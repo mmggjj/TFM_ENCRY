@@ -39,10 +39,11 @@ def arregla(m: re.Match) -> str:
         nuevo = re.sub(r"(?<!\\)&", r"\\&", nuevo)
         nuevo = re.sub(r"(?<!\\)%", r"\\%", nuevo)
         nuevo = re.sub(r"(?<!\\)#", r"\\#", nuevo)
-        # ^ y ~ fuera de modo matematico rompen pdfLaTeX ("Missing $"):
-        # aparecian en notas como "kGates/mm^2".
+        # ^ fuera de modo matematico rompe pdfLaTeX ("Missing $"): aparecia
+        # en notas como "kGates/mm^2". La tilde NO se toca: en LaTeX es el
+        # espacio irrompible ("SP~800-90B") y sustituirla por \~{} dentro de
+        # una expresion matematica da "Please use \mathaccent".
         nuevo = re.sub(r"(?<!\\)\^", r"\\^{}", nuevo)
-        nuevo = re.sub(r"(?<!\\)~", r"\\~{}", nuevo)
     for k, v in SUSTITUCIONES.items():
         nuevo = nuevo.replace(k, v)
     return f"{nombre} = {{{nuevo}}}"
@@ -54,6 +55,11 @@ def main() -> None:
         shutil.copy(BIB, copia)
     s = BIB.read_text(encoding="utf-8")
     s2 = re.sub(r"(\w+)\s*=\s*\{((?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}", arregla, s)
+    # Campos delimitados con comillas en vez de llaves (BibTeX los admite y
+    # algunos ficheros de los investigadores los usan): mismo tratamiento.
+    def arregla_comillas(m: re.Match) -> str:
+        return arregla(re.match(r"(\w+)\s*=\s*\{(.*)\}$", f"{m.group(1)} = {{{m.group(2)}}}", re.S))
+    s2 = re.sub(r"(\w+)\s*=\s*\"((?:[^\"\\]|\\.)*)\"", arregla_comillas, s2)
     BIB.write_text(s2, encoding="utf-8")
     restantes = sorted({c for c in s2 if ord(c) > 255})
     print("cambios:", sum(a != b for a, b in zip(s.splitlines(), s2.splitlines())), "lineas")
