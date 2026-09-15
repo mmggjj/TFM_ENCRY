@@ -1,0 +1,719 @@
+% refs_trng.bib — Referencias del estado del arte RO-TRNG / min-entropía
+% Estado de verificación en el campo `note`:
+%   [VERIFICADO]      documento abierto y contenido confirmado
+%   [VERIFICADO-META] título/autores/venue/año/DOI confirmados por Crossref o editor; contenido no leído
+%   [NO VERIFICADO]   de memoria o solo por fragmento de buscador
+% Fecha de verificación: 2026-09-11
+
+% ---------- Normas y documentos oficiales ----------
+
+@techreport{turan_2018_sp80090b,
+  author      = {Turan, Meltem S{\"o}nmez and Barker, Elaine and Kelsey, John and McKay, Kerry A. and Baish, Mary L. and Boyle, Mike},
+  title       = {Recommendation for the Entropy Sources Used for Random Bit Generation},
+  institution = {National Institute of Standards and Technology},
+  type        = {NIST Special Publication},
+  number      = {800-90B},
+  year        = {2018},
+  month       = jan,
+  doi         = {10.6028/NIST.SP.800-90B},
+  url         = {https://nvlpubs.nist.gov/nistpubs/SpecialPublications/nist.sp.800-90b.pdf},
+  note        = {[VERIFICADO] PDF completo; \S4.4 health tests (RCT, APT), \S3.1 datos, \S6.3 diez estimadores non-IID}
+}
+
+@misc{nist_ea_github,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {SP800-90B\_EntropyAssessment: C++ implementation of the min-entropy assessment methods of SP 800-90B},
+  howpublished = {GitHub repository},
+  url          = {https://github.com/usnistgov/SP800-90B_EntropyAssessment},
+  year         = {2018},
+  note         = {[VERIFICADO] README: C++11/OpenMP, libbz2/libdivsufsort/jsoncpp/OpenSSL/MPFR/GMP; ea\_iid, ea\_non\_iid, ea\_restart, ea\_conditioning, ea\_transpose; consultado 2026-09-11}
+}
+
+@misc{turan_2023_slides,
+  author       = {Turan, Meltem S{\"o}nmez},
+  title        = {{SP 800-90B} in Depth and Revision},
+  howpublished = {Presentaci{\'o}n, NIST Random Bit Generation Workshop 2023},
+  year         = {2023},
+  url          = {https://csrc.nist.gov/csrc/media/Presentations/2023/sp-800-90b-in-depth-and-revision/images-media/session-3-turan-sp800-90b.pdf},
+  note         = {[VERIFICADO] PDF; dos pistas IID/non-IID, restart dataset 1000x1000, plan de revisi{\'o}n}
+}
+
+@techreport{bassham_2010_sp80022,
+  author      = {Bassham, Lawrence E. and Rukhin, Andrew L. and Soto, Juan and Nechvatal, James R. and Smid, Miles E. and Barker, Elaine B. and Leigh, Stefan D. and Levenson, Mark and Vangel, Mark and Banks, David L. and Heckert, N. Alan and Dray, James F. and Vo, San},
+  title       = {A Statistical Test Suite for Random and Pseudorandom Number Generators for Cryptographic Applications},
+  institution = {National Institute of Standards and Technology},
+  type        = {NIST Special Publication},
+  number      = {800-22 Rev. 1a},
+  year        = {2010},
+  month       = apr,
+  doi         = {10.6028/NIST.SP.800-22r1a},
+  note        = {[VERIFICADO-META] Crossref}
+}
+
+@misc{nist_2022_decision,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {Decision to Revise {NIST SP 800-22 Rev. 1a}},
+  year         = {2022},
+  month        = apr,
+  day          = {19},
+  url          = {https://www.nist.gov/news-events/news/2022/04/decision-revise-nist-sp-800-22-rev-1a},
+  note         = {[VERIFICADO] Cita literal: ``rejecting its use for assessing cryptographic random number generators''}
+}
+
+@techreport{peter_2024_ais31,
+  author      = {Peter, Matthias and Schindler, Werner},
+  title       = {A Proposal for Functionality Classes for Random Number Generators, Version 3.0},
+  institution = {Bundesamt f{\"u}r Sicherheit in der Informationstechnik (BSI)},
+  type        = {Mathematical-technical reference of AIS 20/31},
+  year        = {2024},
+  month       = sep,
+  day         = {10},
+  url         = {https://www.bsi.bund.de/SharedDocs/Downloads/EN/BSI/Certification/Interpretations/AIS_31_Functionality_classes_for_random_number_generators_e_2024.pdf},
+  note        = {[VERIFICADO] PDF 306 pp.; PTG.2.2: Shannon $\geq 0.9998$ y/o min-entrop{\'i}a $\geq 0.98$, Prob(1) en (0.493,0.507); \S4.5.3 online test, \S4.5.4 total failure test, \S4.6 suite $T_{irn}$}
+}
+
+@techreport{killmann_2011_ais31,
+  author      = {Killmann, Wolfgang and Schindler, Werner},
+  title       = {A Proposal for: Functionality Classes for Random Number Generators, Version 2.0},
+  institution = {Bundesamt f{\"u}r Sicherheit in der Informationstechnik (BSI)},
+  year        = {2011},
+  month       = sep,
+  day         = {18},
+  url         = {https://cosec.bit.uni-bonn.de/fileadmin/user_upload/teaching/15ss/15ss-taoc/01_AIS31_Functionality_classes_for_random_number_generators.pdf},
+  note        = {[VERIFICADO] PDF 133 pp.; PTG.2.7: ``average Shannon entropy per internal random bit exceeds 0.997''}
+}
+
+@techreport{bsi_2025_transition,
+  author      = {{Bundesamt f{\"u}r Sicherheit in der Informationstechnik}},
+  title       = {Transition Policy to Version 3.0 of the Mathematical/Technical Reference, Part of {AIS 20/31}, Version 1.0},
+  institution = {BSI},
+  year        = {2025},
+  month       = apr,
+  day         = {15},
+  url         = {https://www.bsi.bund.de/SharedDocs/Downloads/EN/BSI/Certification/Interpretations/AIS_20_31_Transition_Policy_Version_3_0.pdf},
+  note        = {[VERIFICADO] Certificaciones nuevas con AIS antigua hasta 31/03/2026}
+}
+
+@misc{schindler_2024_ecw,
+  author       = {Schindler, Werner},
+  title        = {The New {AIS 20/31}},
+  howpublished = {Presentaci{\'o}n, European Cyber Week 2024, Rennes},
+  year         = {2024},
+  month        = nov,
+  url          = {https://www.creachlabs.fr/sites/default/files/public/media/document/2024-12/ecw2024-rng-puf-schindlerwerner-20241120.pdf},
+  note         = {[VERIFICADO] ``At most 0.9998 bit Shannon entropy / 0.98 bit min-entropy can be claimed on the basis of the stochastic model''}
+}
+
+@misc{schindler_2023_nist,
+  author       = {Schindler, Werner},
+  title        = {Overview of {AIS 20/31}},
+  howpublished = {Presentaci{\'o}n, NIST Random Bit Generation Workshop 2023},
+  year         = {2023},
+  url          = {https://csrc.nist.gov/csrc/media/Presentations/2023/overview-of-ais-2031/images-media/session-2-schindler-overview-of-ais-20-31.pdf},
+  note         = {[VERIFICADO] PDF; armonizaci{\'o}n BSI--NIST}
+}
+
+@misc{lubicz_2024_recommendations,
+  author       = {Lubicz, David and Fischer, Viktor},
+  title        = {Recommendations for the Design and Validation of a Physical True Random Number Generator Integrated in an Electronic Device, Version 1.0},
+  howpublished = {IACR Cryptology ePrint Archive, Report 2024/301},
+  year         = {2024},
+  month        = feb,
+  url          = {https://eprint.iacr.org/2024/301.pdf},
+  note         = {[VERIFICADO] PDF 33 pp.; ``proven entropy''; ERO como ejemplo can{\'o}nico; comparaci{\'o}n con AIS 20/31 y SP 800-90B}
+}
+
+% ---------- Modelo estocástico ----------
+
+@article{baudet_2011_security,
+  author  = {Baudet, Mathieu and Lubicz, David and Micolod, Julien and Tassiaux, Andr{\'e}},
+  title   = {On the Security of Oscillator-Based Random Number Generators},
+  journal = {Journal of Cryptology},
+  volume  = {24},
+  number  = {2},
+  pages   = {398--425},
+  year    = {2011},
+  doi     = {10.1007/s00145-010-9089-3},
+  url     = {https://eprint.iacr.org/2009/299.pdf},
+  note    = {[VERIFICADO] ePrint 2009/299 le{\'i}do; Crossref confirma DOI/vol/p{\'a}gs. Q = $\sigma^2\Delta t$; Prop. 1 ecs. 8, 10, 12; Cor. 1 ec. 14}
+}
+
+@inproceedings{killmann_2008_design,
+  author    = {Killmann, Wolfgang and Schindler, Werner},
+  title     = {A Design for a Physical {RNG} with Robust Entropy Estimators},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2008},
+  series    = {LNCS},
+  volume    = {5154},
+  pages     = {146--163},
+  publisher = {Springer},
+  year      = {2008},
+  doi       = {10.1007/978-3-540-85053-3_10},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{schindler_2002_evaluation,
+  author    = {Schindler, Werner and Killmann, Wolfgang},
+  title     = {Evaluation Criteria for True (Physical) Random Number Generators Used in Cryptographic Applications},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2002},
+  series    = {LNCS},
+  volume    = {2523},
+  pages     = {431--449},
+  publisher = {Springer},
+  year      = {2003},
+  doi       = {10.1007/3-540-36400-5_31},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{ma_2014_entropy,
+  author    = {Ma, Yuan and Lin, Jingqiang and Chen, Tianyu and Xu, Changwei and Liu, Zongbin and Jing, Jiwu},
+  title     = {Entropy Evaluation for Oscillator-Based True Random Number Generators},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2014},
+  series    = {LNCS},
+  volume    = {8731},
+  pages     = {544--561},
+  publisher = {Springer},
+  year      = {2014},
+  doi       = {10.1007/978-3-662-44709-3_30},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{haddad_2014_assumption,
+  author    = {Haddad, Patrick and Teglia, Yannick and Bernard, Florent and Fischer, Viktor},
+  title     = {On the Assumption of Mutual Independence of Jitter Realizations in {P-TRNG} Stochastic Models},
+  booktitle = {Design, Automation \& Test in Europe (DATE 2014)},
+  pages     = {1--6},
+  year      = {2014},
+  doi       = {10.7873/DATE.2014.052},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@article{bernard_2019_physical,
+  author  = {Bernard, Florent and Haddad, Patrick and Fischer, Viktor and Nicolai, Jean},
+  title   = {From Physical to Stochastic Modeling of a {TERO}-Based {TRNG}},
+  journal = {Journal of Cryptology},
+  volume  = {32},
+  number  = {2},
+  pages   = {435--458},
+  year    = {2019},
+  doi     = {10.1007/s00145-018-9291-2},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@misc{saarinen_2021_entropy,
+  author       = {Saarinen, Markku-Juhani O.},
+  title        = {On Entropy and Bit Patterns of Ring Oscillator Jitter},
+  howpublished = {arXiv:2102.02196 [cs.CR], v4},
+  year         = {2021},
+  month        = oct,
+  url          = {https://arxiv.org/abs/2102.02196},
+  note         = {[VERIFICADO] PDF; advierte que la cota de Baudet nunca baja de 0.415; m{\'e}todo num{\'e}rico exacto con gaussiana envuelta}
+}
+
+% ---------- Medida de jitter ----------
+
+@inproceedings{fischer_2014_embedded,
+  author    = {Fischer, Viktor and Lubicz, David},
+  title     = {Embedded Evaluation of Randomness in Oscillator Based Elementary {TRNG}},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2014},
+  series    = {LNCS},
+  volume    = {8731},
+  pages     = {527--543},
+  publisher = {Springer},
+  year      = {2014},
+  doi       = {10.1007/978-3-662-44709-3_29},
+  url       = {https://www.iacr.org/archive/ches2014/87310109/87310109.pdf},
+  note      = {[VERIFICADO] PDF completo; Algoritmo 1; error $<5\%$; $\sigma = 5.01$ ps / 7.81 ns en Cyclone III; $K_D \approx 430\,000$ para $H\ge 0.997$}
+}
+
+@article{lubicz_2015_towards,
+  author  = {Lubicz, David and Bochard, Nathalie},
+  title   = {Towards an Oscillator Based {TRNG} with a Certified Entropy Rate},
+  journal = {IEEE Transactions on Computers},
+  volume  = {64},
+  number  = {4},
+  pages   = {1191--1200},
+  year    = {2015},
+  doi     = {10.1109/TC.2014.2308423},
+  note    = {[VERIFICADO-META] Crossref; contenido seg{\'u}n abstract}
+}
+
+@misc{lubicz_2024_jitter,
+  author       = {Lubicz, David and Sk{\'o}rski, Maciej},
+  title        = {Improved Phase Noise Measurement for Multi-Ring Oscillator Based {TRNG} (arXiv title: Quantifying Jitter Transfer for Differential Measurement: Enhancing Security of Oscillator-Based {TRNGs})},
+  howpublished = {arXiv:2410.08259 [cs.CR]},
+  year         = {2024},
+  month        = oct,
+  url          = {https://arxiv.org/abs/2410.08259},
+  note         = {[VERIFICADO] PDF completo; jitter transfer principle; dos m{\'e}todos con tres osciladores; Cyclone V}
+}
+
+@inproceedings{valtchanov_2008_modeling,
+  author    = {Valtchanov, Boyan and Aubert, Alain and Bernard, Florent and Fischer, Viktor},
+  title     = {Modeling and Observing the Jitter in Ring Oscillators Implemented in {FPGAs}},
+  booktitle = {11th IEEE Workshop on Design and Diagnostics of Electronic Circuits and Systems (DDECS 2008)},
+  pages     = {1--6},
+  year      = {2008},
+  doi       = {10.1109/DDECS.2008.4538777},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{fischer_2008_enhancing,
+  author    = {Fischer, Viktor and Bernard, Florent and Bochard, Nathalie and Varchola, Michal},
+  title     = {Enhancing Security of Ring Oscillator-Based {TRNG} Implemented in {FPGA}},
+  booktitle = {International Conference on Field Programmable Logic and Applications (FPL 2008)},
+  pages     = {245--250},
+  year      = {2008},
+  doi       = {10.1109/FPL.2008.4629939},
+  note      = {[VERIFICADO-META] Crossref; ``random jitter accumulates slower than deterministic jitter'' (abstract)}
+}
+
+% ---------- Arquitecturas ----------
+
+@article{sunar_2007_provably,
+  author  = {Sunar, Berk and Martin, William J. and Stinson, Douglas R.},
+  title   = {A Provably Secure True Random Number Generator with Built-In Tolerance to Active Attacks},
+  journal = {IEEE Transactions on Computers},
+  volume  = {56},
+  number  = {1},
+  pages   = {109--119},
+  year    = {2007},
+  doi     = {10.1109/TC.2007.250627},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@article{wold_2009_analysis,
+  author  = {Wold, Knut and Tan, Chik How},
+  title   = {Analysis and Enhancement of Random Number Generator in {FPGA} Based on Oscillator Rings},
+  journal = {International Journal of Reconfigurable Computing},
+  volume  = {2009},
+  pages   = {Article ID 501672},
+  year    = {2009},
+  doi     = {10.1155/2009/501672},
+  note    = {[VERIFICADO-META] Crossref; 100 Mbit/s, $<100$ LE Cyclone II (abstract)}
+}
+
+@article{bochard_2010_true,
+  author  = {Bochard, Nathalie and Bernard, Florent and Fischer, Viktor and Valtchanov, Boyan},
+  title   = {True-Randomness and Pseudo-Randomness in Ring Oscillator-Based True Random Number Generators},
+  journal = {International Journal of Reconfigurable Computing},
+  volume  = {2010},
+  pages   = {Article ID 879281, 1--13},
+  year    = {2010},
+  doi     = {10.1155/2010/879281},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{kohlbrenner_2004_embedded,
+  author    = {Kohlbrenner, Paul and Gaj, Kris},
+  title     = {An Embedded True Random Number Generator for {FPGAs}},
+  booktitle = {Proc. ACM/SIGDA 12th International Symposium on Field Programmable Gate Arrays (FPGA 2004)},
+  pages     = {71--78},
+  year      = {2004},
+  doi       = {10.1145/968280.968292},
+  url       = {https://people-ece.vse.gmu.edu/~kgaj/publications/conferences/GMU_FPGA_2004.pdf},
+  note      = {[VERIFICADO] PDF + Crossref; Virtex XCV1000, 0.5 Mbit/s, diferencias de periodo 22--35 ps}
+}
+
+@inproceedings{valtchanov_2009_enhanced,
+  author    = {Valtchanov, Boyan and Fischer, Viktor and Aubert, Alain},
+  title     = {Enhanced {TRNG} Based on the Coherent Sampling},
+  booktitle = {3rd International Conference on Signals, Circuits and Systems (SCS 2009)},
+  pages     = {1--6},
+  year      = {2009},
+  doi       = {10.1109/ICSCS.2009.5412601},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{varchola_2010_new,
+  author    = {Varchola, Michal and Drutarovsk{\'y}, Milo{\v{s}}},
+  title     = {New High Entropy Element for {FPGA} Based True Random Number Generators},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2010},
+  series    = {LNCS},
+  volume    = {6225},
+  pages     = {351--365},
+  publisher = {Springer},
+  year      = {2010},
+  doi       = {10.1007/978-3-642-15031-9_24},
+  url       = {https://www.iacr.org/archive/ches2010/62250341/62250341.pdf},
+  note      = {[VERIFICADO] PDF + Crossref; TERO en un CLB de Spartan-3E}
+}
+
+@inproceedings{cherkaoui_2013_very,
+  author    = {Cherkaoui, Abdelkarim and Fischer, Viktor and Fesquet, Laurent and Aubert, Alain},
+  title     = {A Very High Speed True Random Number Generator with Entropy Assessment},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2013},
+  series    = {LNCS},
+  volume    = {8086},
+  pages     = {179--196},
+  publisher = {Springer},
+  year      = {2013},
+  doi       = {10.1007/978-3-642-40349-1_11},
+  url       = {https://www.iacr.org/archive/ches2013/80860154/80860154.pdf},
+  note      = {[VERIFICADO] PDF + Crossref; STR; ecs. 8--9 cota $H_m$; 200 Mbit/s; jitter 2 ps Cyclone III, 2.5 ps Virtex-5}
+}
+
+@article{martin_2016_new,
+  author  = {Mart{\'i}n, Honorio and Peris-Lopez, Pedro and Tapiador, Juan E. and San Mill{\'a}n, Enrique},
+  title   = {A New {TRNG} Based on Coherent Sampling With Self-Timed Rings},
+  journal = {IEEE Transactions on Industrial Informatics},
+  volume  = {12},
+  number  = {1},
+  pages   = {91--100},
+  year    = {2016},
+  doi     = {10.1109/TII.2015.2502183},
+  url     = {https://e-archivo.uc3m.es/rest/api/core/bitstreams/cf763018-1253-4091-a4a0-6332ef059492/content},
+  note    = {[VERIFICADO] PDF (repositorio UC3M) + Crossref; Spartan-3E XC3S500E; validaci{\'o}n bajo variaciones de tensi{\'o}n y temperatura}
+}
+
+@inproceedings{petura_2016_survey,
+  author    = {Petura, Oto and Mureddu, Ugo and Bochard, Nathalie and Fischer, Viktor and Bossuet, Lilian},
+  title     = {A Survey of {AIS-20/31} Compliant {TRNG} Cores Suitable for {FPGA} Devices},
+  booktitle = {26th International Conference on Field Programmable Logic and Applications (FPL 2016)},
+  pages     = {1--10},
+  year      = {2016},
+  doi       = {10.1109/FPL.2016.7577379},
+  url       = {https://hal.science/hal-01382955/document},
+  note      = {[VERIFICADO] PDF HAL completo + Crossref; Tabla II (Spartan-6, Cyclone V, SmartFusion2); jitter 2--4 ps; ec. (1) $H_{min}$}
+}
+
+@inproceedings{rozic_2015_highly,
+  author    = {Ro{\v{z}}i{\'c}, Vladimir and Yang, Bohan and Dehaene, Wim and Verbauwhede, Ingrid},
+  title     = {Highly Efficient Entropy Extraction for True Random Number Generators on {FPGAs}},
+  booktitle = {Proc. 52nd Annual Design Automation Conference (DAC 2015)},
+  pages     = {116:1--116:6},
+  year      = {2015},
+  doi       = {10.1145/2744769.2744852},
+  note      = {[VERIFICADO-META] Crossref; DC-TRNG con cadena de acarreo}
+}
+
+@inproceedings{rozic_2016_iterating,
+  author    = {Ro{\v{z}}i{\'c}, Vladimir and Yang, Bohan and Dehaene, Wim and Verbauwhede, Ingrid},
+  title     = {Iterating {Von Neumann}'s Post-Processing under Hardware Constraints},
+  booktitle = {IEEE International Symposium on Hardware Oriented Security and Trust (HOST 2016)},
+  pages     = {37--42},
+  year      = {2016},
+  doi       = {10.1109/HST.2016.7495553},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@article{grujic_2017_lightweight,
+  author  = {Gruji{\'c}, Milo{\v{s}} and Ro{\v{z}}i{\'c}, Vladimir and Yang, Bohan and Verbauwhede, Ingrid},
+  title   = {Lightweight Prediction-Based Tests for On-Line Min-Entropy Estimation},
+  journal = {IEEE Embedded Systems Letters},
+  volume  = {9},
+  number  = {2},
+  pages   = {45--48},
+  year    = {2017},
+  doi     = {10.1109/LES.2017.2687082},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@article{yang_2018_estrng,
+  author  = {Yang, Bohan and Ro{\v{z}}i{\'c}, Vladimir and Gruji{\'c}, Milo{\v{s}} and Mentens, Nele and Verbauwhede, Ingrid},
+  title   = {{ES-TRNG}: A High-throughput, Low-area True Random Number Generator based on Edge Sampling},
+  journal = {IACR Transactions on Cryptographic Hardware and Embedded Systems},
+  volume  = {2018},
+  number  = {3},
+  pages   = {267--292},
+  year    = {2018},
+  doi     = {10.13154/tches.v2018.i3.267-292},
+  url     = {https://tches.iacr.org/index.php/TCHES/article/view/7276},
+  note    = {[VERIFICADO] p{\'a}gina TCHES; Spartan-6: 10 LUT + 5 FF, 1.15 Mbit/s, Shannon 0.997}
+}
+
+@misc{yang_2018_estrng_slides,
+  author       = {Yang, Bohan and Ro{\v{z}}i{\'c}, Vladimir and Gruji{\'c}, Milo{\v{s}} and Mentens, Nele and Verbauwhede, Ingrid},
+  title        = {{ES-TRNG}: A High-throughput, Low-area True Random Number Generator based on Edge Sampling (diapositivas CHES 2018)},
+  howpublished = {CHES 2018, Amsterdam, 12 de septiembre de 2018},
+  year         = {2018},
+  url          = {https://ches.iacr.org/2018/slides/ches2018-session2-talk3-slides.pdf},
+  note         = {[VERIFICADO] PDF; RO 2.172/2.740 ns; jitter strength $\sigma_m^2/t_m = 2.9$ fs; TDC $\sim$17 ps}
+}
+
+@inproceedings{grujic_2018_closer,
+  author    = {Gruji{\'c}, Milo{\v{s}} and Ro{\v{z}}i{\'c}, Vladimir and Yang, Bohan and Verbauwhede, Ingrid},
+  title     = {A Closer Look at the Delay-Chain Based {TRNG}},
+  booktitle = {IEEE International Symposium on Circuits and Systems (ISCAS 2018)},
+  year      = {2018},
+  note      = {[NO VERIFICADO] solo por fragmento de buscador; sin DOI confirmado}
+}
+
+@article{grujic_2022_trot,
+  author  = {Gruji{\'c}, Milo{\v{s}} and Verbauwhede, Ingrid},
+  title   = {{TROT}: A Three-Edge Ring Oscillator Based True Random Number Generator With Time-to-Digital Conversion},
+  journal = {IEEE Transactions on Circuits and Systems I: Regular Papers},
+  volume  = {69},
+  number  = {6},
+  pages   = {2435--2448},
+  year    = {2022},
+  doi     = {10.1109/TCSI.2022.3158022},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{peetermans_2019_portable,
+  author    = {Peetermans, Adriaan and Ro{\v{z}}i{\'c}, Vladimir and Verbauwhede, Ingrid},
+  title     = {A Highly-Portable True Random Number Generator Based on Coherent Sampling},
+  booktitle = {29th International Conference on Field Programmable Logic and Applications (FPL 2019)},
+  pages     = {218--224},
+  year      = {2019},
+  doi       = {10.1109/FPL.2019.00041},
+  url       = {https://lirias.kuleuven.be/retrieve/0ee069b3-afb3-43e3-9fe3-9e6d0b90ae46},
+  note      = {[VERIFICADO] PDF Lirias + Crossref; Spartan-6 3.30 Mbit/s, SmartFusion2 1.47 Mbit/s, AIS-31 sin post-procesado}
+}
+
+@article{peetermans_2021_configurable,
+  author  = {Peetermans, Adriaan and Ro{\v{z}}i{\'c}, Vladimir and Verbauwhede, Ingrid},
+  title   = {Design and Analysis of Configurable Ring Oscillators for True Random Number Generation Based on Coherent Sampling},
+  journal = {ACM Transactions on Reconfigurable Technology and Systems},
+  volume  = {14},
+  number  = {2},
+  pages   = {7:1--7:20},
+  year    = {2021},
+  doi     = {10.1145/3433166},
+  url     = {https://cosicdatabase.esat.kuleuven.be/backend/publications/files/journal/3280},
+  note    = {[VERIFICADO] PDF COSIC + Crossref; modelo COSO ecs. 1--10; Spartan-7 4.65 Mbit/s; umbral min-entrop{\'i}a 0.91 (interpretaci{\'o}n de los autores)}
+}
+
+@inproceedings{fischer_2002_true,
+  author    = {Fischer, Viktor and Drutarovsk{\'y}, Milo{\v{s}}},
+  title     = {True Random Number Generator Embedded in Reconfigurable Hardware},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2002},
+  series    = {LNCS},
+  volume    = {2523},
+  pages     = {415--430},
+  publisher = {Springer},
+  year      = {2003},
+  doi       = {10.1007/3-540-36400-5_30},
+  note      = {[VERIFICADO-META] Crossref; PLL-TRNG}
+}
+
+% ---------- Ataques / seguridad ----------
+
+@inproceedings{markettos_2009_frequency,
+  author    = {Markettos, A. Theodore and Moore, Simon W.},
+  title     = {The Frequency Injection Attack on Ring-Oscillator-Based True Random Number Generators},
+  booktitle = {Cryptographic Hardware and Embedded Systems -- CHES 2009},
+  series    = {LNCS},
+  volume    = {5747},
+  pages     = {317--331},
+  publisher = {Springer},
+  year      = {2009},
+  doi       = {10.1007/978-3-642-04138-9_23},
+  url       = {https://www.iacr.org/archive/ches2009/57470316/57470316.pdf},
+  note      = {[VERIFICADO] PDF + Crossref; keyspace $2^{64}\to 3300$; tarjeta EMV 2004; enganche 74HC04 a 24 MHz / 900 mV pk-pk}
+}
+
+@inproceedings{bayon_2012_contactless,
+  author    = {Bayon, Pierre and Bossuet, Lilian and Aubert, Alain and Fischer, Viktor and Poucheret, Fran{\c{c}}ois and Robisson, Bruno and Maurine, Philippe},
+  title     = {Contactless Electromagnetic Active Attack on Ring Oscillator Based True Random Number Generator},
+  booktitle = {Constructive Side-Channel Analysis and Secure Design (COSADE 2012)},
+  series    = {LNCS},
+  volume    = {7275},
+  pages     = {151--166},
+  publisher = {Springer},
+  year      = {2012},
+  doi       = {10.1007/978-3-642-29912-4_12},
+  note      = {[VERIFICADO-META] Crossref; 50 ROs enganchados por campo EM (abstract)}
+}
+
+@inproceedings{fischer_2012_closer,
+  author    = {Fischer, Viktor},
+  title     = {A Closer Look at Security in Random Number Generators Design},
+  booktitle = {Constructive Side-Channel Analysis and Secure Design (COSADE 2012)},
+  series    = {LNCS},
+  volume    = {7275},
+  pages     = {167--182},
+  publisher = {Springer},
+  year      = {2012},
+  doi       = {10.1007/978-3-642-29912-4_13},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+@article{barbareschi_2016_ring,
+  author  = {Barbareschi, Mario and Di Natale, Giorgio and Bruguier, Florent and Benoit, Pascal and Torres, Lionel},
+  title   = {Ring Oscillators Analysis for Security Purposes in {Spartan-6} {FPGAs}},
+  journal = {Microprocessors and Microsystems},
+  volume  = {47},
+  pages   = {3--10},
+  year    = {2016},
+  doi     = {10.1016/j.micpro.2016.06.005},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@article{hurleysmith_2018_certifiably,
+  author  = {Hurley-Smith, Darren and Hernandez-Castro, Julio},
+  title   = {Certifiably Biased: An In-Depth Analysis of a Common Criteria {EAL4+} Certified {TRNG}},
+  journal = {IEEE Transactions on Information Forensics and Security},
+  volume  = {13},
+  number  = {4},
+  pages   = {1031--1041},
+  year    = {2018},
+  doi     = {10.1109/TIFS.2017.2777342},
+  note    = {[VERIFICADO-META] Crossref}
+}
+
+@inproceedings{hurleysmith_2018_great,
+  author    = {Hurley-Smith, Darren and Hernandez-Castro, Julio},
+  title     = {Great Expectations: A Critique of Current Approaches to Random Number Generation Testing \& Certification},
+  booktitle = {Security Standardisation Research (SSR 2018)},
+  series    = {LNCS},
+  volume    = {11322},
+  pages     = {143--163},
+  publisher = {Springer},
+  year      = {2018},
+  doi       = {10.1007/978-3-030-04762-7_8},
+  note      = {[VERIFICADO-META] Crossref}
+}
+
+% ---------- Documentación AMD/Xilinx ----------
+
+@manual{amd_ug912_dont_touch,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite Properties Reference Guide (UG912), v2026.1: DONT\_TOUCH},
+  year         = {2026},
+  url          = {https://docs.amd.com/r/en-US/ug912-vivado-properties/DONT_TOUCH},
+  note         = {[VERIFICADO] ``forward-annotated to place and route to prevent logic optimization during implementation''}
+}
+
+@manual{amd_ug912_keep,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite Properties Reference Guide (UG912), v2026.1: KEEP},
+  year         = {2026},
+  url          = {https://docs.amd.com/r/en-US/ug912-vivado-properties/KEEP},
+  note         = {[VERIFICADO] Afecta solo a s{\'i}ntesis; ``Set this attribute in the RTL only''}
+}
+
+@manual{amd_ug912_loc,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite Properties Reference Guide (UG912), v2026.1: LOC},
+  year         = {2026},
+  url          = {https://docs.amd.com/r/en-US/ug912-vivado-properties/LOC},
+  note         = {[VERIFICADO] (* LOC = "SLICE\_X0Y0" *); set\_property LOC}
+}
+
+@manual{amd_ug912_bel,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite Properties Reference Guide (UG912), v2026.1: BEL},
+  year         = {2026},
+  url          = {https://docs.amd.com/r/en-US/ug912-vivado-properties/BEL},
+  note         = {[VERIFICADO] set\_property BEL A5FF [get\_cells ...]}
+}
+
+@manual{amd_ug835_set_disable_timing,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite Tcl Command Reference Guide (UG835), v2026.1: set\_disable\_timing},
+  year         = {2026},
+  url          = {https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/set_disable_timing},
+  note         = {[VERIFICADO] Ejemplo: set\_disable\_timing -from A6 -to O [get\_cells my\_lut\_instance]}
+}
+
+@manual{amd_ug835_set_false_path,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite Tcl Command Reference Guide (UG835): set\_false\_path},
+  year         = {2025},
+  url          = {https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/set_false_path},
+  note         = {[VERIFICADO-META] URL listada por buscador; p{\'a}gina no abierta}
+}
+
+@manual{amd_ug901_synthesis,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite User Guide: Synthesis (UG901), v2026.1, cap. Synthesis Attributes},
+  year         = {2026},
+  url          = {https://docs.amd.com/r/en-US/ug901-vivado-synthesis/Synthesis-Attributes},
+  note         = {[VERIFICADO] Lista DONT\_TOUCH, KEEP, KEEP\_HIERARCHY, ...; NO incluye ALLOW\_COMBINATORIAL\_LOOPS (tampoco en el PDF 2022.1)}
+}
+
+@misc{amd_support_lutlp,
+  organization = {Advanced Micro Devices},
+  title        = {AMD Adaptive Support: ``[DRC LUTLP-1] Combinatorial Loop'' / ``Properly constraining (expected) combinational loops''},
+  url          = {https://adaptivesupport.amd.com/s/question/0D52E00006hpff4SAA/properly-constraining-expected-combinational-loops},
+  year         = {2020},
+  note         = {[VERIFICADO-META] Existencia confirmada; texto no accesible (anti-bot). Seg{\'u}n res{\'u}menes: set\_property ALLOW\_COMBINATORIAL\_LOOPS TRUE [get\_nets ...] convierte LUTLP-1 en LUTLP-2}
+}
+
+@manual{amd_ug903,
+  organization = {Advanced Micro Devices},
+  title        = {Vivado Design Suite User Guide: Using Constraints (UG903)},
+  url          = {https://docs.amd.com/r/en-US/ug903-vivado-using-constraints},
+  note         = {[NO VERIFICADO] solo URL ra{\'i}z}
+}
+
+@manual{amd_ug949,
+  organization = {Advanced Micro Devices},
+  title        = {UltraFast Design Methodology Guide for FPGAs and SoCs (UG949)},
+  url          = {https://docs.amd.com/r/en-US/ug949-vivado-design-methodology},
+  note         = {[NO VERIFICADO] solo URL ra{\'i}z}
+}
+
+@misc{tseng_ring_oscillators,
+  author       = {Tseng, {\relax N}.},
+  title        = {Motifs of Ring Oscillators (FPGA design lecture notes)},
+  howpublished = {tseng.engineering},
+  url          = {https://www.tseng.engineering/docs/notes/fpga_design/lecture_a3/},
+  note         = {[VERIFICADO] dont\_touch, KEEP\_HIERARCHY, LUT1 con INIT, LOC, ALLOW\_COMBINATORIAL\_LOOPS, set\_disable\_timing; autor{\'i}a exacta no confirmada}
+}
+
+@misc{opentrng_2025_docs,
+  author       = {{CEA-Leti}},
+  title        = {OpenTRNG: open-source reference PTRNGs based on ring oscillators (ERO, MURO, COSO) — hardware documentation and repository},
+  howpublished = {https://opentrng.org/docs/hardware.html ; https://github.com/opentrng/ptrng},
+  year         = {2025},
+  note         = {[VERIFICADO] Licencia MIT; Digilent Arty A7 (xc7a35ticsg324-1L); LUT2 NAND + LUT1 inversores; constraints.xdc con {\'a}rea prohibida; sin cifras de entrop{\'i}a publicadas}
+}
+
+% ---------- ESP32 ----------
+
+@manual{espressif_trm_esp32,
+  organization = {Espressif Systems},
+  title        = {{ESP32} Technical Reference Manual, Version 5.8, Chapter 18: Random Number Generator (RNG)},
+  year         = {2025},
+  url          = {https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf},
+  note         = {[VERIFICADO] PDF; RNG\_DATA\_REG 0x3FF75144; ruido de SAR ADC / HS ADC via XOR; RC\_FAST\_CLK 8 MHz, 2 bits/ciclo; lectura m{\'a}x. 500 kHz / 5 MHz; Dieharder 3.31.1 sobre 2 GB; pseudoaleatorio sin ADC}
+}
+
+@misc{espressif_idf_random,
+  organization = {Espressif Systems},
+  title        = {{ESP-IDF} Programming Guide: Random Number Generation ({ESP32})},
+  url          = {https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/random.html},
+  year         = {2026},
+  note         = {[VERIFICADO] Condiciones RF / bootloader\_random\_enable / bootloader; ``pseudo-random only'' en caso contrario; esp\_random() busy-wait}
+}
+
+@article{castillo_2026_automated,
+  author  = {Castillo, J. and Aran Vila, P. and Palacio, F. and Garrido, B. and Hern{\'a}ndez, S. and Cirera, A.},
+  title   = {Automated Framework for Testing Random Number Generators for {IoT} Security Applications Using {NIST SP 800-22}},
+  journal = {IoT},
+  volume  = {7},
+  number  = {1},
+  pages   = {26},
+  year    = {2026},
+  doi     = {10.3390/iot7010026},
+  note    = {[VERIFICADO-META] Crossref; ESP32-C3, 2 GB, 1000 secuencias de $10^6$ bits, solo SP 800-22 (seg{\'u}n resumen)}
+}
+
+@inproceedings{hidayatulloh_2024_performance,
+  author    = {Hidayatulloh, Papat and Qolbiyah, Nada Syifa and Nugroho, Asep and Mukhtar, Husneni and Purnama, Irwan and Simanjuntak, Firman},
+  title     = {Performance Evaluation of {ESP32} Random Number Generator for {LoRa} Communication Security},
+  booktitle = {2024 International Conference on Radar, Antenna, Microwave, Electronics, and Telecommunications (ICRAMET)},
+  pages     = {44--49},
+  year      = {2024},
+  doi       = {10.1109/ICRAMET62801.2024.10809333},
+  note      = {[VERIFICADO-META] Crossref; NIST STS (800-22)}
+}
+
+@misc{blancoromero_2026_entropy,
+  author       = {Blanco-Romero, Javier and Almenares Mendoza, Florina and D{\'i}az-S{\'a}nchez, Daniel and Mar{\'i}n-L{\'o}pez, Andr{\'e}s},
+  title        = {Entropy Bootstrapping for Wireless Embedded Systems},
+  howpublished = {arXiv:2607.08865},
+  year         = {2026},
+  month        = sep,
+  url          = {https://arxiv.org/abs/2607.08865},
+  note         = {[VERIFICADO] p{\'a}gina abs; ESP32 RNG pseudoaleatorio con RF apagada pasa cribados estad{\'i}sticos}
+}
+
+@misc{esp32forum_rng,
+  author       = {{ESP32 Forum users}},
+  title        = {ESP32 RNG and WiFi/BT radio-supplied entropy; RNG Quality (Dieharder Test Results Failing)},
+  howpublished = {esp32.com, hilos t=6746 y t=12622},
+  note         = {[NO VERIFICADO] no accesible (protecci{\'o}n anti-bot); no citar como evidencia}
+}

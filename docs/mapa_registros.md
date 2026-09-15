@@ -1,0 +1,91 @@
+# Mapa de registros del motor (interfaz I2C)
+
+**Dirección I2C:** 0x30 (7 bits). Protocolo de puntero de registro con
+autoincremento, ver `rtl/io/i2c_slave.vhd`. Este documento es la
+especificación que comparten `rtl/top/motor_top.vhd` y el firmware del
+ESP32; si cambia uno, cambian los tres.
+
+## Registros
+
+| Dir | Nombre | Acceso | Contenido |
+|---|---|---|---|
+| 0x00 | ID | R | 0xA5, para saber que hay alguien al otro lado |
+| 0x01 | VERSION | R | 0x01 |
+| 0x02 | STATUS | R | ver bits abajo |
+| 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor (5 bits útiles) |
+| 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
+| 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
+| 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |
+| 0x08 | APT_MAX_L | R | proporción máxima vista, byte bajo |
+| 0x09 | APT_MAX_H | R | proporción máxima vista, byte alto |
+| 0x0A–0x0D | PETICIONES | R | contador de peticiones del DRBG, 32 bits, byte bajo primero |
+| 0x10–0x1F | CLAVE | R | clave actual, 16 bytes. **Solo legible en modo test** |
+| 0x20–0x2F | RETO | W | nonce de 16 bytes para el reto-respuesta |
+| 0x30–0x3F | ETIQUETA | R | CMAC(RETO) con la clave actual, 16 bytes |
+| 0x40–0x5F | ALEATORIO | R | los 32 bytes de la última generación del DRBG |
+| 0x80–0xFF | CAPTURA | R | 128 bytes de la página CFG_PAG del buffer de bits crudos. **Solo en modo test** |
+
+Lecturas de direcciones no definidas devuelven 0x00; escrituras a
+direcciones de solo lectura se ignoran.
+
+## STATUS (0x02)
+
+| Bit | Nombre | Significado |
+|---|---|---|
+| 0 | sembrado | el DRBG tiene estado válido |
+| 1 | ocupado | hay una orden en curso; no mandar otra |
+| 2 | alarma_rct | test de repetición disparado (fuente pegada) |
+| 3 | alarma_apt | test de proporción disparado (fuente sesgada) |
+| 4 | clave_valida | hay clave cargada en el autenticador |
+| 5 | captura_llena | el buffer de captura tiene un trozo listo |
+| 6 | etiqueta_lista | ETIQUETA corresponde al RETO actual |
+| 7 | modo_test | el pin de test está activo |
+
+Con alarma levantada, `sembrar` y `resembrar` se rechazan hasta que se
+borre: nunca se siembra con una fuente que se sabe degradada.
+
+## CONTROL (0x03)
+
+| Bit | Orden | Qué hace |
+|---|---|---|
+| 0 | sembrar | recoge 384 bits crudos del anillo (256 de entropía + 128 de nonce), pasa los tests de salud y **instancia** el DRBG desde cero |
+| 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE y los 256 quedan en ALEATORIO; recarga el autenticador |
+| 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
+| 3 | borrar_alarmas | baja las alarmas de salud |
+| 4 | capturar | llena el buffer de captura con un trozo de bits crudos |
+| 5 | resembrar | como sembrar pero **sobre** el estado actual, sin borrarlo |
+
+Las órdenes largas (sembrar, generar) no estiran el reloj I2C: el maestro
+las lanza, sondea `ocupado` en STATUS y recoge el resultado después. Es
+como trabajan los elementos seguros comerciales.
+
+## Secuencia típica del ESP32
+
+1. Leer ID, comprobar 0xA5.
+2. Escribir CFG_KD con el divisor decidido en la caracterización.
+3. CONTROL ← sembrar. Sondear STATUS hasta `ocupado = 0`. Comprobar
+   `sembrado = 1` y sin alarmas.
+4. CONTROL ← generar. Sondear. Ahora hay clave.
+5. Provisión (solo en banco, modo test): leer CLAVE y guardarla en el
+   ESP32.
+6. Reto-respuesta: escribir RETO con un nonce, CONTROL ← autenticar,
+   sondear, leer ETIQUETA y compararla con el CMAC que calcula mbedtls
+   con la clave provisionada.
+
+## Modo test
+
+El pin `modo_test` habilita la lectura de CLAVE y de CAPTURA. En la FPGA
+es un interruptor de la placa. En un circuito integrado sería un fusible
+que se quema en producción, porque exponer la clave o la entropía cruda
+es un agujero. En la memoria se describe así.
+
+## Restricción de tasa
+
+La vía que alimenta los tests de salud y la recogida de semilla cruza del
+dominio del anillo al de sistema bit a bit, y necesita que cada bit dure
+al menos 8 ciclos de sistema. Con reloj de 100 MHz y anillo de muestreo a
+~700 MHz, eso exige K_D ≥ 64 (CFG_KD ≥ 6). En modo generador K_D es
+mucho mayor, así que no aprieta. La captura de bits crudos para medir
+jitter no pasa por esta vía: `trng_capture` escribe en el dominio del
+anillo y admite cualquier K_D, incluido 1.

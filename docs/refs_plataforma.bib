@@ -1,0 +1,364 @@
+% refs_plataforma.bib — Plataforma y flujo de herramientas (TFM motor criptográfico FPGA)
+% Campo `note` indica el estado de verificación a fecha 2026-09-11.
+
+@manual{digilent_basys3_rm,
+  title        = {Basys 3\texttrademark{} FPGA Board Reference Manual},
+  author       = {{Digilent, Inc.}},
+  year         = {2016},
+  month        = apr,
+  note         = {Rev. C, DOC\# 502-183, revised April 8, 2016. [VERIFICADO PDF]},
+  url          = {https://digilent.com/reference/_media/basys3:basys3_rm.pdf},
+  urldate      = {2026-09-11}
+}
+
+@manual{digilent_basys3_sch,
+  title        = {Basys 3 Schematic, Rev. C.0},
+  author       = {{Digilent, Inc.}},
+  year         = {2014},
+  month        = may,
+  note         = {Doc\# 500-183, 5/21/2014, 7 hojas. Oscilador IC9 DSC1033CC1-100.0000T; reguladores IC10 LTC3633, IC11 LTC3621. [VERIFICADO]},
+  url          = {https://digilent.com/reference/_media/basys3:basys3_sch.pdf},
+  urldate      = {2026-09-11}
+}
+
+@misc{digilent_basys3_xdc,
+  title        = {Basys-3-Master.xdc (digilent-xdc repository)},
+  author       = {{Digilent, Inc.}},
+  howpublished = {GitHub},
+  note         = {Fichero maestro de restricciones para Basys 3 rev. B. [VERIFICADO]},
+  url          = {https://raw.githubusercontent.com/Digilent/digilent-xdc/master/Basys-3-Master.xdc},
+  urldate      = {2026-09-11}
+}
+
+@misc{amd_xc7a35tcpg236_pkg,
+  title        = {Device/Package xc7a35tcpg236 pinout file},
+  author       = {{AMD/Xilinx}},
+  year         = {2013},
+  note         = {Generado 10/25/2013. Identifica pines MRCC/SRCC de los Pmod. [VERIFICADO]},
+  url          = {https://www.xilinx.com/support/packagefiles/a7packages/xc7a35tcpg236pkg.txt},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ds180,
+  title        = {7 Series FPGAs Data Sheet: Overview (DS180)},
+  author       = {{AMD/Xilinx}},
+  year         = {2020},
+  month        = sep,
+  note         = {v2.6.1, September 8, 2020. Recursos XC7A35T y Tabla 5 (CPG236). [VERIFICADO]},
+  url          = {https://docs.amd.com/v/u/en-US/ds180_7Series_Overview},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ds181,
+  title        = {Artix-7 FPGAs Data Sheet: DC and AC Switching Characteristics (DS181)},
+  author       = {{AMD/Xilinx}},
+  year         = {2024},
+  month        = jul,
+  note         = {v1.27.1, July 3, 2024. Tabla 65: XADC 12 bit, 1 MS/s, error sensor temperatura $\pm$4\,\textdegree C máx., sensor alimentación $\pm$1\,\% máx. [VERIFICADO]},
+  url          = {https://docs.amd.com/v/u/en-US/ds181_Artix_7_Data_Sheet},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug480,
+  title        = {7 Series FPGAs and Zynq-7000 SoC XADC Dual 12-Bit 1 MSPS Analog-to-Digital Converter User Guide (UG480)},
+  author       = {{AMD/Xilinx}},
+  year         = {2016},
+  month        = sep,
+  note         = {v1.9, September 27, 2016. Fórmulas: $T = \mathrm{ADC}\cdot 503.975/4096 - 273.15$; $V = \mathrm{ADC}/4096 \cdot 3\,\mathrm{V}$. [VERIFICADO en PDF]},
+  url          = {https://docs.amd.com/r/en-US/ug480_7Series_XADC},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug470,
+  title        = {7 Series FPGAs Configuration User Guide (UG470)},
+  author       = {{AMD/Xilinx}},
+  year         = {2015},
+  month        = jun,
+  note         = {v1.10, June 24, 2015. Tabla 1-1: bitstream 7A35T = 17\,536\,096 bits. [VERIFICADO en PDF]},
+  url          = {https://docs.amd.com/v/u/en-US/ug470_7Series_Config},
+  urldate      = {2026-09-11}
+}
+
+@manual{micrel_dsc1033,
+  title        = {DSC1033: 3.3V Low-Power CMOS Oscillator (MEMS PureSilicon)},
+  author       = {{Micrel, Inc. (now Microchip Technology)}},
+  year         = {2009},
+  note         = {Doc. MK-Q-B-P-D-031809-01-7. Jitter ciclo a ciclo 95 ps @100 MHz (único valor tabulado); código CC1 = 3.2x2.5 mm, 0--70\,\textdegree C, $\pm$50 ppm. [VERIFICADO]},
+  url          = {https://ww1.microchip.com/downloads/en/DeviceDoc/DSC1033%20Datasheet%20MKQBPD0318091-7.pdf},
+  urldate      = {2026-09-11}
+}
+
+@misc{amd_vivado_downloads_2026_1,
+  title        = {Adaptive SoCs \& FPGA Design Tools Downloads -- 2026.1},
+  author       = {{AMD}},
+  year         = {2026},
+  note         = {Windows Self Extracting Web Installer 286.37 MB; SFD 98.28 GB; Lab Edition Windows 834.72 MB. [VERIFICADO]},
+  url          = {https://www.amd.com/en/support/downloads/adaptive-socs-and-fpgas/development-tools/2026-1.html},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug973,
+  title        = {Vivado Design Suite User Guide: Release Notes, Installation, and Licensing (UG973)},
+  author       = {{AMD}},
+  year         = {2026},
+  month        = jun,
+  note         = {v2026.1, June 23, 2026. Páginas Supported Operating Systems, Device Availability by Subscription Tier, Web Installer [VERIFICADO]; System Requirements / Memory Recommendations no legibles [VERIFICADO URL]},
+  url          = {https://docs.amd.com/r/en-US/ug973-vivado-release-notes-install-license},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug835,
+  title        = {Vivado Design Suite Tcl Command Reference Guide (UG835)},
+  author       = {{AMD}},
+  year         = {2026},
+  month        = jun,
+  note         = {v2026.1, June 23, 2026. read\_vhdl, synth\_design, opt/place/route\_design, create\_pblock, add\_cells\_to\_pblock, resize\_pblock, set\_disable\_timing, set\_false\_path, report\_utilization, report\_timing\_summary, report\_power, write\_bitstream, program\_hw\_devices, get\_drc\_checks. [VERIFICADO URL; contenido parcial]},
+  url          = {https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug901,
+  title        = {Vivado Design Suite User Guide: Synthesis (UG901)},
+  author       = {{AMD}},
+  year         = {2026},
+  month        = jul,
+  note         = {v2026.1, July 8, 2026. DONT\_TOUCH, KEEP, VHDL-2008 Language Support, Setting up Vivado to use VHDL-2008. [VERIFICADO]},
+  url          = {https://docs.amd.com/r/en-US/ug901-vivado-synthesis},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug903,
+  title        = {Vivado Design Suite User Guide: Using Constraints (UG903)},
+  author       = {{AMD}},
+  year         = {2026},
+  note         = {v2026.1. Página DONT\_TOUCH. [VERIFICADO]},
+  url          = {https://docs.amd.com/r/en-US/ug903-vivado-using-constraints},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug912,
+  title        = {Vivado Design Suite Properties Reference Guide (UG912)},
+  author       = {{AMD}},
+  year         = {2026},
+  note         = {v2026.1. BEL [VERIFICADO], SEVERITY (2023.2) [VERIFICADO], ALLOW\_COMBINATORIAL\_LOOPS, IS\_LOC\_FIXED [NO VERIFICADO: página no localizada]},
+  url          = {https://docs.amd.com/r/en-US/ug912-vivado-properties},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug953,
+  title        = {Vivado Design Suite 7 Series FPGA and Zynq 7000 SoC Libraries Guide (UG953)},
+  author       = {{AMD}},
+  year         = {2026},
+  month        = jun,
+  note         = {v2026.1, June 23, 2026. Primitivas LUT1 (INIT 2'h0--2'h3) y XADC. [VERIFICADO]},
+  url          = {https://docs.amd.com/r/en-US/ug953-vivado-7series-libraries},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug900,
+  title        = {Vivado Design Suite User Guide: Logic Simulation (UG900)},
+  author       = {{AMD}},
+  year         = {2026},
+  month        = jul,
+  note         = {v2026.1, July 8, 2026. UNISIM Library: \texttt{<Vivado>/data/vhdl/src/unisims/}. [VERIFICADO]},
+  url          = {https://docs.amd.com/r/en-US/ug900-vivado-logic-simulation/UNISIM-Library},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug906,
+  title        = {Vivado Design Suite User Guide: Design Analysis and Closure Techniques (UG906)},
+  author       = {{AMD}},
+  year         = {2026},
+  note         = {v2026.1. TIMING-23 Combinational Loop Found; Report Timing Summary. [VERIFICADO URL]},
+  url          = {https://docs.amd.com/r/en-US/ug906-vivado-design-analysis},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ug907,
+  title        = {Vivado Design Suite User Guide: Power Analysis and Optimization (UG907)},
+  author       = {{AMD}},
+  year         = {2026},
+  note         = {v2026.1. report\_power es estimación; Confidence Level. [VERIFICADO URL]},
+  url          = {https://docs.amd.com/r/en-US/ug907-vivado-power-analysis-optimization},
+  urldate      = {2026-09-11}
+}
+
+@misc{amd_lutlp1_forum,
+  title        = {[DRC LUTLP-1] Combinatorial Loop Alert (AMD Adaptive Support / AWS re:Post threads)},
+  author       = {{AMD Adaptive Support community}},
+  year         = {2020},
+  note         = {Texto del mensaje DRC y workaround ALLOW\_COMBINATORIAL\_LOOPS / SEVERITY Warning. [NO VERIFICADO literal]},
+  url          = {https://adaptivesupport.amd.com/s/question/0D52E00006txrDLSAY/drc-lutlp1-combinatorial-loop-alert},
+  urldate      = {2026-09-11}
+}
+
+@manual{espressif_spi_master,
+  title        = {ESP-IDF Programming Guide: SPI Master Driver (ESP32)},
+  author       = {{Espressif Systems}},
+  year         = {2026},
+  note         = {Rama stable. IO\_MUX 80 MHz, GPIO matrix 40 MHz; pines SPI2/SPI3; fórmula de límite de frecuencia por retardo MISO. [VERIFICADO]},
+  url          = {https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/spi_master.html},
+  urldate      = {2026-09-11}
+}
+
+@manual{espressif_gpio,
+  title        = {ESP-IDF Programming Guide: GPIO \& RTC GPIO (ESP32)},
+  author       = {{Espressif Systems}},
+  year         = {2026},
+  note         = {gpio\_set\_drive\_capability, GPIO\_DRIVE\_CAP\_0..3; strapping pins GPIO0/2/5/12/15. [VERIFICADO]},
+  url          = {https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html},
+  urldate      = {2026-09-11}
+}
+
+@manual{espressif_esp32_datasheet,
+  title        = {ESP32 Series Datasheet},
+  author       = {{Espressif Systems}},
+  year         = {2025},
+  note         = {Version 5.3. Tabla 2-1 pines HSPI/VSPI; VDD3P3\_CPU 1.8--3.6 V; IOH 40 mA máx. [VERIFICADO]},
+  url          = {https://documentation.espressif.com/esp32_datasheet_en.pdf},
+  urldate      = {2026-09-11}
+}
+
+@misc{ghdl_releases,
+  title        = {GHDL releases -- v6.0.0},
+  author       = {Gingold, Tristan and contributors},
+  year         = {2026},
+  month        = mar,
+  note         = {v6.0.0, 2026-03-07; ghdl-mcode-6.0.0-ucrt64.zip 22.6 MB. [VERIFICADO]},
+  url          = {https://github.com/ghdl/ghdl/releases},
+  urldate      = {2026-09-11}
+}
+
+@manual{ghdl_docs,
+  title        = {GHDL Documentation: Invoking GHDL; Simulation and runtime; Getting GHDL},
+  author       = {Gingold, Tristan and contributors},
+  year         = {2026},
+  note         = {7.0.0-dev. --std=08, -fsynopsys, --work, --wave/--vcd/--fst, backends mcode/LLVM/GCC. [VERIFICADO]},
+  url          = {https://ghdl.github.io/ghdl/},
+  urldate      = {2026-09-11}
+}
+
+@manual{ghdl_vendors,
+  title        = {GHDL: Precompile Vendor Primitives (compile-xilinx-vivado.sh/.ps1)},
+  author       = {Lehmann, Patrick and contributors},
+  note         = {Opciones --unisim, --vhdl2008, --source, --output. [VERIFICADO]},
+  url          = {https://ghdl-rad.readthedocs.io/en/latest/getting/PrecompileVendorPrimitives.html},
+  urldate      = {2026-09-11}
+}
+
+@misc{msys2_ghdl_gtkwave,
+  title        = {MSYS2 packages: mingw-w64-ghdl (6.0.0-3), mingw-w64-gtkwave (3.3.127-1)},
+  author       = {{MSYS2 project}},
+  year         = {2026},
+  note         = {[VERIFICADO]},
+  url          = {https://packages.msys2.org/base/mingw-w64-ghdl},
+  urldate      = {2026-09-11}
+}
+
+@misc{nvc_readme,
+  title        = {NVC: a VHDL compiler and simulator (README)},
+  author       = {Gasson, Nick},
+  year         = {2026},
+  note         = {v1.22.1; VHDL-2008 por defecto; winget install NickGasson.NVC; nvc --install vivado. [VERIFICADO]},
+  url          = {https://github.com/nickg/nvc},
+  urldate      = {2026-09-11}
+}
+
+@misc{gtkwave_site,
+  title        = {GTKWave -- LTS 3.3.128},
+  author       = {Bybell, Tony},
+  year         = {2026},
+  note         = {[VERIFICADO]},
+  url          = {https://gtkwave.sourceforge.net/},
+  urldate      = {2026-09-11}
+}
+
+@manual{cocotb_docs,
+  title        = {cocotb 2.1 documentation: Installation; Simulator Support},
+  author       = {{cocotb contributors}},
+  year         = {2026},
+  note         = {Python $\geq$3.9; GHDL $\geq$2.0 (VPI); NVC $\geq$1.19.1. [VERIFICADO]},
+  url          = {https://docs.cocotb.org/en/stable/install.html},
+  urldate      = {2026-09-11}
+}
+
+@misc{lygte_um25c,
+  title        = {Test of RD Tech USB Meter UM25C},
+  author       = {{lygte-info.dk (Henrik K. Jensen)}},
+  year         = {2018},
+  note         = {Exactitud declarada: tensión $\pm$0.5\,\%+2 dígitos, corriente $\pm$1\,\%+4 dígitos; resolución 1 mV / 0.1 mA; resistencia interna $\approx$0.065 $\Omega$. [VERIFICADO]},
+  url          = {https://lygte-info.dk/review/USBmeter%20RD%20Tech%20USB%20Meter%20UM25C%20UK.html},
+  urldate      = {2026-09-11}
+}
+
+@manual{rd_um25_manual,
+  title        = {Instructions for USB Tester with Full Colour Display -- Model UM25/UM25C (UM34/UM34C)},
+  author       = {{Ruideng Technology Co. Ltd.}},
+  note         = {FCC ID 2A5Y7-UM34C. UM34: tensión $\pm$(0.2\,\%+1 dígito). [VERIFICADO parcial]},
+  url          = {https://fccid.io/2A5Y7-UM34C/User-Manual/User-manual-5807006.pdf},
+  urldate      = {2026-09-11}
+}
+
+@inproceedings{kaps2019lwc,
+  title        = {Hardware Implementations of {NIST} Lightweight Cryptographic Candidates: A First Look},
+  author       = {Kaps, Jens-Peter and Diehl, William and Tempelmeier, Michael and Homsirikamol, Ekawat and Gaj, Kris and others},
+  booktitle    = {NIST Lightweight Cryptography Workshop 2019},
+  year         = {2019},
+  note         = {Métrica TPA en Mbps/LUT sobre Artix-7 xc7a100tcsg324-3, Vivado 2018.3. [VERIFICADO]},
+  url          = {https://csrc.nist.gov/CSRC/media/Events/lightweight-cryptography-workshop-2019/documents/papers/hardware-implementations-of-nist-lwc-candidates-lwc2019.pdf},
+  urldate      = {2026-09-11}
+}
+
+@manual{digilent_basys2_rm,
+  title        = {Basys2\texttrademark{} FPGA Board Reference Manual},
+  author       = {{Digilent, Inc.}},
+  year         = {2016},
+  month        = apr,
+  note         = {Rev. C, DOC\# 502-155, revised April 8, 2016. Spartan-3E XC3S100E CP132; reloj 25/50/100 MHz. [VERIFICADO]},
+  url          = {https://digilent.com/reference/_media/basys2:basys2_rm.pdf},
+  urldate      = {2026-09-11}
+}
+
+@manual{amd_ds312,
+  title        = {Spartan-3E FPGA Family Data Sheet (DS312)},
+  author       = {{Xilinx, Inc.}},
+  year         = {2008},
+  month        = apr,
+  note         = {v3.7, April 18, 2008. XC3S100E: 2\,160 celdas, 960 slices, 72 Kb BRAM, 4 mult., 2 DCM, 108 I/O. [VERIFICADO en PDF espejo]},
+  url          = {https://docs.amd.com/v/u/en-US/ds312},
+  urldate      = {2026-09-11}
+}
+
+@misc{amd_ise_archive,
+  title        = {ISE Design Suite 14.7 archive -- Windows 10 and Windows 11 (VirtualBox VM)},
+  author       = {{AMD}},
+  note         = {Paquete VM $\approx$15.52 GB según terceros. [NO VERIFICADO]},
+  url          = {https://www.amd.com/en/support/downloads/adaptive-socs-and-fpgas/development-tools/archive-ise.html},
+  urldate      = {2026-09-11}
+}
+
+@misc{digilent_forum_basys3_power,
+  title        = {Basys3 Power Consumption Measurement (Digilent Forum)},
+  author       = {{Digilent Forum}},
+  note         = {Sin medida de corriente integrada en la placa. [NO VERIFICADO: 403]},
+  url          = {https://forum.digilent.com/topic/25279-basys3-power-consumption-measurement/},
+  urldate      = {2026-09-11}
+}
+
+@misc{digilent_vivado_boards,
+  title        = {Vivado Board Files for Digilent FPGA Boards},
+  author       = {{Digilent, Inc.}},
+  howpublished = {GitHub},
+  note         = {[VERIFICADO README]},
+  url          = {https://github.com/Digilent/vivado-boards},
+  urldate      = {2026-09-11}
+}
+
+@misc{gouth_esp32_fpga_spi,
+  title        = {esp32-fpga-spi-interface: SPI Slave for Artix-7 (Basys 3) driven by an ESP32},
+  author       = {{gou-th}},
+  howpublished = {GitHub},
+  note         = {Reporta fiabilidad hasta 20 MHz con cables. [NO VERIFICADO]},
+  url          = {https://github.com/gou-th/esp32-fpga-spi-interface},
+  urldate      = {2026-09-11}
+}

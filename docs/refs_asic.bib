@@ -1,0 +1,751 @@
+% =====================================================================
+% refs_asic.bib
+% Referencias para docs/via_asic.md — "De FPGA a ASIC: viabilidad de
+% convertir el motor criptográfico en un elemento seguro dedicado"
+% TFM Máster en Microelectrónica — Universidad de Sevilla / IMSE-CNM (CSIC)
+%
+% Todas las URL consultadas el 12 de septiembre de 2026.
+% El campo "note" indica [VERIFICADO] / [NO VERIFICADO] según se pudiera
+% o no abrir la fuente primaria y confirmar en ella el dato citado.
+% =====================================================================
+
+
+% ---------------------------------------------------------------------
+% 1. IMSE-CNM: organización, líneas, laboratorios, proyectos
+% ---------------------------------------------------------------------
+
+@misc{imse_area_hwsec,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Áreas de Investigación: Hardware Security},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/areas/hardware-sec.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Área formal que agrupa las líneas Cybersecurity y Security and Reliability in CMOS and Emerging Technologies}
+}
+
+@misc{imse_linea_cybersecurity,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Línea de Investigación: Cybersecurity},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/lineas/tic180-sec.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Contactos indicados en la ficha: Iluminada Baturone Castillo y Carlos J. Jiménez Fernández. Incluye diseño de módulos basados en PUF para generación de claves, identificadores y números aleatorios}
+}
+
+@misc{imse_linea_secrel,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Línea de Investigación: Security and Reliability in {CMOS} and Emerging Technologies},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/lineas/tic026-sre.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Contacto indicado en la ficha: Francisco V. Fernández Fernández. PUF, criptografía ligera, variabilidad y envejecimiento}
+}
+
+@misc{imse_grupos,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Grupos de Investigación},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/grupos-investigacion.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Incluye el grupo "Security and Reliability in CMOS and Emerging Technologies"}
+}
+
+@misc{imse_lab_ciberseguridad,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Laboratorio de Ciberseguridad del Hardware},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/laboratorios/ciberseguridad.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Equipado para evaluar inmunidad frente a ataques de canal lateral. Responsable según ficha: Antonio Ragel Morales. Equipamiento: Keysight CX3324A, Zaber ASR100B120B-T3A, Lambda RLNA00G20GA, Keysight M9336A, E36312A, DAQ970A}
+}
+
+@misc{imse_proyectos,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Proyectos de Investigación},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/proyectos.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Proyectos citados: TIRELESS, GREENCRYPT, CRYPTOHARDWEAR, RTN SECURE, RESEQUA y raíces de confianza hardware para sistemas empotrados seguros}
+}
+
+@misc{imse_catalogo_chips,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Catálogo de Circuitos Integrados},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/catalogo-chips.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Entradas etiquetadas cnn_puf, criptobio, trivium bajo las categorías Criptography / Hardware Security}
+}
+
+@misc{imse_publicaciones,
+  author       = {{Instituto de Microelectrónica de Sevilla (IMSE-CNM, CSIC--Universidad de Sevilla)}},
+  title        = {Publicaciones del {IMSE}},
+  year         = {2026},
+  howpublished = {\url{http://www.imse-cnm.csic.es/es/publicaciones.php}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Fuente de los metadatos bibliográficos de las publicaciones del instituto citadas en este documento}
+}
+
+
+% ---------------------------------------------------------------------
+% 1b. Publicaciones IMSE sobre RO-PUF / TRNG / criptografía (2020-2026)
+% ---------------------------------------------------------------------
+
+@article{ortega2026ropuf65nm,
+  author  = {Ortega-Castro, P. and Camacho-Ruiz, E. and Mora-Gutiérrez, J. M. and Brox, P. and Martínez-Rodríguez, M. C.},
+  title   = {Robust and Scalable Cell-Based 65-nm {CMOS} {RO-PUF} Implementation},
+  journal = {IEEE Open Journal of the Solid-State Circuits Society},
+  year    = {2026},
+  note    = {Early Access. [VERIFICADO] metadatos vía Crossref; [NO VERIFICADO] contenido técnico (IEEE Xplore devolvió HTTP 403). Referencia clave: enfoque "cell-based" con celdas estándar, exactamente el problema de rediseñar el RO al pasar de LUT a ASIC},
+  doi     = {10.1109/OJSSCS.2026.3689804},
+  url     = {https://doi.org/10.1109/OJSSCS.2026.3689804},
+  urldate = {2026-09-12}
+}
+
+@inproceedings{ortega2024vlsi65nm,
+  author    = {Ortega-Castro, P. and Rojas-Muñoz, L. F. and Mora-Gutiérrez, J. M. and Brox, P. and Martínez-Rodríguez, M. C.},
+  title     = {{VLSI} integration of a {RO}-based {PUF} into a 65 nm technology},
+  booktitle = {IEEE Nordic Circuits and Systems Conference (NorCAS)},
+  year      = {2024},
+  note      = {[VERIFICADO] resumen vía API de Semantic Scholar. RO-PUF con metodología semi-custom en TSMC 65 nm, fabricado y caracterizado experimentalmente; robustez frente a temperatura y tensión. El resumen afirma que la estructura es adecuada tanto para FPGA como para ASIC},
+  doi       = {10.1109/NorCAS64408.2024.10752474},
+  url       = {https://doi.org/10.1109/NorCAS64408.2024.10752474},
+  urldate   = {2026-09-12}
+}
+
+@article{sanchezsolano2024configurable,
+  author  = {Sánchez-Solano, S. and Rojas-Muñoz, L. F. and Martínez-Rodríguez, M. C. and Brox, P.},
+  title   = {Hardware-Efficient Configurable Ring-Oscillator-Based Physical Unclonable Function/True Random Number Generator Module for Secure Key Management},
+  journal = {Sensors},
+  volume  = {24},
+  number  = {17},
+  pages   = {5674},
+  year    = {2024},
+  note    = {[VERIFICADO] resumen vía API de Semantic Scholar. Módulo configurable PUF/TRNG basado en osciladores de anillo que aprovecha la estructura de las familias Xilinx Serie 7 (misma familia que la Artix-7 de la Basys 3)},
+  doi     = {10.3390/s24175674},
+  url     = {https://doi.org/10.3390/s24175674},
+  urldate = {2026-09-12}
+}
+
+@article{rojas2022trngcapability,
+  author  = {Rojas-Muñoz, L. F. and Sánchez-Solano, S. and Martínez-Rodríguez, M. C. and Brox, P.},
+  title   = {True Random Number Generation Capability of a Ring Oscillator {PUF} for Reconfigurable Devices},
+  journal = {Electronics},
+  volume  = {11},
+  number  = {23},
+  pages   = {4028},
+  year    = {2022},
+  note    = {[VERIFICADO] resumen vía API de Semantic Scholar. TRNG basado en RO-PUF sobre Xilinx Zynq-7000; validado con NIST SP 800-22 y como fuente de entropía conforme a NIST SP 800-90B},
+  doi     = {10.3390/electronics11234028},
+  url     = {https://doi.org/10.3390/electronics11234028},
+  urldate = {2026-09-12}
+}
+
+@article{rojas2023online,
+  author  = {Rojas-Muñoz, L. F. and Sánchez-Solano, S. and Martínez-Rodríguez, M. C. and Brox, P.},
+  title   = {On-Line Evaluation and Monitoring of Security Features of an {RO}-Based {PUF/TRNG} for {IoT} Devices},
+  journal = {Sensors},
+  volume  = {23},
+  number  = {8},
+  pages   = {4070},
+  year    = {2023},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE; resumen no abierto},
+  doi     = {10.3390/s23084070},
+  url     = {https://doi.org/10.3390/s23084070},
+  urldate = {2026-09-12}
+}
+
+@article{martinez2022efficientropuf,
+  author  = {Martínez-Rodríguez, M. C. and Rojas-Muñoz, L. F. and Camacho-Ruiz, E. and Sánchez-Solano, S. and Brox, P.},
+  title   = {Efficient {RO-PUF} for Generation of Identifiers and Keys in Resource-Constrained Embedded Systems},
+  journal = {Cryptography},
+  volume  = {6},
+  number  = {4},
+  pages   = {51},
+  year    = {2022},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE},
+  doi     = {10.3390/cryptography6040051},
+  url     = {https://doi.org/10.3390/cryptography6040051},
+  urldate = {2026-09-12}
+}
+
+@inproceedings{rojas2024roottrust,
+  author    = {Rojas-Muñoz, L. F. and Sánchez-Solano, S. and Martínez-Rodríguez, M. C. and Camacho-Ruiz, E. and Navarro-Torrero, P. and Karmakar, A. and Fernández-García, C. and Tena-Sánchez, E. and Potestad-Ordóñez, F. E. and Casado-Galán, A. and Ortega-Castro, P. and Acosta-Jiménez, A. J. and Jiménez-Fernández, C. J. and Brox, P.},
+  title     = {Cryptographic Security Through a Hardware Root of Trust},
+  booktitle = {Applied Reconfigurable Computing. Architectures, Tools, and Applications (ARC)},
+  year      = {2024},
+  note      = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE. Objeto muy próximo al del TFM: una raíz de confianza hardware completa},
+  doi       = {10.1007/978-3-031-55673-9_8},
+  url       = {https://doi.org/10.1007/978-3-031-55673-9_8},
+  urldate   = {2026-09-12}
+}
+
+@inproceedings{prada2020autocalibrated,
+  author    = {Prada-Delgado, M. A. and Martínez-Gómez, C. and Baturone, I.},
+  title     = {Auto-Calibrated Ring Oscillator {TRNG} Based on Jitter Accumulation},
+  booktitle = {IEEE International Symposium on Circuits and Systems (ISCAS)},
+  year      = {2020},
+  note      = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE; sin DOI en la ficha. Respuesta del propio instituto al problema de calibración por ejemplar del RO-TRNG}
+}
+
+@inproceedings{martinezgomez2020calibration,
+  author    = {Martínez-Gómez, C. and Baturone, I.},
+  title     = {Calibration of Ring Oscillator {PUF} and {TRNG}},
+  booktitle = {European Conference on Circuit Theory and Design (ECCTD)},
+  year      = {2020},
+  note      = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE; sin DOI en la ficha}
+}
+
+@article{mora2020trivium,
+  author  = {Mora-Gutiérrez, J. M. and Jiménez-Fernández, C. J. and Valencia-Barrero, M.},
+  title   = {{ASIC} design and power characterization of standard and low power multi-radix {Trivium}},
+  journal = {IEEE Transactions on Circuits and Systems II: Express Briefs},
+  volume  = {67},
+  number  = {11},
+  pages   = {2682--2686},
+  year    = {2020},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE. Prueba de que el instituto fabrica ASICs criptográficos, no solo prototipos en FPGA},
+  doi     = {10.1109/TCSII.2020.2969242},
+  url     = {https://doi.org/10.1109/TCSII.2020.2969242},
+  urldate = {2026-09-12}
+}
+
+@article{potestad2020breakingtrivium,
+  author  = {Potestad-Ordóñez, F. E. and Valencia-Barrero, M. and Baena-Oliva, C. and Parra-Fernández, P. and Jiménez-Fernández, C. J.},
+  title   = {Breaking {Trivium} Stream Cipher Implemented in {ASIC} using Experimental Attacks and {DFA}},
+  journal = {Sensors},
+  volume  = {20},
+  number  = {23},
+  pages   = {6909},
+  year    = {2020},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE},
+  doi     = {10.3390/s20236909},
+  url     = {https://doi.org/10.3390/s20236909},
+  urldate = {2026-09-12}
+}
+
+@article{potestad2022aescountermeasures,
+  author  = {Potestad-Ordóñez, F. E. and Tena-Sánchez, E. and Acosta-Jiménez, A. J. and Jiménez-Fernández, C. J. and Chaves, R.},
+  title   = {Design and Evaluation of Countermeasures Against Fault Injection Attacks and Power Side-Channel Leakage Exploration for {AES} Block Cipher},
+  journal = {IEEE Access},
+  volume  = {10},
+  pages   = {65548--65561},
+  year    = {2022},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE},
+  doi     = {10.1109/ACCESS.2022.3183764},
+  url     = {https://doi.org/10.1109/ACCESS.2022.3183764},
+  urldate = {2026-09-12}
+}
+
+@inproceedings{camacho2023sha3,
+  author    = {Camacho-Ruiz, E. and Sánchez-Solano, S. and Martínez-Rodríguez, M. C. and Brox, P.},
+  title     = {A complete {SHA-3} hardware library based on a high efficiency {Keccak} design},
+  booktitle = {IEEE Nordic Circuits and Systems Conference (NorCAS)},
+  year      = {2023},
+  note      = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE; sin DOI en la ficha}
+}
+
+@article{roman2021bpuf,
+  author  = {Prada-Delgado, M. A. and Baturone, I.},
+  title   = {Behavioral and Physical Unclonable Functions ({BPUFs}): {SRAM} Example},
+  journal = {IEEE Access},
+  volume  = {9},
+  pages   = {23751--23763},
+  year    = {2021},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE},
+  doi     = {10.1109/ACCESS.2021.3055493},
+  url     = {https://doi.org/10.1109/ACCESS.2021.3055493},
+  urldate = {2026-09-12}
+}
+
+@article{arcenegui2021nft,
+  author  = {Arcenegui, J. and Arjona, R. and Román, R. and Baturone, I.},
+  title   = {Secure Combination of {IoT} and Blockchain by Physically Binding {IoT} Devices to Smart Non-Fungible Tokens using {PUFs}},
+  journal = {Sensors},
+  volume  = {21},
+  number  = {9},
+  pages   = {3119},
+  year    = {2021},
+  note    = {[VERIFICADO] metadatos y resumen desde la ficha oficial de publicaciones del IMSE. Relevante porque la demostración usa la SRAM del microcontrolador ESP32 como PUF},
+  doi     = {10.3390/s21093119},
+  url     = {https://doi.org/10.3390/s21093119},
+  urldate = {2026-09-12}
+}
+
+@article{saraza2022drv,
+  author  = {Santana-Andreo, A. and Saraza-Canflanca, P. and Carrasco-Lopez, H. and Brox, P. and Castro-Lopez, R. and Roca, E. and Fernández, F. V.},
+  title   = {A {DRV}-based bit selection method for {SRAM} {PUF} key generation and its impact on {ECCs}},
+  journal = {Integration},
+  volume  = {85},
+  pages   = {1--9},
+  year    = {2022},
+  note    = {[VERIFICADO] metadatos desde la ficha oficial de publicaciones del IMSE},
+  doi     = {10.1016/j.vlsi.2022.02.008},
+  url     = {https://doi.org/10.1016/j.vlsi.2022.02.008},
+  urldate = {2026-09-12}
+}
+
+
+% ---------------------------------------------------------------------
+% 2. Acceso académico a fabricación: Europractice, IHP, Tiny Tapeout
+% ---------------------------------------------------------------------
+
+@misc{europractice_prices2026,
+  author       = {{EUROPRACTICE IC Service}},
+  title        = {{MPW} Schedules and Prices 2026},
+  year         = {2026},
+  howpublished = {\url{https://europractice-ic.com/schedules-prices-2026/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Precios públicos para UMC, IHP, X-FAB, GlobalFoundries, ams OSRAM. EXCEPCIÓN: los MPW generales de TSMC exigen formulario "Request TSMC Prices" y STMicroelectronics figura "on request": esos precios NO son públicos}
+}
+
+@misc{europractice_minisic,
+  author       = {{EUROPRACTICE IC Service}},
+  title        = {{MPW} Fabrication and the mini@sic programme},
+  year         = {2026},
+  howpublished = {\url{https://europractice-ic.com/services/fabrication/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] mini@sic descrito como compra de un bloque MPW estándar de fundición que se revende en sub-bloques menores y más baratos. Disponible para GlobalFoundries, IHP, TSMC, UMC y X-FAB}
+}
+
+@misc{europractice_membership,
+  author       = {{EUROPRACTICE}},
+  title        = {Membership types and annual fees},
+  year         = {2026},
+  howpublished = {\url{https://www.europractice.stfc.ac.uk/membership/membership.html}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Full-IC 1100 EUR/año; Software-only 600 EUR; MPW-only 600 EUR; FPGA-only 200 EUR}
+}
+
+@misc{europractice_memberlist,
+  author       = {{EUROPRACTICE}},
+  title        = {Active {EUROPRACTICE} Members},
+  year         = {2026},
+  howpublished = {\url{https://www.europractice.stfc.ac.uk/membership/membership_list.cfml}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Figuran literalmente "Instituto de Microelectrónica de Sevilla (IMSE-CNM) CSIC" con membresía Full-IC y "Universidad de Sevilla" con Full-IC y FPGA-Only. Dato decisivo: no hace falta negociar acuerdo marco alguno}
+}
+
+@misc{europractice_eligible,
+  author       = {{EUROPRACTICE}},
+  title        = {Eligible Countries for {EUROPRACTICE} membership},
+  year         = {2026},
+  howpublished = {\url{https://www.europractice.stfc.ac.uk/membership/eligible.html}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] España elegible por ser estado miembro de la UE}
+}
+
+@misc{europractice_access,
+  author       = {{EUROPRACTICE IC Service}},
+  title        = {Foundry access and membership},
+  year         = {2026},
+  howpublished = {\url{https://europractice-ic.com/access-and-registration/foundry-access-and-membership/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Se requieren NDA y DKLA (Design Kit License Agreement) por fundición. Instituciones no elegibles solo acceden a precios estándar}
+}
+
+@misc{ihp_pricelist,
+  author       = {{IHP -- Leibniz-Institut für innovative Mikroelektronik}},
+  title        = {{MPW} Prototyping Service: Schedule and Price List},
+  year         = {2026},
+  howpublished = {\url{https://www.ihp-microelectronics.com/services/research-and-prototyping-service/mpw-prototyping-service/schedule-price-list}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] SG13G2 7300 EUR/mm2, SG13S 6300 EUR/mm2, SG13G3 9000 EUR/mm2. Entrega por defecto de 40 muestras troqueladas. Descuentos para instituciones sin ánimo de lucro y educativas a través de EUROPRACTICE}
+}
+
+@misc{ihp_openpdk,
+  author       = {{IHP -- Leibniz-Institut für innovative Mikroelektronik}},
+  title        = {Open Source {PDK} for {SG13G2}},
+  year         = {2026},
+  howpublished = {\url{https://www.ihp-microelectronics.com/services/research-and-prototyping-service/fast-design-enablement/open-source-pdk}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] SG13G2 es CMOS de 0,13 um con HBT SiGe:C (fT hasta 350 GHz), doble óxido 1,2 V / 3,3 V, 5 metales finos + 2 gruesos, condensadores MIM. Incluye conjunto limitado de celdas lógicas estándar con vistas CDL, GDSII, LEF y Verilog. Flujo OpenROAD soportado. El PDK se califica de "early access version". [NO VERIFICADO] condiciones concretas del área MPW gratuita: no están publicadas}
+}
+
+@misc{ihp_openpdk_repo,
+  author       = {{IHP GmbH}},
+  title        = {{IHP-Open-PDK}: Open Source {PDK} for the {IHP} {SG13G2} 130 nm {BiCMOS} process},
+  year         = {2026},
+  howpublished = {\url{https://github.com/IHP-GmbH/IHP-Open-PDK}},
+  urldate      = {2026-09-12},
+  note         = {[NO VERIFICADO] repositorio localizado en resultados de búsqueda; no se abrió el árbol de ficheros}
+}
+
+@misc{tinytapeout_main,
+  author       = {{Tiny Tapeout}},
+  title        = {Tiny Tapeout: Quicker, easier and cheaper to make your own chip},
+  year         = {2026},
+  howpublished = {\url{https://tinytapeout.com/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Tras el cierre de Efabless, las lanzaderas se ejecutan ahora sobre IHP SG13G2, SkyWater SKY130 y GF180. Lanzadera IHP26b abierta en el momento de la consulta}
+}
+
+@misc{tinytapeout_faq,
+  author       = {{Tiny Tapeout}},
+  title        = {Tiny Tapeout {FAQ}},
+  year         = {2026},
+  howpublished = {\url{https://tinytapeout.com/faq/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Baldosa estándar de 160 x 100 micrómetros, del orden de 1000 puertas lógicas digitales. Fabricación de 6 a 9 meses; con PCBA, test y envío, aproximadamente 1 año total. [NO VERIFICADO] precios: la web remite a una calculadora JavaScript que no se pudo leer}
+}
+
+@misc{tinytapeout_ihp26a,
+  author       = {{Tiny Tapeout}},
+  title        = {Tiny Tapeout {IHP} 26a},
+  year         = {2026},
+  howpublished = {\url{https://tinytapeout.com/chips/ttihp26a/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] "Submitted to IHP using sg13g2 130nm open source PDK". Lanzada 25-11-2025, cierre 23-03-2026, entrega prevista febrero 2027 (aprox. 11 meses desde el cierre). 181 proyectos en el mapa del chip}
+}
+
+@misc{semiwiki_efabless,
+  author       = {{SemiWiki forum}},
+  title        = {efabless just shut down},
+  year         = {2025},
+  howpublished = {\url{https://semiwiki.com/forum/threads/efabless-just-shut-down.22217/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Cierre situado el 4--5 de marzo de 2025. Aviso oficial citado: "Due to funding challenges, Efabless has shut down operations until further notice." Causa: no se cerró la ronda Serie B. Consecuencia: el programa chipIgnite deja de existir}
+}
+
+
+% ---------------------------------------------------------------------
+% 3b. Lo que el ESP32 ya trae de fábrica (contexto de la comparación)
+% ---------------------------------------------------------------------
+
+@misc{espressif_rng,
+  author       = {{Espressif Systems}},
+  title        = {{ESP-IDF} Programming Guide: Random Number Generation},
+  year         = {2026},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/random.html}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] El RNG hardware del ESP32 solo produce números verdaderamente aleatorios si el subsistema de RF (Wi-Fi/Bluetooth) está activo o si se ha llamado a bootloader_random_enable(). Cita literal: "If none of the above conditions are true, the output of the RNG should be considered as pseudo-random only." Además advierte de que el estado interno del RNG no basta para un flujo continuo de aleatoriedad verdadera}
+}
+
+@misc{espressif_security_s3,
+  author       = {{Espressif Systems}},
+  title        = {{ESP-IDF} Programming Guide: Security ({ESP32-S3})},
+  year         = {2026},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/security/security.html}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Periférico RSA_DS que produce firmas digitales RSA aceleradas por hardware "without the RSA private key being accessible by software", periférico HMAC, cifrado de flash y arranque seguro. [NO VERIFICADO] número de bloques de clave en eFuse y ausencia/presencia de certificación Common Criteria: no figuran en esa página}
+}
+
+
+% ---------------------------------------------------------------------
+% 2b. Herramientas EDA y librerías de celdas abiertas
+% ---------------------------------------------------------------------
+
+@misc{europractice_software,
+  author       = {{EUROPRACTICE}},
+  title        = {Design Tools and Training Service},
+  year         = {2026},
+  howpublished = {\url{https://www.europractice.stfc.ac.uk/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Incluye herramientas de Cadence y Synopsys para socios, "for academic teaching and non-commercial research purposes only". [NO VERIFICADO] precios de los paquetes y composición exacta de los bundles: no se publican}
+}
+
+@misc{skywater_pdk_cells,
+  author       = {{SkyWater Technology} and {Google}},
+  title        = {{SkyWater SKY130 PDK} Documentation: Foundry Provided Standard Cell Libraries},
+  year         = {2026},
+  howpublished = {\url{https://skywater-pdk.readthedocs.io/en/main/contents/libraries/foundry-provided.html}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] sky130_fd_sc_hd: site 0,46 x 2,72 um, 9 pistas met1, densidad bruta 266 kGates/mm2 y "Routed Gate Density is 160 kGates/mm^2 or better" (factor 0,60). sky130_fd_sc_hdll: 200 kGates/mm2. DATO CLAVE para convertir kGE en mm2 y para cuantificar cuánto subestima la síntesis lógica}
+}
+
+@misc{gf180mcu_pdk,
+  author       = {{GlobalFoundries} and {Google} and {FOSSi Foundation}},
+  title        = {{GF180MCU} Open {PDK}: standard cell libraries for the {GlobalFoundries} 180 nm {MCU} process},
+  year         = {2026},
+  howpublished = {\url{https://github.com/fossi-foundation/gf180mcu-pdk}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Licencia Apache 2.0. Librerías de celdas estándar de 7 y 9 pistas (gf180mcu_fd_sc_mcu7t5v0, gf180mcu_fd_sc_mcu9t5v0) más un juego de Oklahoma State University. Es la opción abierta de 180 nm, el nodo recomendado en el apartado 2.8}
+}
+
+@misc{nangate45,
+  author       = {{Silicon Integration Initiative (Si2)} and {Silvaco (Nangate)}},
+  title        = {Open Cell and Free {PDK} Libraries: {Nangate} 45 nm Open Cell Library},
+  year         = {2026},
+  howpublished = {\url{https://si2.org/open-cell-and-free-pdk-libraries/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Librería genérica de celdas estándar bajo Apache 2.0 a través de Si2, gratuita para universidades y miembros. ADVERTENCIA: no corresponde a ninguna fundición accesible, por lo que su área no es trasladable a un presupuesto de fabricación}
+}
+
+@article{franck2024sha256,
+  author  = {Franck, Lucas Daudt and Ginja, Gabriel Augusto and Carmo, João Paulo and Afonso, José A. and Luppe, Maximiliam},
+  title   = {Custom {ASIC} Design for {SHA-256} Using Open-Source Tools},
+  journal = {Computers},
+  volume  = {13},
+  number  = {1},
+  pages   = {9},
+  year    = {2024},
+  note    = {[VERIFICADO] resumen vía API de Semantic Scholar. Acelerador SHA-256 creado íntegramente con herramientas EDA de código abierto, sintetizado en SkyWater SKY130 130 nm mediante el flujo OpenLANE. Área total 104.585 um2, frecuencia máxima 97,9 MHz, compatible con microcontroladores de 32 bits. Es la plantilla metodológica del capítulo final propuesto en el apartado 6.5},
+  doi     = {10.3390/computers13010009},
+  url     = {https://doi.org/10.3390/computers13010009},
+  urldate = {2026-09-12}
+}
+
+
+% ---------------------------------------------------------------------
+% 3. Elementos seguros comerciales
+% ---------------------------------------------------------------------
+
+@manual{microchip_atecc608b_ds,
+  title        = {{ATECC608B CryptoAuthentication Device Summary Data Sheet}},
+  organization = {Microchip Technology Inc.},
+  number       = {DS40002239B},
+  year         = {2021},
+  url          = {https://ww1.microchip.com/downloads/aemDocuments/documents/SCBU/ProductDocuments/DataSheets/ATECC608B-CryptoAuthentication-Device-Summary-Data-Sheet-DS40002239B.pdf},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Cita literal: "The random number generator is designed to meet the requirements documented in the NIST 800-90A, 800-90B and 800-90C documents" — redacción de intención de diseño, no de certificación. AES-128 únicamente; solo curva NIST P-256; 16 slots de clave; 1.208 B de data zone; I2C hasta 1 Mbps + SWI; sin SPI. Es un datasheet RESUMEN: el completo está bajo NDA}
+}
+
+@misc{nist_esv_e46,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {Entropy Source Validation Certificate {\#E46}: {ECC608 NRBG} Entropy Source},
+  year         = {2023},
+  howpublished = {\url{https://csrc.nist.gov/projects/cryptographic-module-validation-program/entropy-validations/certificate/46}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Fuente física de osciladores de anillo, SP 800-90B, entropía por muestra 0,5071, laboratorio AEGISOLVE, validado 2023-09-28. Cubre ATECC608A/B/C. Es el ÚNICO certificado NIST de fuente de entropía física entre los cuatro elementos seguros comparados. No cubre SP 800-90A ni 800-90C}
+}
+
+@manual{nxp_se050_ds,
+  title        = {{SE050 Plug \& Trust Secure Element} --- Product Data Sheet},
+  organization = {NXP Semiconductors},
+  number       = {504938, Rev. 3.8},
+  year         = {2023},
+  url          = {https://www.nxp.com/docs/en/data-sheet/SE050-DATASHEET.pdf},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] "TRNG compliant to NIST SP800-90B" y "DRBG compliant to NIST SP800-90A"; PRNG clase DRG.4 (AIS20) inicializado por TRNG clase PTG.2 (AIS31). AES-128/192/256; SHA-1 a SHA-512; ECC P-192 a P-521, Ed25519, X25519; RSA hasta 4096; 50 kB de flash segura; I2C hasta 3,4 MHz, dirección 0x48; sin SPI. CC EAL6+ "up to OS level"}
+}
+
+@misc{nist_cmvp_3840,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{FIPS 140-2} Validation Certificate {\#3840}: {SE050}},
+  year         = {2021},
+  howpublished = {\url{https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/3840}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Nivel global 3, seguridad física nivel 4, validado 2021-03-05. ESTADO ACTUAL: HISTORICAL (sunset). DRBG con certificado CAVP #C886; la fuente de ruido figura solo como "NDRNG - Allowed Algorithm", sin certificado ESV SP 800-90B propio}
+}
+
+@manual{infineon_optiga_trustm_ds,
+  title        = {{OPTIGA Trust M} Datasheet --- {SLS 32AIA010MH/S/K/L/M}},
+  organization = {Infineon Technologies AG},
+  number       = {Z8F80311641-D, Revision 3.70},
+  year         = {2024},
+  url          = {https://www.infineon.com/assets/row/public/documents/30/49/infineon-optiga-trust-m-sls32aia-datasheet-en.pdf},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] CERO menciones de NIST SP 800-90, AIS31 o AIS20 en todo el datasheet: solo declara "TRNG, DRNG" sin caracterizar. AES-128/192/256; SHA-256; ECC P-256/384/521 y Brainpool; RSA 1024/2048; 10 kB de memoria de usuario (4 ECC + 2 RSA + 1 AES + 4 X.509); I2C hasta 1 MHz, dirección 0x30; sin SPI. CC EAL6+ solo del HARDWARE (BSI-DSZ-CC-0961); PSA Level 3}
+}
+
+@manual{st_stsafe_a110_ds,
+  title        = {{STSAFE-A110}: Authentication, State-of-the-Art Security for Peripherals and {IoT} Devices --- Datasheet},
+  organization = {STMicroelectronics},
+  number       = {DS13039 Rev 1},
+  year         = {2019},
+  url          = {https://www.st.com/resource/en/datasheet/stsafe-a110.pdf},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO vía espejo oficial de Farnell, https://www.farnell.com/datasheets/2917358.pdf; st.com dio timeout reiterado] CERO menciones de NIST SP 800-90 o AIS31: solo un comando "Generate Random" sin caracterizar el generador. SHA-256/384; ECC P-256/P-384 NIST o Brainpool; sin RSA; 6 kB de EEPROM; I2C hasta 400 kbps, sin clock stretching; sin SPI. "CC EAL5+ AVA_VAN5 Common Criteria certified". [NO VERIFICADO] número de certificado CC y Protection Profile}
+}
+
+@misc{digikey_prices_2026,
+  author       = {{DigiKey Electronics}},
+  title        = {Precios y disponibilidad de {ATECC608B}, {SE050}, {OPTIGA Trust M} y {STSAFE-A110}},
+  year         = {2026},
+  howpublished = {\url{https://www.digikey.com/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Precios en USD. ATECC608B-SSHDA-T (SOIC-8): 0,90 USD a cantidad 1; 0,8872 USD a 25; 0,725 USD a 4.000 en carrete. ATECC608B-MAHDA-T (UDFN-8): 0,87 USD a 1. SE050C2HQ1/Z01SDZ: 5,10 USD a 1. STSAFA110S8SPL02: 2,49 USD a 1. ADVERTENCIA: el tramo de 1.000 unidades a menudo NO existe; DigiKey salta de 250/500 al carrete completo. Ningún OPTIGA Trust M tiene precio a cantidad 1 en DigiKey (descatalogados o solo carrete)}
+}
+
+@misc{mouser_prices_2026,
+  author       = {{Mouser Electronics Europe}},
+  title        = {Precios y disponibilidad de {ATECC608B}, {SE050}, {OPTIGA Trust M} y {STSAFE-A110}},
+  year         = {2026},
+  howpublished = {\url{https://eu.mouser.com/}},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Precios en EUR de Mouser Europa (www.mouser.com redirige a eu.mouser.com), presumiblemente sin IVA. ATECC608B-SSHDA-T: 0,774 EUR a 1 y 0,667 EUR a 1.000. SE050C2HQ1/Z01SDZ: 4,27 EUR a 1 y 2,47 EUR a 1.000. SLS32AIA010MKUSON10XTMB1: 1,73 EUR a 1 y 0,903 EUR a 1.000. STSAFA110DFSPL02: 2,14 EUR a 1}
+}
+
+
+% ---------------------------------------------------------------------
+% 4. TRNG en ASIC y área de núcleos criptográficos
+% ---------------------------------------------------------------------
+
+@article{yang2016edgeracing,
+  author  = {Yang, Kaiyuan and Blaauw, David and Sylvester, Dennis},
+  title   = {An All-Digital Edge Racing True Random Number Generator Robust Against {PVT} Variations},
+  journal = {IEEE Journal of Solid-State Circuits},
+  volume  = {51},
+  number  = {4},
+  pages   = {1022--1031},
+  year    = {2016},
+  doi     = {10.1109/JSSC.2016.2519383},
+  url     = {https://blaauw.engin.umich.edu/wp-content/uploads/sites/342/2017/11/YangAnAllDigitalEdge2016.pdf},
+  urldate = {2026-09-12},
+  note    = {[VERIFICADO] texto completo extraído del PDF abierto del autor. REFERENCIA DE ANCLAJE DEL DOCUMENTO: TRNG de oscilador de anillo (colapso de dos flancos inyectados en un anillo de etapas pares) fabricado en 40 Y 180 nm. Área: 836 um2 en 40 nm, 7.250 um2 en 180 nm. Throughput 0,18-1,08 Mb/s en 180 nm, 2 Mb/s en 40 nm. Energía 23 pJ/b a 0,9 V y 11 pJ/b a 0,6 V (40 nm), 28,9-101,7 pJ/b (180 nm). El lazo de sintonía da robustez frente a PVT Y frente al ataque de inyección: pasa todos los tests NIST con inyección de hasta 500 mV pico a pico a la frecuencia de peor caso 3xf_RO; sin el lazo, falla}
+}
+
+@inproceedings{markettos2009frequency,
+  author    = {Markettos, A. Theodore and Moore, Simon W.},
+  title     = {The Frequency Injection Attack on Ring-Oscillator-Based True Random Number Generators},
+  booktitle = {Cryptographic Hardware and Embedded Systems --- CHES 2009},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {5747},
+  year      = {2009},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-642-04138-9_23},
+  url       = {https://www.cl.cam.ac.uk/~atm26/papers/markettos-ches2009-inject-trng-original.pdf},
+  urldate   = {2026-09-12},
+  note      = {[VERIFICADO] resumen y parámetros extraídos literalmente del PDF abierto de la Universidad de Cambridge. Reduce el espacio de claves de un microcontrolador seguro de 2^64 a 3300 y ataca una tarjeta EMV de 2004; el ataque encubierto al sistema EMV requiere solo 13 intentos de adivinar un número que debería requerir 2^32. Parámetros: senoidal de 900 mV pico a pico sobre el raíl de 5 V, enganche observado a 24 MHz; en la tarjeta EMV f_inject = 24,04 MHz. Las resonancias en los anillos elevan la amplitud de 5 a 10 V pico a pico}
+}
+
+@misc{aljafar2024scaller,
+  author       = {Aljafar, Muayad J. and Ul Abideen, Zain and Peetermans, Adriaan and Gierlichs, Benedikt and Pagliarini, Samuel},
+  title        = {{SCALLER}: Standard Cell Assembled and Local Layout Effect-based Ring Oscillators},
+  year         = {2024},
+  eprint       = {2406.01258},
+  archivePrefix= {arXiv},
+  url          = {https://arxiv.org/html/2406.01258v1},
+  urldate      = {2026-09-12},
+  note         = {[VERIFICADO] Osciladores de anillo con celdas estándar en CMOS 65 nm comercial, explotando efectos locales de layout (Well Proximity Effect). Variante "extended" ~2 % más rápida, "shortened" ~2,86 % más lenta. Frecuencias medidas 80-900 MHz; paso de sintonía ~90 kHz; margen de sintonía 3,7-11 MHz dentro de un mismo chip según variabilidad. Cuantifica por qué el RO NO se traslada de LUT a celda estándar sin rediseño}
+}
+
+@inproceedings{valtchanov2010characterization,
+  author    = {Valtchanov, Boyan and Fischer, Viktor and Aubert, Alain and Bernard, Florent},
+  title     = {Characterization of randomness sources in ring oscillator-based true random number generators in {FPGAs}},
+  booktitle = {IEEE International Symposium on Design and Diagnostics of Electronic Circuits and Systems (DDECS)},
+  year      = {2010},
+  doi       = {10.1109/DDECS.2010.5491819},
+  url       = {https://ieeexplore.ieee.org/document/5491819/},
+  urldate   = {2026-09-12},
+  note      = {[VERIFICADO] existencia y hallazgo cualitativo: la proporción de jitter procedente de fuentes de ruido correlacionadas frente a no correlacionadas depende del número de elementos de retardo (inversores) del anillo. Importa porque solo el jitter NO correlacionado cuenta como entropía ante SP 800-90B y AIS 20/31. [NO VERIFICADO] las cifras de desviación típica del jitter por periodo en ps: texto completo tras muro de pago}
+}
+
+@inproceedings{satoh2001aes,
+  author    = {Satoh, Akashi and Morioka, Sumio and Takano, Kohji and Munetoh, Seiji},
+  title     = {A Compact {Rijndael} Hardware Architecture with {S}-Box Optimization},
+  booktitle = {Advances in Cryptology --- ASIACRYPT 2001},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {2248},
+  pages     = {239--254},
+  year      = {2001},
+  publisher = {Springer},
+  doi       = {10.1007/3-540-45682-1_15},
+  url       = {https://link.springer.com/chapter/10.1007/3-540-45682-1_15},
+  urldate   = {2026-09-12},
+  note      = {Metadatos [VERIFICADO] vía API de Semantic Scholar; cifras [VERIFICADO] en el resumen público del capítulo (texto completo no abierto: Springer exige autenticación). 5,4 kGates en librería de celdas estándar CMOS de 0,11 um, 0,052 mm2, 311 Mb/s, CIFRADO Y DESCIFRADO combinados; variante de alta velocidad 21,3 kGates a 2,6 Gb/s. ATENCIÓN: la cifra de 5,4 kGE se cita a menudo mal como si fuera de 180 nm y de solo cifrado}
+}
+
+@inproceedings{moradi2011pushing,
+  author    = {Moradi, Amir and Poschmann, Axel and Ling, San and Paar, Christof and Wang, Huaxiong},
+  title     = {Pushing the Limits: A Very Compact and a Threshold Implementation of {AES}},
+  booktitle = {Advances in Cryptology --- EUROCRYPT 2011},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {6632},
+  year      = {2011},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-642-20465-4_6},
+  url       = {https://link.springer.com/chapter/10.1007/978-3-642-20465-4_6},
+  urldate   = {2026-09-12},
+  note      = {Metadatos [VERIFICADO] vía API de Semantic Scholar; cifra de 2.400 GE [VERIFICADO] en el resumen público. AES-128 SOLO CIFRADO en librería UMC 180 nm — que es justamente lo que necesita un CTR_DRBG. [NO VERIFICADO] rango de páginas}
+}
+
+@article{feldhofer2005grainofsand,
+  author  = {Feldhofer, Martin and Wolkerstorfer, Johannes and Rijmen, Vincent},
+  title   = {{AES} Implementation on a Grain of Sand},
+  journal = {IEE Proceedings --- Information Security},
+  volume  = {152},
+  number  = {1},
+  pages   = {13--20},
+  year    = {2005},
+  doi     = {10.1049/ip-ifs:20055006},
+  url     = {https://doi.org/10.1049/ip-ifs:20055006},
+  urldate = {2026-09-12},
+  note    = {Metadatos [VERIFICADO] vía API de Semantic Scholar. AES-128 de aproximadamente 3.400 GE = 0,25 mm2 en CMOS de 0,35 um, con cifrado, descifrado y key setup; chip fabricado y medido}
+}
+
+@inproceedings{satoh2005hash,
+  author    = {Satoh, Akashi and Inoue, Tadanobu},
+  title     = {{ASIC}-Hardware-Focused Comparison for Hash Functions {MD5}, {RIPEMD-160}, and {SHS}},
+  booktitle = {International Conference on Information Technology: Coding and Computing (ITCC'05)},
+  year      = {2005},
+  doi       = {10.1016/j.vlsi.2005.12.006},
+  url       = {https://doi.org/10.1016/j.vlsi.2005.12.006},
+  urldate   = {2026-09-12},
+  note      = {Metadatos [VERIFICADO] vía API de Semantic Scholar (versión ampliada en Integration, the VLSI Journal, 2007). REFERENCIA PRINCIPAL PARA SHA-256: circuitos compactos de 11,5 a 15,3 kGates con throughput de 1,1 a 2,4 Gb/s en librería CMOS de 0,13 um. También SHA-1 en 8,0 kGates a 934 Mb/s y SHA-384/512 en 27,3 kGates a 2,9 Gb/s}
+}
+
+@phdthesis{poschmann2009lightweight,
+  author  = {Poschmann, Axel York},
+  title   = {Lightweight Cryptography --- Cryptographic Engineering for a Pervasive World},
+  school  = {Ruhr-Universität Bochum},
+  year    = {2009},
+  month   = feb,
+  url     = {https://eprint.iacr.org/2009/516.pdf},
+  urldate = {2026-09-12},
+  note    = {IACR Cryptology ePrint Archive, Report 2009/516. [VERIFICADO] Tabla 2.1: librería Virtual Silicon UMCL18G212T3 (UMC L180 0,18 um 1P6M), celda HDNAN2D1 (NAND2 de drive mínimo) = 9,677 um2. FUENTE DE LA CONVERSIÓN kGE -> mm2 a 180 nm: 1 kGE = 0,009677 mm2. Es la misma librería usada por Moradi et al. 2011 y Bogdanov et al. CHES 2008}
+}
+
+@techreport{hamburg2012intel,
+  author      = {Hamburg, Mike and Kocher, Paul and Marson, Mark E.},
+  title       = {Analysis of {Intel's} {Ivy Bridge} Digital Random Number Generator},
+  institution = {Cryptography Research, Inc.},
+  year        = {2012},
+  month       = mar,
+  url         = {https://www.rambus.com/wp-content/uploads/2015/08/Intel_TRNG_Report_20120312.pdf},
+  urldate     = {2026-09-12},
+  note        = {[VERIFICADO] Arquitectura de referencia del sistema completo: fuente de entropía a unos 3 GHz basada en un "dual differential jamb latch with feedback" (NO es un oscilador de anillo), acondicionamiento con AES-CBC-MAC de 128 bits y CTR_DRBG con AES-128 según NIST SP 800-90A. Es el mismo esqueleto arquitectónico que propone el TFM}
+}
+
+@inproceedings{cartagena2016trng130nm,
+  author    = {Cartagena, Juan and Gómez, Héctor and Roa, Elkim},
+  title     = {A Fully-Synthesized {TRNG} with Lightweight Cellular-Automata Based Post-Processing Stage in 130nm {CMOS}},
+  booktitle = {IEEE Nordic Circuits and Systems Conference (NORCAS)},
+  year      = {2016},
+  doi       = {10.1109/NORCHIP.2016.7792898},
+  url       = {https://doi.org/10.1109/NORCHIP.2016.7792898},
+  urldate   = {2026-09-12},
+  note      = {[VERIFICADO] TRNG completo (anillo de 3 flancos con jitter acumulativo + autómata celular como post-proceso) en 130 nm: 0,0098 mm2 en total, de los cuales 0,0023 mm2 corresponden al post-proceso. Punto de anclaje para el presupuesto de área a 130 nm}
+}
+
+@article{peetermans2022jitter,
+  author  = {Peetermans, Adriaan and Verbauwhede, Ingrid},
+  title   = {An Energy and Area Efficient, All Digital Entropy Source Compatible with Modern Standards Based on Jitter Pipelining},
+  journal = {IACR Transactions on Cryptographic Hardware and Embedded Systems},
+  volume  = {2022},
+  number  = {4},
+  pages   = {88--109},
+  year    = {2022},
+  doi     = {10.46586/tches.v2022.i4.88-109},
+  url     = {https://tches.iacr.org/index.php/TCHES/article/view/9814},
+  urldate = {2026-09-12},
+  note    = {[VERIFICADO] Fuente de entropía basada en jitter de flanco en oscilador de anillo con "jitter pipelining", en 28 nm: 750,7 um2, 298 Mb/s, 1,46 pJ/bit a 0,8 V. Supera SP 800-90B en modo IID con min-entropía de 0,933 bit/bit, y supera AIS-31}
+}
+
+@article{mathew2012trng45nm,
+  author  = {Mathew, Sanu K. and Srinivasan, Suresh and Anders, Mark A. and Kaul, Himanshu and Hsu, Steven K. and Sheikh, Farhana and Agarwal, Amit and Satpathy, Sudhir and Krishnamurthy, Ram K.},
+  title   = {2.4 {Gbps}, 7 {mW} All-Digital {PVT}-Variation Tolerant True Random Number Generator for 45 nm {CMOS} High-Performance Microprocessors},
+  journal = {IEEE Journal of Solid-State Circuits},
+  volume  = {47},
+  number  = {11},
+  pages   = {2807--2821},
+  year    = {2012},
+  doi     = {10.1109/JSSC.2012.2217631},
+  url     = {https://doi.org/10.1109/JSSC.2012.2217631},
+  urldate = {2026-09-12},
+  note    = {Metadatos [VERIFICADO] vía API de Semantic Scholar. 45 nm HKMG, 4.004 um2, 2,4 Gb/s, 2,9 pJ/bit, 7 mW. ATENCIÓN: la fuente de entropía es METAESTABILIDAD en un par de inversores cruzados precargado, NO un oscilador de anillo}
+}
+
+@article{mathew2016urng,
+  author  = {Mathew, Sanu K. and Johnston, David and Satpathy, Sudhir and Suresh, Vikram and Newman, Paul and Anders, Mark A. and Kaul, Himanshu and Agarwal, Amit and Hsu, Steven K. and Chen, Gregory and Krishnamurthy, Ram K.},
+  title   = {{$\mu$RNG}: A 300--950 {mV}, 323 {Gbps/W} All-Digital Full-Entropy True Random Number Generator in 14 nm {FinFET} {CMOS}},
+  journal = {IEEE Journal of Solid-State Circuits},
+  volume  = {51},
+  number  = {7},
+  pages   = {1695--1704},
+  year    = {2016},
+  doi     = {10.1109/JSSC.2016.2558490},
+  url     = {https://doi.org/10.1109/JSSC.2016.2558490},
+  urldate = {2026-09-12},
+  note    = {Metadatos [VERIFICADO] vía API de Semantic Scholar. 14 nm FinFET, 1.008 um2, 162,5 Mb/s de entropía plena, 3 pJ/bit, pico de 323 Gb/s/W}
+}

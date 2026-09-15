@@ -1,0 +1,28 @@
+# Compilados de simulacion y sintesis (se regeneran con rtl/run_tb.py y synth/sintetiza.py)
+rtl/build/
+synth/build/
+# Firmware: el build de ESP-IDF se regenera con idf.py build
+firmware/*/build/
+firmware/*/sdkconfig
+firmware/*/sdkconfig.old
+firmware/*/dependencies.lock
+firmware/*/managed_components/
+# Memoria: solo fuentes, no el PDF ni auxiliares
+memoria/*.aux
+memoria/*.log
+memoria/*.out
+memoria/*.toc
+memoria/*.lof
+memoria/*.lot
+memoria/*.bbl
+memoria/*.blg
+memoria/*.acn
+memoria/*.acr
+memoria/*.alg
+memoria/*.synctex.gz
+# Python
+__pycache__/
+*.pyc
+# Copias de seguridad y temporales
+*.bak
+*~

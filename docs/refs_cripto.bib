@@ -1,0 +1,506 @@
+% refs_cripto.bib — Referencias del estado del arte criptográfico (TFM motor cripto FPGA vs ESP32)
+% Convención: clave autor_anio_palabra. El campo "note" indica el estado de verificación
+% en la sesión de investigación del 11-09-2026: [VERIFICADO] = fuente abierta y dato confirmado;
+% [NO VERIFICADO] = dato procedente de resumen indirecto o de memoria.
+% Todas las URL consultadas el 2026-09-11.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Normas NIST / IETF
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@techreport{nist_2023_fips197,
+  author      = {{National Institute of Standards and Technology}},
+  title       = {Advanced Encryption Standard ({AES})},
+  institution = {NIST},
+  type        = {Federal Information Processing Standards Publication},
+  number      = {FIPS 197-upd1},
+  year        = {2023},
+  month       = may,
+  doi         = {10.6028/NIST.FIPS.197-upd1},
+  url         = {https://csrc.nist.gov/pubs/fips/197/final},
+  note        = {Publicado originalmente el 26-11-2001; actualización editorial (sin cambios técnicos) del 9-05-2023. [VERIFICADO: página CSRC y PDF, Tabla 3 y Apéndice D]}
+}
+
+@techreport{nist_2015_fips1804,
+  author      = {{National Institute of Standards and Technology}},
+  title       = {Secure Hash Standard ({SHS})},
+  institution = {NIST},
+  type        = {Federal Information Processing Standards Publication},
+  number      = {FIPS 180-4},
+  year        = {2015},
+  month       = aug,
+  doi         = {10.6028/NIST.FIPS.180-4},
+  url         = {https://csrc.nist.gov/pubs/fips/180-4/upd1/final},
+  note        = {[VERIFICADO: página CSRC y PDF, secciones 5.1.1 y 6.2.2]}
+}
+
+@techreport{nist_2016_sp80038b,
+  author      = {Dworkin, Morris},
+  title       = {Recommendation for Block Cipher Modes of Operation: The {CMAC} Mode for Authentication},
+  institution = {NIST},
+  type        = {Special Publication},
+  number      = {SP 800-38B (incl. updates as of 10-06-2016)},
+  year        = {2016},
+  month       = oct,
+  doi         = {10.6028/NIST.SP.800-38B},
+  url         = {https://csrc.nist.gov/pubs/sp/800/38/b/upd1/final},
+  note        = {Publicado en mayo de 2005; erratas sustantivas del 6-10-2016 (frontal, retirada de ejemplos del Ap. D, bibliografía). [VERIFICADO: PDF extraído; autor según portada del PDF]}
+}
+
+@techreport{song_2006_rfc4493,
+  author      = {Song, JH. and Poovendran, R. and Lee, J. and Iwata, T.},
+  title       = {The {AES-CMAC} Algorithm},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {4493},
+  year        = {2006},
+  month       = jun,
+  url         = {https://www.rfc-editor.org/rfc/rfc4493},
+  note        = {[VERIFICADO: vectores de prueba de la sección 4 confirmados; autores y fecha citados de memoria, NO VERIFICADOS en esta sesión]}
+}
+
+@misc{nist_cmac_examples,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {Block Cipher Modes of Operation --- {CMAC} Mode for Authentication: Example Values ({CMAC-AES128/192/256})},
+  howpublished = {\url{https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/AES_CMAC.pdf}},
+  year         = {2016},
+  note         = {Ejemplos retirados del Apéndice D de SP 800-38B en 2016. [VERIFICADO: PDF extraído; K1/K2 y etiquetas coinciden con RFC 4493]}
+}
+
+@techreport{barker_2015_sp80090ar1,
+  author      = {Barker, Elaine and Kelsey, John},
+  title       = {Recommendation for Random Number Generation Using Deterministic Random Bit Generators},
+  institution = {NIST},
+  type        = {Special Publication},
+  number      = {SP 800-90A Rev. 1},
+  year        = {2015},
+  month       = jun,
+  doi         = {10.6028/NIST.SP.800-90Ar1},
+  url         = {https://csrc.nist.gov/pubs/sp/800/90/a/r1/final},
+  note        = {[VERIFICADO: PDF extraído; Tablas 2 y 3, secciones 8.6, 10.1, 10.2.1.3.1 y 11 leídas. Autores citados de memoria]}
+}
+
+@techreport{turan_2018_sp80090b,
+  author      = {Turan, Meltem S{\"o}nmez and Barker, Elaine and Kelsey, John and McKay, Kerry A. and Baish, Mary L. and Boyle, Mike},
+  title       = {Recommendation for the Entropy Sources Used for Random Bit Generation},
+  institution = {NIST},
+  type        = {Special Publication},
+  number      = {SP 800-90B},
+  year        = {2018},
+  month       = jan,
+  doi         = {10.6028/NIST.SP.800-90B},
+  url         = {https://csrc.nist.gov/pubs/sp/800/90/b/final},
+  note        = {[VERIFICADO: PDF extraído; sección 3.1.5 completa (lista de componentes vetted, Tabla 1, fórmula Output\_Entropy, factor 0,999 para no vetted). Autores citados de memoria]}
+}
+
+@techreport{barker_2025_sp80090c,
+  author      = {Barker, Elaine and Kelsey, John and McKay, Kerry and Roginsky, Allen and Turan, Meltem S{\"o}nmez},
+  title       = {Recommendation for Random Bit Generator ({RBG}) Constructions},
+  institution = {NIST},
+  type        = {Special Publication},
+  number      = {SP 800-90C},
+  year        = {2025},
+  month       = sep,
+  doi         = {10.6028/NIST.SP.800-90C},
+  url         = {https://csrc.nist.gov/pubs/sp/800/90/c/final},
+  note        = {Versión final (RBG1, RBG2, RBG3, RBGC). [VERIFICADO: página CSRC, estado y fecha; autores citados de memoria]}
+}
+
+@techreport{chen_2022_sp800108r1,
+  author      = {Chen, Lily},
+  title       = {Recommendation for Key Derivation Using Pseudorandom Functions},
+  institution = {NIST},
+  type        = {Special Publication},
+  number      = {SP 800-108 Rev. 1 upd1},
+  year        = {2024},
+  month       = feb,
+  doi         = {10.6028/NIST.SP.800-108r1-upd1},
+  url         = {https://csrc.nist.gov/pubs/sp/800/108/r1/upd1/final},
+  note        = {Publicado en agosto de 2022, actualizado el 2-02-2024; PRF = HMAC, CMAC o KMAC. [VERIFICADO: página CSRC; autora citada de memoria]}
+}
+
+@misc{nist_2025_sp80090a_predraft,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {Pre-Draft Call for Comments on {SP} 800-90A, Random Number Generation Using {DRBGs}},
+  howpublished = {\url{https://csrc.nist.gov/News/2025/pre-draft-call-for-comments-on-sp-800-90a}},
+  year         = {2025},
+  month        = sep,
+  note         = {Anuncio del 4-09-2025; comentarios hasta el 4-11-2025. [VERIFICADO: noticia; detalle de cambios previstos (XOF-DRBG, retirada de TDES/SHA-1) NO VERIFICADO]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Vectores de prueba CAVP / ACVP
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@misc{nist_cavp_home,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {Cryptographic Algorithm Validation Program ({CAVP})},
+  howpublished = {\url{https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program}},
+  year         = {2026},
+  note         = {CAVS deprecated by ACVTS; servidor Demo gratuito, servidor de producción sólo para laboratorios NVLAP. [VERIFICADO]}
+}
+
+@misc{nist_cavp_blockciphers,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{CAVP} Testing: Block Ciphers --- {AES} Test Vectors ({KAT\_AES.zip}, {aesmmt.zip}, {aesmct.zip})},
+  howpublished = {\url{https://csrc.nist.gov/Projects/cryptographic-algorithm-validation-program/block-ciphers}},
+  year         = {2026},
+  note         = {Ficheros .rsp: ECBGFSbox128, ECBKeySbox128, ECBVarKey128, ECBVarTxt128, ECBMMT128, CBCMMT128, etc. [VERIFICADO: página y zips descargados y listados]}
+}
+
+@misc{nist_cavp_modes,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{CAVP} Testing: Block Cipher Modes --- {CMAC} Test Vectors ({cmactestvectors.zip})},
+  howpublished = {\url{https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/cavp-testing-block-cipher-modes}},
+  year         = {2026},
+  note         = {Contiene CMACGenAES128.rsp y CMACVerAES128.rsp. [VERIFICADO: página y zip descargado]}
+}
+
+@misc{nist_cavp_shs,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{CAVP} Testing: Secure Hashing --- {SHA} Test Vectors ({shabytetestvectors.zip})},
+  howpublished = {\url{https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing}},
+  year         = {2026},
+  note         = {SHA256ShortMsg.rsp, SHA256LongMsg.rsp, SHA256Monte.rsp. [VERIFICADO: página y zip descargado]}
+}
+
+@misc{nist_cavp_drbg,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{CAVP} Testing: Random Number Generators --- {DRBG} Test Vectors ({drbgtestvectors.zip})},
+  howpublished = {\url{https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/random-number-generators}},
+  year         = {2026},
+  note         = {Tres zips (no\_reseed, pr\_false, pr\_true) con CTR\_DRBG.rsp, Hash\_DRBG.rsp, HMAC\_DRBG.rsp. [VERIFICADO: página y zip descargado]}
+}
+
+@misc{nist_acvp_server,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{ACVP-Server}: {NIST} Automated Cryptographic Validation Protocol server and sample {JSON} test vectors},
+  howpublished = {\url{https://github.com/usnistgov/ACVP-Server}},
+  year         = {2026},
+  note         = {Carpeta gen-val/json-files con ACVP-AES-ECB-1.0, ACVP-AES-CBC-1.0, CMAC-AES-1.0, SHA2-256-1.0, ctrDRBG-1.0, hashDRBG-1.0, hmacDRBG-1.0; ficheros prompt.json / expectedResults.json / internalProjection.json. Licencia NIST. [VERIFICADO: README y API de GitHub]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% AES en hardware: S-box y arquitecturas
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{satoh_2001_compact,
+  author    = {Satoh, Akashi and Morioka, Sumio and Takano, Kohji and Munetoh, Seiji},
+  title     = {A Compact {Rijndael} Hardware Architecture with {S-Box} Optimization},
+  booktitle = {Advances in Cryptology --- ASIACRYPT 2001},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {2248},
+  pages     = {239--254},
+  publisher = {Springer},
+  year      = {2001},
+  doi       = {10.1007/3-540-45682-1_15},
+  note      = {S-box en campo compuesto; 5,4 kpuertas en CMOS 0,11 um. [VERIFICADO: título/autores/DOI vía Springer Link; cifra de puertas por resumen, NO VERIFICADA en el texto]}
+}
+
+@inproceedings{canright_2005_compact,
+  author    = {Canright, David},
+  title     = {A Very Compact {S-box} for {AES}},
+  booktitle = {Cryptographic Hardware and Embedded Systems --- CHES 2005},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {3659},
+  pages     = {441--455},
+  publisher = {Springer},
+  year      = {2005},
+  doi       = {10.1007/11545262_32},
+  url       = {https://www.iacr.org/archive/ches2005/032.pdf},
+  note      = {432 elecciones de base (polinomiales y normales) para los subcampos; mejora del 20 % sobre Satoh et al. [VERIFICADO: abstract leído del PDF de IACR]}
+}
+
+@inproceedings{boyar_2010_minimization,
+  author    = {Boyar, Joan and Peralta, Ren{\'e}},
+  title     = {A New Combinational Logic Minimization Technique with Applications to Cryptology},
+  booktitle = {Experimental Algorithms (SEA 2010)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {6049},
+  pages     = {178--189},
+  publisher = {Springer},
+  year      = {2010},
+  doi       = {10.1007/978-3-642-13193-6_16},
+  url       = {https://www.nist.gov/publications/new-combinational-logic-minimization-technique-applications-cryptology},
+  note      = {Circuito de la S-box de AES con el menor número de puertas conocido entonces. [VERIFICADO: cita y abstract en la página de NIST; el desglose 32 AND + 83 XOR NO VERIFICADO]}
+}
+
+@inproceedings{chodowiec_2003_compact,
+  author    = {Chodowiec, Pawe{\l} and Gaj, Kris},
+  title     = {Very Compact {FPGA} Implementation of the {AES} Algorithm},
+  booktitle = {Cryptographic Hardware and Embedded Systems --- CHES 2003},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {2779},
+  pages     = {319--333},
+  publisher = {Springer},
+  year      = {2003},
+  doi       = {10.1007/978-3-540-45238-6_26},
+  note      = {Cifrado, descifrado y key schedule en 222 slices y 3 Block RAM de un Spartan-II XC2S30. [VERIFICADO: título/autores/DOI/páginas por Crossref; cifras por el resumen de Springer]}
+}
+
+@inproceedings{good_2005_fastest,
+  author    = {Good, Tim and Benaissa, Mohammed},
+  title     = {{AES} on {FPGA} from the Fastest to the Smallest},
+  booktitle = {Cryptographic Hardware and Embedded Systems --- CHES 2005},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {3659},
+  pages     = {427--440},
+  publisher = {Springer},
+  year      = {2005},
+  doi       = {10.1007/11545262_31},
+  note      = {25 Gbit/s en Spartan-III XC3S2000 (pipelined); 124 slices + 2 BRAM y 2,2 Mbit/s en Spartan-II XC2S15 (ASIP 8 bit). [VERIFICADO: abstract leído del PDF]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SHA-256 en FPGA y DRBG en hardware
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{li_2019_hashing,
+  author  = {Li, Lin and Lin, Shaoyu and Shen, Shuli and Wu, Kongcheng and Li, Xiaochao and Chen, Yihui},
+  title   = {High-throughput and area-efficient fully-pipelined hashing cores using {BRAM} in {FPGA}},
+  journal = {Microprocessors and Microsystems},
+  volume  = {67},
+  pages   = {82--92},
+  year    = {2019},
+  doi     = {10.1016/j.micpro.2019.03.002},
+  note    = {SHA-256 fully-pipelined en Kintex-7: 154,88 Gbit/s y 10,94 Mbit/s/slice, > 300 MHz. [VERIFICADO: DOI, autores y abstract vía Semantic Scholar; volumen/páginas NO VERIFICADOS]}
+}
+
+@article{santos_2024_sha256,
+  author  = {Santos, Carlos E. B. and Silva, Lucileide M. D. and Torquato, Matheus F. and Silva, S{\'e}rgio N. and Fernandes, Marcelo A. C.},
+  title   = {{SHA-256} Hardware Proposal for {IoT} Devices in the Blockchain Context},
+  journal = {Sensors},
+  volume  = {24},
+  number  = {12},
+  pages   = {3908},
+  year    = {2024},
+  doi     = {10.3390/s24123908},
+  note    = {Virtex-6 xc6vlx240t, ~1,4 Gbit/s con 16 núcleos. Su ref. [38] reporta 1310 LUT / 327 slices / 141,84 MHz / 1404 Mbit/s en Artix-7 xc7a200t (cita indirecta). [VERIFICADO: DOI/autores/abstract vía Semantic Scholar; la cifra Artix-7 NO VERIFICADA en la fuente original]}
+}
+
+@article{baldanzi_2020_csprng,
+  author  = {Baldanzi, Luca and Crocetti, Luca and Falaschi, Francesco and Bertolucci, Matteo and Belli, Jacopo and Fanucci, Luca and Saponara, Sergio},
+  title   = {Cryptographically Secure Pseudo-Random Number Generator {IP}-Core Based on {SHA2} Algorithm},
+  journal = {Sensors},
+  volume  = {20},
+  number  = {7},
+  pages   = {1869},
+  year    = {2020},
+  doi     = {10.3390/s20071869},
+  note    = {Hash-DRBG (SP 800-90A) con SHA-256; 690 Mbit/s en FPGA y 19,67 Gbit/s en ASIC 7 nm según resúmenes. [VERIFICADO: DOI/autores/revista por Crossref; cifras de throughput NO VERIFICADAS]}
+}
+
+@article{xie_2025_ctrdrbg,
+  author  = {Xie, Xianli and Chen, Jiansheng and Zhou, Jiajun and Zhai, Ruiqing and Xia, Xianzhao},
+  title   = {Multidimensional Fault Injection and Simulation Analysis for Random Number Generators},
+  journal = {Electronics},
+  volume  = {14},
+  number  = {18},
+  pages   = {3702},
+  year    = {2025},
+  doi     = {10.3390/electronics14183702},
+  note    = {Prototipo FPGA de CTR-DRBG con AES-128 (SP 800-90A) sometido a inyección de fallos. [VERIFICADO: DOI/autores/abstract vía Semantic Scholar; sin cifras de área]}
+}
+
+@inproceedings{woodage_2019_analysis,
+  author    = {Woodage, Joanne and Shumow, Dan},
+  title     = {An Analysis of {NIST SP 800-90A}},
+  booktitle = {Advances in Cryptology --- EUROCRYPT 2019},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {11476},
+  publisher = {Springer},
+  year      = {2019},
+  doi       = {10.1007/978-3-030-17656-3_6},
+  url       = {https://eprint.iacr.org/2018/349},
+  note      = {Robustez de Hash\_DRBG y HMAC\_DRBG en el ROM (con salvedad); HMAC\_DRBG sin additional\_input no alcanza forward security; análisis práctico de fuga parcial de estado en CTR\_DRBG. [VERIFICADO: abstract leído del PDF de IACR; DOI por Crossref]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Implementaciones abiertas
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@misc{strombergson_aes,
+  author       = {Str{\"o}mbergson, Joachim},
+  title        = {secworks/aes: {Verilog} implementation of the symmetric block cipher {AES} as specified in {NIST FIPS 197}},
+  howpublished = {\url{https://github.com/secworks/aes}},
+  year         = {2026},
+  note         = {Verilog 2001, BSD-2-Clause; iterativo a nivel de palabra, 4 S-box, 46 ciclos/bloque; Artix-7 200T-3: 2298 slices, 2989 FF, 97 MHz; Spartan-6: 2576 slices, 100 MHz. Testbench con vectores de FIPS 197 Ap. C y SP 800-38A. [VERIFICADO: README y tb\_aes.v]}
+}
+
+@misc{strombergson_sha256,
+  author       = {Str{\"o}mbergson, Joachim},
+  title        = {secworks/sha256: Hardware implementation of the {SHA-256} cryptographic hash function},
+  howpublished = {\url{https://github.com/secworks/sha256}},
+  year         = {2026},
+  note         = {Verilog 2001, BSD-2-Clause; iterativo, 66 ciclos/bloque, sin relleno; Artix-7: 2471 LUT, 747 slices, 1930 FF, 108 MHz. Testbench con ejemplos oficiales de NIST. [VERIFICADO: README y tb\_sha256.v]}
+}
+
+@misc{usselmann_2002_aescore,
+  author       = {Usselmann, Rudolf},
+  title        = {{AES} ({Rijndael}) {IP} Core (aes\_core)},
+  howpublished = {\url{https://opencores.org/projects/aes_core}},
+  year         = {2002},
+  note         = {Verilog; Spartan-IIe 101 MHz (1,08 Gbit/s); última actualización 2009; vectores "del sitio de NIST" en el testbench. [VERIFICADO: página del proyecto; licencia NO VERIFICADA]}
+}
+
+@misc{hsing_tinyaes,
+  author       = {Hsing, Homer},
+  title        = {tiny\_aes: Ultra high speed pipelined {AES} encryption core},
+  howpublished = {\url{https://opencores.org/projects/tiny_aes}},
+  year         = {2012},
+  note         = {Verilog, Apache-2.0; pipelined, 1 bloque/ciclo, sólo cifrado; 324,6 MHz en Virtex-6. [VERIFICADO: página del proyecto; año NO VERIFICADO]}
+}
+
+@misc{hadipour_aesvhdl,
+  author       = {Hadipour, Hosein},
+  title        = {{AES-VHDL}: {VHDL} Implementation of {AES} Algorithm},
+  howpublished = {\url{https://github.com/hadipourh/AES-VHDL}},
+  year         = {2026},
+  note         = {VHDL, GPL-3.0; 1 ronda/ciclo (10 ciclos); Artix-7 xc7a200t-3: cifrador 1104 LUT, 264 FF, 294,4 MHz, 3,77 Gbit/s; descifrador 1490 LUT, 253,8 MHz, 3,25 Gbit/s; verificado con vectores NIST. [VERIFICADO: README]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ESP32 / ESP-IDF / Mbed TLS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@manual{espressif_2025_trm,
+  author       = {{Espressif Systems}},
+  title        = {{ESP32} Technical Reference Manual, Version 5.8},
+  organization = {Espressif Systems},
+  year         = {2025},
+  url          = {https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf},
+  note         = {Cap. 14 AES Accelerator (AES-128/192/256 enc/dec; 11--15 ciclos cifrado, 21--22 descifrado; base 0x3FF01000) y Cap. 16 SHA Accelerator (SHA-1/256/384/512; un bloque a la vez; sin relleno). [VERIFICADO: PDF descargado y capítulos extraídos; año de la v5.8 NO VERIFICADO]}
+}
+
+@manual{espressif_datasheet,
+  author       = {{Espressif Systems}},
+  title        = {{ESP32} Series Datasheet, Version 5.3},
+  organization = {Espressif Systems},
+  year         = {2025},
+  url          = {https://documentation.espressif.com/esp32_datasheet_en.html},
+  note         = {Xtensa LX6 dual-core hasta 240 MHz; aceleradores AES, SHA, RSA, RNG; cuatro controladores SPI (SPI2/SPI3 maestro o esclavo). [VERIFICADO; año NO VERIFICADO]}
+}
+
+@misc{espressif_spimaster,
+  author       = {{Espressif Systems}},
+  title        = {{SPI} Master Driver --- {ESP-IDF} Programming Guide v5.4 ({ESP32})},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/peripherals/spi_master.html}},
+  year         = {2025},
+  note         = {GPIO matrix hasta 40 MHz vs IO\_MUX 80 MHz; Freq limit [MHz] = 80/(floor(MISO delay[ns]/12.5)+1); full-duplex por GPIO matrix ~26,67 MHz; modos (CPOL,CPHA). [VERIFICADO: v5.4 y v5.1]}
+}
+
+@misc{espressif_mbedtls,
+  author       = {{Espressif Systems}},
+  title        = {{Mbed TLS} --- {ESP-IDF} Programming Guide v5.4 ({ESP32})},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/protocols/mbedtls.html}},
+  year         = {2025},
+  note         = {Mbed TLS 3.6.x; CONFIG\_MBEDTLS\_HARDWARE\_AES / \_SHA / \_MPI. [VERIFICADO]}
+}
+
+@misc{espressif_kconfig_mbedtls,
+  author       = {{Espressif Systems}},
+  title        = {esp-idf/components/mbedtls/Kconfig (release/v5.4)},
+  howpublished = {\url{https://github.com/espressif/esp-idf/blob/release/v5.4/components/mbedtls/Kconfig}},
+  year         = {2025},
+  note         = {Texto de ayuda de MBEDTLS\_HARDWARE\_AES ("if the ESP32 CPU is running at 240MHz, hardware AES does not offer any speed boost over software AES") y MBEDTLS\_HARDWARE\_SHA (un digest a la vez); MBEDTLS\_CMAC\_C por defecto n. [VERIFICADO: fichero raw leído]}
+}
+
+@misc{mbedtls_36_headers,
+  author       = {{Mbed TLS Contributors}},
+  title        = {{Mbed TLS} 3.6 public headers: aes.h, cmac.h, sha256.h},
+  howpublished = {\url{https://github.com/Mbed-TLS/mbedtls/tree/mbedtls-3.6/include/mbedtls}},
+  year         = {2025},
+  note         = {Prototipos de mbedtls\_aes\_crypt\_ecb/cbc, mbedtls\_cipher\_cmac\_*, mbedtls\_aes\_cmac\_prf\_128, mbedtls\_sha256\_*. [VERIFICADO: ficheros raw leídos]}
+}
+
+@misc{wolfssl_2019_esp32bench,
+  author       = {{wolfSSL Inc.}},
+  title        = {{HWCrypto} vs {MbedTLS}: wolfCrypt benchmark on {ESP32-WROOM-32} at 240 MHz ({ESP-IDF} v3.3-beta1)},
+  howpublished = {\url{https://www.esp32.com/viewtopic.php?t=3080} y \url{https://github.com/wolfSSL/wolfssl/blob/master/wolfcrypt/src/port/Espressif/README.md}},
+  year         = {2019},
+  note         = {AES-128-CBC: 1,146 MB/s SW vs 5,958 MB/s HW (cifrado), 1,104 vs 5,287 MB/s (descifrado); SHA-256: 1,747 vs 15,234 MB/s. [VERIFICADO: ambas fuentes leídas; año aproximado]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Basys 3 / Artix-7 / Pmod / SPI
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@manual{digilent_2014_basys3rm,
+  author       = {{Digilent Inc.}},
+  title        = {{Basys3} {FPGA} Board Reference Manual (Revised August 12, 2014; applies to {Basys3} rev. C)},
+  organization = {Digilent},
+  year         = {2014},
+  url          = {https://www.amd.com/content/dam/amd/en/documents/university/aup-boards/XUPBasys3/documentation/Basys3_rm_8_22_2014.pdf},
+  note         = {XC7A35T-1CPG236C; 33 280 celdas lógicas en 5200 slices (4 LUT6 + 8 FF por slice); oscilador de 100 MHz en W5; Pmod JA/JB/JC + JXADC, 3,3 V en pines 6 y 12. Versión web actual: \url{https://digilent.com/reference/programmable-logic/basys-3/reference-manual} (no accesible en esta sesión). [VERIFICADO: PDF extraído]}
+}
+
+@manual{digilent_pmodspec,
+  author       = {{Digilent Inc.}},
+  title        = {{Digilent Pmod} Interface Specification, Revision 1.2.0},
+  organization = {Digilent},
+  url          = {https://digilent.com/reference/_media/reference/pmod/pmod-interface-specification-1_2_0.pdf},
+  note         = {Puertos Pmod estándar "generally have ESD protection diodes and 200-ohm series resistors"; señales LVCMOS 3,3 V / LVTTL 3,3 V; sólo 3,3 V obligatorio. [VERIFICADO: PDF extraído; sin fecha en la referencia]}
+}
+
+@misc{digilent_xdc,
+  author       = {{Digilent Inc.}},
+  title        = {digilent-xdc: {Basys-3-Master.xdc}},
+  howpublished = {\url{https://github.com/Digilent/digilent-xdc/blob/master/Basys-3-Master.xdc}},
+  year         = {2026},
+  note         = {create\_clock -period 10.00 en W5; IOSTANDARD LVCMOS33 en reloj y en JA/JB/JC. [VERIFICADO: fichero raw leído]}
+}
+
+@manual{xilinx_2020_ds180,
+  author       = {{Xilinx Inc.}},
+  title        = {7 Series {FPGAs} Data Sheet: Overview ({DS180}), v2.6.1},
+  organization = {Xilinx (AMD)},
+  year         = {2020},
+  month        = sep,
+  url          = {https://docs.amd.com/v/u/en-US/ds180_7Series_Overview},
+  note         = {Tabla 4, XC7A35T: 33 280 celdas lógicas, 5200 slices, 400 kbit RAM distribuida, 90 DSP48E1, 50 BRAM36 (1800 kbit), 5 CMT, 1 XADC, 250 E/S. [VERIFICADO: PDF extraído]}
+}
+
+@misc{eevblog_spislave,
+  author       = {{EEVblog forum users}},
+  title        = {How to create {SPI} slave in {FPGA} when {SCLK} frequency similar to {FPGA} system clock},
+  howpublished = {\url{https://www.eevblog.com/forum/fpga/how-to-create-spi-slave-in-fpga-when-sclk-frequency-similar-to-fpga-system-clock/}},
+  year         = {2026},
+  note         = {Sobremuestreo requiere reloj de sistema "at least 4-5 times faster than SPI"; alternativa: SCLK como reloj + CDC/FIFO. Fuente no arbitrada, usada sólo como práctica de ingeniería. [VERIFICADO: hilo leído]}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Fuera de alcance (justificación de exclusiones)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{kocher_1999_dpa,
+  author    = {Kocher, Paul and Jaffe, Joshua and Jun, Benjamin},
+  title     = {Differential Power Analysis},
+  booktitle = {Advances in Cryptology --- CRYPTO '99},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {1666},
+  pages     = {388--397},
+  publisher = {Springer},
+  year      = {1999},
+  doi       = {10.1007/3-540-48405-1_25},
+  note      = {[VERIFICADO: título/autores/DOI/páginas por Crossref]}
+}
+
+@article{javeed_2023_e2csm,
+  author  = {Javeed, Khalid and El-Moursy, Ali and Gregg, David},
+  title   = {{E$^2$CSM}: efficient {FPGA} implementation of elliptic curve scalar multiplication over generic prime field {GF}(p)},
+  journal = {The Journal of Supercomputing},
+  year    = {2024},
+  doi     = {10.1007/s11227-023-05428-4},
+  note    = {Publicado en línea el 22-06-2023. Citado como evidencia de la complejidad de un acelerador ECSM. [VERIFICADO: título/autores/DOI por Crossref; cifras de área NO VERIFICADAS]}
+}
+
+@article{cui_2023_ecsm,
+  author  = {Cui, Yingchao and Liu, Qing and Yao, Yingbiao and Xu, Xiaorong and Wu, Wei and Xu, Xin},
+  title   = {An area-efficient and low-latency elliptic curve scalar multiplication accelerator over prime field},
+  journal = {Microprocessors and Microsystems},
+  volume  = {102},
+  pages   = {104944},
+  year    = {2023},
+  doi     = {10.1016/j.micpro.2023.104944},
+  note    = {[VERIFICADO: título/autores/DOI por Crossref; volumen/páginas y cifras NO VERIFICADOS]}
+}

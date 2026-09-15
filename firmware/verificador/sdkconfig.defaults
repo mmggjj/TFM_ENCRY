@@ -1,0 +1,22 @@
+# Verificador del motor de claves. ESP32 clasico.
+CONFIG_IDF_TARGET="esp32"
+
+# CMAC no viene activado por defecto en mbedtls de ESP-IDF; hace falta
+# para mbedtls_cipher_cmac en el reto-respuesta.
+CONFIG_MBEDTLS_CMAC_C=y
+
+# Aceleradores hardware: se miden las dos configuraciones (on/off) en la
+# comparacion; por defecto activados.
+CONFIG_MBEDTLS_HARDWARE_AES=y
+CONFIG_MBEDTLS_HARDWARE_SHA=y
+
+# Consola: solo errores, para no contaminar las tramas hacia el PC
+# (leccion del TFM_RNG). UART a 115200, la unica velocidad fiable con el
+# CP2102 en los montajes anteriores.
+CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
+CONFIG_LOG_DEFAULT_LEVEL=1
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+
+# stdin bloqueante por UART para la consola minima de main.c
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_VFS_SUPPORT_IO=y

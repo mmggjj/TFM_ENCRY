@@ -1,0 +1,12 @@
+ S_i [A2/Hz]  cruces    T [ps]  sigma [fs]    exp       s
+     0.0e+00     500    230.29       1.383   1.49      17
+     1.0e-20     501    230.37    1199.999   0.82     171
+     4.0e-20     507    229.98    2416.462   0.89     193
+     1.6e-19     509    227.77   25587.971   1.00     222
+
+resolucion del banco (ruido apagado): 1.3831 fs
+escalado del jitter frente a la raiz de la densidad:
+  S_i x  4.0 -> sigma x 2.01 (teorico x 2.00)
+  S_i x 16.0 -> sigma x21.32 (teorico x 4.00)
+
+datos en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\spice_ruido_s1.csv
