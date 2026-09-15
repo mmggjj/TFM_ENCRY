@@ -1,0 +1,216 @@
+% =========================================================================
+% Design of a Key-Generation Cryptographic Engine for Integrated-Circuit
+% Implementation: a Transistor-Level Characterized Entropy Source with
+% FPGA Verification against an ESP32
+%
+% Master's Thesis -- Master Universitario en Microelectronica:
+% Diseno y Aplicaciones de Sistemas Micro/Nanometricos
+% Universidad de Sevilla / IMSE-CNM-CSIC -- Academic year 2025-2026
+%
+% Author: Mario Garcia Jimenez
+% Compile on Overleaf: pdfLaTeX + BibTeX (main file: tfm_main.tex)
+% =========================================================================
+\documentclass[12pt, a4paper, oneside]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, chains}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nottoc]{tocbibind}
+\usepackage{acronym}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+\onehalfspacing
+
+\graphicspath{{figures/}}
+
+% ---- listings style ------------------------------------------------------
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0,0.5,0.2}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+\lstdefinestyle{code}{
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen}\itshape,
+  keywordstyle=\color{blue},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{purple},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true, numbers=left, numbersep=6pt,
+  frame=single, framerule=0.2pt, tabsize=2, captionpos=b,
+  literate={—}{{--}}1 {–}{{-}}1 {±}{{$\pm$}}1 {°}{{$^\circ$}}1
+           {·}{{$\cdot$}}1 {→}{{$\rightarrow$}}1 {≈}{{$\approx$}}1
+           {σ}{{$\sigma$}}1 {τ}{{$\tau$}}1 {µ}{{$\mu$}}1 {í}{{\'i}}1
+           {á}{{\'a}}1 {é}{{\'e}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1,
+}
+\lstset{style=code}
+\lstdefinelanguage{VHDL2008}[]{VHDL}{morekeywords={process,all,generic,port}}
+
+% ---- commands ------------------------------------------------------------
+\newcommand{\thetitle}{Design of a Key-Generation Cryptographic Engine for
+Integrated-Circuit Implementation: a Transistor-Level Characterized Entropy
+Source with FPGA Verification against an ESP32}
+% Measured / simulated / estimated markers used throughout the text.
+\newcommand{\meas}{\textsc{[measured]}}
+\newcommand{\simu}{\textsc{[simulated]}}
+\newcommand{\est}{\textsc{[estimated]}}
+
+\begin{document}
+
+% =========================================================================
+\begin{titlepage}
+\centering
+{\scshape\large Universidad de Sevilla\\
+Instituto de Microelectr\'onica de Sevilla (IMSE-CNM-CSIC)\par}
+\vspace{0.8cm}
+{\scshape M\'aster Universitario en Microelectr\'onica:\\
+Dise\~no y Aplicaciones de Sistemas Micro/Nanom\'etricos\par}
+\vspace{2.0cm}
+{\LARGE\bfseries \thetitle\par}
+\vspace{2.0cm}
+{\Large Master's Thesis\par}
+\vspace{1.4cm}
+{\large\bfseries Author:\\ Mario Garc\'ia Jim\'enez\par}
+\vspace{0.7cm}
+{\large\bfseries Supervisor:\\ {[To be assigned]}\par}
+\vfill
+{\large Academic year 2025--2026\par}
+\end{titlepage}
+
+% =========================================================================
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+% [DRAFT -- to be finalized with measured results]
+Cryptographic keys are only as good as the entropy behind them, yet most
+embedded key generators are evaluated as black boxes: statistical test
+suites are run on their output and a pass is taken as evidence of
+randomness. The author's previous work on the hardware random number
+generator of the ESP32 showed why that is not enough --- a source with
+low min-entropy can pass NIST SP~800-22 --- and NIST itself has since
+rejected the suite for assessing cryptographic generators. This thesis
+takes the opposite route: a white-box key-generation engine whose entropy
+is justified from the physics of the device. A ring-oscillator entropy
+source is designed at transistor level and its jitter is extracted from
+simulation and turned, through a validated stochastic model, into a lower
+bound on min-entropy per bit and into the design parameters of the
+sampler. Around it, a fully portable digital core --- SP~800-90B health
+tests, an AES-based conditioning and \acs{CTRDRBG} with derivation
+function, AES-CMAC authentication and an \acs{I2C} register interface ---
+is written once and verified three ways: against the official test
+vectors, in simulation on a Basys~3 FPGA acting as the verification
+vehicle, and against an ESP32 that recomputes every result with an
+independent implementation (mbedtls). The same VHDL is finally
+synthesized on an open 130~nm standard-cell library to give the area in
+gate equivalents and the path to a dedicated integrated circuit. All
+code, models, vectors and data are released.
+
+\paragraph{Keywords} true random number generator, ring oscillator,
+jitter, min-entropy, stochastic model, AIS~20/31, SP~800-90B, CTR\_DRBG,
+AES-CMAC, secure element, FPGA, ASIC, ESP32.
+
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+% [BORRADOR -- se cierra con los resultados medidos]
+Las claves criptogr\'aficas valen lo que vale la entrop\'ia que hay
+detr\'as, y sin embargo la mayor\'ia de los generadores embebidos se
+eval\'uan como cajas negras: se pasan bater\'ias de tests estad\'isticos
+sobre su salida y un aprobado se toma como prueba de aleatoriedad. El
+trabajo previo del autor sobre el generador hardware del ESP32 mostr\'o
+por qu\'e no basta --- una fuente con poca min-entrop\'ia puede pasar
+NIST SP~800-22 --- y el propio NIST ha rechazado despu\'es esa bater\'ia
+para evaluar generadores criptogr\'aficos. Este TFM toma el camino
+contrario: un motor de generaci\'on de claves de caja blanca cuya
+entrop\'ia se justifica desde la f\'isica del dispositivo. Se dise\~na a
+nivel de transistor una fuente de entrop\'ia por oscilador de anillo, se
+extrae su jitter por simulaci\'on y se convierte, mediante un modelo
+estoc\'astico validado, en una cota inferior de min-entrop\'ia por bit y
+en los par\'ametros de dise\~no del muestreador. A su alrededor, un
+n\'ucleo digital totalmente portable --- tests de salud SP~800-90B,
+acondicionado y \acs{CTRDRBG} con funci\'on de derivaci\'on basados en
+AES, autenticaci\'on AES-CMAC e interfaz de registros \acs{I2C} --- se
+escribe una sola vez y se verifica de tres maneras: contra los vectores
+oficiales, en simulaci\'on sobre una FPGA Basys~3 que hace de veh\'iculo
+de verificaci\'on, y frente a un ESP32 que recalcula cada resultado con
+una implementaci\'on independiente (mbedtls). El mismo VHDL se sintetiza
+por \'ultimo sobre una biblioteca abierta de celdas est\'andar de 130~nm
+para dar el \'area en puertas equivalentes y el camino hacia un circuito
+integrado dedicado. Todo el c\'odigo, modelos, vectores y datos se
+publican.
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+To my family, my colleagues at Airzone, and the faculty of the M\'aster en
+Microelectr\'onica at IMSE-CNM, for their support during this work.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% =========================================================================
+\chapter*{List of Acronyms}
+\addcontentsline{toc}{chapter}{List of Acronyms}
+\begin{acronym}[CTR\_DRBG]
+\acro{AES}{Advanced Encryption Standard}
+\acro{AIS}{Anwendungshinweise und Interpretationen zum Schema (BSI)}
+\acro{APT}{Adaptive Proportion Test}
+\acro{ASIC}{Application-Specific Integrated Circuit}
+\acro{BSI}{Bundesamt f\"ur Sicherheit in der Informationstechnik}
+\acro{CAVP}{Cryptographic Algorithm Validation Program}
+\acro{CDC}{Clock Domain Crossing}
+\acro{CMAC}{Cipher-based Message Authentication Code}
+\acro{CTRDRBG}[CTR\_DRBG]{Counter-mode Deterministic Random Bit Generator}
+\acro{DRBG}{Deterministic Random Bit Generator}
+\acro{ERO}{Elementary Ring Oscillator}
+\acro{FPGA}{Field-Programmable Gate Array}
+\acro{GE}{Gate Equivalent}
+\acro{I2C}{Inter-Integrated Circuit}
+\acro{KAT}{Known-Answer Test}
+\acro{LUT}{Look-Up Table}
+\acro{MEMS}{Micro-Electro-Mechanical System}
+\acro{MPW}{Multi-Project Wafer}
+\acro{NIST}{National Institute of Standards and Technology}
+\acro{PDK}{Process Design Kit}
+\acro{PLL}{Phase-Locked Loop}
+\acro{PUF}{Physically Unclonable Function}
+\acro{RCT}{Repetition Count Test}
+\acro{RO}{Ring Oscillator}
+\acro{RTL}{Register-Transfer Level}
+\acro{SPI}{Serial Peripheral Interface}
+\acro{TRNG}{True Random Number Generator}
+\acro{XADC}{Xilinx Analog-to-Digital Converter}
+\end{acronym}
+
+% =========================================================================
+\input{chapters/ch1_intro}
+\input{chapters/ch2_soa}
+\input{chapters/ch3_entropy}
+\input{chapters/ch4_engine}
+\input{chapters/ch5_verification}
+\input{chapters/ch6_asic}
+\input{chapters/ch7_results}
+\input{chapters/ch8_concl}
+
+% =========================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+% =========================================================================
+\appendix
+\input{chapters/appendices}
+
+\end{document}
