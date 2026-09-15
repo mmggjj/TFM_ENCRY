@@ -35,15 +35,21 @@ def arregla(m: re.Match) -> str:
     nombre, val = m.group(1), m.group(2)
     nuevo = val
     if nombre.lower() in CAMPOS_TEXTO:
-        nuevo = re.sub(r"(?<!\\)_", r"\\_", nuevo)
-        nuevo = re.sub(r"(?<!\\)&", r"\\&", nuevo)
-        nuevo = re.sub(r"(?<!\\)%", r"\\%", nuevo)
-        nuevo = re.sub(r"(?<!\\)#", r"\\#", nuevo)
-        # ^ fuera de modo matematico rompe pdfLaTeX ("Missing $"): aparecia
-        # en notas como "kGates/mm^2". La tilde NO se toca: en LaTeX es el
-        # espacio irrompible ("SP~800-90B") y sustituirla por \~{} dentro de
-        # una expresion matematica da "Please use \mathaccent".
-        nuevo = re.sub(r"(?<!\\)\^", r"\\^{}", nuevo)
+        # Los escapes solo se aplican FUERA de modo matematico: dentro de
+        # $...$ el ^ y el _ son exponentes y subindices legitimos, y
+        # escaparlos ahi da "Please use \mathaccent for accents in math
+        # mode". Se trocea por $ y se tratan solo los trozos pares.
+        trozos = nuevo.split("$")
+        for i in range(0, len(trozos), 2):
+            t = trozos[i]
+            t = re.sub(r"(?<!\\)_", r"\\_", t)
+            t = re.sub(r"(?<!\\)&", r"\\&", t)
+            t = re.sub(r"(?<!\\)%", r"\\%", t)
+            t = re.sub(r"(?<!\\)#", r"\\#", t)
+            t = re.sub(r"(?<!\\)\^", r"\\^{}", t)   # p. ej. "kGates/mm^2"
+            trozos[i] = t
+        nuevo = "$".join(trozos)
+        # La tilde NO se toca: en LaTeX es el espacio irrompible.
     for k, v in SUSTITUCIONES.items():
         nuevo = nuevo.replace(k, v)
     return f"{nombre} = {{{nuevo}}}"
