@@ -70,7 +70,8 @@ def main() -> int:
         esperado = aes_cmac(v["clave1"], v[f"reto{i}"])
         chk(esperado == v[f"etiqueta{i}"],
             f"etiqueta{i} = CMAC_clave1(reto{i}) -> {esperado.hex()}")
-    chk(v["clave1"] == v["aleatorio1"][:16], "clave1 = primeros 16 bytes de aleatorio1")
+    chk(v["clave1"] not in (v["aleatorio1"][:16], v["aleatorio1"][16:]),
+        "aleatorio1 (registro legible) no contiene clave1 en ninguna mitad")
     chk(v["clave1"] != v["clave2"], "las dos claves difieren")
     chk(len(set(v["clave1"])) > 4, "clave1 no es un patron trivial")
 

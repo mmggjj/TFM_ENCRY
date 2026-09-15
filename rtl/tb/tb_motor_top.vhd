@@ -220,10 +220,17 @@ begin
     esperar_libre(status);
     comprobar(status(4) = '1', "clave valida");
     leer_bloque(x"10", 16, clave1);
-    leer_bloque(x"40", 32, aleatorio);
-    comprobar(clave1 = aleatorio(255 downto 128),
-              "CLAVE = primeros 16 bytes de ALEATORIO");
     comprobar(clave1 /= (127 downto 0 => '0'), "clave no nula: " & hex(clave1));
+
+    report "3b) Aleatorio: generacion independiente, nunca la clave";
+    -- Antes ALEATORIO era la misma generacion que la clave y la filtraba
+    -- sin modo test. Ahora es una orden aparte.
+    escribir_reg(x"03", x"40");                 -- aleatorio
+    esperar_libre(status);
+    leer_bloque(x"40", 32, aleatorio);
+    comprobar(aleatorio /= (255 downto 0 => '0'), "ALEATORIO no nulo");
+    comprobar(aleatorio(255 downto 128) /= clave1 and aleatorio(127 downto 0) /= clave1,
+              "ALEATORIO no contiene la clave en ninguna de sus mitades");
 
     report "4) Reto-respuesta";
     reto := x"00112233445566778899aabbccddeeff";

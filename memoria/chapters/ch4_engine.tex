@@ -197,15 +197,21 @@ every read would have been shifted --- and were fixed.
 The register map (Appendix~\ref{app:regs}) exposes identification,
 status and control, the divider and capture-page configuration, the
 health-test diagnostics, the reseed counter, the challenge and its tag,
-the last 256 bits generated and, \emph{only while a test pin is
-asserted}, the current key and the capture buffer. In the FPGA the test
+a 256-bit random-output register and, \emph{only while a test pin is
+asserted}, the current key and the capture buffer. The random-output
+register is filled by its own command with a separate generation of the
+DRBG, never by the one that produced the key: an earlier version of the
+design left the 256 bits of the key-generating call in that register,
+readable without the test pin, and thus leaked the key. The review that
+caught it is described in Chapter~\ref{ch:ch5_verification}. In the FPGA the test
 pin is a switch; in an integrated circuit it would be a fuse blown at
 production, because exposing either the key or the raw entropy is a
 vulnerability. A small sequencer serializes the commands: seeding
 collects 384 raw bits, aborts if a health alarm rises meanwhile, and
-instantiates or reseeds the generator; generation takes 256 bits, makes
-the first 128 the key and reloads the CMAC sub-keys; authentication runs
-the CMAC over the challenge block.
+instantiates or reseeds the generator; generation takes 256 bits, keeps the first 128 as the key, discards the rest and reloads the CMAC
+sub-keys; a separate command fills the random-output register from an
+independent generation; authentication runs the CMAC over the challenge
+block.
 
 The whole engine was exercised as the ESP32 will exercise it: a
 bus-functional \ac{I2C} master reads the identification, configures the

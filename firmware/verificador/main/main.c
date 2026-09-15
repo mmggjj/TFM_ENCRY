@@ -16,6 +16,7 @@
  *   sembrar   ordena sembrar y espera
  *   generar   pide una clave nueva, la provisiona (modo test) y la muestra
  *   reto N    hace N retos-respuesta con nonces de esp_random() y cuenta
+ *   aleatorio N  vuelca N bloques de 32 bytes del DRBG al PC
  *   crudo N   vuelca N trozos del buffer de captura al PC
  *   esp N     vuelca N bloques de esp_random() al PC (comparacion)
  */
@@ -61,6 +62,8 @@ static const char *TAG = "verificador";
 #define CTL_AUTENTICAR   (1u << 2)
 #define CTL_BORRAR_ALM   (1u << 3)
 #define CTL_CAPTURAR     (1u << 4)
+#define CTL_RESEMBRAR    (1u << 5)
+#define CTL_ALEATORIO    (1u << 6)
 
 /* ---- pines: I2C por defecto del ESP32 clasico ------------------------- */
 #define PIN_SDA          21
@@ -155,16 +158,28 @@ static void cmd_generar(void)
     reg_escribir1(REG_CONTROL, CTL_GENERAR);
     uint8_t st = esperar_libre(2000);
     if (!(st & ST_CLAVE_VALIDA)) { printf("generar: FALLO, sin clave valida\n"); return; }
-    uint8_t aleatorio[32];
-    reg_leer(REG_ALEATORIO, aleatorio, 32);
-    trama_pc('D', aleatorio, 32);
     if (st & ST_MODO_TEST) {
+        static const uint8_t cero[16] = {0};
         reg_leer(REG_CLAVE, clave_provisionada, 16);
-        hay_clave = memcmp(clave_provisionada, aleatorio, 16) == 0;
+        hay_clave = memcmp(clave_provisionada, cero, 16) != 0;
         imprimir_hex("clave", clave_provisionada, 16);
-        printf("provision: %s (CLAVE == ALEATORIO[0:16])\n", hay_clave ? "ok" : "FALLO");
+        printf("provision: %s\n", hay_clave ? "ok" : "FALLO, clave nula");
     } else {
         printf("generar: ok, clave no exportable sin modo test\n");
+    }
+}
+
+/* Aleatorio del DRBG hacia el PC. Es una generacion independiente de la
+ * clave: el registro ALEATORIO nunca contiene la clave. */
+static void cmd_aleatorio(int n)
+{
+    uint8_t b[32];
+    for (int i = 0; i < n; i++) {
+        reg_escribir1(REG_CONTROL, CTL_ALEATORIO);
+        uint8_t st = esperar_libre(500);
+        if (!(st & ST_SEMBRADO)) { printf("aleatorio: el motor no esta sembrado\n"); return; }
+        reg_leer(REG_ALEATORIO, b, 32);
+        trama_pc('D', b, 32);
     }
 }
 
@@ -224,7 +239,7 @@ static void cmd_esp(int n)
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("verificador listo. comandos: id sembrar generar reto N crudo N esp N\n");
+    printf("verificador listo. comandos: id sembrar generar reto N aleatorio N crudo N esp N\n");
     for (;;) {
         if (!fgets(linea, sizeof linea, stdin)) { vTaskDelay(pdMS_TO_TICKS(50)); continue; }
         char cmd[16] = {0}; int arg = 1;
@@ -233,6 +248,7 @@ static void bucle_consola(void)
         else if (!strcmp(cmd, "sembrar")) cmd_sembrar();
         else if (!strcmp(cmd, "generar")) cmd_generar();
         else if (!strcmp(cmd, "reto"))    cmd_reto(arg);
+        else if (!strcmp(cmd, "aleatorio")) cmd_aleatorio(arg);
         else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg);
         else if (!strcmp(cmd, "esp"))     cmd_esp(arg);
         else if (cmd[0])                  printf("comando desconocido: %s\n", cmd);

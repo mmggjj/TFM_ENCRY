@@ -9,6 +9,12 @@ de cada decisión vive aquí.
 
 ## 1. Vista de bloques
 
+> **Nota (15-09-2026):** el diagrama de abajo es el del borrador inicial y
+> está desfasado en dos cosas: ya **no hay SHA-256** (§9, el acondicionado
+> lo hace el AES) y la interfaz de producto es **I2C**, no SPI
+> (`mapa_registros.md`). El bloque real está en `rtl/top/motor_top.vhd`,
+> cuyo comentario de cabecera es la vista de bloques vigente.
+
 ```
                      ┌──────────────────────── FPGA (Artix-7) ───────────────────────┐
                      │                                                               │
@@ -280,6 +286,13 @@ Decisiones concretas:
   interoperabilidad cruzada con mbedtls en el ESP32.
 
 ## 5. Interfaz SPI y protocolo
+
+> **Nota (15-09-2026):** sección desfasada. La interfaz de producto pasó a
+> ser **I2C** por decisión del autor; la especificación vigente es
+> `docs/mapa_registros.md` y la implementación `rtl/io/i2c_slave.vhd`. Lo
+> que sigue se conserva como registro del razonamiento sobre el SPI y el
+> doble enlace (§5.0), que sigue siendo válido para la vía de volcado
+> masivo por la UART propia de la Basys 3.
 
 ### 5.0 Dos enlaces, no uno (decisión revisada 12-09-2026)
 

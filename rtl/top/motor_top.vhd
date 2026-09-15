@@ -8,7 +8,9 @@
 --   anillos -> ero_core -> bit_cdc -> health_tests
 --                                  -> recogida de 384 bits (semilla)
 --                                  -> ctr_drbg.instanciar
---   ctr_drbg.generar -> CLAVE (128 b) + ALEATORIO (256 b) -> aes_cmac.carga
+--   ctr_drbg.generar (orden generar)   -> CLAVE (128 b) -> aes_cmac.carga
+--   ctr_drbg.generar (orden aleatorio) -> ALEATORIO (256 b), generacion
+--                                         independiente: nunca contiene la clave
 --   RETO -> aes_cmac -> ETIQUETA
 --
 -- Lo unico atado a la FPGA son los dos anillos. El resto es RTL portable.
@@ -79,8 +81,12 @@ architecture rtl of motor_top is
   signal cmac_en_curso : std_logic := '0';
 
   -- Secuenciador de ordenes
+  -- GENERANDO produce la clave y no deja nada legible; GENERANDO_ALEATORIO
+  -- es otra generacion independiente cuyo resultado si va al registro
+  -- ALEATORIO. Antes ambas cosas salian de la misma generacion y el
+  -- registro ALEATORIO, legible sin modo test, contenia la clave.
   type t_orden is (LIBRE, SEMBRANDO, ESPERA_DRBG, GENERANDO, CARGANDO_CLAVE,
-                   AUTENTICANDO);
+                   GENERANDO_ALEATORIO, AUTENTICANDO);
   signal orden : t_orden := LIBRE;
   signal ocupado : std_logic;
 
@@ -252,6 +258,9 @@ begin
               elsif reg_wdato(1) = '1' and drbg_sembrado = '1' then
                 drbg_gen <= '1';
                 orden <= GENERANDO;
+              elsif reg_wdato(6) = '1' and drbg_sembrado = '1' then
+                drbg_gen <= '1';
+                orden <= GENERANDO_ALEATORIO;
               elsif reg_wdato(2) = '1' and clave_valida = '1' then
                 cmac_inicia <= '1';
                 etiqueta_lista <= '0';
@@ -299,7 +308,8 @@ begin
 
         when GENERANDO =>
           if drbg_listo = '1' then
-            aleatorio <= drbg_salida;
+            -- Solo la clave. Los otros 128 bits se descartan: no deben
+            -- quedar en ningun registro legible.
             clave     <= drbg_salida(255 downto 128);
             clave_valida <= '0';
             etiqueta_lista <= '0';
@@ -310,6 +320,12 @@ begin
         when CARGANDO_CLAVE =>
           if cmac_clave_lista = '1' then
             clave_valida <= '1';
+            orden <= LIBRE;
+          end if;
+
+        when GENERANDO_ALEATORIO =>
+          if drbg_listo = '1' then
+            aleatorio <= drbg_salida;
             orden <= LIBRE;
           end if;
 

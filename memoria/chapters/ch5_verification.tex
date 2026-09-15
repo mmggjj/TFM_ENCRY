@@ -118,6 +118,18 @@ same signal and every conflicting bit resolved to unknown.
 shift register seeded with a single one, started with a run of 27 zeros
 and a first window at 76\,\%; the detector fired. The detector was right.
 
+\paragraph{Key leak through the random register.} The most serious
+finding did not come from a bench but from reading the design again
+before handing it over. The command that generated the key wrote the
+full 256-bit output of the DRBG into the random-output register, which is
+readable without the test pin; the first 128 of those bits \emph{were} the
+key. The system bench even asserted that equality as a ``check''. The fix
+separates the two: key generation leaves nothing readable, and a new
+command fills the random register from an independent generation, after
+the DRBG has updated its state. The bench now asserts the opposite, that
+the register contains the key in neither half, and the Python
+cross-check does the same.
+
 \paragraph{Whole engine.} With the rings at their physical speed the
 system bench, which drives almost a millisecond of I2C traffic, did not
 finish in twenty minutes of CPU: every ring transition costs two random
@@ -125,9 +137,9 @@ draws in the jitter model. In that bench alone the stage delay is set ten
 times larger, with the same relative jitter, and this is stated in the
 bench. The sixteen checks pass, and the key, the two challenges and their
 tags are written to a file that \texttt{verifica\_top.py} checks: both
-tags equal the CMAC recomputed by the independent Python AES, the key is
-the first half of the generator's output, and two generations give
-different keys. This is the first point at which a key born from
+tags equal the CMAC recomputed by the independent Python AES, the
+readable random-output register contains the key in neither of its
+halves, and two generations give different keys. This is the first point at which a key born from
 ring-oscillator noise, conditioned, generated and used to authenticate,
 is confirmed by an implementation that shares nothing with the VHDL.
 

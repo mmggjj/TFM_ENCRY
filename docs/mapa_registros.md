@@ -13,7 +13,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x01 | VERSION | R | 0x01 |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
-| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor (5 bits útiles) |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 20 (el contador del ERO tiene 20 bits; valores mayores equivalen a 20). Cambiarlo solo con el motor libre |
 | 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
 | 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
 | 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |
@@ -23,7 +23,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x10–0x1F | CLAVE | R | clave actual, 16 bytes. **Solo legible en modo test** |
 | 0x20–0x2F | RETO | W | nonce de 16 bytes para el reto-respuesta |
 | 0x30–0x3F | ETIQUETA | R | CMAC(RETO) con la clave actual, 16 bytes |
-| 0x40–0x5F | ALEATORIO | R | los 32 bytes de la última generación del DRBG |
+| 0x40–0x5F | ALEATORIO | R | 32 bytes de la última orden `aleatorio`: una generación del DRBG **independiente de la clave**. Nunca contiene la clave |
 | 0x80–0xFF | CAPTURA | R | 128 bytes de la página CFG_PAG del buffer de bits crudos. **Solo en modo test** |
 
 Lecturas de direcciones no definidas devuelven 0x00; escrituras a
@@ -50,11 +50,18 @@ borre: nunca se siembra con una fuente que se sabe degradada.
 | Bit | Orden | Qué hace |
 |---|---|---|
 | 0 | sembrar | recoge 384 bits crudos del anillo (256 de entropía + 128 de nonce), pasa los tests de salud y **instancia** el DRBG desde cero |
-| 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE y los 256 quedan en ALEATORIO; recarga el autenticador |
+| 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE, los otros 128 se descartan; recarga el autenticador. **No deja nada legible** |
 | 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
 | 3 | borrar_alarmas | baja las alarmas de salud |
 | 4 | capturar | llena el buffer de captura con un trozo de bits crudos |
 | 5 | resembrar | como sembrar pero **sobre** el estado actual, sin borrarlo |
+| 6 | aleatorio | pide otros 256 bits al DRBG y los deja en ALEATORIO. Generación independiente: el DRBG ya actualizó su estado tras `generar`, así que no hay relación calculable con la clave |
+
+**Historial:** hasta el 15-09-2026 `generar` dejaba sus 256 bits en
+ALEATORIO, legible sin modo test, y los 128 primeros eran la clave: **el
+registro filtraba la clave**. Se detectó en la revisión previa al
+traspaso y se separó en dos órdenes. El banco `tb_motor_top` comprueba
+ahora que ALEATORIO no contiene la clave en ninguna de sus mitades.
 
 Las órdenes largas (sembrar, generar) no estiran el reloj I2C: el maestro
 las lanza, sondea `ocupado` en STATUS y recoge el resultado después. Es
@@ -72,6 +79,9 @@ como trabajan los elementos seguros comerciales.
 6. Reto-respuesta: escribir RETO con un nonce, CONTROL ← autenticar,
    sondear, leer ETIQUETA y compararla con el CMAC que calcula mbedtls
    con la clave provisionada.
+7. Aleatorio para el host: CONTROL ← aleatorio, sondear, leer ALEATORIO
+   (32 bytes). Repetir cuantas veces haga falta; cada orden es una
+   generación nueva.
 
 ## Modo test
 

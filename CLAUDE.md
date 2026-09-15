@@ -33,6 +33,19 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Pendiente inmediato al retomar (parado el 15-09-2026 por la noche)
+
+- La corrección de la fuga de clave por `ALEATORIO` está aplicada en RTL,
+  banco, verificación, firmware y memoria, y el firmware recompila, pero
+  **el banco `tb_motor_top` no se llegó a re-ejecutar** con el cambio: la
+  sesión se paró a mitad. Antes de nada, desde la raíz del repo:
+  `python rtl/run_tb.py motor_top` (unos 8 minutos) y después
+  `python analysis/verifica_top.py`. Si algo falla, el cambio está en el
+  estado `GENERANDO_ALEATORIO` de `rtl/top/motor_top.vhd` y en el paso 3b
+  de `rtl/tb/tb_motor_top.vhd`.
+- `results/run_tb_todos.log` puede estar vacío o truncado por ese corte;
+  no es un resultado.
+
 ## Qué hay y qué está verificado
 
 | Carpeta | Contenido | Estado |
@@ -62,7 +75,12 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   `mbedtls_cipher_cmac(AES-128-ECB, clave, reto)`.
 - **La clave solo es legible (0x10) con el pin `modo_test` activo.** Es
   para provisionar en banco. En producto la clave no sale del chip; el
-  ESP32 solo obtiene etiquetas y aleatorio (`ALEATORIO`, 0x40, 32 bytes).
+  ESP32 solo obtiene etiquetas y aleatorio.
+- Aleatorio para el host: `CONTROL ← aleatorio` (bit 6), sondear, leer
+  `ALEATORIO` (0x40, 32 bytes). Es una generación del DRBG **independiente
+  de la clave**. Hasta el 15-09 `generar` dejaba la clave en ese registro
+  (fuga corregida en la revisión de traspaso): si ves código o notas
+  antiguas que lean la clave desde ALEATORIO, están obsoletas.
 - mbedtls en ESP-IDF **no trae CMAC activado por defecto**: hace falta
   `CONFIG_MBEDTLS_CMAC_C=y` (ver `firmware/verificador/sdkconfig.defaults`).
 - Referencia de código: `firmware/verificador/main/main.c` (driver
