@@ -1,37 +1,368 @@
 \chapter{State of the Art}
 \label{ch:ch2_soa}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT v1] Source material: docs/estado_del_arte_trng.md, estado_del_arte_cripto.md,
+% plataforma_y_flujo.md, via_asic.md. Every numeric claim below carries a
+% reference that was checked against its source when the review was compiled;
+% items the review could not open are marked as such in the working notes.
+
+The review is organized along the chain the thesis builds: how ring
+oscillators are turned into random bits, how their entropy is modeled and
+bounded, how their jitter is measured from inside the device, what the two
+governing standards demand, which symmetric primitives fit a constrained
+engine, what the commercial parts offer, and what changes when the design
+leaves the FPGA for silicon. The last section states the gap this work
+addresses, in the guarded form the working rules require.
 
 \section{Ring-oscillator TRNG architectures}
+\label{sec:soa_archs}
 
-% TODO
+A ring oscillator is an odd chain of inverters closed on itself; its
+period fluctuates because each transition is delayed by a random amount,
+and that fluctuation --- jitter --- is the noise source of an entire family
+of generators. What distinguishes the architectures is how the jitter is
+accumulated and sampled~\cite{petura_2016_survey, lubicz_2024_recommendations}.
+
+The \textbf{elementary ring oscillator} (ERO) samples one ring with a
+flip-flop clocked by a second ring divided by $K_D$; the divider sets the
+accumulation time. It has the most mature stochastic
+model~\cite{baudet_2011_security, killmann_2008_design, ma_2014_entropy} and
+an embedded jitter measurement~\cite{fischer_2014_embedded}, at the price
+of a very low output rate ($K_D$ of $10^4$ to $10^5$: 80\,000 in Spartan-6
+and 135\,000 in Cyclone~V in Petura's implementation, about 430\,000 in
+Fischer and Lubicz's design for 0.997~bit of entropy). The
+\textbf{multi-ring} generator of Sunar, Martin and
+Stinson~\cite{sunar_2007_provably} XORs many rings sampled by a reference
+clock; Wold and Tan~\cite{wold_2009_analysis} added a flip-flop per ring
+before the XOR and reported 100~Mbit/s in under 100 logic elements. Its
+weakness was exposed by Bochard \emph{et al.}~\cite{bochard_2010_true}:
+part of the apparent randomness is \emph{pseudo}-randomness from the
+interaction of rings at different frequencies, and the independence the
+proof assumes does not hold on an FPGA. \textbf{Coherent sampling} (COSO)
+uses two rings of nearly equal period and counts the beat~\cite{kohlbrenner_2004_embedded,
+valtchanov_2009_enhanced}; its model gives min-entropy directly from the
+distribution of the count~\cite{peetermans_2021_configurable}, and
+dynamic calibration of reconfigurable rings makes it portable across
+devices and placements (3.30~Mbit/s in Spartan-6, 4.65~Mbit/s in
+Spartan-7)~\cite{peetermans_2019_portable, peetermans_2021_configurable}.
+The \textbf{transition-effect ring} (TERO) counts how many times a
+bistable structure oscillates before settling~\cite{varchola_2010_new},
+with a full physical-to-stochastic model~\cite{bernard_2019_physical};
+the \textbf{self-timed ring} (STR) circulates several events in an
+asynchronous ring to obtain phases spaced by the order of the
+jitter~\cite{cherkaoui_2013_very}, reaching 154~Mbit/s; and the
+\textbf{ES-TRNG} of Yang \emph{et al.} uses the carry chain as a
+time-to-digital converter to encode the edge position with 10~LUTs and
+5~flip-flops~\cite{yang_2018_estrng, rozic_2015_highly}.
+
+Table~\ref{tab:petura} reproduces the comparison Petura \emph{et al.}
+made of the AIS-compliant cores on one device~\cite{petura_2016_survey}.
+The entropy column is a statistical estimate (the AIS~31 T8 test), not a
+model bound; the feasibility column is the authors' qualitative note,
+where COSO and TERO score worst because they need manual adjustment per
+device. No comparable table exists for Artix-7; the open OpenTRNG project
+implements ERO, multi-ring and COSO on an Arty~A7 with the same XC7A35T
+die as the Basys~3 but publishes neither entropy nor throughput
+figures~\cite{opentrng_2025_docs}.
+
+\begin{table}[htbp]
+\centering
+\caption{AIS-compatible TRNG cores on Xilinx Spartan-6 (45~nm), after
+Petura \emph{et al.}~\cite{petura_2016_survey}, Table~II. Entropy is the
+T8 estimate; ``feasibility'' is the authors' rank (1 best).}
+\label{tab:petura}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Core & LUT/reg. & Power (mW) & Rate (Mbit/s) & Entropy/bit & Feasib. \\
+\midrule
+ERO  & 46/19   & 2.16  & 0.0042 & 0.999 & 5 \\
+COSO & 18/3    & 1.22  & 0.54   & 0.999 & 1 \\
+MURO & 521/131 & 54.72 & 2.57   & 0.999 & 4 \\
+PLL  & 34/14   & 10.6  & 0.44   & 0.981 & 3 \\
+TERO & 39/12   & 3.31  & 0.625  & 0.999 & 1 \\
+STR  & 346/256 & 65.9  & 154    & 0.998 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Stochastic models and entropy bounds}
+\label{sec:soa_models}
 
-% TODO
+The requirement that a physical generator come with a \emph{stochastic
+model} --- a mathematical description of the noise source from which the
+entropy of the output can be derived --- was introduced by Killmann and
+Schindler~\cite{killmann_2008_design, schindler_2002_evaluation} and is
+mandatory in AIS~20/31. For ring oscillators the reference model is
+Baudet \emph{et al.}~\cite{baudet_2011_security}: the phase of the sampled
+ring is a Wiener process with drift $\mu$ and volatility $\sigma^2$, the
+sampled bit is the half-period the phase falls in, and everything depends
+on the quality factor $Q=\sigma^2\Delta t$ (accumulated phase variance
+between samples) and the frequency ratio $\nu=\mu\Delta t$. The model
+gives the bit probability conditioned on the previous phase, the
+probability of any output vector, and a lower bound on the Shannon
+entropy rate, $H \ge 1 - \frac{4}{\pi^2\ln 2}e^{-4\pi^2 Q}$, whose exact
+status is examined in Chapter~\ref{ch:ch3_entropy}. Petura \emph{et al.}
+rewrite it in design quantities, $H = 1 - \frac{4}{\pi^2\ln2}\exp(-\pi^2
+\sigma_{th}^2 K T_2/T_1^3)$, and Fischer and Lubicz invert it to obtain
+the divider $K_D$ from a measured jitter~\cite{fischer_2014_embedded}. Ma
+\emph{et al.} give an alternative model used by the Leuven
+group~\cite{ma_2014_entropy}; Haddad \emph{et al.} question the mutual
+independence of jitter realizations on which these cancellations
+rest~\cite{haddad_2014_assumption}; and Saarinen warns that Baudet's bound
+``is never lower than 0.415 even when $Q$ approaches zero'' and is safe
+only under additional assumptions, proposing a bound valid over the whole
+range~\cite{saarinen_2021_entropy}.
+
+Two refinements matter for a design. First, not all jitter is entropy.
+Fischer and Lubicz separate the accumulated phase variance into a
+random-walk term, linear in time, produced by thermal (white) noise, and
+flicker ($1/f^\beta$) terms whose variance grows quadratically and
+dominate at long accumulation times~\cite{fischer_2014_embedded};
+deterministic, global jitter from the supply and substrate behaves like
+the latter and can be known or induced by an
+adversary~\cite{fischer_2008_enhancing}. Only the linear term may be
+credited, which is why a divider cannot be made arbitrarily large to
+compensate a weak source. Second, every embedded measurement is
+\emph{differential}: two rings sharing a supply see the same global
+jitter, which cancels in their relative phase, leaving the sum of their
+local jitters. Lubicz and Sk\'orski formalize this ``jitter transfer
+principle'' and show that with two rings one obtains only the sum, while
+three rings and three pairwise measurements recover the individual
+variances; their experiment also shows the assumption of variance linear
+in period failing by a factor of two in one case~\cite{lubicz_2024_jitter}.
 
 \section{Embedded jitter measurement}
+\label{sec:soa_jitter}
 
-% TODO
+Oscilloscopes cannot resolve the picoseconds of jitter of a ring inside a
+chip without an external divider~\cite{benea_2024_flicker}, so the useful
+methods measure from within. The \textbf{counter method} counts periods of
+one ring in a fixed window of the other; the variance of the count grows
+with the accumulated relative jitter~\cite{killmann_2008_design,
+lubicz_2015_towards}, with a quantization floor of one count and
+contamination by flicker at long windows. The method of \textbf{Fischer
+and Lubicz}~\cite{fischer_2014_embedded} needs no divider: in $K\approx10^4$
+blocks of $N\approx100$ bits sampled at $K_D=1$, the fraction of pairs
+$(b_j,b_{j+M})$ that differ tracks the phase accumulated over $M$ periods,
+and its variance across blocks, plotted against $M$ between 200 and 1600,
+gives the jitter per period with an error under 5\,\% in simulation; on a
+Cyclone~III they measured $\sigma=5.01$~ps per 7.81~ns period, and showed
+that cooling the chip reduces $\sigma$ --- which makes the same measurement
+an online test. \textbf{Coherent sampling} yields the accumulated jitter
+from the variance of the beat count with no extra
+hardware~\cite{peetermans_2021_configurable}. Most recently Benea
+\emph{et al.} characterize the jitter of rings with the \textbf{Allan
+variance}, fitting $\sigma_t^2(t)=a_0+a_1 t+a_2 t^2$ to separate
+quantization, thermal and flicker terms, and do so both on an Artix-7
+--- the FPGA family of this work --- and on a 28~nm FD-SOI circuit, with
+data and scripts released~\cite{benea_2024_flicker}. Published per-period
+jitter figures cluster at 2--4~ps for periods of 4--8~ns in Spartan-6 and
+Cyclone~V~\cite{petura_2016_survey}, 5~ps in Cyclone~III measured
+embedded~\cite{fischer_2014_embedded}, and 2--2.5~ps in Cyclone~III and
+Virtex-5 for self-timed rings~\cite{cherkaoui_2013_very}; the Artix-7
+coefficients of Benea \emph{et al.} are published in counter units, not
+seconds, so an absolute figure for the XC7A35T remains to be measured.
 
 \section{Standards: AIS 20/31 v3.0 and NIST SP 800-90B}
+\label{sec:soa_standards}
 
-% TODO
+Two documents govern how a physical generator is assessed. The German
+\textbf{AIS~20/31}, in its version~3.0 of September 2024~\cite{peter_2024_ais31},
+replaces the 2011 requirement of 0.997~bit of Shannon entropy per
+internal bit~\cite{killmann_2011_ais31} with a choice in class PTG.2:
+Shannon entropy $\ge0.9998$ and/or min-entropy $\ge0.98$, together with
+$P(1)\in(0.493, 0.507)$; the BSI's transition policy allows new
+evaluations under the old version only until March
+2026~\cite{bsi_2025_transition}. Its requirements are structural as much
+as numerical: a verifiable stochastic model is mandatory; the online test
+must be derived from the model, failing with high probability when the
+source parameter leaves the admissible set; a total-failure test must
+detect entropy collapsing to zero, and the repetition-count test of
+SP~800-90B is explicitly accepted for it; and the black-box suite
+$T_{\mathrm{irn}}$ now includes two of NIST's predictors (MultiMMC and
+LZ78Y), a deliberate harmonization~\cite{peter_2024_ais31, schindler_2024_ecw}.
+
+The American \textbf{SP~800-90B}~\cite{turan_2018_sp80090b} estimates
+\emph{min-entropy} --- the adversarial quantity, $-\log_2$ of the most
+probable value --- from at least one million raw samples and a
+1000$\times$1000 restart matrix, using the most-common-value estimator
+if the source is shown to be i.i.d.\ and otherwise the minimum of ten
+estimators, four of them predictors that try to guess the next sample.
+It approves two continuous health tests and requires no others: the
+Repetition Count Test with cutoff $C=1+\lceil-\log_2\alpha/H\rceil$ and the
+Adaptive Proportion Test over a window of 1024 samples for binary sources
+(512 for non-binary), $C=1+\mathrm{CRITBINOM}(W,2^{-H},1-\alpha)$, with
+$\alpha=2^{-20}$ recommended. It lists the conditioning components whose
+output may claim full entropy --- HMAC, CMAC, CBC-MAC, approved hashes and
+the two derivation functions of SP~800-90A --- and gives the formula for
+the entropy of a conditioned output as a function of input length, input
+entropy and internal width. The reference implementation of the
+estimators is public~\cite{nist_ea_github}.
+
+The two standards agree on what the older statistical suites cannot do.
+SP~800-22~\cite{bassham_2010_sp80022} tests uniformity and independence of
+a bit stream; a deterministic generator with zero entropy passes it by
+construction, and so does a weak physical source behind a cryptographic
+post-processor~\cite{saarinen_2021_entropy}. NIST's 2022 decision to
+revise the publication states the point in so many words, ``rejecting its
+use for assessing cryptographic random number generators''~\cite{nist_2022_decision}.
+The empirical record agrees: a certified smart-card generator showed
+consistent biases while passing most tests~\cite{hurleysmith_2018_certifiably,
+hurleysmith_2018_great}, and the ESP32's generator passes the same
+screenings with its radio off, when Espressif's own documentation says it
+returns pseudo-random values~\cite{espressif_idf_random, espressif_trm_esp32,
+blancoromero_2026_entropy}. The academic literature on that generator
+applies only SP~800-22 or Dieharder~\cite{castillo_2026_automated,
+hidayatulloh_2024_performance}; no SP~800-90B characterization of it was
+found.
 
 \section{Symmetric cores for constrained hardware}
+\label{sec:soa_cores}
 
-% TODO
+The engine needs a block cipher and, if it uses one, a hash. For AES-128
+(ten rounds~\cite{nist_2023_fips197}) the design space runs from
+fully unrolled pipelines for throughput to 8-bit datapaths for area:
+Good and Benaissa report 124 slices and two block RAMs at 2.2~Mbit/s on
+a Spartan-II at one extreme and 25~Gbit/s at the
+other~\cite{good_2005_fastest}; Chodowiec and Gaj's compact design uses 222
+slices and three block RAMs~\cite{chodowiec_2003_compact}; and the
+smallest ASIC realizations reach 2.4~kGE with an 8-bit datapath at 226
+cycles per block~\cite{moradi2011pushing}, following the composite-field
+S-box line of Satoh~\cite{satoh_2001_compact}, Canright~\cite{canright_2005_compact}
+and Boyar--Peralta~\cite{boyar_2010_minimization}. The composite-field
+constructions optimize ASIC gate counts and lose their advantage in an
+FPGA LUT, where a direct table is both faster and simpler. Open
+reference designs with published Artix-7 figures exist: a one-round-per-cycle
+encryptor at 1104~LUTs and 294~MHz~\cite{hadipour_aesvhdl}, and a 32-bit
+iterative encryptor/decryptor at 2298 slices and 97~MHz~\cite{strombergson_aes}.
+For an engine whose output leaves through an I2C link, any of these is
+far faster than the link, and the choice is dictated by verifiability and
+area, not speed.
+
+SHA-256~\cite{nist_2015_fips1804} in its iterative form costs about 750
+slices at 108~MHz on Artix-7~\cite{strombergson_sha256}, comparable to a
+compact AES; its role in a generator would be as the vetted conditioner of
+SP~800-90B. The deterministic generators of
+SP~800-90A~\cite{barker_2015_sp80090ar1} --- Hash\_DRBG, HMAC\_DRBG and
+CTR\_DRBG --- differ mainly in cost: CTR\_DRBG with AES-128 keeps a state
+of 256~bits plus a counter and produces 128~bits per block encryption,
+Hash\_DRBG needs 440-bit modular additions, and HMAC\_DRBG two hash
+compressions per output block. Without a derivation function CTR\_DRBG
+requires full-entropy input of exactly the seed length; with one, the
+usual configuration in practice, it accepts arbitrary input. Woodage and
+Shumow's analysis warns that the standard's flexibility permits choices
+that worsen state leakage and recommends updating after every generate
+and reseeding far below the $2^{48}$ limit~\cite{woodage_2019_analysis};
+SP~800-90C, final since 2025, frames how a physical source and a DRBG
+combine~\cite{barker_2025_sp80090c}. For authentication, AES-CMAC
+(SP~800-38B~\cite{nist_2016_sp80038b}, RFC~4493~\cite{song_2006_rfc4493})
+costs one block encryption per message block and is itself a vetted
+conditioner. The official vectors for all of these are
+public~\cite{nist_cavp_blockciphers, nist_cavp_modes, nist_cavp_drbg,
+nist_acvp_server}.
 
 \section{Commercial secure elements}
+\label{sec:soa_se}
 
-% TODO
+The product category this engine belongs to exists. A secure element is
+a small integrated circuit that generates and stores keys and performs
+symmetric and asymmetric operations for a host microcontroller, almost
+always over I2C. Four parts dominate the low-cost segment: Microchip's
+ATECC608B, NXP's SE050, Infineon's OPTIGA Trust~M and ST's STSAFE-A110~\cite{microchip_atecc608b_ds,
+nxp_se050_ds, infineon_optiga_trustm_ds, st_stsafe_a110_ds}. The
+ATECC608B, at 0.90~\$ in single units~\cite{digikey_prices_2026}, offers
+AES-128, SHA-256/HMAC, ECDSA/ECDH on P-256, sixteen key slots and an I2C
+interface, and its entropy source holds a NIST validation under
+SP~800-90B, obtained precisely with ring oscillators~\cite{nist_esv_e46}.
+Two of its competitors make no reference to SP~800-90 in their datasheets;
+the third states that its generator is ``designed to meet'' the standard.
+The lesson for this work is where an academic design can and cannot
+compete: not on price, where a certified part costs less than a euro, but
+on the transparency of the entropy, which is exactly what a black-box part
+cannot offer and what the standards now demand.
 
 \section{From FPGA to ASIC: what changes in the entropy source}
+\label{sec:soa_asic}
 
-% TODO
+Digital logic ports from an FPGA to standard cells with a known penalty
+--- Kuon and Rose measured 40$\times$ in area, 3.2$\times$ in delay and
+12$\times$ in dynamic power for logic-only designs in 90~nm, and 27--49$\times$
+in area for AES specifically~\cite{kuon2006}; the ring oscillator does not
+port at all, because in silicon it is built from inverter cells whose
+noise, variability and coupling differ from a LUT chain. Three published
+findings define what a silicon implementation must add. Benea
+\emph{et al.} show that flicker noise, whose weight grows in newer nodes,
+changes the character of the jitter and, against expectation, that
+treating it as a legitimate source can raise throughput fourfold at equal
+entropy~\cite{benea_2024_flicker}. Yang, Blaauw and Sylvester show that
+process variation --- larger in 40~nm than in 180~nm --- must be absorbed
+by a configurable ring with a tuning loop for the generator to survive
+$-40$ to 120~$^\circ$C and 0.6 to 0.9~V~\cite{yang_2016_jssc}. And two
+attacks show why a security device cannot ignore its environment: a
+frequency injected on the supply locks the rings and removed the jitter
+of a commercial secure microcontroller, reducing its key space from
+$2^{64}$ to 3300~\cite{markettos_2009_frequency}, and a few hundred
+microwatts of radiated field biased a fifty-ring generator until it
+failed every test~\cite{bayon_2012_contactless}; the published defence
+combines supply filtering with the same calibration loop~\cite{yang_2016_jssc},
+and device aging under bias-temperature instability and hot-carrier
+injection degrades poorly-timed generators over years while leaving
+well-timed ones intact.
+
+Access to silicon is more open than it appears. The University of Sevilla
+and IMSE-CNM are members of Europractice~\cite{europractice_memberlist},
+whose academic price list is public: a mini@sic block costs 3\,430~\texteuro{}
+in UMC~180~nm and 3\,691~\texteuro{} in TSMC~65~nm, and IHP's SG13G2 is
+offered at 5\,110~\texteuro{}/mm$^2$ with a free run for open-source designs
+under 2~mm$^2$~\cite{europractice_prices2026, europractice_minisic,
+ihp_openpdk}. The institute's hardware-security area has already taken
+ring-oscillator primitives from Xilinx 7-series FPGAs, evaluated with
+SP~800-22 and SP~800-90B, to characterized 65~nm silicon~\cite{imse_area_hwsec,
+martinez2022efficientropuf, ortega2024vlsi65nm, ortega2026ropuf65nm}, and
+has fabricated cryptographic circuits before~\cite{mora2020trivium}. The
+open standard-cell libraries that make a synthesis chapter possible ---
+IHP SG13G2, SkyWater SKY130, GlobalFoundries GF180MCU and the predictive
+Nangate 45~nm --- come with liberty, LEF and GDS views, and the literature
+compares such designs in gate equivalents normalized to the minimum NAND2
+of the library~\cite{ihp_openpdk_repo, skywater_pdk_cells, gf180mcu_pdk,
+nangate45, kaps2019lwc}, with the caution that logic-synthesis area is a
+lower bound that grows by a factor of 1.7 to 4.6 to routed core area.
 
 \section{Gap addressed by this work}
+\label{sec:gap}
 
-% TODO
+No absolute novelty is claimed. The ERO and its model, the embedded
+jitter measurement, the survey of AIS-compliant cores, the calibrated
+COSO on 7-series devices and an open implementation on the very die of
+the Basys~3 all exist, and the institute's own group has crossed from
+7-series FPGAs to 65~nm silicon with ring-oscillator primitives. What was
+\emph{not found} in the literature consulted, and what this work sets out
+to provide in a modest but verifiable way, is the following.
 
+\begin{enumerate}
+\item A per-period jitter figure for the Artix-7 XC7A35T in absolute
+units, obtained inside the device with a differential method, with the
+thermal and flicker components separated and with stated uncertainty ---
+the published Artix-7 coefficients being in counter units.
+\item The complete chain \emph{measured jitter $\to$ quality factor $\to$
+min-entropy bound $\to$ divider $\to$ health-test cutoffs}, applied to one
+platform and confronted with the ten non-i.i.d.\ estimators of SP~800-90B
+and with the PTG.2 requirements of AIS~20/31 \emph{version~3.0}, which
+most of the earlier literature could not use.
+\item An SP~800-90B characterization of the ESP32 generator in its
+operating states, and a controlled comparison between a white-box FPGA
+source and a black-box commercial one under the same methodology.
+\item The use of a commodity microcontroller with its own cryptographic
+accelerators as an independent oracle for an FPGA engine, over a real
+bus, with known-answer, interoperability and challenge-response tests.
+\item A single-primitive key-generation engine --- AES for conditioning,
+generation and authentication --- written as portable RTL, verified
+against official vectors, synthesized on an open 130~nm library with the
+result stated as a lower bound, and costed for an academic shuttle.
+\end{enumerate}
+
+Each item is formulated as ``not found'' rather than ``does not exist''.
+One earlier claim of this kind in the working notes --- that no Artix-7
+jitter measurement had been published --- had to be corrected when
+Benea \emph{et al.}'s paper was found, and the correction is kept visible
+there.
