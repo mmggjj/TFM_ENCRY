@@ -39,6 +39,10 @@ def arregla(m: re.Match) -> str:
         nuevo = re.sub(r"(?<!\\)&", r"\\&", nuevo)
         nuevo = re.sub(r"(?<!\\)%", r"\\%", nuevo)
         nuevo = re.sub(r"(?<!\\)#", r"\\#", nuevo)
+        # ^ y ~ fuera de modo matematico rompen pdfLaTeX ("Missing $"):
+        # aparecian en notas como "kGates/mm^2".
+        nuevo = re.sub(r"(?<!\\)\^", r"\\^{}", nuevo)
+        nuevo = re.sub(r"(?<!\\)~", r"\\~{}", nuevo)
     for k, v in SUSTITUCIONES.items():
         nuevo = nuevo.replace(k, v)
     return f"{nombre} = {{{nuevo}}}"
