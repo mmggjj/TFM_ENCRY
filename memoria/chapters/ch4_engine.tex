@@ -1,33 +1,219 @@
 \chapter{Digital Engine}
 \label{ch:ch4_engine}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT v1] Source material: docs/arquitectura.md (sec. 9), docs/mapa_registros.md,
+% docs/estado_del_arte_cripto.md, rtl/ (aes, drbg, trng, io, top).
+
+The digital engine turns raw bits from the entropy source into keys and
+uses them, and it is written so that the same \ac{RTL} runs on the FPGA
+used for verification and, later, on standard cells. Nothing in it is
+tied to a vendor: no primitives, no memory macros, no clock-management
+blocks. The only technology-dependent block of the whole design is the
+pair of ring oscillators of Chapter~\ref{ch:ch3_entropy}.
 
 \section{Architecture and the single-primitive decision}
+\label{sec:arch}
 
-% TODO
+Figure~\ref{fig:engine} summarizes the data path. Raw bits leave the
+\ac{ERO} in the clock domain of the sampling ring, cross to the system
+clock one bit at a time, and feed three consumers: the health tests, the
+seed collector of the deterministic generator, and a capture buffer used
+only for characterization. Keys come out of a \ac{CTRDRBG}; the current
+key is loaded into an AES-CMAC block that answers challenges; and an
+\ac{I2C} slave exposes everything as a register map.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=6mm and 8mm, >=Stealth,
+  bloque/.style={draw, rounded corners=2pt, minimum height=8mm, minimum width=19mm, align=center, font=\small},
+  flecha/.style={->, thick}]
+\node[bloque] (ro) {RO1, RO2\\(LUT / transistor)};
+\node[bloque, right=of ro] (ero) {ERO\\sampler $\div K_D$};
+\node[bloque, right=of ero] (cdc) {bit CDC};
+\node[bloque, above right=of cdc] (ht) {Health tests\\RCT, APT};
+\node[bloque, right=of cdc] (seed) {Seed collector\\384 bits};
+\node[bloque, below right=of cdc] (cap) {Capture\\4096 bits};
+\node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
+\node[bloque, right=of drbg] (cmac) {AES-CMAC};
+\node[bloque, below=12mm of drbg] (i2c) {I2C slave\\register map};
+\draw[flecha] (ro) -- (ero); \draw[flecha] (ero) -- (cdc);
+\draw[flecha] (cdc) -- (ht); \draw[flecha] (cdc) -- (seed);
+\draw[flecha] (ero) |- (cap);
+\draw[flecha] (seed) -- (drbg) node[midway, above, font=\scriptsize] {entropy, nonce};
+\draw[flecha] (drbg) -- (cmac) node[midway, above, font=\scriptsize] {key};
+\draw[flecha, <->] (i2c) -- (drbg); \draw[flecha, <->] (i2c) -| (cmac);
+\draw[flecha, <->] (i2c) -| (cap); \draw[flecha] (ht) -| (i2c);
+\end{tikzpicture}
+\caption{Data path of the engine. Only the ring oscillators are technology
+dependent; every other block is portable RTL.}
+\label{fig:engine}
+\end{figure}
+
+The decision that shapes the whole engine is to use \textbf{one
+cryptographic primitive, AES-128, for the three jobs}: conditioning the
+entropy, generating keys and authenticating. The first architecture had
+a SHA-256 core as conditioner; the synthesis estimates of
+Chapter~\ref{ch:ch6_asic} showed that it would take almost half the
+digital area, and SP~800-90B lists AES-based constructions --- CMAC,
+CBC-MAC and the block-cipher derivation function of SP~800-90A --- among
+its \emph{vetted} conditioning components~\cite{turan_2018_sp80090b}.
+Dropping the hash brings the engine from an estimated $\sim$25 to
+$\sim$13~\acp{GE} (thousands), at the price of moving from a
+\ac{CTRDRBG} \emph{without} derivation function, which needs full-entropy
+input, to one \emph{with} it, which is the common configuration in
+practice and accepts non-full-entropy input directly. The AES core is
+encryption-only: counter mode and CMAC never decrypt, and offering
+decryption as a service to the ESP32 would be pointless since the ESP32
+has its own accelerator. Cross-verification is unaffected: the engine
+encrypts and the ESP32 decrypts with mbedtls.
 
 \section{AES-128 encryption core}
+\label{sec:aes}
 
-% TODO
+The core is iterative, one round per clock cycle, eleven cycles per block
+(initial key addition plus ten rounds), with the round keys expanded on
+the fly from the previous one --- forward expansion is all that
+encryption needs, and it saves storing eleven round keys. At 100~MHz that
+is 1.16~Gbit/s of core throughput, far above what any \ac{I2C} link can
+carry, so pipelining would be wasted area; the iterative form is chosen
+instead because one round is a pure combinational function that can be
+checked directly against the standard~\cite{nist_2023_fips197}. The
+S-box is a 256-entry table synthesized as logic, MixColumns is written as
+the usual \texttt{xtime} network, and the state follows the column-major
+convention of FIPS~197 with byte~0 on the left, so that hexadecimal
+strings in the standard map one-to-one onto the VHDL vectors.
+
+The core was verified against the five official vectors available for
+AES-128 encryption (FIPS~197 appendices~B and~C.1, and the three ECB
+blocks of SP~800-38A F.1.1) and against a chain of one thousand
+encryptions to expose any state left over between blocks. A check that
+had not been planned turned out to be the most convincing: the
+encryption of the all-zero block under the SP~800-38A example key gave
+\texttt{7df76b0c\ldots546f}, which is exactly the intermediate value $L$
+published by NIST in its CMAC examples~\cite{nist_cmac_examples}.
 
 \section{AES-CMAC}
+\label{sec:cmac}
 
-% TODO
+AES-CMAC~\cite{nist_2016_sp80038b, song_2006_rfc4493} is the primitive of
+the challenge-response: the ESP32 sends a nonce, the engine returns its
+tag under the current key. The block computes the sub-keys $K_1$, $K_2$
+once when a key is loaded (one encryption of the zero block and two
+conditional left shifts with the polynomial constant \texttt{0x87}) and
+then runs CBC-MAC over the message, applying $K_1$ to a complete last
+block or padding with \texttt{0x80} and applying $K_2$ otherwise. It was
+chosen over HMAC-SHA-256 because it reuses the only primitive and costs
+one encryption per block against two hash compressions. The block passes
+the four vectors of RFC~4493 (empty message, one block, 40 and 64 bytes),
+which exercise both padding paths.
 
 \section{CTR\_DRBG with derivation function}
+\label{sec:drbg}
 
-% TODO
+The generator implements CTR\_DRBG with AES-128 and the block-cipher
+derivation function of SP~800-90A~\cite{barker_2015_sp80090ar1}. Its
+input format is fixed on purpose: 256~bits of raw entropy and 128~bits of
+nonce, so that $S = L\,\|\,N\,\|\,E\,\|\,\mathit{nonce}\,\|\,\texttt{0x80}\,\|\,0\ldots$
+is exactly four blocks and the derivation function becomes a closed
+sequence of fourteen encryptions; a variable-length input would cost a
+byte-oriented datapath for no benefit. Instantiation (or reseed) costs
+14~AES operations, 183~cycles; generating 256~bits costs four, 53~cycles.
+The state (Key, V) is never exposed; the reseed counter is readable so
+that the host can enforce a reseed policy far below the $2^{48}$ limit of
+the standard.
+
+Verification proceeded in two steps. First, a bit-exact reference model
+was written in Python --- with its own AES, independent from the VHDL ---
+and run against the CAVP vectors: 960 AES-128 cases with and without
+derivation function, with and without reseed, all passing. Second, that
+model generated the expected outputs for the fixed input layout of the
+hardware, and the VHDL reproduced them: two consecutive generations, a
+reseed followed by a generation, the reseed counter, and the fact that a
+new instantiation erases the previous state.
 
 \section{Health tests}
+\label{sec:health}
 
-% TODO
+The two tests approved by SP~800-90B run continuously on the raw
+bits~\cite{turan_2018_sp80090b}. The Repetition Count Test fails when
+$C_{\mathrm{RCT}} = 1 + \lceil -\log_2\alpha / H \rceil$ identical samples
+arrive in a row; the Adaptive Proportion Test counts, in a window of
+$W = 1024$ samples (the binary-source value; 512 is for non-binary
+sources), how many repeat the first one, and fails at
+$C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. For the
+design target $H = 0.98$ and $\alpha = 2^{-20}$ these are $C_{\mathrm{RCT}}
+= 22$ and $C_{\mathrm{APT}} = 596$; both are generics, because $H$ is set
+from the \emph{measured} min-entropy, not assumed. The proportion test
+also checks the complement of the count, which the standard permits for
+binary sources: a source stuck at the value opposite to the window's
+first sample would otherwise score zero and pass. Alarms are sticky until
+explicitly cleared, and while any alarm is raised the sequencer refuses
+to seed.
+
+The testbench injects the failure modes the tests exist for: a healthy
+source passes twenty windows (worst run 13, worst proportion 540); a
+stuck source trips the repetition test at exactly sample~22; a source
+biased to 70\,\% trips the proportion test at 713 without tripping the
+repetition test; and a source stuck at the complement is caught. The
+first ``healthy'' source of the bench --- a shift register seeded with a
+single one --- was itself caught by the tests, with a start-up run of 27
+zeros and a first window at 76\,\%. The detector was right and the bench
+was wrong; the source now starts from a dense seed and is warmed up.
 
 \section{Capture path and clock-domain crossings}
+\label{sec:cdc}
 
-% TODO
+Raw bits are produced in the clock domain of RO2 and consumed in the
+system domain. The bit-serial path to the health tests and the seed
+collector uses a toggle synchronizer: the source registers the bit and
+inverts a flag; the destination synchronizes the flag through three
+flip-flops and reads the bit on the flag's edge. It requires each bit to
+last at least eight system cycles, i.e.\ $K_D \ge 64$ for a $\sim$700~MHz
+sampling ring at 100~MHz, which the generator mode satisfies by orders of
+magnitude. The characterization path does not cross bit by bit: the
+capture buffer is written in the ring domain at full rate into a 4096-bit
+memory and read out in the system domain afterwards, with the two
+directions of the handshake carried by toggle flags. Writing and reading
+never overlap, so no asynchronous FIFO is needed, and the buffer size
+follows from Section~\ref{sec:estimator}: one chunk of $N + M_{\max}$
+bits is all the estimator needs.
 
 \section{I2C register interface and command sequencer}
+\label{sec:i2c}
 
-% TODO
+The product interface is \ac{I2C}, as in commercial secure elements: two
+pins, addressable, and the bus the ESP32 uses for its peripherals. The
+slave implements the register-pointer protocol with auto-increment, a
+five-sample glitch filter on both lines as the specification requires,
+and open-drain outputs. It does not stretch the clock: at 400~kHz there
+are 250 system cycles per bit, plenty for any register access, and long
+operations (seeding, generation) are issued as commands and polled
+through a status register, which is how commercial devices behave. The
+slave was tested with a bus-functional master; two real defects surfaced
+--- the pointer did not auto-increment on multi-byte writes, and the most
+significant bit of each read byte was driven one clock edge late, so
+every read would have been shifted --- and were fixed.
 
+The register map (Appendix~\ref{app:regs}) exposes identification,
+status and control, the divider and capture-page configuration, the
+health-test diagnostics, the reseed counter, the challenge and its tag,
+the last 256 bits generated and, \emph{only while a test pin is
+asserted}, the current key and the capture buffer. In the FPGA the test
+pin is a switch; in an integrated circuit it would be a fuse blown at
+production, because exposing either the key or the raw entropy is a
+vulnerability. A small sequencer serializes the commands: seeding
+collects 384 raw bits, aborts if a health alarm rises meanwhile, and
+instantiates or reseeds the generator; generation takes 256 bits, makes
+the first 128 the key and reloads the CMAC sub-keys; authentication runs
+the CMAC over the challenge block.
+
+The whole engine was exercised as the ESP32 will exercise it: a
+bus-functional \ac{I2C} master reads the identification, configures the
+divider, seeds, generates, reads the key in test mode, writes two
+challenges and reads their tags, generates again, captures raw bits and
+verifies that the key is unreadable without the test pin --- sixteen
+checks. What a VHDL bench cannot know is whether the tags are
+\emph{correct}, because the key came from ring-oscillator noise; the
+bench dumps key, challenges and tags to a file and a Python script
+recomputes the CMACs with the independent AES. They match. That is the
+same cross-check the ESP32 performs on hardware with mbedtls.

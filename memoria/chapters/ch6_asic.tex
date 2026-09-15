@@ -1,25 +1,170 @@
 \chapter{Path to an Integrated Circuit}
 \label{ch:ch6_asic}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT v1] Source material: docs/sintesis_resultados.md, docs/via_asic.md,
+% synth/sintetiza.py, results/sintesis_sg13g2.csv.
+
+The engine is designed to end up as a dedicated integrated circuit that
+serves keys to a microcontroller, and the FPGA is its verification
+vehicle, not its destination. This chapter takes the same VHDL that
+passes the testbenches of Chapter~\ref{ch:ch5_verification}, synthesizes
+it on an open standard-cell library, and states what a fabrication run
+would cost and what would have to change in the entropy source. A
+tape-out is explicitly out of scope of this thesis --- not for cost or
+area, as will be seen, but for schedule --- and everything here is
+labelled as what it is: a lower bound on area from logic synthesis, with
+the growth factors to core area taken from published data.
 
 \section{Standard-cell synthesis flow}
+\label{sec:synthflow}
 
-% TODO
+The flow is deliberately reproducible with free tools. Yosys reads the
+VHDL through the GHDL front end, synthesizes each block flattened, maps
+flip-flops and logic onto the liberty file of the target library and
+reports cell count and area. The library is the open \ac{PDK} of IHP,
+SG13G2, a 130~nm BiCMOS process with a maintained standard-cell library,
+compiled SRAM macros, I/O cells and OpenROAD support, chosen because it is
+the one open \ac{PDK} that is alive, European and reachable through the
+same Europractice membership the university already holds. The gate
+equivalent is read from the liberty file itself rather than from memory:
+$1~\mathrm{GE} = $ area of \texttt{sg13g2\_nand2\_1} $= 7.2576~\mu\mathrm{m}^2$.
+No clock constraint is applied: Yosys does not use one for area, so the
+figures do not depend on a target frequency. The ring oscillators are not
+synthesized; they are the one block designed at transistor level
+(Chapter~\ref{ch:ch3_entropy}).
 
 \section{Area per block in gate equivalents}
+\label{sec:area}
 
-% TODO
+Table~\ref{tab:synth} gives the result for each block. The digital
+engine --- everything except the capture buffer --- is about
+\textbf{62~kGE}, and AES is 51\,\% of it: the authenticator and the
+generator each instantiate their own encryption core, 15.8~kGE apiece.
+The capture buffer is reported for completeness but must not be read as
+part of the product: its 46.7~kGE are a 4096-bit memory mapped onto
+flip-flops because the flow has no SRAM macros. In the FPGA it occupies a
+block RAM at no logic cost; in silicon it would be a compiled SRAM or,
+more sensibly, a much smaller buffer, because it is a test path that is
+disabled at production.
+
+\begin{table}[htbp]
+\centering
+\caption{Logic synthesis on IHP SG13G2, flattened, no routing.
+1~GE $=7.2576~\mu\mathrm{m}^2$. Lower bound on area \simu{}.}
+\label{tab:synth}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Block & Cells & Flip-flops & Area ($\mu\mathrm{m}^2$) & kGE \\
+\midrule
+AES-128 encryption core       & 10\,439 & 262   & 114\,771 & 15.81 \\
+AES-CMAC (with its AES)        & 13\,210 & 909   & 169\,766 & 23.39 \\
+CTR\_DRBG with df (with its AES) & 17\,953 & 2\,355 & 267\,262 & 36.83 \\
+Health tests (RCT, APT)        & 568     & 85    & 8\,986   & 1.24 \\
+ERO sampler and divider        & 117     & 24    & 2\,078   & 0.29 \\
+Bit clock-domain crossing      & 11      & 7     & 408      & 0.06 \\
+I2C slave                      & 310     & 63    & 5\,507   & 0.76 \\
+\midrule
+Capture buffer (4096-bit RAM as flip-flops) & 12\,250 & 4\,140 & 339\,057 & 46.72 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The numbers are internally consistent, and that consistency is how an
+error in the flow was caught: before flattening, the report returned for
+the authenticator and for the generator the area of their AES
+sub-module alone. An authenticator weighing exactly as much as a bare AES
+is impossible, so the report, not the design, was wrong. After
+flattening, the authenticator adds to the AES 647 flip-flops (sub-keys,
+chaining state, key) and 7.6~kGE, and the generator adds 2093 flip-flops
+and 21~kGE, about half of which are its registers.
 
 \section{Optimizations and their expected savings}
+\label{sec:opt}
 
-% TODO
+The synthesis is naive on purpose --- the \ac{RTL} was written to be
+verifiable, not small --- and it points at three optimizations, in order
+of return on effort:
+
+\begin{enumerate}
+\item \textbf{One shared AES core.} The top-level sequencer already
+serializes commands: the generator and the authenticator never run at the
+same time. Sharing the core saves $\approx$15.8~kGE, a quarter of the
+engine, for a trivial arbiter.
+\item \textbf{Compact S-box datapath.} Twenty independent S-box tables
+synthesize to 15.8~kGE for the whole core; area-optimized designs in the
+literature range from 2.4~kGE for an 8-bit datapath at 226 cycles per
+block~\cite{moradi2011pushing} to about 5~kGE for 32-bit datapaths. Speed
+is irrelevant here, so a 32-bit datapath with four shared S-boxes is the
+sensible point; estimated saving, 10~kGE per core.
+\item \textbf{Fewer registers in the generator.} Of its 2355 flip-flops,
+the captured entropy and nonce (384), the seed material (256), the output
+(256) and the temporaries of the derivation function can be reduced by
+consuming the seed as a stream and sharing temporaries; roughly 800
+flip-flops, about 4~kGE.
+\end{enumerate}
+
+With the three, the digital engine falls to \textbf{$\approx$20~kGE},
+which is the order of magnitude the state of the art anticipated (13 to
+25~kGE for engines of this kind) and which, at the published growth
+factor of $\approx$2.35 from cell area to core area for an AES on this same
+library, is about 0.34~mm$^2$ of core. Each of these savings is stated as
+an estimate; measuring them by synthesizing the optimized variants is
+listed as future work, not claimed.
 
 \section{What the ring oscillator needs in silicon}
+\label{sec:ro_silicon}
 
-% TODO
+The digital blocks port with the standard flow. The entropy source does
+not, and the literature that has done the crossing --- notably a 2024
+study that characterizes the same ring model on an Artix-7 and on a 28~nm
+FD-SOI circuit~\cite{benea_2024_flicker} --- makes three points that the
+chip design must absorb.
+
+First, the ring is rebuilt from inverter cells rather than look-up tables,
+and its jitter changes in value and in character: flicker noise gains
+weight in newer nodes, and the study finds, against expectation, that
+counting it as a legitimate source can raise throughput for the same
+entropy. The stochastic model and the estimator of
+Chapter~\ref{ch:ch3_entropy} carry over unchanged; the measured $\sigma$
+does not. Second, process variation makes every die different, so the
+frequency and jitter of each ring must be calibrated per chip; the
+published all-digital designs that survive voltage and temperature
+sweeps do it with a configurable ring and a tuning loop~\cite{yang_2016_jssc}.
+Third, and most important for a security device, injecting a frequency on
+the supply locks the rings and removes the jitter: a 500~mV signal on
+the rail reduced the key space of a commercial secure microcontroller
+from $2^{64}$ to about 3300~\cite{markettos_2009_frequency}, and a few
+hundred microwatts of radiated field destroyed the statistics of a
+fifty-ring generator~\cite{bayon_2012_contactless}. The same calibration
+loop, together with supply filtering, is the published defence, and the
+health tests of Section~\ref{sec:health} are the detector of last resort.
+None of this is in the FPGA prototype; it is the work that a silicon
+implementation adds.
 
 \section{Cost and schedule of an academic shuttle}
+\label{sec:shuttle}
 
-% TODO
+Fabrication is more accessible than the size of the word suggests. The
+University of Sevilla and IMSE-CNM are members of Europractice, whose
+academic price list is public: a mini@sic block in UMC~180~nm costs
+3\,430~\euro{}, one in TSMC~65~nm 3\,691~\euro{}, and IHP SG13G2 is
+offered at 5\,110~\euro{}/mm$^2$ with a free multi-project run for
+open-source designs under 2~mm$^2$~\cite{europractice_prices2026}. An engine of
+0.3--0.4~mm$^2$ fits many times over in the smallest block of any of
+them; the chip would be limited by its pads, not its logic. The
+institute's own hardware-security group has already taken ring-oscillator
+primitives from Xilinx~7-series FPGAs to characterized 65~nm silicon,
+which makes the continuation of this work a matter of joining an
+existing line rather than opening one.
 
+What does not fit in a master's thesis is the schedule: from tape-out to
+packaged samples takes months to over a year, the price does not include
+packaging, and the characterization of the returned dies is a project in
+itself. For comparison, a commercial secure element such as the
+ATECC608B costs 0.90~\$ in single units and ships with a NIST entropy
+source validation~\cite{microchip_atecc608b_ds}; two of its direct competitors
+do not mention SP~800-90 anywhere in their datasheets. The honest
+position of this work is therefore not to compete on price but on
+\emph{transparency of the entropy}: every bit of a key produced by this
+engine can be traced to a measured jitter and a stated bound, which is
+precisely what a black-box part cannot offer.
