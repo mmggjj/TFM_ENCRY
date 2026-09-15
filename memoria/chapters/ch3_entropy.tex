@@ -1,29 +1,263 @@
 \chapter{Entropy Source: from Transistor to Min-Entropy}
 \label{ch:ch3_entropy}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT v1 -- theory and simulation only; hardware figures pending]
+% Source material: docs/modelo_ero_resultados.md, docs/arquitectura.md,
+% analysis/ero_model.py, analysis/jitter_estimator.py, analysis/spice_ring.py
+
+This chapter builds the chain that the rest of the thesis rests on: from
+the physical jitter of a ring oscillator to a defensible figure of
+min-entropy per output bit, and from that figure to the design parameters
+of the sampler. Every step is validated before it is used. The
+statistical estimators are validated against synthetic data of known
+jitter; the analytic bounds are validated against an exact numerical
+computation; and the transistor-level bench is validated by measuring its
+own resolution before anything is measured with it. All figures in this
+chapter are \simu{} unless stated otherwise; the hardware campaign is
+reported in Chapter~\ref{ch:ch7_results}.
 
 \section{The elementary ring oscillator}
+\label{sec:ero}
 
-% TODO
+The entropy source is an \ac{ERO}: a free-running ring oscillator RO1
+whose output is sampled by a flip-flop clocked by a second ring
+oscillator RO2 divided by an integer $K_D$~\cite{baudet_2011_security,
+fischer_2014_embedded}. Between two samples the phase of RO1 accumulates
+jitter for $K_D$ periods of RO2; when the accumulated jitter is
+comparable to the period of RO1, the sampled bit becomes unpredictable.
+The \ac{ERO} was chosen over higher-throughput alternatives (multi-ring
+XOR, coherent sampling, transition-effect rings) for one reason: it is
+the architecture for which a stochastic model with a provable entropy
+bound exists and for which an embedded jitter measurement method has
+been published and validated~\cite{petura_2016_survey}. Throughput is
+not a requirement here --- the engine consumes entropy only to seed a
+deterministic generator --- whereas a demonstrable bound is.
+
+A design decision that follows from the platform is that \emph{the board
+oscillator is never used as a reference}. The Basys~3 clock source is a
+MEMS oscillator with a fractional \ac{PLL} whose datasheet specifies a
+cycle-to-cycle jitter of up to 95~ps \est{}~\cite{digilent_2014_basys3rm},
+one to two orders of magnitude above the per-period jitter of a ring
+oscillator in a 28~nm process (2--4~ps \est{}~\cite{petura_2016_survey}).
+Sampling RO1 with that clock would measure the phase noise of the PLL,
+a global and potentially inducible component, rather than the thermal
+noise of the ring. RO2 therefore samples RO1, and the 100~MHz system
+clock only drives the synchronous logic.
 
 \section{Stochastic model and the quality factor}
+\label{sec:model}
 
-% TODO
+Following Baudet \emph{et al.}~\cite{baudet_2011_security}, the phase
+$\varphi(t)$ of RO1, measured in periods, is modeled as a Wiener process
+with drift $\mu$ and volatility $\sigma^2$. Between two samples separated
+by $\Delta t$ the phase advances $\nu = \mu\,\Delta t$ periods on average
+and accumulates a variance
+\begin{equation}
+  Q = \sigma^2\,\Delta t ,
+  \label{eq:Q}
+\end{equation}
+the \emph{quality factor}. The output bit is $s = 1$ when the fractional
+phase lies in $[1/2, 1)$. Conditioned on the previous phase $\varphi_0$,
+the bit is Bernoulli with
+\begin{equation}
+  P(s=1 \mid \varphi_0) = \sum_{k\in\mathbb{Z}}
+  \left[\Phi\!\left(\tfrac{k+1-\varphi_0-\nu}{\sqrt{Q}}\right) -
+        \Phi\!\left(\tfrac{k+\tfrac12-\varphi_0-\nu}{\sqrt{Q}}\right)\right],
+  \label{eq:puno}
+\end{equation}
+where $\Phi$ is the standard normal distribution function; this is the
+wrapped Gaussian evaluated exactly. Its first harmonic gives the maximum
+bias $\varepsilon_{\max} \approx (2/\pi)\,e^{-2\pi^2 Q}$, from which
+Baudet's Corollary~1 yields the well-known expression
+\begin{equation}
+  H(s \mid \varphi_0) = 1 - \frac{4}{\pi^2 \ln 2}\, e^{-4\pi^2 Q}
+  + O\!\left(e^{-6\pi^2 Q}\right).
+  \label{eq:baudet14}
+\end{equation}
 
-\section{Exact conditional entropy vs. the asymptotic bound}
+\section{Exact conditional entropy vs.\ the asymptotic bound}
+\label{sec:exact}
 
-% TODO
+Equation~\eqref{eq:baudet14} is routinely cited as a \emph{lower bound}
+on entropy per bit. Read carefully, the inequality in the corollary is
+only that the entropy rate of the sequence is at least the entropy of
+one bit conditioned on the exact previous phase; the right-hand side is
+an asymptotic expansion \emph{of} that conditional entropy, not a bound
+on it. Expanding the binary entropy in the bias,
+$h_2(\tfrac12+\varepsilon) = 1 - \tfrac{1}{\ln 2}\sum_{n\ge1}
+\tfrac{(2\varepsilon)^{2n}}{2n(2n-1)}$, and averaging over a uniform
+$\varphi_0$ with $\varepsilon = A\sin(2\pi\varphi)$,
+$A = (2/\pi)e^{-2\pi^2 Q}$, gives
+\begin{equation}
+  H(s\mid\varphi_0) = 1 - \frac{4}{\pi^2\ln 2}\,e^{-4\pi^2 Q}
+                        - \frac{8}{\pi^4\ln 2}\,e^{-8\pi^2 Q} - \cdots
+  \label{eq:orden2}
+\end{equation}
+All omitted terms are negative, so \emph{any} truncation overestimates
+the entropy; the next term decays as $e^{-8\pi^2 Q}$, not $e^{-6\pi^2 Q}$.
+Table~\ref{tab:exact} compares the exact value computed from
+\eqref{eq:puno} on a grid of 8192 phases with the first- and second-order
+expansions. Adding the second-order term reduces the error of
+\eqref{eq:baudet14} by a factor of 95 at $Q=0.10$ and 4970 at $Q=0.20$,
+which confirms the derivation.
+
+\begin{table}[htbp]
+\centering
+\caption{Conditional Shannon entropy per bit: exact wrapped-Gaussian
+computation vs.\ truncated expansions \simu{}.}
+\label{tab:exact}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$Q$ & Exact & Order 2 & Order 1 (Eq.~\ref{eq:baudet14}) & Error of order 1 \\
+\midrule
+0.02 & 0.7013194 & 0.7100952 & 0.7345213 & $+3.3\times10^{-2}$ \\
+0.05 & 0.9163001 & 0.9164920 & 0.9187783 & $+2.5\times10^{-3}$ \\
+0.10 & 0.9886728 & 0.9886733 & 0.9887174 & $+4.5\times10^{-5}$ \\
+0.15 & 0.9984319 & 0.9984319 & 0.9984327 & $+8.5\times10^{-7}$ \\
+0.20 & 0.9997823 & 0.9997823 & 0.9997823 & $+1.6\times10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In the operating region ($Q\approx0.2$) the discrepancy is $10^{-8}$ and
+irrelevant; for an under-dimensioned generator ($Q\approx0.02$) the
+truncated formula credits 3.3\,\% of entropy that does not exist. This
+thesis therefore uses the exact computation as the conservative value and
+cites \eqref{eq:baudet14} as what it is: an excellent asymptotic
+approximation for $Q \gtrsim 0.1$. The same numerical machinery shows
+that the min-entropy obtained from the first-harmonic bias,
+$H_\infty = -\log_2(\tfrac12 + \varepsilon_{\max})$, agrees with the exact
+worst-case value to better than $10^{-4}$~bit over $Q\in[0.05, 0.30]$.
+
+\subsection{Design target}
+
+AIS~20/31 version~3.0~\cite{peter_2024_ais31} admits two alternative
+criteria for class PTG.2: Shannon entropy $\ge 0.9998$ or min-entropy
+$\ge 0.98$ per internal bit. Solving both by bisection on the exact
+entropies gives $Q \ge 0.2022$ and $Q \ge 0.2286$ respectively. The
+min-entropy criterion is the more demanding one and is also the quantity
+NIST SP~800-90B works with, so it is adopted here: \textbf{the design
+target is $Q \ge 0.23$, with a set point of $Q = 0.30$} ($H_\infty =
+0.9951$), the margin covering the reduction of thermal jitter at low
+temperature, which is the standard adversarial test of Fischer and
+Lubicz~\cite{fischer_2014_embedded}.
 
 \section{Embedded jitter estimator and its two corrections}
+\label{sec:estimator}
 
-% TODO
+To choose $K_D$ one must know $\sigma^2$, and the method of Fischer and
+Lubicz~\cite{fischer_2014_embedded} measures it from the bits themselves:
+with $K_D = 1$, the fraction $c$ of pairs $(b_j, b_{j+M})$ that differ
+within a block of $N$ pairs estimates the phase accumulated over $M$
+samples, and its variance across $K$ blocks grows as $4 M Q_{\mathrm{raw}}$.
+Implemented literally, with a straight-line fit, the estimator
+\emph{underestimates} $Q_{\mathrm{raw}}$ by 13\,\% to 38\,\% depending on
+the jitter level. Two causes were identified on synthetic data with known
+$Q$ and corrected:
+
+\begin{enumerate}
+\item \textbf{Vertex effect.} $c$ is not linear in the accumulated phase;
+it is a \emph{triangular} wave of period one and slope $\pm2$. When the
+deterministic phase $M\nu \bmod 1$ falls near a vertex the distribution
+straddles it and the variance collapses --- to 0.38 of its nominal value
+in one measured case. The vertex is detected from the measured mean
+itself ($\bar c \approx 0$ or $1$ is a vertex, $\bar c \approx \tfrac12$
+the middle of the ramp), so distances $M$ with $\bar c$ outside
+$[0.15, 0.85]$, or for which $3\sqrt{MQ}$ reaches the vertex, are
+discarded iteratively.
+\item \textbf{Non-constant estimation noise.} Estimating a fraction from
+$N$ pairs adds a variance that scales with $\bar c(1-\bar c)$, which
+changes with $M$. Fitting it as a constant intercept biases the slope; it
+is fitted instead as a second regressor,
+$\mathrm{Var}(c) = Q\,(4M) + \kappa\,\bar c(1-\bar c)/N$.
+\end{enumerate}
+
+After both corrections the estimator recovers the injected $Q_{\mathrm{raw}}$
+within $\pm2\,\%$ over a range of $150\times$ (Table~\ref{tab:estimator}),
+with a bias of $-0.6\,\%$ and a dispersion of 4.0\,\% over eight
+independent seeds for $K=20\,000$ blocks. The fitted accumulation
+exponent is $1.009$ for a simulator without flicker noise; measured on
+hardware, the same exponent separates the thermal component ($b=1$, which
+counts as entropy) from flicker and global jitter ($b=2$, which does not).
+
+\begin{table}[htbp]
+\centering
+\caption{Recovery of a known $Q_{\mathrm{raw}}$ by the corrected embedded
+estimator ($K=20\,000$ blocks of $N=100$ pairs) \simu{}.}
+\label{tab:estimator}
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$Q_{\mathrm{raw}}$ injected & Estimated & Error & $M$ values used \\
+\midrule
+$2.0\times10^{-7}$ & $1.979\times10^{-7}$ & $-1.07\,\%$ & 19 \\
+$5.0\times10^{-7}$ & $5.060\times10^{-7}$ & $+1.21\,\%$ & 18 \\
+$2.0\times10^{-6}$ & $2.037\times10^{-6}$ & $+1.86\,\%$ & 16 \\
+$8.0\times10^{-6}$ & $8.039\times10^{-6}$ & $+0.48\,\%$ & 9 \\
+$3.0\times10^{-5}$ & $2.977\times10^{-5}$ & $-0.78\,\%$ & 5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A practical consequence for the hardware is that the blocks need not be
+contiguous: each requires only $N+M$ consecutive bits, and independent
+blocks give a slightly better estimate ($-0.30\,\%$ error with 20\,000
+independent chunks). The capture buffer in the FPGA therefore holds a
+single chunk of a few kilobits, filled at ring speed and read out slowly,
+instead of megabits of contiguous samples.
 
 \section{Transistor-level bench and its resolution}
+\label{sec:spice}
 
-% TODO
+The entropy source is the only block of the engine tied to the
+technology, and in an integrated circuit it is designed at transistor
+level. A SPICE bench was built around a five-stage ring with an enabling
+NAND gate, with every technology-dependent parameter (device models,
+widths, minimum length, supply) confined to a header so that moving from
+the generic placeholder models used here to a foundry \ac{PDK} changes
+one block of the netlist. Jitter is extracted from the threshold-crossing
+instants of the output by the second difference
+$D(M) = t_{k+2M} - 2t_{k+M} + t_k$, i.e.\ the Allan variance applied to
+phase data, whose expectation $2M\sigma^2$ is free of the bias that a
+simple difference over overlapping windows carries (measured at 5\,\%),
+and which is the method used by Benea \emph{et al.} to characterize rings
+both in Artix-7 and in 28~nm silicon~\cite{benea_2024_flicker}. Estimates
+at different $M$ are combined with inverse-variance weights proportional
+to the number of independent windows; without that weighting the
+dispersion stayed at 15\,\% regardless of the simulated length.
+
+The bench measures its own resolution first: with all noise sources
+disabled, the residual jitter is the numerical noise of the simulator.
+The first attempt gave 0.33~ps, of the same order as the jitter to be
+measured; it was entirely the start-up transient of the oscillator, and
+discarding the first twenty cycles brings the floor to \textbf{1.38~fs},
+three orders of magnitude below the signal. Only then was noise injected.
+Jitter scales with the square root of the injected spectral density
+($\times2.01$ measured for $\times4$ in density, against $\times2.00$
+expected) up to the point where the r.m.s.\ noise current reaches
+about 80\,\% of the stage drive current; there the small-signal regime
+breaks down, the mean period shifts, and the scaling law fails by a
+factor of five. A validity criterion follows for every campaign,
+including those on a real \ac{PDK}: keep injected noise below $\sim40\,\%$
+of the stage current and verify that the mean period does not move when
+noise is enabled. With the placeholder models the ring oscillates at
+4.3~GHz, which is not physical; the numbers that enter the thesis come
+from the foundry models, where transient noise analysis injects the
+device noise itself.
 
 \section{Design target and divider selection}
+\label{sec:kd}
 
-% TODO
-
+With $\sigma/T$ measured per period, $Q_{\mathrm{raw}} = (\sigma/T)^2$ and
+the divider follows from $K_D = \lceil Q_{\mathrm{target}} /
+Q_{\mathrm{raw}} \rceil$. For the range of jitter expected in a 28~nm
+process the divider lies between $3\times10^4$ and $5\times10^5$ and the
+throughput per ring between 1 and 20~kbit/s. The model reproduces the
+published design point of Fischer and Lubicz ($K_D \approx 430\,000$ for
+$\sigma = 5.01$~ps over $T = 7.81$~ns)~\cite{fischer_2014_embedded}. Such
+rates are sufficient here: seeding the deterministic generator with
+256~bits of full entropy requires about 512 raw bits at $H_\infty \approx
+0.98$, i.e.\ between 0.03 and 0.5~s per seed, and the engine issues a seed
+only at start-up and at reseed intervals. If more throughput were ever
+needed, the clean route is several independent \acp{ERO}, each with its
+own bound, rather than a multi-ring XOR whose independence cannot be
+demonstrated~\cite{bochard_2010_true}.

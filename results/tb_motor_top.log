@@ -1,0 +1,36 @@
+=== analisis ===
+rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
+  shared variable cfg : t_cfg;
+                  ^
+
+=== ejecucion ===
+
+--- tb_motor_top ---
+Traceback (most recent call last):
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\rtl\run_tb.py", line 122, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\rtl\run_tb.py", line 108, in main
+    rc = correr(["-r", "--std=08", "--workdir=rtl/build/work",
+                 "-Prtl/build/unisim", nombre], nombre)
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\rtl\run_tb.py", line 74, in correr
+    r = subprocess.run([ghdl] + args, capture_output=True, text=True,
+                       timeout=1800)
+  File "C:\Python314\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1644, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['C:\\Users\\mario\\AppData\\Local\\ghdl\\bin\\ghdl.exe', '-r', '--std=08', '--workdir=rtl/build/work', '-Prtl/build/unisim', 'tb_motor_top']' timed out after 1800 seconds
+exit=1
+Verificacion cruzada del motor con el modelo de referencia
+  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 2ab86562329ae5a3a4de6ea59e4dbdc5
+  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 7c11c9d2cb6d836618ffa7fd85c2714d
+  [ok ] clave1 = primeros 16 bytes de aleatorio1
+  [ok ] las dos claves difieren
+  [ok ] clave1 no es un patron trivial
+
+verifica_top: 0 fallos
