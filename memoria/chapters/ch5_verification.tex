@@ -1,25 +1,172 @@
 \chapter{Verification}
 \label{ch:ch5_verification}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT v1] Source material: rtl/tb/*, rtl/run_tb.py, analysis/ctr_drbg_ref.py,
+% analysis/verifica_top.py, firmware/verificador/, docs/mapa_registros.md.
+% FPGA bring-up section pending hardware.
 
 \section{Strategy: vectors, simulation, independent verifier}
+\label{sec:verif_strategy}
 
-% TODO
+A cryptographic engine that is verified only against itself proves
+nothing: an error in the S-box would be reproduced identically in the
+model used to check it. The verification of this work therefore rests on
+three legs that do not share an implementation.
+
+\begin{enumerate}
+\item \textbf{Official vectors.} Every primitive is checked against the
+test vectors published with its standard: FIPS~197 and SP~800-38A for
+AES, RFC~4493 and the NIST example file for CMAC, and the CAVP response
+files for CTR\_DRBG (with and without derivation function, with and
+without reseed). These are known-answer tests and they settle
+correctness of the algorithm.
+\item \textbf{Independent reference models.} A bit-exact model of the
+generator was written in Python with its own AES, derived from the
+standard without looking at the VHDL. It is validated against the CAVP
+vectors first, and only then used to generate expected values for the
+fixed input layout of the hardware and to recompute the tags of the
+system-level bench. Two implementations that agree are worth more than
+one that passes.
+\item \textbf{An independent verifier in the loop.} On hardware the
+ESP32 recomputes with mbedtls, and with its own AES accelerator, every
+result the engine produces, so that the final check is performed by a
+third, unrelated implementation over a real bus.
+\end{enumerate}
+
+Two working rules apply throughout, both inherited from the author's
+previous experimental work: the output of a compilation, simulation or
+measurement is never filtered before being read in full --- a filter
+hides exactly the warning that mattered --- and failures are recorded
+whole, never discarded. Twice in this work a filter on the simulator's
+log hid a result, and both times the fix was to remove the filter.
 
 \section{Reference models in Python}
+\label{sec:refmodels}
 
-% TODO
+\texttt{ctr\_drbg\_ref.py} implements AES-128 encryption, the block-cipher
+derivation function, CBC-MAC and CTR\_DRBG with and without derivation
+function, in pure Python and from the text of SP~800-90A. The AES asserts
+the two FIPS~197 vectors at import; the DRBG is exercised against the CAVP
+response files following the CAVS procedure (instantiate, optional reseed,
+two generate calls, compare the second): \textbf{960 AES-128 cases, all
+passing}. One defect was found in the file parser rather than in the
+model --- a section header must close the pending test case before the
+parameters change, otherwise the last case of every parameter block is
+evaluated with the next block's parameters --- and it is worth recording
+because its symptom, a single failure at count~14 of each block, looked
+exactly like an algorithmic error.
+
+A second script, \texttt{gen\_drbg\_vectores.py}, drives the validated
+model through the sequence the hardware supports (instantiate with 32
+bytes of entropy and 16 of nonce, generate twice, reseed, generate) and
+emits a VHDL package of expected values; if the input layout of the
+hardware ever changes, that script is the only place to change it. A
+third, \texttt{verifica\_top.py}, recomputes AES-CMAC from the same AES and
+validates itself against RFC~4493 before checking anything.
 
 \section{Testbenches and results}
+\label{sec:testbenches}
 
-% TODO
+All VHDL is simulated with GHDL~6 under a single runner that analyses the
+sources in dependency order and executes every bench, printing the
+simulator's output unfiltered. Table~\ref{tab:tb} summarizes the seven
+benches and their state at the time of writing.
+
+\begin{table}[htbp]
+\centering
+\caption{Testbenches, what they check and their result (GHDL 6.0, VHDL-2008).}
+\label{tab:tb}
+\begin{tabular}{@{}llc@{}}
+\toprule
+Bench & Checks & Result \\
+\midrule
+Ring oscillator & start/stop, $f = 1/(2N t_{pd})$, zero floor, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 4/4 \\
+I2C slave & addressing, foreign address, multi-byte write, repeated-start read & 14/14 \\
+AES-128 core & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 blocks); 1000-block chain & 6/6 \\
+AES-CMAC & RFC~4493 examples 1--4; repeatability & 5/5 \\
+CTR\_DRBG & instantiate, 2$\times$generate, reseed, counter, re-instantiate, refuse unseeded & 13/13 \\
+Health tests & healthy source, stuck, 70\,\% biased, stuck-at-complement, sticky/clear & 10/10 \\
+Whole engine & ESP32 sequence over I2C: id, seed, key, 2 challenges, 2nd key, capture, key hidden & 16/16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Some of what the benches found deserves to be stated, because a
+verification chapter that reports only passes has not verified much.
+
+\paragraph{Ring model.} The LUT primitives used to simulate the ring
+were first modeled with a strict unknown-propagation rule: any unknown
+input gave an unknown output. At the start of a simulation every signal
+is unknown, so the ring never left that state and never started. A real
+NAND with its enable input at zero outputs one regardless of the other
+input; the model now evaluates every combination compatible with the
+known inputs and resolves the output when they all agree. Without this
+the entire system-level bench would have been impossible.
+
+\paragraph{I2C slave.} Two genuine design errors: the register pointer
+did not advance on multi-byte writes, so consecutive bytes overwrote the
+same address; and on reads the most significant bit was driven one clock
+edge too late, shifting every byte. The first was fixed by incrementing
+the pointer one state after the write strobe, so the address is still
+valid during the strobe; the second by loading the shift register and
+driving its first bit on the same falling edge that releases the
+acknowledge. A third defect was in the bench itself: initializing the
+register memory from the stimulus process created a second driver on the
+same signal and every conflicting bit resolved to unknown.
+
+\paragraph{Health tests.} The ``healthy'' source of the first bench, a
+shift register seeded with a single one, started with a run of 27 zeros
+and a first window at 76\,\%; the detector fired. The detector was right.
+
+\paragraph{Whole engine.} With the rings at their physical speed the
+system bench, which drives almost a millisecond of I2C traffic, did not
+finish in twenty minutes of CPU: every ring transition costs two random
+draws in the jitter model. In that bench alone the stage delay is set ten
+times larger, with the same relative jitter, and this is stated in the
+bench. The sixteen checks pass, and the key, the two challenges and their
+tags are written to a file that \texttt{verifica\_top.py} checks: both
+tags equal the CMAC recomputed by the independent Python AES, the key is
+the first half of the generator's output, and two generations give
+different keys. This is the first point at which a key born from
+ring-oscillator noise, conditioned, generated and used to authenticate,
+is confirmed by an implementation that shares nothing with the VHDL.
 
 \section{ESP32 verifier firmware}
+\label{sec:firmware}
 
-% TODO
+The firmware is an ESP-IDF~5 application for the classic ESP32 that
+talks to the engine through the register map of Appendix~\ref{app:regs}
+and offers a console over the UART. Its commands map onto the
+verification plan: \texttt{id} reads identification and status;
+\texttt{sembrar} and \texttt{generar} issue the long commands and poll
+the busy flag; in test mode \texttt{generar} also reads back the key
+(provisioning) and checks that it equals the first sixteen bytes of the
+generated block; \texttt{reto N} performs $N$ challenge-response rounds
+with nonces from \texttt{esp\_random()}, recomputing each tag with
+\texttt{mbedtls\_cipher\_cmac} and counting matches and mismatches, the
+mismatches being printed in full; \texttt{crudo N} dumps $N$ chunks of
+raw bits and \texttt{esp N} dumps blocks of the ESP32's own generator, both
+in the framed, CRC32-protected format used in the author's previous work
+so that the same statistical pipeline processes the two sources. CMAC is
+not enabled by default in the ESP-IDF build of mbedtls and is switched on
+in the project defaults; the console runs at 115\,200~baud, the only rate
+that proved reliable with the board's USB bridge in earlier campaigns,
+and the log level is set to errors only so that log lines cannot corrupt
+the frames. The firmware builds with ESP-IDF~5.3.2 into a 255~kB image;
+running it awaits the hardware.
 
 \section{FPGA bring-up}
+\label{sec:bringup}
 
-% TODO
-
+% [PENDING HARDWARE] Vivado project, constraints (DONT_TOUCH, pblocks,
+% ALLOW_COMBINATORIAL_LOOPS, set_disable_timing), first bitstream: do the
+% rings oscillate and at what frequency; then the ESP32 in the loop.
+Pending hardware. The constraints the rings need are known from the
+literature and from the vendor documentation --- \texttt{DONT\_TOUCH} on
+the cells and nets of each ring (unlike \texttt{KEEP}, it survives
+implementation), \texttt{ALLOW\_COMBINATORIAL\_LOOPS} on one net of each
+loop, \texttt{set\_disable\_timing} to break the loop for static timing
+analysis, and one placement block per ring so that identical rings are
+neither merged nor placed side by side --- and the first bitstream has a
+single purpose: to read the frequency counters and confirm that every
+ring oscillates. Nothing about entropy is claimed before that.

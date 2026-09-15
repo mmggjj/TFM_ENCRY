@@ -1,29 +1,160 @@
 \chapter{Introduction}
 \label{ch:ch1_intro}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT v1] Source material: docs/plan.md, docs/arquitectura.md, docs/via_asic.md.
 
 \section{Motivation: keys are only as good as their entropy}
+\label{sec:motivation}
 
-% TODO
+Every secure connection an embedded device opens, every firmware image it
+authenticates and every credential it stores rests on a key, and every
+key rests on a source of randomness. If that source is weaker than
+assumed, no amount of cryptographic sophistication downstream recovers
+what was lost at the start: a 128-bit key drawn from a generator with
+effectively 40 bits of entropy is a 40-bit key. This is not a theoretical
+concern. Frequency injection on the supply rail of a commercial secure
+microcontroller collapsed its key space from $2^{64}$ to about
+3300~\cite{markettos_2009_frequency}; a certified smart-card generator was
+found biased despite passing the standard statistical
+suites~\cite{hurleysmith_2018_certifiably}; and the hardware generator of
+one of the most widely deployed IoT microcontrollers, the ESP32, silently
+returns pseudo-random values when its radio is off while still passing
+every black-box test~\cite{blancoromero_2026_entropy}.
+
+The common thread is that randomness has been judged by looking at the
+output. Statistical batteries such as NIST SP~800-22 check whether a bit
+stream \emph{looks} uniform and independent; they cannot tell a physical
+noise source from a deterministic generator seeded with a constant, and
+NIST said so formally in 2022 when it announced the revision of that
+publication, ``rejecting its use for assessing cryptographic random
+number generators''~\cite{nist_2022_decision}. The current standards
+--- AIS~20/31 in Europe~\cite{peter_2024_ais31} and SP~800-90B in the
+United States~\cite{turan_2018_sp80090b} --- ask for something different:
+a stochastic model of the noise source, an estimate of its min-entropy
+derived from that model, and health tests that watch the source itself
+rather than its output. That is a microelectronics problem before it is a
+cryptography problem, and it is the problem this thesis addresses.
 
 \section{From the black-box ESP32 study to a white-box engine}
+\label{sec:background}
 
-% TODO
+This work continues a previous project by the author that characterized
+the hardware random number generator of the ESP32 as a black box: the
+same peripheral was exercised under four operating conditions, its output
+was run through a self-validated implementation of the fifteen tests of
+SP~800-22, and a key-harvesting scheme combining several on-chip sources
+was proposed. Its central finding was methodological: the tests passed
+under conditions in which the entropy could not have been what the tests
+implied, which is exactly the blind spot described above. Two of its
+numbers also had to be revisited with hindsight --- a temperature
+correlation was reported from a sensor whose resolution was a single
+step over the observed range, and a stability figure was inferred where
+it could have been measured --- and both lessons are turned into rules in
+Section~\ref{sec:conventions}.
+
+The natural next step was to build the generator instead of measuring
+someone else's: an engine whose entropy source is designed, whose jitter
+is measured inside the device, whose min-entropy follows from a model,
+and whose keys are produced and used by primitives verified against the
+standards. The ESP32 changes role from subject to judge. It has its own
+AES and SHA accelerators and a mature cryptographic library, so it can
+recompute everything the engine produces with an implementation that
+shares nothing with it, over a real bus.
+
+The engine is designed for silicon. Secure elements --- small integrated
+circuits that generate, store and use keys on behalf of a host
+microcontroller over I2C --- are a mature product category; the
+\emph{transparency} of their entropy is not. Of three widely used parts,
+one ships with a NIST validation of its entropy source and two do not
+mention SP~800-90 anywhere in their documentation~\cite{microchip_atecc608b_ds}.
+The FPGA in this work is therefore the verification vehicle, not the
+target: it lets millions of test vectors run against the design in
+minutes, which no transistor-level simulator can, before the same
+description is synthesized on standard cells.
 
 \section{Objectives}
+\label{sec:objectives}
 
-% TODO
+\begin{enumerate}
+\item[O1] Design a ring-oscillator entropy source at transistor level,
+with enable and sampler, and simulate it with noise, stating the
+numerical resolution of the bench before any figure is read from it.
+\item[O2] Extract the jitter from the simulated waveforms with an
+estimator that separates quantization, thermal and flicker components,
+validated beforehand on synthetic data of known jitter.
+\item[O3] Turn the jitter into a min-entropy bound through a stochastic
+model checked against an exact computation, and derive the sampler
+divider that meets the AIS~20/31 target with margin.
+\item[O4] Write the digital engine --- health tests, AES-based
+conditioning and CTR\_DRBG, AES-CMAC and an I2C register interface --- as
+technology-independent RTL verified against official vectors.
+\item[O5] Verify the engine functionally on an FPGA with the ESP32 as an
+independent oracle: known-answer tests, cross interoperability and
+challenge-response.
+\item[O6] Run an entropy campaign on real silicon (the FPGA's rings) with
+the SP~800-90B estimators and compare with the ESP32 generator under the
+same methodology.
+\item[O7] Synthesize the engine on an open standard-cell library and
+report its area in gate equivalents with the growth factors to core area.
+\item[O8] Compare the design with the ESP32 generator, with commercial
+secure elements and with published circuits, with stated uncertainties.
+\end{enumerate}
+
+The minimum defensible result is O1--O3 together with O5: an entropy
+source designed from the transistor, with its jitter extracted and turned
+into a bound, and a digital engine verified against an independent
+implementation. A negative result that is well measured closes the work
+as well as a positive one: if the accumulation exponent on hardware is
+two rather than one, flicker dominates and the divider cannot grow
+indefinitely, and that is a finding.
 
 \section{Scope and exclusions}
+\label{sec:scope}
 
-% TODO
+Four things are deliberately out of scope, each for a stated reason.
+\emph{Fabrication}: an academic shuttle is affordable and the engine fits
+in the smallest block offered, but the schedule from tape-out to packaged
+and characterized samples exceeds a master's thesis; the cost and the path
+are documented, not executed. \emph{Asymmetric cryptography}: an
+elliptic-curve multiplier is a project in itself and would consume the
+whole area budget; the engine provides symmetric keys and authentication.
+\emph{Side-channel resistance}: the threat model is a logical, remote
+adversary; timing leaks are avoided by construction, but no masking or
+trace-based evaluation is attempted, and the institute's own laboratory
+for such work is noted as the natural continuation. \emph{Formal
+certification}: the criteria of AIS~20/31 and SP~800-90B and the official
+vectors are used throughout, and no validation is claimed.
 
 \section{Methodology and reproducibility conventions}
+\label{sec:conventions}
 
-% TODO
+Four conventions apply to every figure in this document. First, each
+number is labelled \meas{}, \simu{} or \est{}, and carries its
+uncertainty or the source it comes from. Second, \textbf{the resolution of
+the instrument is declared before any trend is interpreted}, whether the
+instrument is a sensor, an estimator or a simulator --- the numerical
+noise floor of the SPICE bench and the quantization of a temperature
+sensor are treated alike. Third, quantities are measured rather than
+inferred whenever a direct measurement exists. Fourth, novelty is stated
+as ``not found in the literature consulted'', never as ``does not exist'';
+one such claim in an early draft of this work had to be corrected when a
+2024 paper measuring exactly the quantity in question was found, and the
+correction is left visible in the working notes.
+
+Everything is released: the VHDL and its testbenches, the Python models
+and analysis, the firmware, the synthesis flow, the official test vectors
+used and the raw data of every campaign, with the commands that reproduce
+each table.
 
 \section{Structure of the document}
+\label{sec:structure}
 
-% TODO
-
+Chapter~\ref{ch:ch2_soa} reviews ring-oscillator generators, their
+stochastic models, the standards and the commercial landscape.
+Chapter~\ref{ch:ch3_entropy} builds the chain from transistor to
+min-entropy and validates every link. Chapter~\ref{ch:ch4_engine}
+describes the digital engine and Chapter~\ref{ch:ch5_verification} its
+verification. Chapter~\ref{ch:ch6_asic} synthesizes the engine on standard
+cells and states the path and cost of an integrated circuit.
+Chapter~\ref{ch:ch7_results} reports the hardware campaign and the
+comparisons, and Chapter~\ref{ch:ch8_concl} concludes.
