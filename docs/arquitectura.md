@@ -260,9 +260,18 @@ Decisiones concretas:
 - **AES-128 iterativo**: una ronda por ciclo, 10 rondas + carga → ~11
   ciclos por bloque, S-box en LUT (256×8 combinacional, 16 instancias +
   4 para la expansión de clave) o en BRAM (una BRAM de 36 Kb da 4 S-box
-  de doble puerto). Cifrado y descifrado con datapath compartido donde
-  sea razonable; la expansión de clave se precalcula y guarda (11×128
-  bits) porque la clave cambia poco. Throughput orientativo a 100 MHz:
+  de doble puerto).
+  > **Corregido (16-09-2026), esto estaba desfasado frente al RTL.** El
+  > borrador decía "cifrado y descifrado con datapath compartido" y que
+  > "la expansión de clave se precalcula y guarda (11×128 bits)". El
+  > `aes_enc.vhd` implementado hace las dos cosas al revés, y bien: es
+  > **solo de cifrado** (§9) y la **expansión va al vuelo**, derivando la
+  > clave de cada ronda de la anterior. Lo confirman los 262 biestables
+  > que da la síntesis: 128 de estado + 128 de clave de ronda + control;
+  > guardar once claves serían 1408. Al vuelo es lo correcto para un
+  > núcleo de solo cifrado, porque las rondas se recorren en orden
+  > ascendente y nunca hace falta la clave de la última primero.
+  Throughput orientativo a 100 MHz:
   128 bits / 11 ciclos ≈ 1,16 Gbit/s de núcleo — el cuello será el SPI,
   no el AES, lo que se declara.
 - **AES-CMAC (SP 800-38B / RFC 4493), decidido** frente a HMAC-SHA-256
@@ -446,7 +455,7 @@ sobre el mismo AES, no una primitiva nueva.
 | Generador | CTR_DRBG sin df | CTR_DRBG con df |
 | Autenticación | AES-CMAC | AES-CMAC |
 | Primitivas | AES + SHA-256 | **solo AES** |
-| Área estimada | ~25 kGE | **~13 kGE** |
+| Área estimada | ~25 kGE | **~13 kGE** [ESTIMADO, superado] |
 
 **El AES será solo de cifrado, no de descifrado.** El descifrado ocuparía
 en torno a un 40 % más y no hace falta para nada: el generador
@@ -458,3 +467,14 @@ implementación independiente.
 
 Lo que se pierde: el chip no puede ofrecer servicios de hash. No es su
 trabajo. Si algún día hiciera falta, el hueco de área existe.
+
+> **Nota (16-09-2026): la estimación de ~13 kGE no se cumplió.** La
+> síntesis real sobre SG13G2 da **~62 kGE** para el motor digital, y el
+> motivo es que "una sola primitiva" lo es a nivel de **algoritmo**, no de
+> **hardware**: `aes_cmac` y `ctr_drbg` instancian cada uno su propio
+> `aes_enc`, así que hay **dos** núcleos de 15,8 kGE, el 51 % del motor.
+> El análisis correcto, con las tres optimizaciones y sus ahorros
+> estimados (compartir el AES, S-box compacta, menos registros en el
+> generador) está en el **capítulo 6 de la memoria**, que es la referencia
+> vigente para todo lo de área. Esta tabla se conserva como registro de la
+> estimación inicial, no como dato.

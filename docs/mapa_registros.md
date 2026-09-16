@@ -90,6 +90,29 @@ es un interruptor de la placa. En un circuito integrado sería un fusible
 que se quema en producción, porque exponer la clave o la entropía cruda
 es un agujero. En la memoria se describe así.
 
+## Obligaciones del maestro que el hardware NO impone
+
+Tres reglas que el motor documenta pero no obliga. Quien escriba el driver
+tiene que cumplirlas, porque nada le va a avisar si no lo hace.
+
+1. **Suelo de `CFG_KD`.** La vía que lleva los bits del dominio del anillo al
+   de sistema necesita `CFG_KD >= 6` (K_D >= 64). Por debajo, el cruce pierde
+   bits **en silencio** y los que pasan tienen muy poco jitter acumulado, o
+   sea muy poca entropía. El registro admite hoy cualquier valor de 0 a 31.
+   Sembrar con `CFG_KD < 6` produce claves de calidad no garantizada y los
+   tests de salud no lo detectan de forma fiable: el RCT busca fuente pegada
+   y el APT busca sesgo, no correlación.
+2. **Política de resembrado.** `PETICIONES` (0x0A–0x0D) es el `reseed_counter`
+   de SP 800-90A: vale 1 tras sembrar y sube en cada `generar`. El motor
+   **no** lo compara con ningún umbral ni rechaza generar por contador. Es el
+   maestro quien debe vigilarlo y lanzar `resembrar` muy por debajo del
+   límite de 2^48 de la norma.
+3. **Cambiar la configuración solo con el motor libre.** `CFG_KD` y `CFG_PAG`
+   se atienden aunque haya una orden en curso. Cambiar `CFG_KD` a mitad de un
+   sembrado altera la tasa de muestreo a medio camino, y entonces el modelo
+   estocástico que justifica la min-entropía **no aplica a esa semilla**.
+   Sondear `ocupado` antes de escribirlos.
+
 ## Restricción de tasa
 
 La vía que alimenta los tests de salud y la recogida de semilla cruza del
