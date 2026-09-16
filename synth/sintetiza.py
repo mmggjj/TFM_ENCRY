@@ -44,6 +44,18 @@ BLOQUES = {
     "bit_cdc":      ["rtl/trng/bit_cdc.vhd"],
     "trng_capture": ["rtl/trng/trng_capture.vhd"],
     "i2c_slave":    ["rtl/io/i2c_slave.vhd"],
+    # Nivel superior: la cifra que va en la memoria. Los anillos entran
+    # con el sustituto de rtl/synth/, porque el real usa primitivas de
+    # Xilinx y no se puede sintetizar a celdas estandar; su area se cuenta
+    # aparte. Incluye la logica propia de motor_top (registros de clave,
+    # aleatorio, reto y semilla, y el decodificador), que la suma de
+    # bloques no recogia.
+    "motor_top":    ["rtl/aes/aes_pkg.vhd", "rtl/aes/aes_enc.vhd",
+                     "rtl/aes/aes_cmac.vhd", "rtl/drbg/ctr_drbg.vhd",
+                     "rtl/synth/ring_osc_stub.vhd", "rtl/trng/ero_core.vhd",
+                     "rtl/trng/bit_cdc.vhd", "rtl/trng/health_tests.vhd",
+                     "rtl/trng/trng_capture.vhd", "rtl/io/i2c_slave.vhd",
+                     "rtl/top/motor_top.vhd"],
 }
 
 
