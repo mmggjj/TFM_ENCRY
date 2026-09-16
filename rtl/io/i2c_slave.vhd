@@ -43,7 +43,11 @@ entity i2c_slave is
     G_DIR      : std_logic_vector(6 downto 0) := "0110000";
     -- Ciclos de reloj de sistema que debe durar un nivel para darlo por
     -- bueno. I2C exige suprimir pulsos de hasta 50 ns; a 100 MHz son 5.
-    G_FILTRO   : positive := 5
+    G_FILTRO   : positive := 5;
+    -- Ciclos sin actividad en SCL que dan por perdido al maestro. 3,5e6
+    -- a 100 MHz son 35 ms, la guarda que fija SMBus. Debe ser mucho mayor
+    -- que un periodo de SCL: a 100 kHz (el I2C mas lento) son 1000 ciclos.
+    G_GUARDA   : positive := 3_500_000
   );
   port (
     clk       : in  std_logic;
@@ -93,6 +97,9 @@ architecture rtl of i2c_slave is
   -- de escritura la direccion debe seguir siendo la de ese byte.
   signal fue_dato  : std_logic := '0';
   signal tirar     : std_logic := '0';   -- valor de sda_oe
+  -- Guarda de bus colgado: cuenta ciclos sin flanco de SCL con una
+  -- transaccion abierta.
+  signal cnt_guarda : natural range 0 to G_GUARDA - 1 := 0;
 
   attribute ASYNC_REG : string;
   attribute ASYNC_REG of scl_s : signal is "TRUE";
@@ -169,10 +176,31 @@ begin
       reg_we   <= '0';
       reg_re   <= '0';
       reg_wdato <= (others => '0');
+      fue_dato <= '0';
+      cnt_guarda <= 0;
 
     elsif rising_edge(clk) then
       reg_we <= '0';
       reg_re <= '0';
+
+      -- Guarda de bus colgado. Si el maestro desaparece a mitad de una
+      -- transaccion (reset, cable, glitch) el esclavo se quedaba en su
+      -- estado para siempre, y si estaba tirando de SDA dejaba el bus
+      -- muerto: el maestro no puede ni emitir un START. Se cuenta la
+      -- inactividad de SCL y se vuelve a reposo soltando la linea.
+      -- Va antes del bloque de estados a proposito: cualquier actividad
+      -- real de este mismo ciclo sobrescribe lo que decida la guarda.
+      if estado = REPOSO then
+        cnt_guarda <= 0;
+      elsif scl_sube = '1' or scl_baja = '1' then
+        cnt_guarda <= 0;
+      elsif cnt_guarda = G_GUARDA - 1 then
+        cnt_guarda <= 0;
+        estado     <= REPOSO;
+        tirar      <= '0';
+      else
+        cnt_guarda <= cnt_guarda + 1;
+      end if;
 
       -- START y STOP mandan sobre cualquier estado.
       if cond_start = '1' then
