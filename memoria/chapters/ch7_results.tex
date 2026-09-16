@@ -1,21 +1,324 @@
 \chapter{Results and Comparison}
 \label{ch:ch7_results}
 
-% [DRAFT] Source material: see docs/ in the repository.
+This chapter collects what the work establishes and separates it, without
+softening, from what it does not. The engine has been modelled, written,
+verified in simulation against official vectors and synthesized on a real
+standard-cell library; it has not yet run on the \ac{FPGA}. Every number
+below therefore carries its provenance tag, and the entropy campaign ---
+the one result that requires silicon on the bench --- is stated as a
+protocol to execute, not as data.
 
-\section{Entropy campaign on the FPGA}
+\section{Status against the objectives}
+\label{sec:status}
 
-% TODO
+Table~\ref{tab:status} maps the objectives of
+Section~\ref{sec:objectives} onto evidence.
 
-\section{Comparison with the ESP32 generator}
+\begin{table}[htbp]
+\centering
+\caption{Objectives and the evidence supporting each.}
+\label{tab:status}
+\small
+\begin{tabular}{@{}llp{7.4cm}@{}}
+\toprule
+Obj. & State & Evidence \\
+\midrule
+O1 & met    & Ring described at transistor level; noise swept in SPICE
+              (Section~\ref{sec:spice_results}) \\
+O2 & met    & Jitter extracted from the waveforms; estimator validated on
+              synthetic data with known $Q$ \\
+O3 & met    & Stochastic model closed: exact wrapped-Gaussian computation,
+              design point $Q \ge 0.2286$ (Section~\ref{sec:opoint}) \\
+O4 & met    & Engine written in portable VHDL-2008; seven testbenches pass
+              against FIPS-197, SP 800-38B, RFC 4493 and \ac{CAVP} vectors \\
+O5 & partial& Verifier firmware compiles and the protocol is closed; the
+              board-level run is pending \\
+O6 & pending& Requires the \ac{FPGA} on the bench
+              (Section~\ref{sec:protocol}) \\
+O7 & met    & Synthesis on IHP SG13G2, per-block area and optimization path
+              (Chapter~\ref{ch:ch6_asic}) \\
+O8 & partial& Structural comparison closed below; the numerical comparison
+              against the ESP32 needs O6 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-% TODO
+The minimum defensible result declared in Chapter~\ref{ch:ch1_intro} ---
+O1--O3 together with O5 --- is reached on its modelling and design side.
+What O5 still lacks is the bring-up, not the design.
+
+\section{Transistor-level noise of the ring}
+\label{sec:spice_results}
+
+The ring was simulated with a current noise source of controlled spectral
+density injected at the switching node, sweeping the density and measuring
+the standard deviation of the rising-edge crossings over 500 periods.
+Table~\ref{tab:spice} gives the result for a five-stage ring with a
+10~fF load.
+
+\begin{table}[htbp]
+\centering
+\caption{Period jitter of the five-stage ring against injected noise
+density \simu{}. $\sigma_{\mathrm{rel}} = \sigma/T$.}
+\label{tab:spice}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Noise density (A$^2$/Hz) & Crossings & $T$ (ps) & $\sigma$ (fs) &
+$\sigma_{\mathrm{rel}}$ \\
+\midrule
+none (numerical floor) & 500 & 230.30 & 1.38   & $6.0\times10^{-6}$ \\
+$1\times10^{-20}$      & 501 & 230.37 & 1200   & $5.2\times10^{-3}$ \\
+$4\times10^{-20}$      & 507 & 229.98 & 2416   & $1.1\times10^{-2}$ \\
+$1.6\times10^{-19}$    & 509 & 227.77 & 25588  & $1.1\times10^{-1}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three readings, and the third is the one that matters.
+
+\paragraph{The numerical floor is far enough below the signal.} With the
+noise source switched off the measurement returns 1.38~fs, which is the
+resolution of the simulation itself, not physics. It sits about 870 times
+below the smallest jitter to be measured, so the floor does not
+contaminate the sweep. Reaching it required care: the first attempt
+returned 0.33~ps, of the same order as the quantity under study, and the
+cause was the ring's start-up transient being included in the statistics.
+Discarding the first twenty cycles removed it. A measurement floor that
+coincides with the signal is indistinguishable from a result, which is
+precisely why the floor was characterized before the sweep and not after.
+
+\paragraph{The scaling law holds where it should.} Thermal jitter
+accumulates as the square root of the noise density, so quadrupling the
+density must double $\sigma$. From $1\times10^{-20}$ to
+$4\times10^{-20}$ the measurement gives a factor of 2.01 against a
+predicted 2.00. That agreement is the evidence that what is being measured
+is the injected noise and not an artefact of the solver.
+
+\paragraph{And it breaks at the top of the sweep, visibly.} At
+$1.6\times10^{-19}$, sixteen times the reference density, $\sigma$ grows by
+a factor of 21.3 where the law predicts 4.0, and the mean period drops from
+230.4 to 227.8~ps. A zero-mean noise source cannot shift a mean period.
+The point is therefore outside the regime the model describes --- the
+perturbation is large enough to change the operating point of the
+inverters --- and it is reported rather than dropped, because the boundary
+of validity of a model is itself a result. Only the two central points are
+used for anything downstream.
+
+\section{Operating point: divider and throughput}
+\label{sec:opoint}
+
+The stochastic model fixes the target. For the PTG.2 thresholds of AIS
+20/31 v3.0, the min-entropy criterion ($H_\infty \ge 0.98$) demands
+$Q \ge 0.2286$, and is more demanding than the Shannon criterion
+($H \ge 0.9998$, $Q \ge 0.2022$); the design therefore targets the former,
+with $Q = 0.30$ as the working set-point, which yields
+$H_\infty = 0.9951$. Two properties of the model were established rather
+than assumed: the truncated series of equation~14
+in~\cite{baudet_2011_security} \emph{overestimates} entropy and is thus
+not a lower bound, so the exact wrapped-Gaussian computation is used
+instead; and the first-harmonic derivation of min-entropy agrees with the
+exact one to six digits over the whole range of interest.
+
+Since $Q_{\mathrm{gen}} = K_D \cdot Q_{\mathrm{raw}}$, the divider follows
+from the jitter that the campaign measures. Table~\ref{tab:opoint} gives
+the operating points for the jitter range expected of this
+technology~\cite{petura_2016_survey}, assuming RO2 at 500~MHz.
+
+\begin{table}[htbp]
+\centering
+\caption{Divider and resulting throughput per ring for
+$Q \ge 0.2286$ \est{}.}
+\label{tab:opoint}
+\small
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+$\sigma/T$ per period & $Q_{\mathrm{raw}}$ & $K_D$ & Throughput \\
+\midrule
+$7.1\times10^{-4}$ & $5\times10^{-7}$ & 457\,200 & 1.09~kbit/s \\
+$1.4\times10^{-3}$ & $2\times10^{-6}$ & 114\,300 & 4.37~kbit/s \\
+$2.8\times10^{-3}$ & $8\times10^{-6}$ & 28\,575  & 17.5~kbit/s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These bracket the published design point of Fischer and
+Lubicz~\cite{fischer_2014_embedded} ($K_D \approx 430\,000$ for
+$\sigma = 5.01$~ps on $T = 7.81$~ns), which is the sanity check that the
+model is being applied as its authors intended.
+
+The architectural consequence is stated plainly: a single \ac{ERO}
+delivers kbit/s, not Mbit/s. That is the price of demonstrable entropy,
+and it is affordable here because the engine's product is a 256-bit seed
+for the \ac{DRBG}, not a bit stream. More throughput means more
+independent rings, each with its own bound, not a faster ring.
+
+\section{Functional verification, consolidated}
+\label{sec:verif_results}
+
+Chapter~\ref{ch:ch5_verification} describes the strategy; this section
+records the totals. Every figure in Table~\ref{tab:verif} was obtained by
+running the suite, not by reading a previous log.
+
+\begin{table}[htbp]
+\centering
+\caption{Verification totals \simu{}.}
+\label{tab:verif}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Suite & What it checks & Result \\
+\midrule
+VHDL testbenches (GHDL) & rings, \ac{ERO}, capture, health tests,
+  \ac{I2C}, \ac{AES}, \ac{CMAC}, \ac{CTRDRBG}, top level & 7/7 pass \\
+\texttt{ctr\_drbg\_ref.py} & \ac{CAVP} vectors, with and without
+  derivation function & 960/960 \\
+\texttt{ero\_model.py} & stochastic model, exactness and bounds & 24/24 \\
+\texttt{jitter\_estimator.py} & jitter recovery on synthetic data of
+  known $Q$ & 20/20 \\
+\texttt{cortes\_salud.py} & health-test cutoffs against SP 800-90B
+  formulas & 6/6 \\
+\texttt{verifica\_top.py} & cross-check of the top-level bench with an
+  independent \ac{AES} & 5/5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two of these deserve a sentence. The 960 \ac{CAVP} cases are the
+strongest single piece of evidence in the work: the generator is not
+merely self-consistent, it reproduces the outputs that \ac{NIST} publishes
+for \ac{CTRDRBG} with AES-128, in both the derivation-function and the
+raw-entropy configurations. And the health-test cutoffs, $C_{RCT} = 22$
+and $C_{APT} = 596$, had been computed by hand from the standard and were
+never checked; deriving them again from the formulas of SP
+800-90B~\cite{turan_2018_sp80090b} confirms both. The same check
+quantifies the cost of the complement test added to the \ac{APT}, which is
+an addition of this work and not of the standard: it raises the
+false-alarm rate per window from $2^{-20.15}$ to $2^{-20.14}$, a 0.8\,\%
+increase, because the complementary tail lies 5.7 standard deviations
+away. The cutoff therefore remains valid as it stands and the addition is
+free in practice.
 
 \section{Comparison with commercial secure elements}
+\label{sec:se_comparison}
 
-% TODO
+The engine occupies the same functional slot as a commercial secure
+element: a small companion device that generates and holds keys for a host
+microcontroller over a two-wire bus. Table~\ref{tab:se} places it beside
+the three parts that dominate the \ac{I2C} secure-element market.
+
+\begin{table}[htbp]
+\centering
+\caption{The engine against commercial secure elements. Certification
+data from the manufacturers' datasheets.}
+\label{tab:se}
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+ & ATECC608B & SE050 & OPTIGA Trust M & This work \\
+ & \cite{microchip_atecc608b_ds} & \cite{nxp_se050_ds} &
+   \cite{infineon_optiga_trustm_ds} & \\
+\midrule
+Bus            & \ac{I2C} & \ac{I2C} & \ac{I2C} & \ac{I2C} \\
+Certification  & FIPS 140-3 L2 & CC EAL6+ & CC EAL6+ & none \\
+Entropy source & undisclosed & undisclosed & undisclosed & \ac{ERO},
+                 published \\
+Entropy bound  & not published & not published & not published &
+                 derived from measured jitter \\
+Key export     & not possible & not possible & not possible &
+                 test mode only \\
+Inspectable    & no & no & no & yes, \ac{RTL} released \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The honest reading of that table has two halves.
+
+On capability and assurance the commercial parts win, and it is not close.
+Two of them carry CC EAL6+ evaluations, which represent an amount of
+third-party scrutiny --- including physical attack resistance --- that no
+academic project reproduces. They offer asymmetric cryptography, certified
+provisioning flows and manufacturing support. This work offers symmetric
+key generation and authentication, and carries no certification at all.
+
+On what the thesis is actually about, the comparison inverts. In all three
+commercial devices the entropy source is undisclosed: the datasheets state
+that a \ac{TRNG} is present, not what it is, and no min-entropy bound
+derived from a measured physical parameter is published for any of them.
+Their randomness is trusted because the vendor and the evaluation scheme
+are trusted. The engine described here makes the opposite trade: it has no
+certificate, and it can show where each bit of entropy comes from, what
+physical measurement bounds it, and what the bound becomes when the
+temperature or the divider changes. That is the same distinction that the
+author's earlier characterization of the ESP32 generator ran into from the
+other side --- a black box can be tested statistically but cannot be
+bounded --- and it is the reason this engine was built as a white box.
+
+Which of the two is preferable depends on the question being asked. For
+shipping a product, the certified part. For knowing what the randomness in
+that product is worth, only the open one answers.
 
 \section{Uncertainty budget}
+\label{sec:uncertainty}
 
-% TODO
+Four quantities carry the conclusions, and each has a different and
+declared kind of uncertainty.
 
+\begin{description}
+\item[Simulated jitter.] Resolution floor 1.38~fs \simu{}, about 870 times
+below the smallest quantity measured. The scaling check against the
+expected square-root law agrees to 0.5\,\% in the valid regime, and the
+regime boundary is documented in Section~\ref{sec:spice_results}. The
+figure depends on the noise density assumed for the technology, which is
+itself \est{}: what the simulation establishes is the \emph{method} and
+the ring's response, not the absolute jitter of a fabricated device.
+\item[Recovered $Q$.] The estimator reproduces a known $Q$ with a bias
+below 2\,\% and a dispersion of 4.0\,\% over eight seeds with 20\,000
+blocks \simu{}. Without the corrections applied here a plain straight-line
+fit biases the result by $-18$\,\%, so the correction is not cosmetic.
+\item[Area.] A lower bound \simu{}: cells only, flattened, without routing,
+fill or clock tree. Published growth factors from cell area to core area
+on this library are $\approx 2.35$ for an \ac{AES}, and the optimization
+savings of Chapter~\ref{ch:ch6_asic} are \est{} and explicitly not claimed
+as measured.
+\item[Min-entropy of the built device.] Not yet bounded. The model, the
+estimator and the cutoffs are ready; the number requires the campaign of
+Section~\ref{sec:protocol}. No value is offered here, and none should be
+inferred from the simulated jitter.
+\end{description}
+
+\section{The pending campaign}
+\label{sec:protocol}
+
+The one result that silicon must supply is the min-entropy of the rings as
+built, and the procedure is fixed in advance so that it cannot be tuned
+after seeing the data.
+
+\begin{enumerate}
+\item \textbf{Confirm the rings oscillate.} Read the frequency of each
+ring with the embedded counter before trusting any entropy measurement. A
+ring removed by the synthesizer, or two rings that have locked to each
+other, would otherwise be indistinguishable from a working source.
+\item \textbf{Measure the jitter} with $K_D = 1$ by the method of Fischer
+and Lubicz~\cite{fischer_2014_embedded}, sweeping the pair distance $M$
+and fitting the linear region, with at least three rings so that the
+global component separates from the local one~\cite{lubicz_2024_jitter}.
+Fit $\sigma^2(t) = at + bt^2$ and keep only the thermal term.
+\item \textbf{Fix $K_D$} from the measured jitter for $Q \ge 0.2286$ with
+margin, and recompute the health-test cutoffs for the measured $H_\infty$
+rather than the assumed 0.98, using \texttt{cortes\_salud.py}.
+\item \textbf{Collect raw bits} at that operating point and run the
+\ac{NIST} SP 800-90B estimators, contrasting the empirical estimate with
+the model's bound. Agreement supports the model; disagreement is a result
+about the model's hypotheses, and either way it is reported.
+\item \textbf{Repeat across placement} --- rings in separated regions
+versus adjacent ones --- to quantify the coupling that the literature
+warns about, which is the measurement the architecture of this engine was
+chosen to make possible.
+\end{enumerate}
+
+Until step 4 closes, the engine's claim is precise and limited: the chain
+from physical noise to key material is designed, implemented and verified
+against the standards, and the bound it will produce is computable from a
+measurement that has not yet been taken.
