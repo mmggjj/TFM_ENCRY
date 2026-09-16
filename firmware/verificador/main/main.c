@@ -76,6 +76,20 @@ static i2c_master_dev_handle_t motor;
 static uint8_t clave_provisionada[16];
 static bool hay_clave = false;
 
+/* Un fallo del bus no es un fallo criptografico, y el verificador existe
+ * para contar los segundos. Cualquier acceso que falle lo marca aqui, y
+ * quien cuente resultados separa los dos casos en vez de sumarlos. */
+static bool io_ok = true;
+
+/* Comparacion sin salida temprana. En este banco no hay adversario que
+ * mida tiempos, pero es codigo criptografico y no cuesta nada. */
+static bool iguales(const uint8_t *a, const uint8_t *b, size_t n)
+{
+    uint8_t d = 0;
+    for (size_t i = 0; i < n; i++) d |= (uint8_t)(a[i] ^ b[i]);
+    return d == 0;
+}
+
 /* ---- acceso a registros ---------------------------------------------- */
 static esp_err_t reg_escribir(uint8_t dir, const uint8_t *datos, size_t n)
 {
@@ -83,12 +97,19 @@ static esp_err_t reg_escribir(uint8_t dir, const uint8_t *datos, size_t n)
     if (n > 32) return ESP_ERR_INVALID_SIZE;
     buf[0] = dir;
     memcpy(buf + 1, datos, n);
-    return i2c_master_transmit(motor, buf, 1 + n, 100);
+    esp_err_t e = i2c_master_transmit(motor, buf, 1 + n, 100);
+    if (e != ESP_OK) io_ok = false;
+    return e;
 }
 
 static esp_err_t reg_leer(uint8_t dir, uint8_t *datos, size_t n)
 {
-    return i2c_master_transmit_receive(motor, &dir, 1, datos, n, 100);
+    esp_err_t e = i2c_master_transmit_receive(motor, &dir, 1, datos, n, 100);
+    if (e != ESP_OK) {
+        io_ok = false;
+        memset(datos, 0, n);   /* nunca dejar el buffer del llamante sin tocar */
+    }
+    return e;
 }
 
 static esp_err_t reg_escribir1(uint8_t dir, uint8_t v)
@@ -98,7 +119,10 @@ static esp_err_t reg_escribir1(uint8_t dir, uint8_t v)
 
 static uint8_t leer_status(void)
 {
-    uint8_t s = 0xFF;
+    uint8_t s = 0;
+    /* Si la lectura falla se devuelve 0, no 0xFF: con 0xFF quedaban a uno
+     * sembrado, clave_valida, etiqueta_lista y modo_test, o sea que un bus
+     * caido se leia como "todo listo". Falla cerrado. */
     reg_leer(REG_STATUS, &s, 1);
     return s;
 }
@@ -137,6 +161,7 @@ static void cmd_id(void)
 {
     uint8_t id = 0, st;
     if (reg_leer(REG_ID, &id, 1) != ESP_OK) { ESP_LOGE(TAG, "sin respuesta I2C"); return; }
+    if (id != 0xA5) ESP_LOGE(TAG, "ID inesperado 0x%02x, se esperaba 0xA5", id);
     st = leer_status();
     printf("id 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d alm_apt=%d "
            "clave=%d captura=%d etiqueta=%d test=%d\n", id, st,
@@ -160,8 +185,13 @@ static void cmd_generar(void)
     if (!(st & ST_CLAVE_VALIDA)) { printf("generar: FALLO, sin clave valida\n"); return; }
     if (st & ST_MODO_TEST) {
         static const uint8_t cero[16] = {0};
-        reg_leer(REG_CLAVE, clave_provisionada, 16);
-        hay_clave = memcmp(clave_provisionada, cero, 16) != 0;
+        if (reg_leer(REG_CLAVE, clave_provisionada, 16) != ESP_OK) {
+            printf("generar: ERROR I2C al leer la clave
+");
+            hay_clave = false;
+            return;
+        }
+        hay_clave = !iguales(clave_provisionada, cero, 16);
         imprimir_hex("clave", clave_provisionada, 16);
         printf("provision: %s\n", hay_clave ? "ok" : "FALLO, clave nula");
     } else {
@@ -186,25 +216,49 @@ static void cmd_aleatorio(int n)
 static void cmd_reto(int n)
 {
     if (!hay_clave) { printf("reto: primero 'generar' en modo test\n"); return; }
-    int aciertos = 0, fallos = 0;
     const mbedtls_cipher_info_t *ci = mbedtls_cipher_info_from_type(MBEDTLS_CIPHER_AES_128_ECB);
+    if (ci == NULL) {
+        printf("reto: mbedtls sin AES-128-ECB; falta CONFIG_MBEDTLS_CMAC_C\n");
+        return;
+    }
+    /* Tres cuentas, no dos: un fallo del bus no dice nada del motor, y
+     * sumarlo a los fallos de etiqueta falsea la estadistica que este
+     * verificador existe para producir. */
+    int aciertos = 0, fallos = 0, errores = 0;
     for (int i = 0; i < n; i++) {
-        uint8_t nonce[16], etiqueta[16], esperada[16];
+        uint8_t nonce[16] = {0}, etiqueta[16] = {0}, esperada[16] = {0};
+        /* El nonce sale del RNG del ESP32: aqui solo hace falta que no se
+         * repita, no que sea impredecible. No es material de clave. */
         esp_fill_random(nonce, 16);
+        io_ok = true;
         reg_escribir(REG_RETO, nonce, 16);
         reg_escribir1(REG_CONTROL, CTL_AUTENTICAR);
         uint8_t st = esperar_libre(500);
         reg_leer(REG_ETIQUETA, etiqueta, 16);
-        mbedtls_cipher_cmac(ci, clave_provisionada, 128, nonce, 16, esperada);
-        bool ok = (st & ST_ETIQ_LISTA) && memcmp(etiqueta, esperada, 16) == 0;
-        if (ok) aciertos++; else {
+        int r = mbedtls_cipher_cmac(ci, clave_provisionada, 128, nonce, 16, esperada);
+        if (r != 0) {
+            printf("reto: mbedtls_cipher_cmac fallo (%d); el roto es el "
+                   "verificador, no el motor\n", r);
+            return;
+        }
+        if (!io_ok) {
+            errores++;
+            imprimir_hex("ERROR I2C nonce", nonce, 16);
+        } else if (!(st & ST_ETIQ_LISTA)) {
+            fallos++;
+            printf("FALLO etiqueta no lista, status 0x%02x\n", st);
+            imprimir_hex("      nonce   ", nonce, 16);
+        } else if (!iguales(etiqueta, esperada, 16)) {
             fallos++;
             imprimir_hex("FALLO nonce   ", nonce, 16);
             imprimir_hex("      motor   ", etiqueta, 16);
             imprimir_hex("      mbedtls ", esperada, 16);
+        } else {
+            aciertos++;
         }
     }
-    printf("reto-respuesta: %d aciertos, %d fallos de %d\n", aciertos, fallos, n);
+    printf("reto-respuesta: %d aciertos, %d fallos criptograficos, "
+           "%d errores de bus, de %d\n", aciertos, fallos, errores, n);
 }
 
 static void cmd_crudo(int n)
