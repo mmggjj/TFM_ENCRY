@@ -135,12 +135,21 @@ begin
 
   -- ----------------------------------------------------------------
   -- Lectura, en el dominio de sistema. Solo es valida con lleno = '1':
-  -- mientras se captura, la memoria es del otro dominio.
+  -- mientras se captura, la memoria es del otro dominio. Antes esa regla
+  -- estaba escrita pero no impuesta, y una lectura durante la captura
+  -- daba un acceso simultaneo entre dominios sobre la misma matriz. Ahora
+  -- se devuelven ceros hasta que el trozo esta completo.
   -- ----------------------------------------------------------------
-  p_lectura : process (clk)
+  p_lectura : process (clk, rst_n)
   begin
-    if rising_edge(clk) then
-      rd_dato <= mem(to_integer(unsigned(rd_dir)) mod G_PALABRAS);
+    if rst_n = '0' then
+      rd_dato <= (others => '0');
+    elsif rising_edge(clk) then
+      if lleno_r = '1' then
+        rd_dato <= mem(to_integer(unsigned(rd_dir)) mod G_PALABRAS);
+      else
+        rd_dato <= (others => '0');
+      end if;
     end if;
   end process p_lectura;
 
