@@ -186,8 +186,7 @@ static void cmd_generar(void)
     if (st & ST_MODO_TEST) {
         static const uint8_t cero[16] = {0};
         if (reg_leer(REG_CLAVE, clave_provisionada, 16) != ESP_OK) {
-            printf("generar: ERROR I2C al leer la clave
-");
+            printf("generar: ERROR I2C al leer la clave\n");
             hay_clave = false;
             return;
         }
