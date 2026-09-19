@@ -76,7 +76,7 @@ warning: tfm_main.bbl:768: Underfull \hbox (badness 2744) in paragraph at lines 
 warning: tfm_main.bbl:768: Underfull \hbox (badness 4254) in paragraph at lines 761--768
 warning: tfm_main.bbl:778: Underfull \hbox (badness 10000) in paragraph at lines 771--778
 warning: tfm_main.bbl:799: Underfull \hbox (badness 10000) in paragraph at lines 793--799
-note: Rerunning TeX because "tfm_main.out" changed ...
+note: Rerunning TeX because "tfm_main.toc" changed ...
 warning: chapters/ch2_soa:201: Overfull \hbox (1.43085pt too wide) in paragraph at lines 185--201
 warning: chapters/ch3_entropy:78: Overfull \hbox (19.4623pt too wide) in paragraph at lines 78--78
 warning: chapters/ch4_engine:48: Overfull \hbox (100.3809pt too wide) in paragraph at lines 46--48
@@ -350,10 +350,10 @@ warning: TeX rerun seems needed, but stopping at 6 passes
 warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
 note: Running xdvipdfmx ...
 warning: Object @page.1 already defined.
-note: Writing `tfm_main.pdf` (276.46 KiB)
 note: Writing `tfm_main.out` (13.17 KiB)
-note: Writing `tfm_main.toc` (6.33 KiB)
+note: Writing `tfm_main.lot` (2.91 KiB)
 note: Writing `tfm_main.bbl` (42.64 KiB)
+note: Writing `tfm_main.toc` (6.33 KiB)
 note: Writing `tfm_main.lof` (450 B)
-note: Writing `tfm_main.lot` (2.72 KiB)
-note: Writing `tfm_main.aux` (33.54 KiB)
+note: Writing `tfm_main.pdf` (276.83 KiB)
+note: Writing `tfm_main.aux` (33.93 KiB)

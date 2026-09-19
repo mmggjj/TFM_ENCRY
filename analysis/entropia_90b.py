@@ -47,6 +47,10 @@ FUENTES = {
     # _1 se corto a los 400 s (440.384 B), _2 es la captura completa de 1 MB
     "esp_rf_off_1": RES / "esp32_tramas_E_esp_rf_off_1.bin",
     "esp_rf_off_2": RES / "esp32_tramas_E_esp_rf_off_2.bin",
+    # segunda campana con el firmware del TFM_RNG (mismo protocolo, 2026-09-19):
+    # dos ciclos D->C->B->A seguidos; rep2 y rep3 de cada condicion
+    **{f"cond{c}_rep{r}": RES / "esp32_campana_rng" / f"cond{c}_rep{r}.bin"
+       for c in "ABCD" for r in (2, 3)},
 }
 
 
@@ -140,7 +144,7 @@ def main() -> int:
         w.writeheader()
         w.writerows(filas)
     print(f"\nresumen: {CSV} ({len(filas)} filas, {len(columnas)} columnas)")
-    return 0 if all(f["exit"] == 0 for f in filas) else 1
+    return 0 if all(int(f["exit"]) == 0 for f in filas) else 1   # las filas viejas vienen del CSV como texto
 
 
 if __name__ == "__main__":

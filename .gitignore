@@ -33,3 +33,6 @@ results/entropia90b/bits/
 results/esp32_consola_*.log
 # Copia por consola de esos mismos logs (stdout de consola_esp32.py): tampoco se versiona
 results/esp32_captura_*.txt
+# Build del firmware del TFM_RNG (va al scratchpad, no aqui) y copia de consola de su captura
+results/esp32_campana_rng/build/
+results/esp32_campana_rng/serie_*.log

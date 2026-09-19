@@ -1,0 +1,8 @@
+  [dev] DEVICE mac=ec:e3:34:9a:d1:18 idf=v5.3.2 puf_bytes=4096
+  [fw] PUF_BEGIN bytes=4096 entropy=1.0000 weight=16265
+  [fw] PUF_END crc32=0x9b56d32f
+  [fw] CYCLE_BEGIN rep=1 uptime_ms=727
+  [rng] cond=D rep=2 125000 B ok  temp=49.4->49.4 C  tput=5214513 B/s  [1/8]
+  [rng] cond=C rep=2 125000 B ok  temp=49.4->49.4 C  tput=2766632 B/s  [2/8]
+  [rng] cond=B rep=2 125000 B ok  temp=50.0->50.0 C  tput=5218249 B/s  [3/8]
+  [rng] cond=A rep=2 125000 B ok  temp=50.0->50.6 C  tput=2768970 B/s  [4/8]

@@ -41,14 +41,19 @@ todo. Léelo entero antes de tocar nada.
   5/5 (log íntegro en `results/tb_motor_top.log`). El banco tarda unos
   4 min de simulación; ahora termina solo con `std.env.stop` (antes los
   anillos seguían oscilando y GHDL no acababa nunca).
-- Hecho sin placa: línea base del ESP32 bajo SP 800-90B (abajo).
+- Hecho sin placa: línea base del ESP32 bajo SP 800-90B (abajo), con
+  **catorce capturas**: tres repeticiones por condición A-D (la de agosto
+  del TFM_RNG más dos del 19-09 con el mismo firmware, capturadas con
+  `analysis/campana_rng.py`) y dos largas sin radio. ANOVA por estimador:
+  ningún efecto de condición (p ≥ 0,063). Resumen en
+  `results/entropia_90b_resumen.md`; lectura en `docs/esp32_linea_base_90b.md`.
 
 ## Qué hay y qué está verificado
 
 | Carpeta | Contenido | Estado |
 |---|---|---|
 | `docs/` | plan, arquitectura, **`mapa_registros.md`**, 4 estados del arte, resultados | cerrado |
-| `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL) | autovalidado |
+| `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `campana_rng.py` (captura con el firmware del TFM_RNG, log íntegro), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL), `resumen_90b.py` (tablas + ANOVA por condición) | autovalidado |
 | `rtl/` | VHDL-2008: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG, `top/motor_top.vhd` | 7 bancos pasan (`python rtl/run_tb.py`) |
 | `synth/` | síntesis Yosys sobre IHP SG13G2, área en kGE | hecho |
 | `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls | compilado y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio |
