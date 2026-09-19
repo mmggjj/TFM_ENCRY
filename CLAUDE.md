@@ -24,41 +24,41 @@ todo. Léelo entero antes de tocar nada.
 - **Nada de credenciales, tokens ni modelos de fábrica bajo
   confidencialidad** en el repo. Los comandos que necesiten credenciales
   los lanza Mario.
-- El GitLab de Airzone (`gitlab2.airzonesl.es`) es **solo de lectura**
-  para Claude: nada de commits, push, MRs ni issues allí. Lo interno de
-  Airzone (WSBUS, esquemáticos, códigos) es confidencial y no se publica.
+- Los repositorios internos de la empresa del autor son **solo de
+  lectura** para Claude: nada de commits, push, MRs ni issues allí. Nada
+  interno de la empresa (protocolos propietarios, esquemáticos, código,
+  nombres de servidores) se copia a este repositorio, que es público.
 - Windows 11 + PowerShell 5.1 (sin `&&`); los proyectos ESP32 pueden ir
   en WSL o en Windows con `C:\esp\esp-idf` (v5.3.2). Commits con autor
   `MarioGarciaJimenez <mariogj.03@gmail.com>` y coautoría de Claude.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
-## Pendiente inmediato al retomar (parado el 15-09-2026 por la noche)
+## Estado al cierre del 19-09-2026
 
-- La corrección de la fuga de clave por `ALEATORIO` está aplicada en RTL,
-  banco, verificación, firmware y memoria, y el firmware recompila, pero
-  **el banco `tb_motor_top` no se llegó a re-ejecutar** con el cambio: la
-  sesión se paró a mitad. Antes de nada, desde la raíz del repo:
-  `python rtl/run_tb.py motor_top` (unos 8 minutos) y después
-  `python analysis/verifica_top.py`. Si algo falla, el cambio está en el
-  estado `GENERANDO_ALEATORIO` de `rtl/top/motor_top.vhd` y en el paso 3b
-  de `rtl/tb/tb_motor_top.vhd`.
-- `results/run_tb_todos.log` puede estar vacío o truncado por ese corte;
-  no es un resultado.
+- `tb_motor_top` re-ejecutado con la corrección de la fuga y el
+  endurecimiento de CFG_KD: **18/18** comprobaciones y `verifica_top.py`
+  5/5 (log íntegro en `results/tb_motor_top.log`). El banco tarda unos
+  4 min de simulación; ahora termina solo con `std.env.stop` (antes los
+  anillos seguían oscilando y GHDL no acababa nunca).
+- Hecho sin placa: línea base del ESP32 bajo SP 800-90B (abajo).
 
 ## Qué hay y qué está verificado
 
 | Carpeta | Contenido | Estado |
 |---|---|---|
 | `docs/` | plan, arquitectura, **`mapa_registros.md`**, 4 estados del arte, resultados | cerrado |
-| `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py` | autovalidado |
+| `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL) | autovalidado |
 | `rtl/` | VHDL-2008: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG, `top/motor_top.vhd` | 7 bancos pasan (`python rtl/run_tb.py`) |
 | `synth/` | síntesis Yosys sobre IHP SG13G2, área en kGE | hecho |
-| `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls | compila, no probado en placa |
-| `memoria/` | LaTeX con la plantilla común | caps. 1–6 borrador, 7–8 pendientes de hardware |
+| `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls | compilado y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio |
+| `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 bajo SP 800-90B); 8 y apéndices pendientes |
 
 **Pendiente de hardware:** puesta en marcha en la Basys 3, campaña de
-entropía, ESP32 en el bucle. Nada de eso se ha ejecutado aún.
+entropía del motor, ESP32 en el bucle con el motor. Lo que sí está hecho
+sin placa: la **línea base del ESP32 bajo SP 800-90B** (5 capturas reales,
+`docs/esp32_linea_base_90b.md`, `results/entropia_90b.csv`), que cierra
+la mitad del objetivo O8.
 
 ## Cómo integra un ESP32 el motor (lo que le importa al otro Claude)
 
@@ -76,6 +76,11 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
 - **La clave solo es legible (0x10) con el pin `modo_test` activo.** Es
   para provisionar en banco. En producto la clave no sale del chip; el
   ESP32 solo obtiene etiquetas y aleatorio.
+- El hardware **rechaza** `sembrar`/`resembrar` si `CFG_KD` está por debajo
+  del mínimo (genérico `G_KD_MIN`, 6 por defecto): la orden se ignora y
+  `ocupado` no llega a subir. Escribir `CFG_KD` con una orden en curso se
+  ignora. Ambas cosas desde el 19-09; antes eran obligaciones del maestro
+  sin comprobar. Detalle en `docs/mapa_registros.md`.
 - Aleatorio para el host: `CONTROL ← aleatorio` (bit 6), sondear, leer
   `ALEATORIO` (0x40, 32 bytes). Es una generación del DRBG **independiente
   de la clave**. Hasta el 15-09 `generar` dejaba la clave en ese registro
@@ -105,9 +110,15 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
 - Con anillos a velocidad física la simulación del sistema completo no
   termina; `tb_motor_top` usa un modelo de anillo 10× más lento, y lo
   dice en el propio banco.
-- Para editar `.tex` no usar `sed` en Git Bash (`\t` se vuelve
-  tabulador): usar Python. `memoria/saneabib.py` sanea el `.bib` para
-  pdfLaTeX. Las claves de acrónimo del paquete `acronym` no admiten `_`.
+- Para editar `.tex` o `.bib` usar las herramientas Write/Edit de Claude
+  Code, **nunca** `sed` en Git Bash (`\t` se vuelve tabulador) ni heredocs
+  de Bash con Python dentro: la capa Bash colapsa `\\` seguido de salto de
+  línea en `\`, y las filas de una tabla pierden el terminador (comprobado
+  el 19-09: 100 errores "Misplaced \noalign"). `memoria/saneabib.py` sanea
+  el `.bib` para pdfLaTeX. Las claves de acrónimo del paquete `acronym` no
+  admiten `_`. Compilador: tectonic 0.15 en
+  `%LOCALAPPDATA%\tectonic\tectonic.exe` (`cd memoria; tectonic
+  tfm_main.tex`; tras un fallo borrar `tfm_main.bbl` y `tfm_main.aux`).
 
 ## Memoria de trabajo de la sesión original
 

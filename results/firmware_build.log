@@ -40,7 +40,7 @@ Generated C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/verificador/build/ve
 
 [9/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\Users\mario\Documents\TFM_FPGA_CRYPTO\firmware\verificador\build\esp-idf\esptool_py && C:\Users\mario\.espressif\python_env\idf5.3_py3.14_env\Scripts\python.exe C:/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/verificador/build/partition_table/partition-table.bin C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/verificador/build/verificador.bin"
 
-verificador.bin binary size 0x3e6e0 bytes. Smallest app partition is 0x100000 bytes. 0xc1920 bytes (76%) free.
+verificador.bin binary size 0x3e980 bytes. Smallest app partition is 0x100000 bytes. 0xc1680 bytes (76%) free.
 
 
 
@@ -53,4 +53,4 @@ or
  python -m esptool --chip esp32 -b 460800 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_size 2MB --flash_freq 40m 0x1000 build\bootloader\bootloader.bin 0x8000 build\partition_table\partition-table.bin 0x10000 build\verificador.bin
 or from the "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\firmware\verificador\build" directory
  python -m esptool --chip esp32 -b 460800 --before default_reset --after hard_reset write_flash "@flash_args"
-exit=0
+build exit=0

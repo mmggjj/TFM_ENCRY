@@ -285,6 +285,9 @@ static void cmd_esp(int n)
     for (int i = 0; i < n; i++) {
         esp_fill_random(b, 32);
         trama_pc('E', b, 32);
+        /* Sin ceder la CPU el task watchdog salta cada 5 s y su mensaje se
+         * mezcla con una trama (40 tramas perdidas en 32768 el 19-09). */
+        if ((i & 31) == 31) vTaskDelay(1);
     }
 }
 

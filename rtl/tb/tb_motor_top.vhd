@@ -25,7 +25,10 @@ end entity tb_motor_top;
 architecture sim of tb_motor_top is
 
   constant C_T     : time := 10 ns;      -- 100 MHz
-  constant C_T_BIT : time := 2 us;       -- 500 kHz I2C
+  -- 1 MHz de bus (fast-mode plus). El esclavo lo sobremuestrea a 100 MHz y
+  -- admite hasta unos 20 MHz; a 1 MHz el banco tarda la mitad que a 500 kHz,
+  -- y el trafico I2C es lo que domina su duracion.
+  constant C_T_BIT : time := 1 us;
   constant C_DIR   : std_logic_vector(6 downto 0) := "0110000";
 
   signal clk, rst_n : std_logic := '0';
@@ -59,8 +62,11 @@ begin
   scl <= scl_m;
   sda <= '0' when (m_sda_oe = '1' or s_sda_oe = '1') else '1';
 
+  -- G_KD_MIN = 4 SOLO en este banco: con el anillo lento del modelo, K_D = 16
+  -- ya da 24 ciclos de sistema por bit, por encima de los 8 que exige el
+  -- cruce de dominio. En hardware el valor por defecto es 6 (K_D = 64).
   dut : entity work.motor_top
-    generic map (G_DIR_I2C => C_DIR)
+    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
@@ -207,10 +213,23 @@ begin
     comprobar(status(0) = '0', "sin sembrar al arrancar");
 
     report "2) Sembrar";
-    -- K_D = 16: con el anillo lento del banco, un bit cada 16 x 15 ns = 240 ns,
-    -- 24 ciclos de sistema, por encima de los 8 que exige el cruce de dominio.
+    -- 2a) Con el divisor por debajo del minimo el hardware debe rechazar la
+    --     orden: la semilla seria de calidad no garantizada y los tests de
+    --     salud no lo detectarian. Antes era solo una obligacion documentada.
+    escribir_reg(x"04", x"02");                 -- K_D = 4 < minimo (16)
+    escribir_reg(x"03", x"01");                 -- sembrar
+    wait for 20 us;
+    leer_reg(x"02", status);
+    comprobar(status(1) = '0' and status(0) = '0',
+              "sembrar con CFG_KD por debajo del minimo se rechaza");
+    -- 2b) K_D = 16: con el anillo lento del banco, un bit cada 16 x 15 ns = 240 ns,
+    --     24 ciclos de sistema, por encima de los 8 que exige el cruce de dominio.
     escribir_reg(x"04", x"04");
     escribir_reg(x"03", x"01");                 -- sembrar
+    -- 2c) Con la orden en curso, CFG_KD no debe cambiar.
+    escribir_reg(x"04", x"09");
+    leer_reg(x"04", b);
+    comprobar(b = x"04", "CFG_KD se ignora mientras hay una orden en curso");
     esperar_libre(status);
     comprobar(status(0) = '1', "sembrado");
     comprobar(status(2) = '0' and status(3) = '0', "sin alarmas de salud");
@@ -300,6 +319,9 @@ begin
       report "tb_motor_top: " & integer'image(fallos) & " fallos" severity failure;
     end if;
     fin <= true;
+    -- Los anillos del DUT siguen oscilando con el reloj parado: sin esto
+    -- la simulacion no termina nunca (45 min de CPU el 19-09).
+    std.env.stop;
     wait;
   end process principal;
 

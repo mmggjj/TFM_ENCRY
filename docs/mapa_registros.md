@@ -90,28 +90,34 @@ es un interruptor de la placa. En un circuito integrado sería un fusible
 que se quema en producción, porque exponer la clave o la entropía cruda
 es un agujero. En la memoria se describe así.
 
-## Obligaciones del maestro que el hardware NO impone
+## Obligaciones del maestro y lo que el hardware impone
 
-Tres reglas que el motor documenta pero no obliga. Quien escriba el driver
-tiene que cumplirlas, porque nada le va a avisar si no lo hace.
+Tres reglas. Dos las impone ya el hardware desde el 19-09-2026, porque eran
+baratas de imponer y su incumplimiento era silencioso; la tercera sigue
+siendo del maestro.
 
-1. **Suelo de `CFG_KD`.** La vía que lleva los bits del dominio del anillo al
-   de sistema necesita `CFG_KD >= 6` (K_D >= 64). Por debajo, el cruce pierde
-   bits **en silencio** y los que pasan tienen muy poco jitter acumulado, o
-   sea muy poca entropía. El registro admite hoy cualquier valor de 0 a 31.
-   Sembrar con `CFG_KD < 6` produce claves de calidad no garantizada y los
-   tests de salud no lo detectan de forma fiable: el RCT busca fuente pegada
-   y el APT busca sesgo, no correlación.
-2. **Política de resembrado.** `PETICIONES` (0x0A–0x0D) es el `reseed_counter`
-   de SP 800-90A: vale 1 tras sembrar y sube en cada `generar`. El motor
-   **no** lo compara con ningún umbral ni rechaza generar por contador. Es el
-   maestro quien debe vigilarlo y lanzar `resembrar` muy por debajo del
-   límite de 2^48 de la norma.
-3. **Cambiar la configuración solo con el motor libre.** `CFG_KD` y `CFG_PAG`
-   se atienden aunque haya una orden en curso. Cambiar `CFG_KD` a mitad de un
-   sembrado altera la tasa de muestreo a medio camino, y entonces el modelo
-   estocástico que justifica la min-entropía **no aplica a esa semilla**.
-   Sondear `ocupado` antes de escribirlos.
+1. **Suelo de `CFG_KD`, impuesto por hardware.** La vía que lleva los bits
+   del dominio del anillo al de sistema necesita `CFG_KD >= 6` (K_D >= 64).
+   Por debajo, el cruce pierde bits **en silencio** y los que pasan tienen
+   muy poco jitter acumulado, o sea muy poca entropía, y los tests de salud
+   no lo detectan: el RCT busca fuente pegada y el APT busca sesgo, no
+   correlación. Por eso `sembrar` y `resembrar` **se rechazan** (la orden se
+   ignora y `ocupado` no llega a subir) si `CFG_KD` está por debajo del
+   mínimo, fijado por el genérico `G_KD_MIN` de `motor_top` (6 por defecto).
+   El maestro debe comprobar tras la orden que `ocupado` ha subido o que
+   `sembrado` acaba en 1; si no, el rechazo es la causa más probable. El
+   banco `tb_motor_top` (paso 2a) comprueba el rechazo.
+2. **Política de resembrado, del maestro.** `PETICIONES` (0x0A–0x0D) es el
+   `reseed_counter` de SP 800-90A: vale 1 tras sembrar y sube en cada
+   `generar`. El motor **no** lo compara con ningún umbral ni rechaza generar
+   por contador. Es el maestro quien debe vigilarlo y lanzar `resembrar` muy
+   por debajo del límite de 2^48 de la norma.
+3. **`CFG_KD` solo con el motor libre, impuesto por hardware.** Una escritura
+   de `CFG_KD` con una orden en curso **se ignora**: cambiar la tasa de
+   muestreo a mitad de un sembrado invalidaría el modelo estocástico de esa
+   semilla. `CFG_PAG` sí se atiende siempre, porque solo afecta a la lectura
+   del buffer de captura. El banco (paso 2c) comprueba que la escritura se
+   ignora.
 
 ## Restricción de tasa
 

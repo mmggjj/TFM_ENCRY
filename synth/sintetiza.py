@@ -141,12 +141,23 @@ def main() -> int:
             print(f"{bloque:14s} FALLO (ver synth/build/{bloque}.log)")
             print("  " + res.get("error", "").replace("\n", "\n  "))
 
+    # Con filtro se actualizan solo las filas afectadas: antes una ejecucion
+    # de un solo bloque machacaba el CSV entero con una fila.
     RESULTADOS.parent.mkdir(exist_ok=True)
+    campos = ["bloque", "celdas", "biestables", "area_um2", "kGE", "segundos", "ok"]
+    previas = {}
+    if filtro and RESULTADOS.exists():
+        with RESULTADOS.open(newline="") as f:
+            for fila in csv.DictReader(f):
+                previas[fila["bloque"]] = fila
+    for r in filas:
+        previas[r["bloque"]] = {k: r.get(k, "") for k in campos}
     with RESULTADOS.open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["bloque", "celdas", "biestables", "area_um2",
-                                          "kGE", "segundos", "ok"], extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=campos, extrasaction="ignore")
         w.writeheader()
-        w.writerows(filas)
+        for bloque in BLOQUES:
+            if bloque in previas:
+                w.writerow(previas[bloque])
     print(f"\nGE = area de {celda} ({ge} um2). Area de celdas, sin rutar: cota inferior.")
     print(f"datos en {RESULTADOS}")
     return 0 if all(r["ok"] for r in filas) else 1

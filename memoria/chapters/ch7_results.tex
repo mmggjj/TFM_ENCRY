@@ -38,8 +38,9 @@ O6 & pending& Requires the \ac{FPGA} on the bench
               (Section~\ref{sec:protocol}) \\
 O7 & met    & Synthesis on IHP SG13G2, per-block area and optimization path
               (Chapter~\ref{ch:ch6_asic}) \\
-O8 & partial& Structural comparison closed below; the numerical comparison
-              against the ESP32 needs O6 \\
+O8 & partial& Structural comparison closed (Section~\ref{sec:se_comparison});
+              the ESP32 side of the numerical comparison is measured under
+              SP 800-90B (Section~\ref{sec:esp32_90b}); the engine side needs O6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -166,7 +167,7 @@ running the suite, not by reading a previous log.
 \caption{Verification totals \simu{}.}
 \label{tab:verif}
 \small
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}lp{7.6cm}l@{}}
 \toprule
 Suite & What it checks & Result \\
 \midrule
@@ -211,23 +212,21 @@ the three parts that dominate the \ac{I2C} secure-element market.
 \begin{table}[htbp]
 \centering
 \caption{The engine against commercial secure elements. Certification
-data from the manufacturers' datasheets.}
+data from the manufacturers' datasheets and from the NIST validation
+records~\cite{microchip_atecc608b_ds, nist_esv_e46, nxp_se050_ds,
+infineon_optiga_trustm_ds}.}
 \label{tab:se}
 \small
-\begin{tabular}{@{}lllll@{}}
+\begin{tabular}{@{}lp{2.6cm}p{2.4cm}p{2.2cm}p{2.6cm}@{}}
 \toprule
  & ATECC608B & SE050 & OPTIGA Trust M & This work \\
- & \cite{microchip_atecc608b_ds} & \cite{nxp_se050_ds} &
-   \cite{infineon_optiga_trustm_ds} & \\
 \midrule
 Bus            & \ac{I2C} & \ac{I2C} & \ac{I2C} & \ac{I2C} \\
-Certification  & FIPS 140-3 L2 & CC EAL6+ & CC EAL6+ & none \\
-Entropy source & undisclosed & undisclosed & undisclosed & \ac{ERO},
-                 published \\
-Entropy bound  & not published & not published & not published &
-                 derived from measured jitter \\
-Key export     & not possible & not possible & not possible &
-                 test mode only \\
+Certification  & JIL High; NIST ESV \#E46 for the entropy source & CC EAL6+ (up to OS) & CC EAL6+ (hardware) & none \\
+Entropy source & ring oscillators, per the ESV record & ``TRNG, SP~800-90B'' in datasheet & not stated & \ac{ERO}, published \\
+Entropy claim  & 0.5071~bit/sample, NIST-validated & not published & not published & bound derived from measured jitter \\
+Stochastic model & not published & not published & not published & published \\
+Key export     & not possible & not possible & not possible & test mode only \\
 Inspectable    & no & no & no & yes, \ac{RTL} released \\
 \bottomrule
 \end{tabular}
@@ -242,15 +241,20 @@ academic project reproduces. They offer asymmetric cryptography, certified
 provisioning flows and manufacturing support. This work offers symmetric
 key generation and authentication, and carries no certification at all.
 
-On what the thesis is actually about, the comparison inverts. In all three
-commercial devices the entropy source is undisclosed: the datasheets state
-that a \ac{TRNG} is present, not what it is, and no min-entropy bound
-derived from a measured physical parameter is published for any of them.
-Their randomness is trusted because the vendor and the evaluation scheme
-are trusted. The engine described here makes the opposite trade: it has no
-certificate, and it can show where each bit of entropy comes from, what
-physical measurement bounds it, and what the bound becomes when the
-temperature or the divider changes. That is the same distinction that the
+On what the thesis is actually about, the comparison is more nuanced than
+``open versus closed'', and it pays to be exact. Of the three, only the
+ATECC608B has its entropy source validated under SP~800-90B: the NIST
+record names ring oscillators and states 0.5071~bit of entropy per
+sample~\cite{nist_esv_e46}. That is a real, third-party figure, and it must
+be credited. What no vendor publishes --- not Microchip either --- is the
+stochastic model behind the figure, the jitter measurement that supports
+it, or the circuit itself; the datasheet of one competitor claims
+compliance without a validation record and the other does not mention
+SP~800-90 at all. Their randomness is trusted because the vendor and the
+evaluation scheme are trusted. The engine described here makes the opposite
+trade: it has no certificate, and it can show where each bit of entropy
+comes from, what physical measurement bounds it, and what the bound becomes
+when the temperature or the divider changes. That is the same distinction that the
 author's earlier characterization of the ESP32 generator ran into from the
 other side --- a black box can be tested statistically but cannot be
 bounded --- and it is the reason this engine was built as a white box.
@@ -258,6 +262,108 @@ bounded --- and it is the reason this engine was built as a white box.
 Which of the two is preferable depends on the question being asked. For
 shipping a product, the certified part. For knowing what the randomness in
 that product is worth, only the open one answers.
+
+\section{The ESP32 reference under SP 800-90B}
+\label{sec:esp32_90b}
+
+O8 asks for a numerical comparison against the ESP32, and half of it can
+be closed without the board: the reference side. The author's earlier
+characterization of the ESP32 generator captured $10^6$ bits of
+\texttt{esp\_fill\_random} output under four operating conditions ---
+Wi-Fi and ADC active, Wi-Fi only, ADC only, neither --- and applied
+Shannon entropy and SP 800-22 to them; it did not apply the SP 800-90B
+estimators, and that is the gap closed here. Two further captures with
+the radio off, of $3.52\times10^6$ and $8.38\times10^6$ bits, were taken
+during this work with the verifier firmware of
+Chapter~\ref{ch:ch5_verification}: same silicon, different board, firmware
+and day. All six were run through the
+\ac{NIST} reference implementation of the SP 800-90B
+estimators~\cite{nist_ea_github, turan_2018_sp80090b} (version 1.1.8),
+on both the IID and the non-IID tracks, in the binary layout the standard
+prescribes for bit sources. Table~\ref{tab:esp32_90b} gives the outcome.
+
+\begin{table}[htbp]
+\centering
+\caption{The ESP32 generator under the SP 800-90B estimators \meas{}. $N$
+is the number of bits; the ceiling is the highest value the most-common-value
+(MCV) estimator can return for a perfectly uniform source of that length
+at 99\,\% confidence; the non-IID figure is the minimum of the ten
+estimators of Section~6.3 of the standard, and the last column names the
+estimator that set it.}
+\label{tab:esp32_90b}
+\footnotesize
+\begin{tabular}{@{}llrlrrrl@{}}
+\toprule
+Capture & Condition & $N$ (bits) & IID & $H$ (IID) & Ceiling & $H$ (non-IID) & Limiting \\
+\midrule
+A & Wi-Fi + ADC & $10^6$ & pass & 0.9940 & 0.9963 & 0.8255 & Compression \\
+B & Wi-Fi       & $10^6$ & pass & 0.9949 & 0.9963 & 0.8980 & LRS \\
+C & ADC         & $10^6$ & pass & 0.9960 & 0.9963 & 0.8199 & Compression \\
+D & none        & $10^6$ & pass & 0.9959 & 0.9963 & 0.9155 & Collision \\
+E (this work) & none & $3.5\times10^6$ & pass & 0.9977 & 0.9980 & 0.8671 & Compression \\
+F (this work) & none & $8.4\times10^6$ & pass & 0.9982 & 0.9987 & 0.9108 & Compression \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The resolution comes first, as everywhere in this work. The MCV estimator
+returns $-\log_2 p_u$ with $p_u = \hat p + 2.576\sqrt{\hat p(1-\hat p)/N}$,
+so even a perfect source cannot score above 0.9963 with $10^6$ bits,
+0.9980 with $3.5\times10^6$ or 0.9987 with $8.4\times10^6$. Every capture
+sits within 0.0023 of that ceiling, and none shows a bias of ones beyond
+$1.6\sigma$. On the IID track, which all six pass (permutation tests and
+$\chi^2$), the ESP32
+output is therefore indistinguishable from a full-entropy binary source at
+this sample size. That is the same verdict SP 800-22 gave, reached by a
+different route, and it says the same thing: nothing wrong is visible.
+
+The non-IID track says something else, and reading it correctly matters
+more than the number. Its minimum is set in every case by one of three
+estimators --- compression, collision or longest repeated substring --- at
+0.82 to 0.92 bit per bit, while the MCV, Markov and the four predictors
+never drop below 0.99. Those three estimators are known to be conservative
+on nearly uniform data~\cite{zhu_2017_analysis}; the predictors of Kelsey, McKay and S\"onmez
+Turan~\cite{kelsey_2015_predictive} were introduced precisely because the
+earlier estimators of the standard misjudge sources of that kind. The
+captures themselves show that this is estimator behaviour and not a
+property of the conditions: three captures of the \emph{same} condition
+(D, E and F) span 0.87 to 0.92 on the compression estimate, as much as the
+whole spread between conditions. The largest capture adds a second
+illustration of the same effect: in the byte layout its limiting
+estimator is the $t$-tuple test at $t = 2$, which returns 7.39 bits per
+byte because $10^6$ bytes hold too few of the 65\,536 possible pairs for
+the most frequent one to be representative, exactly as the MCV ceiling
+does at $t = 1$. With one repetition per condition, no
+difference between Wi-Fi on, ADC on and neither is resolvable by any
+estimator, and none is claimed. One anomaly is recorded without
+interpretation: in the byte layout, capture D fails the $\chi^2$
+goodness-of-fit test of the IID track ($p = 2.4\times10^{-4}$ against a
+threshold of $10^{-3}$) while passing every other test in both layouts,
+and captures E and F, taken under the same condition with three and eight
+times more data, pass it with $p = 0.27$ and $p = 0.28$. Twelve such
+tests were run; one failure at that level has about a one-in-a-hundred
+chance of being noise, and a second repetition of condition D is the only
+thing that settles it.
+
+Three consequences follow for O8. First, the figure this thesis carries
+forward as the ESP32 reference is the non-IID one, 0.82 to 0.92 bit per
+bit, because it is what an evaluator would credit without granting the
+IID assumption; the engine's raw bits, when the campaign of
+Section~\ref{sec:protocol} produces them, must be run through the same
+battery at the same $N$, and compared estimator by estimator, since the
+same conservative bias will act on them. Second, the earlier
+characterization's Shannon figure of 0.99999 bit per bit and the
+min-entropy figures above are not in contradiction --- $H_\infty \le H$
+always --- but they are different currencies: crediting 256 bits of
+entropy costs 256 output bits in the first and up to 313 in the second,
+and only the second is the one key generation may use. Third, and
+independent of any number, the measurement is of a black box: the source
+and post-processing behind \texttt{esp\_fill\_random} are undocumented,
+and the SP 800-90B estimators are designed for raw noise, not for an
+output that may already be conditioned. What the ESP32 cannot supply,
+whatever the estimators return, is the bound that Section~\ref{sec:opoint}
+derives for the engine from a physical measurement. That asymmetry is the
+comparison.
 
 \section{Uncertainty budget}
 \label{sec:uncertainty}
@@ -282,6 +388,13 @@ fill or clock tree. Published growth factors from cell area to core area
 on this library are $\approx 2.35$ for an \ac{AES}, and the optimization
 savings of Chapter~\ref{ch:ch6_asic} are \est{} and explicitly not claimed
 as measured.
+\item[Min-entropy of the ESP32 reference.] Measured \meas{} on
+$10^6$ to $3.5\times10^6$ bits per capture. The IID-track figure is at the
+resolution ceiling of the MCV estimator for that $N$ (0.9963 at $10^6$
+bits), so it is a floor on the ceiling rather than a measurement of the
+source; the non-IID figure is set by estimators whose conservative bias on
+nearly uniform data exceeds the spread between conditions, and with one
+repetition per condition no condition effect is claimed.
 \item[Min-entropy of the built device.] Not yet bounded. The model, the
 estimator and the cutoffs are ready; the number requires the campaign of
 Section~\ref{sec:protocol}. No value is offered here, and none should be

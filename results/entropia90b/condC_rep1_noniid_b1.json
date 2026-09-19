@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/condC_rep1_noniid_b1.json /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/condC_rep1.bits 1",
+   "dateTimeStamp" : "20260919133459",
+   "errorLevel" : 0,
+   "filename" : "/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/condC_rep1.bits",
+   "sha256" : "bcfd54bd8de13fa4cc0cb2caa5f7f9c1ac320547720a037f80e817f71fd6bf62",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99596058787769115,
+         "mcvEstimateMode" : 500114.0,
+         "mcvEstimatePHat" : 0.50011399999999995,
+         "mcvEstimatePU" : 0.50140191526225675,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.92438606568169335,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99916853548040785,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.819937077656688,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93978015269195192,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.96563872734869138,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.9986779378419135,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99526012787631757,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 1.0,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99803807203160266,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.819937077656688,
+         "hOriginal" : 0.819937077656688,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

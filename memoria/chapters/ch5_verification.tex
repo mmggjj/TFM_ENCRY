@@ -76,7 +76,8 @@ benches and their state at the time of writing.
 \centering
 \caption{Testbenches, what they check and their result (GHDL 6.0, VHDL-2008).}
 \label{tab:tb}
-\begin{tabular}{@{}llc@{}}
+\small
+\begin{tabular}{@{}lp{9.2cm}c@{}}
 \toprule
 Bench & Checks & Result \\
 \midrule
@@ -86,7 +87,7 @@ AES-128 core & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 blocks); 1000-block chain & 
 AES-CMAC & RFC~4493 examples 1--4; repeatability & 5/5 \\
 CTR\_DRBG & instantiate, 2$\times$generate, reseed, counter, re-instantiate, refuse unseeded & 13/13 \\
 Health tests & healthy source, stuck, 70\,\% biased, stuck-at-complement, sticky/clear & 10/10 \\
-Whole engine & ESP32 sequence over I2C: id, seed, key, 2 challenges, 2nd key, capture, key hidden & 16/16 \\
+Whole engine & ESP32 sequence over I2C: id, seed (divider below minimum refused, divider frozen while busy), key, random register free of the key, 2 challenges, 2nd key, capture, key hidden & 18/18 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,13 +136,22 @@ system bench, which drives almost a millisecond of I2C traffic, did not
 finish in twenty minutes of CPU: every ring transition costs two random
 draws in the jitter model. In that bench alone the stage delay is set ten
 times larger, with the same relative jitter, and this is stated in the
-bench. The sixteen checks pass, and the key, the two challenges and their
+bench. The eighteen checks pass, and the key, the two challenges and their
 tags are written to a file that \texttt{verifica\_top.py} checks: both
 tags equal the CMAC recomputed by the independent Python AES, the
 readable random-output register contains the key in neither of its
 halves, and two generations give different keys. This is the first point at which a key born from
 ring-oscillator noise, conditioned, generated and used to authenticate,
 is confirmed by an implementation that shares nothing with the VHDL.
+Two of the eighteen checks were added when two obligations that the
+register map had placed on the host were moved into the hardware: a seed
+command issued with the divider below its minimum is now refused, and a
+write to the divider register while a command is running is ignored. A
+rule that only the documentation enforces is a rule that a careless host
+breaks; the bench now exercises both. The bench also had to be told to
+stop: with the rings running after reset, a simulation whose stimulus has
+finished never runs out of events, and the first re-run consumed
+forty-five minutes of CPU after its last check had passed.
 
 \section{ESP32 verifier firmware}
 \label{sec:firmware}

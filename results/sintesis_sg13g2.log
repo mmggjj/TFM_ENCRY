@@ -1,14 +1,16 @@
 biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
 
 bloque          celdas     FF   area um2     kGE     s
-aes_enc          10439    262   114771.2  15.814    14
-aes_cmac         13210    909   169766.4  23.392    10
-ctr_drbg         17953   2355   267262.0  36.825    12
+aes_enc          10439    262   114771.2  15.814     9
+aes_cmac         13210    909   169766.4  23.392    11
+ctr_drbg         17953   2355   267262.0  36.825    13
 health_tests       568     85     8986.2   1.238     1
 ero_core           117     24     2077.5   0.286     1
 bit_cdc             11      7      408.2   0.056     1
-trng_capture     12250   4140   339057.0  46.718     7
-i2c_slave          310     63     5506.5   0.759     1
+trng_capture     12592   4140   339698.0  46.806     9
+i2c_slave          431     85     7407.9   1.021     1
+motor_top        47202   8405   832639.0 114.726    30
 
 GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
 datos en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\sintesis_sg13g2.csv
+exit=0

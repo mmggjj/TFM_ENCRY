@@ -72,7 +72,7 @@ def main():
 
     def correr(args, etiqueta):
         r = subprocess.run([ghdl] + args, capture_output=True, text=True,
-                           timeout=1800)
+                           timeout=7200)   # tb_motor_top: ~8 min solo, mucho mas con la CPU compartida
         salida = (r.stdout + r.stderr).rstrip()
         if salida:
             print(salida)

@@ -6,31 +6,47 @@ rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object befo
 === ejecucion ===
 
 --- tb_motor_top ---
-Traceback (most recent call last):
-  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\rtl\run_tb.py", line 122, in <module>
-    sys.exit(main())
-             ~~~~^^
-  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\rtl\run_tb.py", line 108, in main
-    rc = correr(["-r", "--std=08", "--workdir=rtl/build/work",
-                 "-Prtl/build/unisim", nombre], nombre)
-  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\rtl\run_tb.py", line 74, in correr
-    r = subprocess.run([ghdl] + args, capture_output=True, text=True,
-                       timeout=1800)
-  File "C:\Python314\Lib\subprocess.py", line 556, in run
-    stdout, stderr = process.communicate(input, timeout=timeout)
-                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python314\Lib\subprocess.py", line 1220, in communicate
-    stdout, stderr = self._communicate(input, endtime, timeout)
-                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python314\Lib\subprocess.py", line 1644, in _communicate
-    raise TimeoutExpired(self.args, orig_timeout)
-subprocess.TimeoutExpired: Command '['C:\\Users\\mario\\AppData\\Local\\ghdl\\bin\\ghdl.exe', '-r', '--std=08', '--workdir=rtl/build/work', '-Prtl/build/unisim', 'tb_motor_top']' timed out after 1800 seconds
-exit=1
+../../src/ieee2008/numeric_std-body.vhdl:1793:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+rtl/tb/tb_motor_top.vhd:208:5:@2200ns:(report note): 1) Identificacion
+rtl/tb/tb_motor_top.vhd:82:9:@43200ns:(report note):   [ok ] ID = 0xA5
+rtl/tb/tb_motor_top.vhd:82:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
+rtl/tb/tb_motor_top.vhd:82:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
+rtl/tb/tb_motor_top.vhd:215:5:@84200ns:(report note): 2) Sembrar
+rtl/tb/tb_motor_top.vhd:82:9:@206200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@338700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
+rtl/tb/tb_motor_top.vhd:82:9:@379700ns:(report note):   [ok ] sembrado
+rtl/tb/tb_motor_top.vhd:82:9:@379700ns:(report note):   [ok ] sin alarmas de salud
+rtl/tb/tb_motor_top.vhd:237:5:@379700ns:(report note): 3) Generar clave
+rtl/tb/tb_motor_top.vhd:82:9:@451200ns:(report note):   [ok ] clave valida
+rtl/tb/tb_motor_top.vhd:82:9:@627200ns:(report note):   [ok ] clave no nula: a6605cff920a967c66e2619982874276
+rtl/tb/tb_motor_top.vhd:244:5:@627200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
+rtl/tb/tb_motor_top.vhd:82:9:@1018700ns:(report note):   [ok ] ALEATORIO no nulo
+rtl/tb/tb_motor_top.vhd:82:9:@1018700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
+rtl/tb/tb_motor_top.vhd:254:5:@1018700ns:(report note): 4) Reto-respuesta
+rtl/tb/tb_motor_top.vhd:82:9:@1578200ns:(report note):   [ok ] etiqueta lista
+rtl/tb/tb_motor_top.vhd:82:9:@1754200ns:(report note):   [ok ] etiqueta: 4ed4e1144a784e92267db036543e1259
+rtl/tb/tb_motor_top.vhd:82:9:@2032200ns:(report note):   [ok ] la etiqueta cambia con el reto
+rtl/tb/tb_motor_top.vhd:273:5:@2032200ns:(report note): 5) Segunda clave distinta
+rtl/tb/tb_motor_top.vhd:82:9:@2279700ns:(report note):   [ok ] dos generaciones dan claves distintas
+rtl/tb/tb_motor_top.vhd:279:5:@2279700ns:(report note): 6) Captura de bits crudos
+rtl/tb/tb_motor_top.vhd:82:9:@3335200ns:(report note):   [ok ] buffer de captura lleno
+rtl/tb/tb_motor_top.vhd:82:9:@3541700ns:(report note):   [ok ] bits crudos con contenido variado: 95a952a952ad52b56a54ad5aad4ab5ab
+rtl/tb/tb_motor_top.vhd:297:5:@3541700ns:(report note): 7) Sin modo test la clave no se lee
+rtl/tb/tb_motor_top.vhd:82:9:@3718700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
+rtl/tb/tb_motor_top.vhd:314:5:@3718700ns:(report note):   volcado en results/tb_motor_top.txt
+rtl/tb/tb_motor_top.vhd:317:7:@3718700ns:(report note): tb_motor_top: 0 fallos
+simulation stopped @3718700ns
+
+=== resumen ===
+todos los bancos pasan
+run_tb exit=0
 Verificacion cruzada del motor con el modelo de referencia
-  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 2ab86562329ae5a3a4de6ea59e4dbdc5
-  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 7c11c9d2cb6d836618ffa7fd85c2714d
-  [ok ] clave1 = primeros 16 bytes de aleatorio1
+  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 4ed4e1144a784e92267db036543e1259
+  [ok ] etiqueta2 = CMAC_clave1(reto2) -> ba7e9a7f67c303d5b243a5a8d983543f
+  [ok ] aleatorio1 (registro legible) no contiene clave1 en ninguna mitad
   [ok ] las dos claves difieren
   [ok ] clave1 no es un patron trivial
 
 verifica_top: 0 fallos
+verifica exit=0

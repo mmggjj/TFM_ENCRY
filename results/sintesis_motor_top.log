@@ -1,0 +1,8 @@
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+motor_top        47091   8405   833525.4 114.849    30
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\sintesis_sg13g2.csv
+exit=0

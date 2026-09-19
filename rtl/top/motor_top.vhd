@@ -23,7 +23,13 @@ entity motor_top is
   generic (
     G_ETAPAS_RO1 : positive := 7;      -- anillo muestreado
     G_ETAPAS_RO2 : positive := 5;      -- anillo de muestreo
-    G_DIR_I2C    : std_logic_vector(6 downto 0) := "0110000"
+    G_DIR_I2C    : std_logic_vector(6 downto 0) := "0110000";
+    -- Divisor minimo (CFG_KD) con el que se acepta sembrar. Por debajo, el
+    -- cruce de dominio pierde bits en silencio y la semilla acumula muy
+    -- poco jitter; los tests de salud no lo detectan. Antes esto era una
+    -- obligacion del maestro que el hardware no imponia; ahora la impone.
+    -- 6 (K_D = 64) para anillos a velocidad fisica con reloj de 100 MHz.
+    G_KD_MIN     : natural := 6
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -250,7 +256,11 @@ begin
               cap_arranca <= '1';
             end if;
             if orden = LIBRE then
-              if (reg_wdato(0) = '1' or reg_wdato(5) = '1') and alm = '0' then
+              -- Sembrar exige ademas un divisor por encima del minimo: con
+              -- CFG_KD bajo la semilla seria de calidad no garantizada y
+              -- ningun test de salud lo delataria.
+              if (reg_wdato(0) = '1' or reg_wdato(5) = '1') and alm = '0'
+                 and to_integer(kd_sel) >= G_KD_MIN then
                 siembra_es_reseed <= reg_wdato(5);
                 recogiendo  <= '1';
                 n_recogidos <= (others => '0');
@@ -268,7 +278,13 @@ begin
                 cmac_en_curso <= '0';
               end if;
             end if;
-          when 16#04# => kd_sel <= unsigned(reg_wdato(4 downto 0));
+          when 16#04# =>
+            -- Solo con el motor libre: cambiar la tasa de muestreo a mitad
+            -- de un sembrado invalidaria el modelo estocastico de esa
+            -- semilla. Con una orden en curso la escritura se ignora.
+            if orden = LIBRE then
+              kd_sel <= unsigned(reg_wdato(4 downto 0));
+            end if;
           when 16#05# => pagina <= unsigned(reg_wdato(1 downto 0));
           when 16#20# to 16#2F# =>
             reto(127 - 8 * (d - 16#20#) downto 120 - 8 * (d - 16#20#)) <= reg_wdato;

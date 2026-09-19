@@ -26,3 +26,10 @@ __pycache__/
 # Copias de seguridad y temporales
 *.bak
 *~
+# Derivados de las capturas (se regeneran con analysis/entropia_90b.py)
+results/entropia90b/bits/
+# Logs serie integros de las capturas del ESP32: se guardan en local (evidencia) pero no se versionan;
+# la carga util con CRC comprobado va en results/esp32_tramas_*.bin
+results/esp32_consola_*.log
+# Copia por consola de esos mismos logs (stdout de consola_esp32.py): tampoco se versiona
+results/esp32_captura_*.txt
