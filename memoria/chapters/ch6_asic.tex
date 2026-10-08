@@ -38,8 +38,10 @@ synthesized; they are the one block designed at transistor level
 
 Table~\ref{tab:synth} gives the result for each block. The digital
 engine --- everything except the capture buffer --- is about
-\textbf{62~kGE}, and AES is 51\,\% of it: the authenticator and the
-generator each instantiate their own encryption core, 15.8~kGE apiece.
+\textbf{68~kGE}: 62.9~kGE in the blocks of the table and 5.2~kGE in the
+top-level sequencer and register file, which only appear when the whole
+engine is synthesized. AES is close to half of it: the authenticator and
+the generator each instantiate their own encryption core, 15.8~kGE apiece.
 The capture buffer is reported for completeness but must not be read as
 part of the product: its 46.7~kGE are a 4096-bit memory mapped onto
 flip-flops because the flow has no SRAM macros. In the FPGA it occupies a
@@ -60,11 +62,12 @@ AES-128 encryption core       & 10\,439 & 262   & 114\,771 & 15.81 \\
 AES-CMAC (with its AES)        & 13\,210 & 909   & 169\,766 & 23.39 \\
 CTR\_DRBG with df (with its AES) & 17\,953 & 2\,355 & 267\,262 & 36.83 \\
 Health tests (RCT, APT)        & 568     & 85    & 8\,986   & 1.24 \\
-ERO sampler and divider        & 117     & 24    & 2\,078   & 0.29 \\
+ERO sampler and 24-bit divider & 132     & 28    & 2\,397   & 0.33 \\
 Bit clock-domain crossing      & 11      & 7     & 408      & 0.06 \\
-I2C slave                      & 310     & 63    & 5\,507   & 0.76 \\
+I2C slave (with bus-hang guard) & 431    & 85    & 7\,408   & 1.02 \\
 \midrule
-Capture buffer (4096-bit RAM as flip-flops) & 12\,250 & 4\,140 & 339\,057 & 46.72 \\
+Capture buffer (4096-bit RAM as flip-flops) & 12\,592 & 4\,140 & 339\,698 & 46.81 \\
+Whole engine, rings as wires   & 47\,252 & 8\,409 & 834\,033 & 114.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,7 +106,8 @@ consuming the seed as a stream and sharing temporaries; roughly 800
 flip-flops, about 4~kGE.
 \end{enumerate}
 
-With the three, the digital engine falls to \textbf{$\approx$20~kGE},
+With the three, the digital engine falls to \textbf{$\approx$20--25~kGE}
+(the 5~kGE of top-level control barely shrink),
 which is the order of magnitude the state of the art anticipated (13 to
 25~kGE for engines of this kind) and which, at the published growth
 factor of $\approx$2.35 from cell area to core area for an AES on this same

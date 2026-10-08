@@ -41,11 +41,20 @@ import numpy as np
 CABECERA_GENERICA = """
 * ---- CABECERA DEPENDIENTE DE LA TECNOLOGIA -------------------------
 * Modelos MARCADOR DE POSICION (MOS nivel 1). Sustituir por el .lib del
-* PDK real; el resto del fichero no cambia.
-.model nmos_tec nmos (level=1 vto=0.45 kp=300u gamma=0.4 lambda=0.08
+* PDK real; el resto del fichero no cambia. Cada cabecera define dos
+* subcircuitos de 4 terminales, nmos_tec y pmos_tec, con parametros w y l:
+* asi un PDK cuyos transistores ya son subcircuitos (IHP SG13G2) entra
+* igual que unos modelos .model.
+.model nmos_l1 nmos (level=1 vto=0.45 kp=300u gamma=0.4 lambda=0.08
 + phi=0.9 tox=4.1n cgso=0.2n cgdo=0.2n cj=1m mj=0.5 cjsw=0.2n)
-.model pmos_tec pmos (level=1 vto=-0.45 kp=100u gamma=0.4 lambda=0.12
+.model pmos_l1 pmos (level=1 vto=-0.45 kp=100u gamma=0.4 lambda=0.12
 + phi=0.9 tox=4.1n cgso=0.2n cgdo=0.2n cj=1m mj=0.5 cjsw=0.2n)
+.subckt nmos_tec d g s b w=1u l=0.18u
+m1 d g s b nmos_l1 w={w} l={l}
+.ends
+.subckt pmos_tec d g s b w=2u l=0.18u
+m1 d g s b pmos_l1 w={w} l={l}
+.ends
 * --------------------------------------------------------------------
 """
 
@@ -62,17 +71,17 @@ ven en  0 dc {{vdd_v}}
 
 * Inversor
 .subckt inv a y vdd vss
-mp y a vdd vdd pmos_tec w={{wp}} l={{lmin}}
-mn y a vss vss nmos_tec w={{wn}} l={{lmin}}
+xmp y a vdd vdd pmos_tec w={{wp}} l={{lmin}}
+xmn y a vss vss nmos_tec w={{wn}} l={{lmin}}
 cc y vss {{cl}}
 .ends
 
 * NAND de dos entradas, para arrancar y parar el anillo
 .subckt nand2 a b y vdd vss
-mp1 y a vdd vdd pmos_tec w={{wp}} l={{lmin}}
-mp2 y b vdd vdd pmos_tec w={{wp}} l={{lmin}}
-mn1 y a nx  vss nmos_tec w={{2*wn}} l={{lmin}}
-mn2 nx b vss vss nmos_tec w={{2*wn}} l={{lmin}}
+xmp1 y a vdd vdd pmos_tec w={{wp}} l={{lmin}}
+xmp2 y b vdd vdd pmos_tec w={{wp}} l={{lmin}}
+xmn1 y a nx  vss nmos_tec w={{2*wn}} l={{lmin}}
+xmn2 nx b vss vss nmos_tec w={{2*wn}} l={{lmin}}
 cc y vss {{cl}}
 .ends
 
@@ -95,13 +104,17 @@ xnand en n{n_ultima} n1 vdd 0 nand2
 
 def netlist(n_etapas=5, vdd=1.8, lmin="0.18u", wn="1u", wp="2u", cl="1f",
             tstop="2u", paso="0.2p", paso_max="1p", tinicio="0",
-            densidad_ruido=0.0, nt_ruido=1e-12, cabecera=None):
+            densidad_ruido=0.0, nt_ruido=1e-12, cabecera=None,
+            flicker=None, guardar=None):
     """Devuelve el netlist como texto.
 
     densidad_ruido: densidad espectral de corriente de ruido por nudo, en
     A^2/Hz (una cara). 0 desactiva el ruido, que es como se mide la
     resolucion numerica del banco.
     nt_ruido: paso temporal de la fuente de ruido, en segundos.
+    flicker: None, o (nalpha, namp) para anadir ruido 1/f^nalpha a cada
+    fuente con la amplitud NAMP de trnoise (calibrada aparte).
+    guardar: senales a guardar; por defecto solo la salida del anillo.
     """
     if n_etapas % 2 == 0:
         raise ValueError("el numero de etapas debe ser impar")
@@ -110,10 +123,12 @@ def netlist(n_etapas=5, vdd=1.8, lmin="0.18u", wn="1u", wp="2u", cl="1f",
         f"xinv{i} n{i} n{i + 1} vdd 0 inv" for i in range(1, n_etapas)
     )
 
-    if densidad_ruido > 0.0:
+    if densidad_ruido > 0.0 or flicker:
         na = np.sqrt(densidad_ruido / (2.0 * nt_ruido))
+        nalpha, namp = flicker if flicker else (0, 0)
         ruido = "\n".join(
-            f"iru{i} n{i} 0 dc 0 trnoise({na:.6e} {nt_ruido:.3e} 0 0)"
+            f"iru{i} n{i} 0 dc 0 trnoise({na:.6e} {nt_ruido:.3e} "
+            f"{nalpha:g} {namp:.6e})"
             for i in range(1, n_etapas + 1)
         )
     else:
@@ -126,7 +141,7 @@ def netlist(n_etapas=5, vdd=1.8, lmin="0.18u", wn="1u", wp="2u", cl="1f",
         vdd=vdd, lmin=lmin, wn=wn, wp=wp, cl=cl,
         cadena=cadena, ruido=ruido,
         tstop=tstop, paso=paso, paso_max=paso_max, tinicio=tinicio,
-        senal=f"v(n{n_etapas})",
+        senal=guardar or f"v(n{n_etapas})",
     )
 
 
@@ -283,30 +298,42 @@ def _ngspice_wsl():
     return None
 
 
-def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800):
-    """Lanza ngspice en modo lote y devuelve (nombres, matriz, salida)."""
+def a_wsl(p):
+    """Ruta de Windows vista desde WSL."""
+    p = os.path.abspath(p).replace("\\", "/")
+    return "/mnt/" + p[0].lower() + p[2:]
+
+
+def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800,
+            orden=None, spiceinit=None):
+    """Lanza ngspice en modo lote y devuelve (nombres, matriz, salida).
+
+    orden: ejecutable de ngspice (por defecto, el que se encuentre).
+    spiceinit: texto de un .spiceinit, p. ej. para cargar modelos OSDI.
+    """
     directorio = directorio or tempfile.mkdtemp(prefix="ring_")
     os.makedirs(directorio, exist_ok=True)
     sp = os.path.join(directorio, "ring.sp")
     raw = os.path.join(directorio, "ring.raw")
     with open(sp, "w") as f:
         f.write(texto_netlist)
+    if spiceinit is not None:
+        # ngspice busca el .spiceinit en el directorio desde el que se lanza
+        with open(os.path.join(directorio, ".spiceinit"), "w", newline="\n") as f:
+            f.write(spiceinit)
 
     if usar_wsl is None:
         usar_wsl = shutil.which("ngspice") is None
 
     if usar_wsl:
-        orden = _ngspice_wsl()
+        orden = orden or _ngspice_wsl()
         if orden is None:
             raise RuntimeError("no se encuentra ngspice ni en Windows ni en WSL")
-
-        def w(p):
-            p = os.path.abspath(p).replace("\\", "/")
-            return "/mnt/" + p[0].lower() + p[2:]
         cmd = ["wsl.exe", "-e", "bash", "-lc",
-               f"{orden} -b -r '{w(raw)}' '{w(sp)}'"]
+               f"cd '{a_wsl(directorio)}' && "
+               f"{orden} -b -r '{a_wsl(raw)}' '{a_wsl(sp)}'"]
     else:
-        cmd = ["ngspice", "-b", "-r", raw, sp]
+        cmd = [orden or "ngspice", "-b", "-r", raw, sp]
 
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     if not os.path.exists(raw):

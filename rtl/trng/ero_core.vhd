@@ -23,8 +23,10 @@ use ieee.numeric_std.all;
 
 entity ero_core is
   generic (
-    -- Ancho del divisor. K_D maximo = 2**G_CNT_BITS.
-    G_CNT_BITS : positive := 20
+    -- Ancho del divisor. K_D maximo = 2**G_CNT_BITS. 24 y no 20: el anillo
+    -- con transistores de IHP pide K_D = 941 107 en esquina tipica a 27 C
+    -- (docs/anillo_ihp.md) y 2**20 solo dejaba un 11 % de margen.
+    G_CNT_BITS : positive := 24
   );
   port (
     ro1     : in  std_logic;                     -- anillo muestreado

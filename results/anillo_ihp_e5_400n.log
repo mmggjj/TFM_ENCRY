@@ -1,0 +1,32 @@
+== 1. Ruido del inversor en su punto de conmutacion (PDK IHP) ==
+  vtrip = 0.630529
+  idd = 1.12866e-05
+  wn = 0.5u
+  wp = 1.2u
+  l = 0.13u
+  vdd = 1.2
+  temp = 27.0
+  esquina = mos_tt
+  s_termico_A2Hz = 4.126461227717957e-24
+  planitud_banda = 1.1137561402414493
+  alfa_flicker = 0.9999991319523158
+  k_flicker = 8.155731962261962e-17
+  f_esquina_Hz = 19764758.33785828
+  g_nudo_S = 0.00023841438697313328
+  gamma_efectiva = 1.0441519118919116
+  directorio = C:\Users\mario\AppData\Local\Temp\ruido_ihp_p_e2_reh
+
+== 2. Anillo en transitorio ==
+  V_T del nmos (extrapolacion lineal) = 0.5573 V
+  escala    0: S_i 0.000e+00 A2/Hz, 1071 cruces, T 366.039 ps, sigma 0.696 fs, sigma/T 1.901e-06, exp 0.47, P 143.0 uW, 80 s
+  escala    1: S_i 4.126e-24 A2/Hz, 1073 cruces, T 365.972 ps, sigma 180.371 fs, sigma/T 4.929e-04, exp 1.05, P 143.0 uW, 739 s
+  escala    4: S_i 1.651e-23 A2/Hz, 1074 cruces, T 365.967 ps, sigma 358.636 fs, sigma/T 9.800e-04, exp 1.08, P 143.0 uW, 1235 s
+
+== 3. Lectura ==
+  resolucion del banco 0.696 fs frente a 180.371 fs con el ruido del PDK (margen x259)
+  ley de la raiz: S x4 -> sigma x1.988 (teorico x2,000)
+  Abidi (orden de magnitud; V_car = (VDD/2 - V_T)/gamma con la gamma medida 1.04): sigma/T = 2.490e-03 frente a 4.929e-04 simulado (cociente 0.20)
+  Q por periodo 2.429e-07 -> K_D = 941107 -> H_min = 0.9800; con el anillo de muestreo a 2.73 GHz, 2.9 kbit/s
+
+datos en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\anillo_ihp_e5_400n.csv
+exit=0

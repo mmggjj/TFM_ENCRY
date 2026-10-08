@@ -1,0 +1,13 @@
+nmos solo: V_d 0.6305 V, S_th 1.4479e-24 A2/Hz, K_1/f 2.0066e-17 A2, alfa 1.000, esquina 13.86 MHz
+pmos solo: V_d 0.6305 V, S_th 2.6791e-24 A2/Hz, K_1/f 6.1492e-17 A2, alfa 1.000, esquina 22.95 MHz
+suma K_n + K_p = 8.1557e-17 (inversor completo: 8.156e-17); asimetria (K_n-K_p)/(K_n+K_p) = -0.508
+linealidad de la ISF en la fase 0,300 del nudo n3 (Gamma con dq = 1 %: -0,85918):
+  dq = 0.5 % de q_max: dt +250.079 fs, Gamma -0.85865
+  dq = 2.0 % de q_max: dt +1001.406 fs, Gamma -0.85959
+
+== Esquina 1/f^3 y cruce termico/1-f segun como module el ruido ==
+nudo n3: Gamma_dc -0.0191, Gamma_rms 0.4232, lobulo neg medio -0.1623, lobulo pos medio +0.1432
+nudo n1: Gamma_dc +0.0137, Gamma_rms 0.4221, lobulo neg medio -0.1568, lobulo pos medio +0.1705
+(a) estacionario, como el banco: f_1/f^3 =      36.5 kHz -> tau_cruce =    9879.9 ns =     26995 periodos; a K_D = 941 107 (344 us) el 1/f es      35 veces el termico
+(b) cada transistor solo en su lobulo: f_1/f^3 =    5325.7 kHz -> tau_cruce =      67.7 ns =       185 periodos; a K_D = 941 107 (344 us) el 1/f es    5080 veces el termico
+(blanco en (b) frente a (a): x0.480 de varianza termica)

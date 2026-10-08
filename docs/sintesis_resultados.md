@@ -22,18 +22,29 @@ mayor, y para un AES en esta misma biblioteca el factor publicado es
 | aes_cmac (incluye su AES) | 13.210 | 909 | 169.766 | 23,39 |
 | ctr_drbg (incluye su AES) | 17.953 | 2.355 | 267.262 | 36,83 |
 | health_tests | 568 | 85 | 8.986 | 1,24 |
-| ero_core | 117 | 24 | 2.078 | 0,29 |
+| ero_core (contador de 24 bits) | 132 | 28 | 2.397 | 0,33 |
 | bit_cdc | 11 | 7 | 408 | 0,06 |
-| i2c_slave | 310 | 63 | 5.507 | 0,76 |
-| trng_capture | 12.250 | 4.140 | 339.057 | 46,72 |
+| i2c_slave (con guarda de bus colgado) | 431 | 85 | 7.408 | 1,02 |
+| trng_capture | 12.592 | 4.140 | 339.698 | 46,81 |
+| **motor_top** (anillos como cable, `synth/ring_osc_stub.vhd`) | 47.252 | 8.409 | 834.033 | **114,92** |
+
+Filas al día con `results/sintesis_sg13g2.csv` el 08-10-2026. Cambios
+respecto a la primera versión de esta tabla: el ERO pasó de 20 a 24 bits
+de contador (0,29 → 0,33 kGE; el motor entero, 114,73 → 114,92) porque el
+anillo de IHP pide K_D ≈ 941 000 (`anillo_ihp.md`); el I2C y la captura
+no se habían actualizado tras la guarda de bus colgado y la lectura a cero
+hasta trozo completo.
 
 Los anillos no se sintetizan: son el único bloque atado a la tecnología y
 en un integrado se diseñan a nivel de transistor.
 
 ## Lectura de los números
 
-**El motor digital, tal como está, son unos 62 kGE** (todo menos la
-captura), y **el AES es el 51 %** de eso: hay dos núcleos AES, uno dentro
+**El motor digital, tal como está, son unos 68 kGE** (todo menos la
+captura): 62,9 en los bloques de la tabla y 5,2 en el secuenciador y los
+registros del nivel superior, que solo aparecen al sintetizar el motor
+entero (114,92 − 46,81). Hasta el 08-10 este documento daba 62 kGE, que
+era solo la suma de bloques. **El AES es casi la mitad**: hay dos núcleos AES, uno dentro
 del autenticador y otro dentro del generador, con 15,8 kGE cada uno. Eso
 apunta a las tres optimizaciones del capítulo de integrado, en orden de
 rendimiento por esfuerzo:
@@ -54,7 +65,8 @@ rendimiento por esfuerzo:
    derivación. Consumiendo la semilla en flujo y compartiendo temporales
    se pueden quitar del orden de 800 biestables, unos 4 kGE.
 
-Con las tres, el motor digital bajaría a **≈ 20 kGE**, que es el orden de
+Con las tres, el motor digital bajaría a **≈ 20-25 kGE** (los 5 kGE del
+nivel superior apenas se reducen), que es el orden de
 magnitud que estimaba el estado del arte (13 a 25 kGE) y que **cabe con
 mucho margen en el bloque mínimo de una tirada académica** (0,8 mm² en IHP;
 20 kGE × 7,26 µm² × 2,35 de crecimiento ≈ 0,34 mm² de núcleo).

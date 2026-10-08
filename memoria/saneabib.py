@@ -10,7 +10,9 @@ import shutil
 from pathlib import Path
 
 BIB = Path(__file__).resolve().parent / "references.bib"
-CAMPOS_TEXTO = {"title", "booktitle", "journal", "note", "author", "publisher",
+# "annote": desde el 08-10-2026 las notas internas de verificacion van en
+# annote, que IEEEtran no imprime (antes iban en note y salian en la memoria).
+CAMPOS_TEXTO = {"title", "booktitle", "journal", "note", "annote", "author", "publisher",
                 "institution", "howpublished", "organization", "series",
                 "address", "school", "editor"}
 SUSTITUCIONES = {

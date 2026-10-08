@@ -1,0 +1,27 @@
+=== analisis ===
+rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
+  shared variable cfg : t_cfg;
+                  ^
+
+=== ejecucion ===
+
+--- tb_ring_osc ---
+rtl/tb/tb_ring_osc.vhd:86:5:@0ms:(report note): 1) Arranque, parada y frecuencia nominal
+rtl/tb/tb_ring_osc.vhd:78:9:@50ns:(report note):   [ok ] con habilitacion a cero el anillo esta quieto
+rtl/tb/tb_ring_osc.vhd:99:5:@401ns:(report note):   periodo medido 1.5e3 ps, esperado 1.5e3 ps
+rtl/tb/tb_ring_osc.vhd:78:9:@401ns:(report note):   [ok ] la frecuencia coincide con 1/(2*N*tpd) dentro del 2 %
+rtl/tb/tb_ring_osc.vhd:78:9:@401ns:(report note):   [ok ] frecuencia = 6.666666666666666e2 MHz
+rtl/tb/tb_ring_osc.vhd:106:5:@401ns:(report note): 2) Resolucion del banco: jitter con el ruido apagado
+rtl/tb/tb_ring_osc.vhd:108:5:@30402500ps:(report note):   suelo de ruido numerico 0.0 ps
+rtl/tb/tb_ring_osc.vhd:78:9:@30402500ps:(report note):   [ok ] el suelo esta muy por debajo del jitter que hay que medir
+rtl/tb/tb_ring_osc.vhd:112:5:@30402500ps:(report note): 3) Jitter inyectado frente al teorico
+rtl/tb/tb_ring_osc.vhd:117:5:@60502056024fs:(report note):   sigma medido 6.366564018748695 ps, teorico 6.324555320336758 ps
+rtl/tb/tb_ring_osc.vhd:78:9:@60502056024fs:(report note):   [ok ] sigma_periodo = sqrt(2N)*sigma_etapa dentro del 10 %
+rtl/tb/tb_ring_osc.vhd:121:5:@60502056024fs:(report note):   jitter relativo sigma/T = 4.2445063518098064e-3
+rtl/tb/tb_ring_osc.vhd:78:9:@60552056024fs:(report note):   [ok ] el anillo vuelve a pararse
+rtl/tb/tb_ring_osc.vhd:128:7:@60552056024fs:(report note): tb_ring_osc: 0 fallos
+simulation stopped @60552056024fs
+
+=== resumen ===
+todos los bancos pasan
+run_tb exit=0

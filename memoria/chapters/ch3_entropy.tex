@@ -241,8 +241,28 @@ including those on a real \ac{PDK}: keep injected noise below $\sim40\,\%$
 of the stage current and verify that the mean period does not move when
 noise is enabled. With the placeholder models the ring oscillates at
 4.3~GHz, which is not physical; the numbers that enter the thesis come
-from the foundry models, where transient noise analysis injects the
-device noise itself.
+from real device models.
+
+The first such models are those of the open IHP SG13G2 \ac{PDK} (130~nm,
+1.2~V core, PSP~103.6 compact model, Apache-2.0
+licence)~\cite{ihp_openpdk_repo}, which can be published along with
+everything else. Two things differ from the placeholder bench. First, the
+models are Verilog-A and must be compiled to the OSDI interface; this
+required building ngspice~47 and the OpenVAF-Reloaded compiler in user
+space, since no package channel offered versions recent enough. Second,
+and more important, the noise is no longer chosen: ngspice does not
+inject device noise during a transient, so the density of the current
+sources is taken from a small-signal noise analysis of the same
+transistors, an inverter biased at its switching point with input tied to
+output, where both devices conduct and noise moves the crossing instant.
+The input-referred noise of that node is exactly the current the
+transient source must reproduce. Its spectrum is a pure $1/f$ term plus a
+white floor of $4.13\times10^{-24}~\mathrm{A^2/Hz}$, flat from 100~kHz to
+10~GHz, with the $1/f$ corner at 19.8~MHz and an effective noise factor
+$\gamma = 1.04$, above the long-channel 2/3 as expected for a short
+device. The $1/f$ part of ngspice's noise source was calibrated against a
+known resistor before use: its density is $\mathrm{NAMP}^2/(\pi f)$ to
+0.4\,\%. Results are in Section~\ref{sec:ihp_ring}.
 
 \section{Design target and divider selection}
 \label{sec:kd}

@@ -48,12 +48,29 @@ todo. Léelo entero antes de tocar nada.
   ningún efecto de condición (p ≥ 0,063). Resumen en
   `results/entropia_90b_resumen.md`; lectura en `docs/esp32_linea_base_90b.md`.
 
+## Estado al 08-10-2026
+
+- Tutores: Antonio J. Acosta y Alejandro Casado (IMSE-CNM). Título
+  propuesto por ellos: *Diseño y caracterización de aleatoriedad de un
+  TRNG basado en osciladores en anillos*. Resumen para la reunión en
+  `docs/resumen_reunion_tutores.md`.
+- **Anillo con transistores reales del PDK abierto IHP SG13G2**
+  (`analysis/anillo_ihp.py`, `docs/anillo_ihp.md`): el ruido inyectado sale
+  del propio modelo; 5 etapas a 2,73 GHz, σ = 180 fs por periodo,
+  K_D ≈ 941 000, 2,9 kbit/s. Necesita ngspice 47 y OpenVAF-Reloaded,
+  compilados en WSL (`~/eda/ngspice47`, `~/eda/bin/openvaf-r`); el
+  ngspice 41 de conda-forge no carga estos modelos. Receta en el documento.
+- Contador del divisor del ERO de **20 a 24 bits** (`G_CNT_BITS`): con 20
+  el K_D máximo dejaba solo un 11 % de margen. CFG_KD efectivo 0-24.
+- Las notas internas de la bibliografía van en `annote` (antes `note`, y
+  se imprimían en la memoria). Al añadir referencias, usar `annote`.
+
 ## Qué hay y qué está verificado
 
 | Carpeta | Contenido | Estado |
 |---|---|---|
 | `docs/` | plan, arquitectura, **`mapa_registros.md`**, 4 estados del arte, resultados | cerrado |
-| `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `campana_rng.py` (captura con el firmware del TFM_RNG, log íntegro), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL), `resumen_90b.py` (tablas + ANOVA por condición) | autovalidado |
+| `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `campana_rng.py` (captura con el firmware del TFM_RNG, log íntegro), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL), `resumen_90b.py` (tablas + ANOVA por condición), `anillo_ihp.py` (anillo con el PDK de IHP, separador térmico/1/f validado) | autovalidado |
 | `rtl/` | VHDL-2008: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG, `top/motor_top.vhd` | 7 bancos pasan (`python rtl/run_tb.py`) |
 | `synth/` | síntesis Yosys sobre IHP SG13G2, área en kGE | hecho |
 | `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls | compilado y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio |

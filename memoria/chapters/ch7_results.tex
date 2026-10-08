@@ -24,10 +24,12 @@ Section~\ref{sec:objectives} onto evidence.
 \toprule
 Obj. & State & Evidence \\
 \midrule
-O1 & met    & Ring described at transistor level; noise swept in SPICE
-              (Section~\ref{sec:spice_results}) \\
-O2 & met    & Jitter extracted from the waveforms; estimator validated on
-              synthetic data with known $Q$ \\
+O1 & met    & Ring at transistor level on the open IHP SG13G2 \ac{PDK},
+              with the noise of its own device models
+              (Section~\ref{sec:ihp_ring}); foundry \ac{PDK} pending \\
+O2 & met    & Jitter extracted from the waveforms; thermal and $1/f$
+              separated (bench and impulse sensitivity function);
+              estimator validated on synthetic data with known $Q$ \\
 O3 & met    & Stochastic model closed: exact wrapped-Gaussian computation,
               design point $Q \ge 0.2286$ (Section~\ref{sec:opoint}) \\
 O4 & met    & Engine written in portable VHDL-2008; seven testbenches pass
@@ -106,6 +108,94 @@ perturbation is large enough to change the operating point of the
 inverters --- and it is reported rather than dropped, because the boundary
 of validity of a model is itself a result. Only the two central points are
 used for anything downstream.
+
+\section{The ring with the transistors of an open PDK}
+\label{sec:ihp_ring}
+
+The same five-stage ring was simulated with the low-voltage transistors of
+the IHP SG13G2 open \ac{PDK} ($W_n = 0.5~\mu$m, $W_p = 1.2~\mu$m,
+$L = 0.13~\mu$m, 1.2~V, 27~$^\circ$C, typical corner, 1~fF per node as a
+pre-layout estimate of wiring), with the noise density measured on the
+same devices (Section~\ref{sec:spice}) injected at every node.
+Table~\ref{tab:ihp_ring} gives the result over 400~ns, about 1070
+periods per point.
+
+\begin{table}[htbp]
+\centering
+\caption{Five-stage ring on IHP SG13G2 \simu{}. The noise density is not
+assumed: it is the white floor of the transistors' own noise model at the
+switching point. Power is the average over whole periods.}
+\label{tab:ihp_ring}
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Injected noise & $T$ (ps) & $\sigma$ (fs) & $\sigma/T$ & Exponent & $P$ ($\mu$W) \\
+\midrule
+none (numerical floor)          & 366.04 & 0.70   & $1.9\times10^{-6}$ & 0.47 & 143.0 \\
+\ac{PDK} thermal, $4.13\times10^{-24}$~A$^2$/Hz & 365.97 & 180.37 & $4.93\times10^{-4}$ & 1.05 & 143.0 \\
+thermal $\times4$               & 365.97 & 358.64 & $9.80\times10^{-4}$ & 1.08 & 143.0 \\
+thermal + $1/f$ of the \ac{PDK}  & 365.97 & 183.33 & $5.01\times10^{-4}$ & 1.01 & 143.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The resolution is stated first: 0.70~fs, 259 times below the jitter that
+the device noise produces, and with an exponent of 0.47 that marks it as
+numerical noise rather than a random walk. Quadrupling the density
+doubles the jitter to 0.6\,\% ($\times1.988$), and the mean period does
+not move, so the bench stays in the linear regime that the placeholder
+bench left at its highest point. The accumulation exponent is 1.05:
+white noise, as the stochastic model assumes. As an independent check,
+Abidi's closed form for ring oscillators~\cite{abidi_2006_ring}, evaluated
+with quantities measured at the same bias point, predicts
+$\sigma/T = 1.2\times10^{-3}$; the simulation gives 0.42 times that,
+the same order. The long-channel form of that formula, which goes through
+the threshold voltage, does not apply here: at the switching point the
+devices sit only 0.07~V above threshold.
+
+With $\sigma/T = 4.93\times10^{-4}$ the divider for $Q \ge 0.2286$ is
+$K_D = 941\,107$, a sampling interval of 344~$\mu$s with an identical
+sampling ring, and 2.9~kbit/s per \ac{ERO}; if the independent jitter of
+the sampling ring is also credited, $K_D$ halves and the rate doubles,
+but that requires the two rings not to share noise through supply or
+substrate, which only silicon can show. One design consequence was acted
+on immediately: the divider counter had 20 bits, so the largest $K_D$ was
+$2^{20} = 1\,048\,576$, an 11\,\% margin over the requirement in the
+typical corner at room temperature. It now has 24 bits (four flip-flops,
+0.04~kGE), and the full-engine bench and its cross-check were re-run with
+it.
+
+\paragraph{Flicker noise.} Adding the $1/f$ noise of the \ac{PDK} leaves
+400~ns unchanged: the separation $E[D^2] = a_1 M + a_2 M^2$, validated
+beforehand on synthetic phases (thermal recovered to 0.1\,\% with and
+without $1/f$), finds $a_2$ compatible with zero. Amplifying the $1/f$
+source to make it visible does not work, and the reason is instructive:
+the source is broadband, and amplified a thousandfold its density near
+the oscillation frequency is already seven times the thermal floor, so
+the ring converts it as white noise and the linear term grows by the
+expected factor while the quadratic term does not scale. The answer comes
+instead from the impulse sensitivity function of Hajimiri and
+Lee~\cite{hajimiri_1998_general}, measured by injecting 1\,\% of the node
+charge at 40 phases (linear to 0.1\,\% between 0.5 and 2\,\%). It is
+nearly symmetric, $|\Gamma_{dc}/\Gamma_{rms}| \approx 0.03$--$0.05$, so
+low-frequency noise injected uniformly over the period is barely
+converted. But the transistors are not symmetric: measured separately,
+the p-channel device has three times the $1/f$ noise of the n-channel
+one, and each injects noise mainly while it conducts, during one of the
+two opposite lobes. The two limits bracket the truth: with stationary
+noise, as in the bench, the $1/f^3$ corner is 36~kHz and flicker equals
+thermal jitter after 27\,000 periods; with each device confined to its
+lobe, the corner is 5.3~MHz and the crossover 185 periods. In both cases,
+at the operating divider flicker dominates the accumulated variance, by a
+factor between 35 and 5\,000. Two consequences follow. The jitter that
+sets the entropy bound must be measured at short accumulation, below
+about a hundred periods for this ring, and separated from the quadratic
+term --- inferring it from the total accumulated jitter at $K_D$ would
+credit entropy that is not there. And the stationary bench may
+overestimate the thermal variance by up to a factor of two, which would
+double $K_D$; the 24-bit counter covers it, and the tool that settles it
+is a cyclostationary transient-noise analysis, a concrete use of a
+commercial simulator.
 
 \section{Operating point: divider and throughput}
 \label{sec:opoint}
@@ -387,10 +477,14 @@ declared kind of uncertainty.
 \item[Simulated jitter.] Resolution floor 1.38~fs \simu{}, about 870 times
 below the smallest quantity measured. The scaling check against the
 expected square-root law agrees to 0.5\,\% in the valid regime, and the
-regime boundary is documented in Section~\ref{sec:spice_results}. The
-figure depends on the noise density assumed for the technology, which is
-itself \est{}: what the simulation establishes is the \emph{method} and
-the ring's response, not the absolute jitter of a fabricated device.
+regime boundary is documented in Section~\ref{sec:spice_results}. On the
+open \ac{PDK} the floor is 0.70~fs, 259 times below the jitter, and the
+noise density is no longer assumed but taken from the device models.
+What remains approximate is how that noise is applied: stationary
+injection may overestimate the thermal variance by up to a factor of two
+against a cyclostationary model, and pre-layout wiring is a 1~fF
+estimate. The figure is therefore a simulated value with a factor-of-two
+band, not the jitter of a fabricated device.
 \item[Recovered $Q$.] The estimator reproduces a known $Q$ with a bias
 below 2\,\% and a dispersion of 4.0\,\% over eight seeds with 20\,000
 blocks \simu{}. Without the corrections applied here a plain straight-line

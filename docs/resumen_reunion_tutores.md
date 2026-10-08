@@ -63,6 +63,31 @@ independientes de 2-8 kbit, no megabits en memoria.
 K_D entre 457 000 y 28 600 → 1 a 17 kbit/s por anillo. Suficiente: el producto es una
 semilla de 256 bits, no un flujo.
 
+**Con transistores reales: PDK abierto IHP SG13G2 (130 nm, 1,2 V)** [simulado]
+(`docs/anillo_ihp.md`). El ruido inyectado ya no se elige: sale del modelo del propio
+transistor (ruido de un inversor en su punto de conmutación): térmico
+4,13·10⁻²⁴ A²/Hz y 1/f con esquina en 19,8 MHz. Herramientas compiladas para ello:
+ngspice 47 y OpenVAF-Reloaded.
+
+| Anillo de 5 etapas, 400 ns | Resultado |
+|---|---|
+| Periodo y potencia | 366 ps (2,73 GHz), 143 µW |
+| Resolución del banco | 0,70 fs |
+| Jitter con el ruido del PDK | 180 fs por periodo, σ/T = 4,9·10⁻⁴, exponente 1,05 |
+| Ley de la raíz | ruido ×4 → jitter ×1,988 (teórico ×2,000) |
+| Contraste con Abidi (JSSC 2006) | mismo orden: la simulación da 0,42 veces su fórmula |
+| Divisor para H_min ≥ 0,98 | K_D ≈ 941 000 → 2,9 kbit/s por anillo |
+
+- Contador del divisor ampliado de 20 a 24 bits: con 20, el K_D máximo dejaba solo un
+  11 % de margen.
+- **Ruido 1/f:** con la función de sensibilidad al impulso (Hajimiri y Lee) y el 1/f de
+  cada transistor (el pMOS tiene 3 veces más que el nMOS), el 1/f iguala al térmico
+  entre los 185 y los 27 000 periodos según cómo actúe el ruido en el periodo; en el
+  punto de trabajo domina el jitter acumulado entre 35 y 5 000 veces. La medida que
+  fija la entropía en la FPGA tiene que hacerse con acumulaciones cortas (< ~100
+  periodos) y separando componentes. Cerrar la horquilla pide ruido transitorio
+  cicloestacionario (Spectre).
+
 ## 4. Motor digital (RTL portable, VHDL-2008)
 
 ```
@@ -94,11 +119,12 @@ RO1, RO2 → ERO (÷K_D) → cruce de dominio → pruebas de salud RCT/APT → 3
 |---|---|---|---|
 | AES-128 (cifrado) | 15,8 | pruebas de salud | 1,24 |
 | AES-CMAC | 23,4 | esclavo I2C | 1,02 |
-| CTR_DRBG | 36,8 | ERO + cruce de dominio | 0,35 |
-| captura de test (RAM como FF) | 46,8 | **nivel superior** | **114,7** |
+| CTR_DRBG | 36,8 | ERO (divisor de 24 bits) + cruce de dominio | 0,39 |
+| captura de test (RAM como FF) | 46,8 | **nivel superior** | **114,9** |
 
-Motor digital sin la vía de test ≈ 62 kGE. Camino identificado a ≈ 20 kGE: compartir un
-único AES entre DRBG y CMAC, S-box compacta, menos registros. 1 GE = NAND2 = 7,26 µm².
+Motor digital sin la vía de test ≈ 68 kGE (62,9 en bloques + 5,2 de control del nivel
+superior). Camino identificado a ≈ 20-25 kGE: compartir un único AES entre DRBG y CMAC,
+S-box compacta, menos registros. 1 GE = NAND2 = 7,26 µm².
 
 ## 6. ESP32 como comprobador [medido]
 
