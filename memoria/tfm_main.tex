@@ -1,13 +1,18 @@
 % =========================================================================
-% Design of a Key-Generation Cryptographic Engine for Integrated-Circuit
-% Implementation: a Transistor-Level Characterized Entropy Source with
-% FPGA Verification against an ESP32
+% Diseno y caracterizacion de aleatoriedad de un TRNG basado en
+% osciladores en anillos
+% (Design and randomness assessment of a Ring Oscillator-based TRNG)
 %
 % Master's Thesis -- Master Universitario en Microelectronica:
 % Diseno y Aplicaciones de Sistemas Micro/Nanometricos
-% Universidad de Sevilla / IMSE-CNM-CSIC -- Academic year 2025-2026
+% Universidad de Sevilla / IMSE-CNM-CSIC -- Academic year 2026-2027
 %
 % Author: Mario Garcia Jimenez
+% Advisors: Antonio Jose Acosta Jimenez, Alejandro Casado Galan
+% Title as in the signed advisor-student agreement of 9-10-2026.
+% Cover follows the official template of the course (caratulaMasterMicro-
+% electronica.sty, docs/asignatura_tfm/portada_latex), rebuilt here for
+% the report class with the same logo, blocks and sizes.
 % Compile on Overleaf: pdfLaTeX + BibTeX (main file: tfm_main.tex)
 % =========================================================================
 \documentclass[12pt, a4paper, oneside]{report}
@@ -60,9 +65,15 @@
 \lstdefinelanguage{VHDL2008}[]{VHDL}{morekeywords={process,all,generic,port}}
 
 % ---- commands ------------------------------------------------------------
-\newcommand{\thetitle}{Design of a Key-Generation Cryptographic Engine for
-Integrated-Circuit Implementation: a Transistor-Level Characterized Entropy
-Source with FPGA Verification against an ESP32}
+% Official title (advisor-student agreement, 9-10-2026), in both languages.
+\newcommand{\thetitle}{Design and randomness assessment of a Ring
+Oscillator-based TRNG}
+\newcommand{\thetitlees}{Dise\~no y caracterizaci\'on de aleatoriedad de un
+TRNG basado en osciladores en anillos}
+\newcommand{\theauthor}{Mario Garc\'ia Jim\'enez}
+\newcommand{\theadvisors}{Antonio Jos\'e Acosta Jim\'enez\\
+Alejandro Casado Gal\'an}
+\newcommand{\thedate}{Junio de 2027 / June 2027}
 % Measured / simulated / estimated markers used throughout the text.
 \newcommand{\meas}{\textsc{[measured]}}
 \newcommand{\simu}{\textsc{[simulated]}}
@@ -71,23 +82,27 @@ Source with FPGA Verification against an ESP32}
 \begin{document}
 
 % =========================================================================
+% Official cover of the Master (layout of caratulaMasterMicroelectronica.sty)
 \begin{titlepage}
-\centering
-{\scshape\large Universidad de Sevilla\\
-Instituto de Microelectr\'onica de Sevilla (IMSE-CNM-CSIC)\par}
-\vspace{0.8cm}
-{\scshape M\'aster Universitario en Microelectr\'onica:\\
-Dise\~no y Aplicaciones de Sistemas Micro/Nanom\'etricos\par}
-\vspace{2.0cm}
-{\LARGE\bfseries \thetitle\par}
-\vspace{2.0cm}
-{\Large Master's Thesis\par}
-\vspace{1.4cm}
-{\large\bfseries Author:\\ Mario Garc\'ia Jim\'enez\par}
-\vspace{0.7cm}
-{\large\bfseries Supervisor:\\ {[To be assigned]}\par}
-\vfill
-{\large Academic year 2025--2026\par}
+\begin{center}
+\includegraphics[width=\textwidth]{logoUS_IMSE.png}
+\par\vspace*{\stretch{2}}
+{\huge Trabajo de Fin de M\'aster\par}\vspace{0.5em}
+{\huge ``M\'aster Universitario en Microelectr\'onica:\par}\vspace{0.5em}
+{\huge Dise\~no y Aplicaciones de Sistemas\par}\vspace{0.5em}
+{\huge Micro/Nanom\'etricos''\par}
+\par\vspace{\stretch{4}}
+{\LARGE\bfseries \thetitlees\par}\vspace{1em}
+{\Large\itshape \thetitle\par}
+\par\vspace{\stretch{8}}
+\end{center}
+\begin{flushright}
+{\Large Autor / Author: \theauthor\par}\vspace{0.8em}
+{\Large Tutores / Advisors:\par}\vspace{0.3em}
+{\Large \theadvisors\par}\vspace{0.8em}
+{\Large Fecha / Date: \thedate\par}
+\end{flushright}
+\vspace*{\stretch{3}}
 \end{titlepage}
 
 % =========================================================================

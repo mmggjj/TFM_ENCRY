@@ -36,3 +36,5 @@ results/esp32_captura_*.txt
 # Build del firmware del TFM_RNG (va al scratchpad, no aqui) y copia de consola de su captura
 results/esp32_campana_rng/build/
 results/esp32_campana_rng/serie_*.log
+# Material descargado del campus (Ensenanza Virtual): solo en local
+docs/asignatura_tfm/

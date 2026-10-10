@@ -50,10 +50,14 @@ todo. Léelo entero antes de tocar nada.
 
 ## Estado al 08-10-2026
 
-- Tutores: Antonio J. Acosta y Alejandro Casado (IMSE-CNM). Título
-  propuesto por ellos: *Diseño y caracterización de aleatoriedad de un
-  TRNG basado en osciladores en anillos*. Resumen para la reunión en
-  `docs/resumen_reunion_tutores.md`.
+- Tutores: **Antonio José Acosta Jiménez y Alejandro Casado Galán**
+  (IMSE-CNM). Título oficial del acuerdo tutor-alumno firmado el
+  9-10-2026: *Diseño y caracterización de aleatoriedad de un TRNG basado
+  en osciladores en anillos* / *Design and randomness assessment of a Ring
+  Oscillator-based TRNG*. La memoria ya lleva la portada oficial del máster
+  con ese título. Normas, calendario (entrega 16-06-2027, defensa semana
+  del 28-06-2027) y lo que se entrega: **`docs/normas_tfm.md`**. Resumen
+  para la reunión en `docs/resumen_reunion_tutores.md`.
 - **Anillo con transistores reales del PDK abierto IHP SG13G2**
   (`analysis/anillo_ihp.py`, `docs/anillo_ihp.md`): el ruido inyectado sale
   del propio modelo; 5 etapas a 2,73 GHz, σ = 180 fs por periodo,
