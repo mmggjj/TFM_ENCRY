@@ -50,8 +50,9 @@ todo. Léelo entero antes de tocar nada.
 
 ## Estado al 08-10-2026
 
-- Tutores: **Antonio José Acosta Jiménez y Alejandro Casado Galán**
-  (IMSE-CNM). Título oficial del acuerdo tutor-alumno firmado el
+- Tutores asignados (IMSE-CNM). **Sus nombres no se ponen todavía en el
+  repositorio ni en la memoria** (Mario, 10-10-2026). Título oficial del
+  acuerdo tutor-alumno firmado el
   9-10-2026: *Diseño y caracterización de aleatoriedad de un TRNG basado
   en osciladores en anillos* / *Design and randomness assessment of a Ring
   Oscillator-based TRNG*. La memoria ya lleva la portada oficial del máster

@@ -71,8 +71,7 @@ warning: tfm_main.bbl:595: Underfull \hbox (badness 2744) in paragraph at lines 
 warning: tfm_main.bbl:595: Underfull \hbox (badness 4254) in paragraph at lines 592--595
 warning: tfm_main.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
 warning: tfm_main.bbl:618: Underfull \hbox (badness 10000) in paragraph at lines 613--618
-warning: internal consistency problem when checking if tfm_main.bbl changed
-note: Rerunning TeX because "tfm_main.bbl" changed ...
+note: Rerunning TeX because "tfm_main.lot" changed ...
 warning: chapters/ch2_soa:201: Overfull \hbox (1.43085pt too wide) in paragraph at lines 185--201
 warning: chapters/ch3_entropy:78: Overfull \hbox (19.4623pt too wide) in paragraph at lines 78--78
 warning: chapters/ch4_engine:48: Overfull \hbox (100.3809pt too wide) in paragraph at lines 46--48
@@ -120,8 +119,7 @@ warning: tfm_main.bbl:595: Underfull \hbox (badness 2744) in paragraph at lines 
 warning: tfm_main.bbl:595: Underfull \hbox (badness 4254) in paragraph at lines 592--595
 warning: tfm_main.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
 warning: tfm_main.bbl:618: Underfull \hbox (badness 10000) in paragraph at lines 613--618
-warning: internal consistency problem when checking if tfm_main.bbl changed
-note: Rerunning TeX because "tfm_main.bbl" changed ...
+note: Rerunning TeX because "tfm_main.lot" changed ...
 warning: chapters/ch2_soa:201: Overfull \hbox (1.43085pt too wide) in paragraph at lines 185--201
 warning: chapters/ch3_entropy:78: Overfull \hbox (19.4623pt too wide) in paragraph at lines 78--78
 warning: chapters/ch4_engine:48: Overfull \hbox (100.3809pt too wide) in paragraph at lines 46--48
@@ -321,10 +319,10 @@ warning: TeX rerun seems needed, but stopping at 6 passes
 warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
 note: Running xdvipdfmx ...
 warning: Object @page.1 already defined.
-note: Writing `tfm_main.lof` (450 B)
 note: Writing `tfm_main.lot` (3.20 KiB)
-note: Writing `tfm_main.bbl` (29.47 KiB)
 note: Writing `tfm_main.toc` (6.49 KiB)
+note: Writing `tfm_main.lof` (450 B)
+note: Writing `tfm_main.pdf` (462.58 KiB)
 note: Writing `tfm_main.aux` (35.16 KiB)
-note: Writing `tfm_main.pdf` (462.71 KiB)
 note: Writing `tfm_main.out` (13.46 KiB)
+note: Writing `tfm_main.bbl` (29.47 KiB)

@@ -1,7 +1,6 @@
 # Resumen de lo hecho — reunión con los tutores
 
 Mario García Jiménez · Máster en Microelectrónica (US / IMSE-CNM) · octubre de 2026
-Tutores: Antonio J. Acosta y Alejandro Casado
 Título propuesto: *Diseño y caracterización de aleatoriedad de un TRNG basado en osciladores en anillos*
 
 Todo lo que sigue está en el repositorio público https://github.com/mmggjj/TFM_ENCRY

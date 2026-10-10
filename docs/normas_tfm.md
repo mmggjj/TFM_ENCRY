@@ -19,7 +19,7 @@ del campus). Sin anuncios publicados a esa fecha.
 - **Título:** *Diseño y caracterización de aleatoriedad de un TRNG basado
   en osciladores en anillos* / *Design and randomness assessment of a Ring
   Oscillator-based TRNG*.
-- **Tutores:** Antonio José Acosta Jiménez y Alejandro Casado Galán.
+- **Tutores:** asignados; sus nombres no se ponen todavía.
 - Cambiar el título exige el Anexo IV.B con 3 meses de antelación a la
   entrega (1 mes si es solo un matiz que no cambia el tema).
 
