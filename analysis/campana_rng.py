@@ -41,8 +41,13 @@ def main() -> int:
     ap.add_argument("--primera-rep", type=int, default=2, help="numero de la primera repeticion nueva")
     ap.add_argument("--timeout", type=float, default=900.0)
     ap.add_argument("--sesion", default=time.strftime("%Y%m%d_%H%M%S"))
+    ap.add_argument("--subdir", default="",
+                    help="subcarpeta por chip (p. ej. mac_a0dd6c0efb4c) para no mezclar chips")
     args = ap.parse_args()
 
+    global DESTINO
+    if args.subdir:
+        DESTINO = DESTINO / args.subdir
     DESTINO.mkdir(parents=True, exist_ok=True)
     log = DESTINO / f"serie_{args.sesion}.log"
     tengo = {c: 0 for c in "ABCD"}

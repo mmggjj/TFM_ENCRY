@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/fb4c_condC_rep3_noniid_b1.json /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/fb4c_condC_rep3.bits 1",
+   "dateTimeStamp" : "20261012094057",
+   "errorLevel" : 0,
+   "filename" : "/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/fb4c_condC_rep3.bits",
+   "sha256" : "5d54035cc2e1ee3546de2ec14b919d5bf7d9bd8e0be60aee79b8c92984ef6ac1",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99624259295396556,
+         "mcvEstimateMode" : 500016.0,
+         "mcvEstimatePHat" : 0.50001600000000002,
+         "mcvEstimatePU" : 0.5013039152950729,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.89602934756837405,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99954915996091553,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.83867165177374192,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93805159541601091,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.93340191757917124,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99582089840092836,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99584118171569269,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99614762190085215,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99864620269012838,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.83867165177374192,
+         "hOriginal" : 0.83867165177374192,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

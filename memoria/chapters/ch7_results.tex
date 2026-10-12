@@ -363,11 +363,14 @@ characterization of the ESP32 generator captured $10^6$ bits of
 Wi-Fi and ADC active, Wi-Fi only, ADC only, neither --- and applied
 Shannon entropy and SP 800-22 to them; it did not apply the SP 800-90B
 estimators, and that is the gap closed here. For this work the same
-firmware, rebuilt unchanged, was run twice more from cold boot, giving
-three repetitions of $10^6$ bits per condition; two further captures with
-the radio off, of $3.52\times10^6$ and $8.38\times10^6$ bits, were taken
-with the verifier firmware of Chapter~\ref{ch:ch5_verification}. All
-fourteen were run through the \ac{NIST} reference implementation of the
+firmware, rebuilt unchanged, was run from cold boot on two chips of the
+same model (ESP32-D0WD-V3), identified by their MAC addresses: twice on
+one and three times on the other. With the August capture, whose board
+was not identified, that gives six repetitions of $10^6$ bits per
+condition. Two further captures with the radio off, of $3.52\times10^6$
+and $8.38\times10^6$ bits, were taken with the verifier firmware of
+Chapter~\ref{ch:ch5_verification}. All
+twenty-six were run through the \ac{NIST} reference implementation of the
 SP 800-90B estimators~\cite{nist_ea_github, turan_2018_sp80090b}
 (version 1.1.8), on both the IID and the non-IID tracks, in the binary
 layout the standard prescribes for bit sources. Table~\ref{tab:esp32_90b}
@@ -376,24 +379,24 @@ gives the outcome.
 \begin{table}[htbp]
 \centering
 \caption{The ESP32 generator under the SP 800-90B estimators \meas{}.
-Conditions A--D: three repetitions of $10^6$ bits each, mean and range
-over the repetitions; E and F: single captures of $3.5\times10^6$ and
-$8.4\times10^6$ bits. The ceiling is the highest value the
-most-common-value (MCV) estimator can return for a perfectly uniform
-source of that length at 99\,\% confidence; the non-IID figure is the
-minimum of the ten estimators of Section~6.3 of the standard, and the
-last column names the estimator that set it (times out of three). All
-fourteen captures pass the IID track.}
+Conditions A--D: six repetitions of $10^6$ bits each on two chips and
+the August board, mean and range over the repetitions; E and F: single
+captures of $3.5\times10^6$ and $8.4\times10^6$ bits. The ceiling is the
+highest value the most-common-value (MCV) estimator can return for a
+perfectly uniform source of that length at 99\,\% confidence; the non-IID
+figure is the minimum of the ten estimators of Section~6.3 of the
+standard, and the last column names the estimator that set it (times out
+of six). The IID-track verdicts are discussed in the text.}
 \label{tab:esp32_90b}
 \footnotesize
 \begin{tabular}{@{}llrrll@{}}
 \toprule
 Capture & Condition & $H$ (IID) & Ceiling & $H$ (non-IID) & Limiting \\
 \midrule
-A & Wi-Fi + ADC & 0.9952 & 0.9963 & 0.853 (0.826--0.877) & Compression 2, Lag 1 \\
-B & Wi-Fi       & 0.9947 & 0.9963 & 0.856 (0.824--0.898) & Compression 2, LRS 1 \\
-C & ADC         & 0.9944 & 0.9963 & 0.833 (0.812--0.867) & Compression 3 \\
-D & none        & 0.9956 & 0.9963 & 0.865 (0.832--0.916) & Compression 2, Collision 1 \\
+A & Wi-Fi + ADC & 0.9954 & 0.9963 & 0.844 (0.812--0.877) & Compression 5, Lag 1 \\
+B & Wi-Fi       & 0.9951 & 0.9963 & 0.862 (0.824--0.898) & Compression 5, LRS 1 \\
+C & ADC         & 0.9952 & 0.9963 & 0.836 (0.812--0.867) & Compression 6 \\
+D & none        & 0.9957 & 0.9963 & 0.857 (0.832--0.916) & Compression 5, Collision 1 \\
 E (this work) & none & 0.9977 & 0.9980 & 0.867 & Compression \\
 F (this work) & none & 0.9982 & 0.9987 & 0.911 & Compression \\
 \bottomrule
@@ -404,56 +407,93 @@ The resolution comes first, as everywhere in this work. The MCV estimator
 returns $-\log_2 p_u$ with $p_u = \hat p + 2.576\sqrt{\hat p(1-\hat p)/N}$,
 so even a perfect source cannot score above 0.9963 with $10^6$ bits,
 0.9980 with $3.5\times10^6$ or 0.9987 with $8.4\times10^6$. Every one of
-the fourteen captures sits within 0.0035 of that ceiling, and none
-implies a bias of ones beyond $2.4\sigma$, which is what fourteen draws
-from an unbiased source look like. On the IID track, which all fourteen
-pass (permutation tests and $\chi^2$), the ESP32 output is therefore
+the twenty-six captures sits within 0.0035 of that ceiling, and none
+implies a bias of ones beyond $2.4\sigma$, which is what twenty-six draws
+from an unbiased source look like.
+
+The IID track needs a calibration before its verdicts can be read. Of the
+fifty-two runs (twenty-six captures in the bit and byte layouts), four
+fail a single test, never the same file in both layouts: one permutation
+test in each layout and two $\chi^2$ tests in the byte layout. How often
+good data fail these tests at the same length is not the nominal
+$10^{-3}$, so it was measured, running the same tool on 1000 files of
+125\,000 bytes and 200 files of $10^6$ bits from the operating-system
+generator. In the byte layout the permutation battery fails on 1.9\,\% of
+good files and the $\chi^2$ pair on 2.4\,\%; in the bit layout
+the permutation battery fails on 2.5\,\% and the $\chi^2$ pair on none of the 200. The $\chi^2$ figure was traced to its cause by reimplementing
+both tests, which reproduces the tool's fifty-two $p$ values to the sixth
+decimal, and running them on 5000 good files. The byte-layout independence
+test spreads 62\,500 non-overlapping pairs over 65\,536 cells and merges
+cells until each group expects five counts, but at this length its $p$ is
+not uniform: the median is 0.175 instead of 0.5, and it falls below
+$10^{-3}$ on 1.7\,\% of the files, seventeen times the nominal rate. The
+other three $\chi^2$ tests are well calibrated, and the defect disappears
+from $10^6$ bytes upwards. Against these rates the ESP32 failures are
+unremarkable: one permutation failure in twenty-six byte runs where 0.49
+are expected ($P = 0.39$), two $\chi^2$ failures where 0.62 are expected
+($P = 0.13$), and one bit-layout permutation failure where 0.65 are expected
+($P = 0.48$). On one chip the byte independence test gave
+$p < 0.05$ in six captures of twelve, against 2.9 expected; pooling each
+chip's captures, where the test is calibrated and more powerful, gives
+empirical $p$ values of 0.82 and 0.96 on that chip for byte pairs aligned
+with the 32-bit word and offset by one byte, and 0.38 and 0.86 on the
+other, so no dependence between neighbouring bytes is present. The rarest
+event is the goodness-of-fit failure of the first capture of condition~D
+($p = 2.4\times10^{-4}$): that test fails on 0.04\,\% of good files, so
+one such failure in twenty-six has a probability near 1\,\%. It did not
+reproduce in the five later captures of the same condition ($p = 0.32$ to
+$0.96$) nor in E and F, and it is recorded as chance; Espressif's warning
+that the generator is not guaranteed random without the radio or the ADC
+stands as a warning that these tests do not see. Formally, a single
+failure withdraws the IID assumption for that capture; since the figure
+carried forward is the non-IID one, nothing below depends on it. Read
+with its calibration, the IID track finds the ESP32 output
 indistinguishable from a full-entropy binary source at this sample size.
 That is the same verdict SP 800-22 gave, reached by a different route,
 and it says the same thing: nothing wrong is visible.
 
 The non-IID track says something else, and reading it correctly matters
-more than the number. In thirteen of the fourteen captures its minimum is
-set by one of three estimators --- compression, collision or longest
-repeated substring --- at 0.81 to 0.92 bit per bit; in the remaining one
-by the lag predictor, at 0.88; the MCV and Markov estimators never drop
-below 0.99. Those three estimators are known to be conservative on nearly
-uniform data~\cite{zhu_2017_analysis}; the predictors of Kelsey, McKay
-and S\"onmez Turan~\cite{kelsey_2015_predictive} were introduced precisely
-because the earlier estimators of the standard misjudge sources of that
-kind. The repetitions show that this is estimator behaviour and not a
-property of the conditions. The compression estimate spreads by 0.02 to
-0.05 \emph{within} a condition, as much as the 0.04 that separates the
-four condition means, and a one-way analysis of variance on each of the
-eleven estimators finds no difference between conditions: the smallest
-$p$ is 0.063, for the MultiMCW predictor, above the uncorrected 0.05 and
-far above the 0.0045 that eleven tests demand. The largest capture adds a
+more than the number. In twenty-five of the twenty-six captures its
+minimum is set by one of three estimators --- compression, collision or
+longest repeated substring --- at 0.81 to 0.92 bit per bit; in the
+remaining one by the lag predictor, at 0.88; the MCV and Markov
+estimators never drop below 0.99. Those three estimators are known to be
+conservative on nearly uniform data~\cite{zhu_2017_analysis}; the
+predictors of Kelsey, McKay and S\"onmez Turan~\cite{kelsey_2015_predictive}
+were introduced precisely because the earlier estimators of the standard
+misjudge sources of that kind. The repetitions show that this is
+estimator behaviour and not a property of the conditions. The compression
+estimate has a standard deviation of 0.02 to 0.04 \emph{within} a
+condition, as large as the 0.03 that separates the four condition means,
+and a one-way analysis of variance on each of the eleven estimators finds
+no difference between conditions: the smallest $p$ is 0.083, for the
+MultiMCW predictor, above the uncorrected 0.05 and far above the 0.0045
+that eleven tests demand. The same holds between chips. Grouping the
+conditions, which do not differ, the eight captures of one chip and the
+twelve of the other are separated by no estimator at the corrected level;
+the two smallest $p$, 0.038 for Markov and 0.046 for MCV, correspond to
+differences of 0.0009 bit per bit next to the resolution ceiling, and two
+values below 0.05 among eleven tests is what chance provides. The non-IID
+minimum is 0.845 on one chip and 0.847 on the other: with two devices,
+the reference does not depend on which one is measured, at the resolution
+of these estimators. The largest capture adds a
 second illustration of the resolution effect: in the byte layout its
 limiting estimator is the $t$-tuple test at $t = 2$, which returns 7.39
 bits per byte because $10^6$ bytes hold too few of the 65\,536 possible
 pairs for the most frequent one to be representative, exactly as the MCV
 ceiling does at $t = 1$. No difference between Wi-Fi on, ADC on and
-neither is resolvable by any estimator with three repetitions, and none
-is claimed. One anomaly arose and was closed by repetition: in the byte
-layout, the first capture of condition D fails the $\chi^2$
-goodness-of-fit test of the IID track ($p = 2.4\times10^{-4}$ against a
-threshold of $10^{-3}$) while passing every other test in both layouts;
-the two later repetitions of the same condition pass it with $p = 0.83$
-and $p = 0.96$, as do captures E and F with $p = 0.27$ and $p = 0.28$.
-Fifty-six $\chi^2$ tests were run in all, so one below $10^{-3}$ has a
-5\,\% chance of arising by chance, and it did not reproduce; it is
-recorded as chance, and Espressif's warning that the generator is not
-guaranteed random without the radio or the ADC stands as a warning that
-these tests do not see.
+neither is resolvable by any estimator with six repetitions, and none
+is claimed.
 
 Three consequences follow for O8. First, the figure this thesis carries
 forward as the ESP32 reference is the non-IID one, 0.81 to 0.92 bit per
-bit with a mean of 0.85 over the twelve captures of conditions A--D,
+bit with a mean of 0.85 over the twenty-four captures of conditions A--D,
 because it is what an evaluator would credit without granting the
 IID assumption; the engine's raw bits, when the campaign of
 Section~\ref{sec:protocol} produces them, must be run through the same
 battery at the same $N$, and compared estimator by estimator, since the
-same conservative bias will act on them. Second, the earlier
+same conservative bias will act on them; the calibration of the IID tests
+at that length applies to them unchanged. Second, the earlier
 characterization's Shannon figure of 0.99999 bit per bit and the
 min-entropy figures above are not in contradiction --- $H_\infty \le H$
 always --- but they are different currencies: crediting 256 bits of
@@ -494,17 +534,21 @@ fill or clock tree. Published growth factors from cell area to core area
 on this library are $\approx 2.35$ for an \ac{AES}, and the optimization
 savings of Chapter~\ref{ch:ch6_asic} are \est{} and explicitly not claimed
 as measured.
-\item[Min-entropy of the ESP32 reference.] Measured \meas{} on fourteen
-captures of $10^6$ to $8.4\times10^6$ bits, three per condition. The
+\item[Min-entropy of the ESP32 reference.] Measured \meas{} on twenty-six
+captures of $10^6$ to $8.4\times10^6$ bits, six per condition, from two
+chips of the same model identified by MAC address and one board of the
+same model that was not identified. The
 IID-track figure is at the resolution ceiling of the MCV estimator for
 that $N$ (0.9963 at $10^6$ bits), so it is a floor on the ceiling rather
-than a measurement of the source; the non-IID figure is set by estimators
-whose conservative bias on nearly uniform data exceeds the spread between
-conditions, and an analysis of variance over the three repetitions finds
-no condition effect ($p \ge 0.063$ on every estimator). The repetitions
-of August and September come from boards of the same model whose identity
-was not recorded in August, so the comparison is between devices of one
-type, not one device.
+than a measurement of the source, and the IID verdicts are read against
+the measured false-failure rate of each test at that length, not against
+the nominal one. The non-IID figure is set by estimators whose
+conservative bias on nearly uniform data exceeds the spread between
+conditions; an analysis of variance finds no condition effect
+($p \ge 0.083$ on every estimator) and no chip effect ($p \ge 0.038$,
+against 0.0045 after correction). Two devices show that the reference
+does not hinge on one of them; they do not bound the spread across a
+production population.
 \item[Min-entropy of the built device.] Not yet bounded. The model, the
 estimator and the cutoffs are ready; the number requires the campaign of
 Section~\ref{sec:protocol}. No value is offered here, and none should be

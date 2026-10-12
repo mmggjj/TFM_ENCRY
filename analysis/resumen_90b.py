@@ -60,7 +60,7 @@ def main() -> int:
     # por condicion: media +- desviacion sobre repeticiones
     conds: dict[str, list[str]] = {}
     for n in nombres:
-        m = re.match(r"cond([A-D])_rep(\d+)", n)
+        m = re.search(r"cond([A-D])_rep(\d+)$", n)
         if m:
             conds.setdefault(m.group(1), []).append(n)
     # ANOVA de un factor por estimador (condicion como factor, repeticiones
@@ -88,6 +88,43 @@ def main() -> int:
                + ("Ningún estimador separa las condiciones al nivel corregido."
                   if p_min >= 0.05 / len(ESTIMADORES) else
                   "Al menos un estimador separa las condiciones al nivel corregido: revisar.")]
+
+    # Por chip: solo capturas A-D de la campana (mismo firmware y protocolo).
+    # Las condiciones se agrupan porque no hay efecto de condicion (arriba).
+    def chip(n):
+        if n.startswith("fb4c_"):
+            return "a0:dd:6c:0e:fb:4c"
+        m = re.fullmatch(r"cond[A-D]_rep(\d+)", n)
+        if not m:
+            return None
+        return "MAC sin anotar (agosto)" if m.group(1) == "1" else "ec:e3:34:9a:d1:18"
+    chips: dict[str, list[str]] = {}
+    for n in nombres:
+        c = chip(n)
+        if c:
+            chips.setdefault(c, []).append(n)
+    conocidos = [c for c in chips if not c.startswith("MAC sin")]
+    if len(conocidos) >= 2:
+        lineas += ["", "## Por chip (capturas A-D, condiciones agrupadas)", "",
+                   "ANOVA de un factor entre los chips de MAC conocida "
+                   f"({', '.join(f'{c}: n={len(chips[c])}' for c in conocidos)}); "
+                   f"umbral de Bonferroni p < {0.05 / len(ESTIMADORES):.4f}. La placa de agosto "
+                   "se muestra aparte porque no se anotó su MAC y podría ser cualquiera.", "",
+                   "| Estimador | " + " | ".join(f"{c} (n={len(chips[c])})" for c in chips)
+                   + " | F | p |",
+                   "|---|" + "---|" * len(chips) + "---|---|"]
+        p_min_c = 1.0
+        for e in ESTIMADORES:
+            k = e[0]
+            F, p = f_oneway(*[[valores[n][k] for n in chips[c]] for c in conocidos])
+            p_min_c = min(p_min_c, p)
+            lineas.append(f"| {k} | " + " | ".join(
+                f"{mean(valores[n][k] for n in chips[c]):.4f} ± {pstdev(valores[n][k] for n in chips[c]):.4f}"
+                for c in chips) + f" | {F:.2f} | {p:.3f} |")
+        lineas += ["", f"p mínima entre chips: {p_min_c:.3f}. "
+                   + ("Ningún estimador distingue un chip de otro al nivel corregido."
+                      if p_min_c >= 0.05 / len(ESTIMADORES) else
+                      "Al menos un estimador distingue los chips al nivel corregido: revisar.")]
     SALIDA.write_text("\n".join(lineas) + "\n", encoding="utf-8")
     print("\n".join(lineas))
     return 0

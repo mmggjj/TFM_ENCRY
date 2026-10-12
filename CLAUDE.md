@@ -42,11 +42,18 @@ todo. Léelo entero antes de tocar nada.
   4 min de simulación; ahora termina solo con `std.env.stop` (antes los
   anillos seguían oscilando y GHDL no acababa nunca).
 - Hecho sin placa: línea base del ESP32 bajo SP 800-90B (abajo), con
-  **catorce capturas**: tres repeticiones por condición A-D (la de agosto
-  del TFM_RNG más dos del 19-09 con el mismo firmware, capturadas con
-  `analysis/campana_rng.py`) y dos largas sin radio. ANOVA por estimador:
-  ningún efecto de condición (p ≥ 0,063). Resumen en
+  **veintiséis capturas**: seis repeticiones por condición A-D (la de
+  agosto del TFM_RNG, dos del 19-09 en el chip ec:e3:34:9a:d1:18 y tres del
+  12-10 en el chip a0:dd:6c:0e:fb:4c, todas con el mismo firmware y
+  `analysis/campana_rng.py`; los datos de cada chip van en su carpeta) y
+  dos largas sin radio. ANOVA por estimador: ningún efecto de condición
+  (p ≥ 0,083) ni de chip (p ≥ 0,038, Bonferroni 0,0045). Resumen en
   `results/entropia_90b_resumen.md`; lectura en `docs/esp32_linea_base_90b.md`.
+  Los chips se nombran por su MAC ("dos chips del mismo modelo").
+  Calibración de la vía IID con datos buenos del mismo tamaño
+  (`analysis/calibra_iid.py`, `analysis/chi2_90b.py`): la χ² de
+  independencia en modo byte de `ea_iid` falla el 1,7 % con datos
+  perfectos a 125 000 B; los fallos sueltos del ESP32 caben en eso.
 
 ## Estado al 08-10-2026
 

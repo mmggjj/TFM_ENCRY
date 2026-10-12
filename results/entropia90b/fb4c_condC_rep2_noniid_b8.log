@@ -1,0 +1,59 @@
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_a0dd6c0efb4c/condC_rep2.bin' (SHA-256 hash 28ef34983698a69fc0faf14301db8bbc83485675e63c24913ef54557a2535fec)
+Loaded 125000 samples of 256 distinct 8-bit-wide symbols
+Number of Binary Symbols: 1000000
+
+*** Warning: data contains less than 1000000 samples ***
+
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Bitstring MCV Estimate: mode = 500118, p-hat = 0.50011799999999995, p_u = 0.50140591525986633
+	Most Common Value Estimate (bit string) = 0.995949 / 1 bit(s)
+Literal MCV Estimate: mode = 552, p-hat = 0.0044159999999999998, p_u = 0.0048990780414329181
+	Most Common Value Estimate = 7.673274 / 8 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Bitstring Collision Estimate: X-bar = 2.4985633260874995, sigma-hat = 0.49999856060323278, p = 0.54166806158853553
+	Collision Test Estimate (bit string) = 0.884519 / 1 bit(s)
+Bitstring Markov Estimate: P_0 = 0.49988199999999999, P_1 = 0.50011800000000006, P_0,0 = 0.50061014399398263, P_0,1 = 0.49938985600601737, P_1,0 = 0.499155197683742, P_1,1 = 0.50084480231625794, p_max = 3.6422958178250755e-39
+	Markov Test Estimate (bit string) = 0.997581 / 1 bit(s)
+Bitstring Compression Estimate: X-bar = 5.2142938904014331, sigma-hat = 1.0186228174963068, p = 0.032735408801934485
+	Compression Test Estimate (bit string) = 0.822167 / 1 bit(s)
+
+Running Tuple Estimates...
+Bitstring t-Tuple Estimate: t = 16, p-hat_max = 0.5266288655261094952056, p_u = 0.5279149530124247283462
+Bitstring LRS Estimate: u = 17, v = 38, p-hat = 0.51106630064809388, p_u = 0.51235390046121889
+	T-Tuple Test Estimate (bit string) = 0.921623 / 1 bit(s)
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004416000000000000000067, p_u = 0.004899078041432918520309
+Literal LRS Estimate: u = 2, v = 4, p-hat = 0.0039812986224819145, p_u = 0.0044400843866016563
+	T-Tuple Test Estimate = 7.673274 / 8 bit(s)
+	LRS Test Estimate (bit string) = 0.964787 / 1 bit(s)
+	LRS Test Estimate = 7.815197 / 8 bit(s)
+
+Running Predictor Estimates...
+Bitstring MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50114344670915567 (C = 499824) Plocal can't affect result (r = 20)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (bit string) = 0.996704 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 124937, Pglobal' = 0.0049268657329185677 (C = 555) Plocal can't affect result (r = 2)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 7.665114 / 8 bit(s)
+Bitstring Lag Prediction Estimate: N = 999999, Pglobal' = 0.50111041568103587 (C = 499822) Plocal can't affect result (r = 19)
+	Lag Prediction Test Estimate (bit string) = 0.996800 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 124999, Pglobal' = 0.0044598933847908671 (C = 500) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate = 7.808775 / 8 bit(s)
+Bitstring MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50052991358765997 (C = 499241) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (bit string) = 0.998472 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 124998, Pglobal' = 0.0043076059507687987 (C = 482) Plocal = 0.0043223691745210161 (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 7.853962 / 8 bit(s)
+Bitstring LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50130842659058616 (C = 500012) Plocal can't affect result (r = 20)
+	LZ78Y Prediction Test Estimate (bit string) = 0.996230 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 124983, Pglobal' = 0.0043081228291071624 (C = 482) Plocal = 0.0043225423391850901 (r = 3)
+	LZ78Y Prediction Test Estimate = 7.853904 / 8 bit(s)
+
+H_original: 7.665114
+H_bitstring: 0.822167
+min(H_original, 8 X H_bitstring): 6.577339
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+tiempo_s=8.54 maxrss_kB=288880

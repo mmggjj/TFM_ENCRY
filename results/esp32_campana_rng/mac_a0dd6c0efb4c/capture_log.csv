@@ -1,0 +1,13 @@
+cond,rep,temp_begin_c,temp_end_c,throughput_Bps,crc_ok,mac,sesion
+D,1,61.7,62.2,5214513,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep1
+C,1,62.2,62.8,2703630,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep1
+B,1,63.3,62.8,5218249,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep1
+A,1,62.8,63.3,2703965,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep1
+D,2,63.3,63.3,5214927,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep2
+C,2,63.3,63.3,2704188,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep2
+B,2,63.9,63.3,5218249,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep2
+A,2,63.9,63.9,2705416,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep2
+D,3,63.3,63.9,5214927,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep3
+C,3,63.9,63.9,2703184,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep3
+B,3,63.9,63.9,5218249,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep3
+A,3,63.9,64.4,2704522,1,a0:dd:6c:0e:fb:4c,mac_a0dd6c0efb4c_rep3

@@ -1,0 +1,69 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/fb4c_condD_rep2_noniid_b8.json /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_a0dd6c0efb4c/condD_rep2.bin 8",
+   "dateTimeStamp" : "20261012094120",
+   "errorLevel" : 0,
+   "filename" : "/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_a0dd6c0efb4c/condD_rep2.bin",
+   "sha256" : "26514d762130b778694bb0a867c20b8cb90db5118711d229e2f1b50d37dc7863",
+   "testCases" : [
+      {
+         "hBitstring" : 0.99623683719586131,
+         "hOriginal" : 7.7059451783563278,
+         "mcvEstimateMode" : 539.0,
+         "mcvEstimatePHat" : 0.0043119999999999999,
+         "mcvEstimatePU" : 0.0047893806625408548,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hBitstring" : 0.88279837849797949,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.99887497515090085,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.83821953841191321,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "binTTupleRes" : 0.91908897702838832,
+         "tTupleRes" : 7.7059451783563278,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "binLrsRes" : 0.99332778612391648,
+         "lrsRes" : 7.8060404334945437,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hBitstring" : 0.99679084932108375,
+         "hOriginal" : 7.8537269029810517,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hBitstring" : 0.99573473350823982,
+         "hOriginal" : 7.7472171941637988,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hBitstring" : 0.99374961877735435,
+         "hOriginal" : 7.773638646131146,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hBitstring" : 0.99623824377169423,
+         "hOriginal" : 7.7734655458605095,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 8.0,
+         "hAssessed" : 6.7057563072953057,
+         "hBitstring" : 0.83821953841191321,
+         "hOriginal" : 7.7059451783563278,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

@@ -1,0 +1,59 @@
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_a0dd6c0efb4c/condB_rep2.bin' (SHA-256 hash 9f0be4b57d5e436119ffaebca500b568c2a3827393e006b6416d9c8074124848)
+Loaded 125000 samples of 256 distinct 8-bit-wide symbols
+Number of Binary Symbols: 1000000
+
+*** Warning: data contains less than 1000000 samples ***
+
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Bitstring MCV Estimate: mode = 500401, p-hat = 0.50040099999999998, p_u = 0.501688914881536
+	Most Common Value Estimate (bit string) = 0.995135 / 1 bit(s)
+Literal MCV Estimate: mode = 546, p-hat = 0.0043680000000000004, p_u = 0.0048484570256475991
+	Most Common Value Estimate = 7.688259 / 8 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Bitstring Collision Estimate: X-bar = 2.5017987951324954, sigma-hat = 0.49999738977305208, p = 0.51091557576642155
+	Collision Test Estimate (bit string) = 0.968843 / 1 bit(s)
+Bitstring Markov Estimate: P_0 = 0.49959900000000002, P_1 = 0.50040099999999998, P_0,0 = 0.49892913902777836, P_0,1 = 0.50107086097222164, P_1,0 = 0.50026678603759789, P_1,1 = 0.49973321396240211, p_max = 3.4823484208923266e-39
+	Markov Test Estimate (bit string) = 0.998087 / 1 bit(s)
+Bitstring Compression Estimate: X-bar = 5.2195968662781969, sigma-hat = 1.0151287573847474, p = 0.026754452162758402
+	Compression Test Estimate (bit string) = 0.870680 / 1 bit(s)
+
+Running Tuple Estimates...
+Bitstring t-Tuple Estimate: t = 16, p-hat_max = 0.5266288655261094952056, p_u = 0.5279149530124247283462
+Bitstring LRS Estimate: u = 17, v = 38, p-hat = 0.50134275382519879, p_u = 0.50263066447673146
+	T-Tuple Test Estimate (bit string) = 0.921623 / 1 bit(s)
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004368000000000000000122, p_u = 0.004848457025647598254284
+Literal LRS Estimate: u = 2, v = 4, p-hat = 0.005264369753523493, p_u = 0.0057915884948213823
+	T-Tuple Test Estimate = 7.688259 / 8 bit(s)
+	LRS Test Estimate (bit string) = 0.992429 / 1 bit(s)
+	LRS Test Estimate = 7.431825 / 8 bit(s)
+
+Running Predictor Estimates...
+Bitstring MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50072141934850123 (C = 499402) Plocal can't affect result (r = 20)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (bit string) = 0.997920 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 124937, Pglobal' = 0.0040214060759509807 (C = 448) Plocal can't affect result (r = 2)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 7.958084 / 8 bit(s)
+Bitstring Lag Prediction Estimate: N = 999999, Pglobal' = 0.50158941600704199 (C = 500301) Plocal can't affect result (r = 18)
+	Lag Prediction Test Estimate (bit string) = 0.995421 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 124999, Pglobal' = 0.0040618262146019414 (C = 453) Plocal = 0.0043223576311967127 (r = 3)
+	Lag Prediction Test Estimate = 7.853966 / 8 bit(s)
+Bitstring MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50058491390464233 (C = 499296) Plocal can't affect result (r = 19)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (bit string) = 0.998313 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 124998, Pglobal' = 0.0041042599952315992 (C = 458) Plocal = 0.0043223691745210161 (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 7.853962 / 8 bit(s)
+Bitstring LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.5014404287758002 (C = 500144) Plocal can't affect result (r = 20)
+	LZ78Y Prediction Test Estimate (bit string) = 0.995850 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 124983, Pglobal' = 0.004104752476476823 (C = 458) Plocal = 0.0043225423391850901 (r = 3)
+	LZ78Y Prediction Test Estimate = 7.853904 / 8 bit(s)
+
+H_original: 7.431825
+H_bitstring: 0.870680
+min(H_original, 8 X H_bitstring): 6.965436
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+tiempo_s=8.27 maxrss_kB=288752
