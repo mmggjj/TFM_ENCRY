@@ -412,6 +412,12 @@ base del ESP32 no depende del chip a la resolución de estos estimadores.**
   habría que mirarlo.
 - La placa de la campaña de agosto no dejó anotada su MAC: sus capturas
   (rep1) se tratan aparte en la comparación entre chips.
+- Prueba de reinicios (§3.1.4 de la norma): **hecha** el 12-10-2026 en el
+  chip a0:dd:6c:0e:fb:4c, `docs/esp32_reinicios.md`. Con el bootloader de
+  serie la pasa; sin el ruido que mete el bootloader, la falla: el
+  generador no tiene ruido propio en condición D, y la entropía física de
+  las capturas D es como mucho la que siembra el arranque, que estos
+  estimadores no ven.
 - Cuando exista la placa: la misma batería sobre los bits crudos del ERO
   (registro CAPTURA, modo test) a K_D de diseño, y sobre la salida del
   DRBG; contrastar con la cota del modelo (`analysis/ero_model.py`).

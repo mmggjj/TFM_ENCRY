@@ -1,0 +1,54 @@
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/sin_ruido/restart_b8.bin' (SHA-256 hash 9e7f7f51373158e2713bd78e8682735a89c1dd0dba55980d252b021472546196)
+Loaded 1000000 samples made up of 256 distinct 8-bit-wide symbols.
+H_I: 6.705756
+ALPHA: 5.0251553006530614e-06, X_cutoff: 30
+X_max: 20
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4756, p-hat = 0.0047559999999999998, p_u = 0.0049332160301932505
+	Most Common Value Estimate (Rows) = 7.663256 / 8 bit(s)
+Literal MCV Estimate: mode = 4756, p-hat = 0.0047559999999999998, p_u = 0.0049332160301932505
+	Most Common Value Estimate (Cols) = 7.663256 / 8 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 3, p-hat_max = 0.0333222407313014966987, p_u = 0.03378454218478121521448
+Literal LRS Estimate: u = 4, v = 1001, p-hat = 0.98459768780330682, p_u = 0.98491489253977627
+Literal t-Tuple Estimate: t = 2, p-hat_max = 0.006082765571681765875822, p_u = 0.006283048045477403596358
+Literal LRS Estimate: u = 3, v = 4, p-hat = 0.0039921714932512017, p_u = 0.004154596639800674
+	T-Tuple Test Estimate (Rows) = 4.887493 / 8 bit(s)
+	T-Tuple Test Estimate (Cols) = 7.314320 / 8 bit(s)
+	LRS Test Estimate (Rows) = 0.021929 / 8 bit(s)
+	LRS Test Estimate (Cols) = 7.911076 / 8 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.004407647638993639 (C = 4240) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 7.825775 / 8 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0057549470694481962 (C = 5563) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 7.440982 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0046357194930623184 (C = 4464) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Rows) = 7.752991 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0071274469310198523 (C = 6914) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Cols) = 7.132399 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.90356284510965512 (C = 902798) Plocal = 0.98591996064706655 (r = 998)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 0.020458 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.0042207417511224898 (C = 4057) Plocal can't affect result (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 7.888288 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.014411018196029773 (C = 14107) Plocal = 0.025273265305010419 (r = 5)
+	LZ78Y Prediction Test Estimate (Rows) = 5.306244 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.0042177447042833797 (C = 4054) Plocal can't affect result (r = 3)
+	LZ78Y Prediction Test Estimate (Cols) = 7.889313 / 8 bit(s)
+
+H_r: 0.020458
+H_c: 7.132399
+H_I: 6.705756
+
+*** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)

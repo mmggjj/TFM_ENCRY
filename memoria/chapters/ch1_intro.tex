@@ -19,7 +19,9 @@ found biased despite passing the standard statistical
 suites~\cite{hurleysmith_2018_certifiably}; and the hardware generator of
 one of the most widely deployed IoT microcontrollers, the ESP32, silently
 returns pseudo-random values when its radio is off while still passing
-every black-box test~\cite{blancoromero_2026_entropy}.
+every black-box test~\cite{blancoromero_2026_entropy}, which this work
+measures directly with the restart test of SP~800-90B
+(Section~\ref{sec:esp32_90b}).
 
 The common thread is that randomness has been judged by looking at the
 output. Statistical batteries such as NIST SP~800-22 check whether a bit

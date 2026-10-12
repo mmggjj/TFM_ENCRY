@@ -485,11 +485,79 @@ ceiling does at $t = 1$. No difference between Wi-Fi on, ADC on and
 neither is resolvable by any estimator with six repetitions, and none
 is claimed.
 
+The restart test of Section~3.1.4 of the standard answers what the
+statistics above cannot: if a generator has no noise of its own, its
+output after a cold restart must repeat. A dedicated firmware read
+1024~bytes with \texttt{esp\_fill\_random} as the first action of the
+application, with the radio and the ADC off (condition~D), and the chip of
+MAC a0:dd:6c:0e:fb:4c was reset through its enable pin 1000 times; the
+boot ROM reported a power-on reset every time. Two variants share the
+application and differ only in the second-stage bootloader: the stock
+one, which feeds SAR ADC noise into the generator for about 126~ms while
+it runs, and the same bootloader with that call diverted to an empty
+function at link time, which the disassembly confirms.
+Table~\ref{tab:esp32_restart} gives the outcome.
+
+\begin{table}[htbp]
+\centering
+\caption{Restart test of the ESP32 generator \meas{}: 1000 cold restarts
+per variant, condition D, one chip. $H_r$ and $H_c$ are the minimum of the
+non-IID estimators over the row and column datasets of the standard
+(1000 restarts $\times$ 1000 samples); the test fails when either is below
+half the initial estimate, $H_I = 0.838$ bit per bit (6.71 bits per byte),
+the lowest non-IID figure of this chip in condition D. With no repeat in
+1000 restarts the per-restart bound is a resolution ceiling, not a
+measurement.}
+\label{tab:esp32_restart}
+\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & Stock bootloader & Boot noise removed \\
+\midrule
+$H_r$ / $H_c$, bit layout & 0.898 / 0.854 & 0.024 / 0.813 \\
+$H_r$ / $H_c$, byte layout (bit per byte) & 7.31 / 6.64 & 0.020 / 7.13 \\
+Verdict of the standard & passes & fails \\
+Distinct 1024-byte outputs & 1000 & 759 \\
+Shifted overlaps between restarts & none & 5424, all identical \\
+Min-entropy per restart, 99\,\% bound & $\ge 8.1$ bits (ceiling) & 6.5 bits \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With the stock bootloader the generator passes in both layouts, and the
+1000 outputs differ from one another exactly as random data would: the
+mean Hamming distance between two restarts is 4096.0 bits of 8192,
+against $4096 \pm 45$ expected. Without the boot noise it fails
+decisively, and the data show why. Each restart is a window on one fixed
+sequence, read from a slightly different starting point: wherever the
+beginning of one restart's output appears inside another's, displaced by
+a few 32-bit words, the whole overlap matches word for word, 5424 times
+without a single difference. The only thing that changes between restarts
+is the instant at which the application starts reading, which varies by a
+few thousand clock cycles from one boot to the next. That is worth between
+6.5 bits per restart, the bound of the standard from the most repeated
+output, and 10.8 bits if every starting point were equally likely, out of
+8192 bits read. With the radio and the ADC off the generator has no noise
+of its own, and Espressif's statement that its output is then
+pseudo-random only~\cite{espressif_idf_random} is confirmed directly,
+which no statistical test on a continuous stream could do. Two
+consequences follow. The condition~D captures of
+Table~\ref{tab:esp32_90b} are the output of a deterministic generator
+seeded during boot: the estimators credit them with 0.85 bit per bit, as
+much as with the radio on, while their physical entropy is at most what
+the bootloader injected, which those estimators do not measure. And an
+application that derives a key right after boot with the radio off
+depends entirely on the stock bootloader's noise; without it, the key
+could be guessed in a few thousand attempts, the cold-boot problem
+described by Blanco-Romero et al.~\cite{blancoromero_2026_entropy}. The
+author has not found this test published for the ESP32 before.
+
 Three consequences follow for O8. First, the figure this thesis carries
 forward as the ESP32 reference is the non-IID one, 0.81 to 0.92 bit per
 bit with a mean of 0.85 over the twenty-four captures of conditions A--D,
 because it is what an evaluator would credit without granting the
-IID assumption; the engine's raw bits, when the campaign of
+IID assumption, with the restart test as the reminder that for
+condition~D it is a statistical figure and not physical entropy; the engine's raw bits, when the campaign of
 Section~\ref{sec:protocol} produces them, must be run through the same
 battery at the same $N$, and compared estimator by estimator, since the
 same conservative bias will act on them; the calibration of the IID tests
@@ -502,7 +570,9 @@ and only the second is the one key generation may use. Third, and
 independent of any number, the measurement is of a black box: the source
 and post-processing behind \texttt{esp\_fill\_random} are undocumented,
 and the SP 800-90B estimators are designed for raw noise, not for an
-output that may already be conditioned. What the ESP32 cannot supply,
+output that may already be conditioned; the restart test shows how far
+that can go, a stream of pseudo-random output that every estimator scores
+like noise. What the ESP32 cannot supply,
 whatever the estimators return, is the bound that Section~\ref{sec:opoint}
 derives for the engine from a physical measurement. That asymmetry is the
 comparison.
@@ -548,7 +618,11 @@ conditions; an analysis of variance finds no condition effect
 ($p \ge 0.083$ on every estimator) and no chip effect ($p \ge 0.038$,
 against 0.0045 after correction). Two devices show that the reference
 does not hinge on one of them; they do not bound the spread across a
-production population.
+production population. The restart test was run on one chip and in
+condition~D only. It bounds the entropy that the stock bootloader injects
+only from below: no repeat in 1000 restarts means more than about
+$1.7\times10^5$ equally likely starting states, some 17 bits, at 95\,\%
+confidence. The size of the generator's internal state is not documented.
 \item[Min-entropy of the built device.] Not yet bounded. The model, the
 estimator and the cutoffs are ready; the number requires the campaign of
 Section~\ref{sec:protocol}. No value is offered here, and none should be

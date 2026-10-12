@@ -54,6 +54,14 @@ todo. Léelo entero antes de tocar nada.
   (`analysis/calibra_iid.py`, `analysis/chi2_90b.py`): la χ² de
   independencia en modo byte de `ea_iid` falla el 1,7 % con datos
   perfectos a 125 000 B; los fallos sueltos del ESP32 caben en eso.
+- Prueba de reinicios del ESP32 (SP 800-90B §3.1.4, 12-10-2026, chip
+  a0:dd:6c:0e:fb:4c, `docs/esp32_reinicios.md`): `firmware/reinicios` y
+  `firmware/reinicios_sin_ruido` (mismo programa; el segundo desvía
+  `bootloader_random_enable()` con `--wrap`), captura con
+  `analysis/reinicios_esp32.py`, análisis con `analysis/reinicios_90b.py`.
+  Bootloader de serie: pasa. Sin el ruido del bootloader: falla (H_r 0,024),
+  759 secuencias distintas en 1000 y todas trozos de una secuencia fija:
+  6,5-10,8 bits por arranque. El chip queda con la variante normal.
 
 ## Estado al 08-10-2026
 

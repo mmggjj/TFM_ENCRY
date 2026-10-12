@@ -1,0 +1,8 @@
+# Prueba de reinicios del RNG. ESP32 clasico, sin Wi-Fi ni ADC.
+CONFIG_IDF_TARGET="esp32"
+# El programa solo saca la trama; el log del bootloader se deja en INFO
+# porque es la prueba de si encendio o no la fuente de entropia.
+CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
+CONFIG_LOG_DEFAULT_LEVEL=1
+CONFIG_BOOTLOADER_LOG_LEVEL_INFO=y
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
