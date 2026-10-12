@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
 """Captura de la prueba de reinicios del RNG del ESP32 (SP 800-90B, 3.1.4).
 
-Resetea el chip por EN (RTS del CP2102) y guarda los RST_BYTES que
-firmware/reinicios lee nada mas arrancar. Repite hasta --n reinicios
-validos (CRC, longitud, MAC y variante comprobados). Se puede cortar y
-seguir: retoma desde lo que ya haya en el CSV.
+Resetea el chip por EN (RTS del CP2102) y guarda los RST_BYTES que el
+firmware lee al arrancar. Repite hasta --n reinicios validos (CRC,
+longitud, MAC y variante comprobados). Se puede cortar y seguir: retoma
+desde lo que ya haya en el CSV.
 
     python analysis/reinicios_esp32.py --variante normal --n 1000
     python analysis/reinicios_esp32.py --variante sin_ruido --n 1000
+    python analysis/reinicios_esp32.py --variante radio_sin_ruido --n 1000
+    python analysis/reinicios_esp32.py --variante espera_sin_ruido --n 1000
+    python analysis/reinicios_esp32.py --variante radio --n 1000
+
+normal y sin_ruido (firmware/reinicios*) sacan un bloque por arranque; las
+de firmware/reinicios_radio* sacan dos: "antes" (nada mas arrancar, radio
+apagada) y "despues" (tras encender el Wi-Fi y esperar 200 ms; en
+espera_sin_ruido, la misma espera sin encender la radio).
 
 Salidas en results/esp32_reinicios/mac_<mac>/<variante>/: reinicios.bin
-(un bloque de RST_BYTES por reinicio, en orden), reinicios.csv (una fila
-por reinicio) y serie_<sesion>.log (flujo serie integro, no se versiona).
+(el bloque que se somete a la prueba: el unico, o el de "despues"; uno de
+RST_BYTES por reinicio, en orden), reinicios_antes.bin en las variantes
+con radio, reinicios.csv (una fila por reinicio) y serie_<sesion>.log
+(flujo serie integro, no se versiona).
 """
 from __future__ import annotations
 
@@ -30,10 +40,16 @@ RE_KV = re.compile(r"(\w+)=([^\s]+)")
 HEX = set("0123456789abcdef")
 COLUMNAS = ["i", "mac", "variante", "reset", "t_us", "ccount", "aviso_bootloader",
             "ruido_arranque_encendido", "duracion_s", "intentos"]
+COLUMNAS_RADIO = COLUMNAS + ["t_us_antes", "ccount_antes", "t_on_us"]
+# bloques que saca cada variante (None: firmware de un solo bloque, sin RST_FIN)
+VARIANTES = {"normal": None, "sin_ruido": None,
+             "radio": ["antes", "despues"], "radio_sin_ruido": ["antes", "despues"],
+             "espera_sin_ruido": ["antes", "despues"]}
 
 
-def un_reinicio(s: serial.Serial, f, timeout: float) -> tuple[dict | None, bytes, str]:
-    """Resetea, lee hasta RST_END. Devuelve (cabecera, datos, motivo de rechazo)."""
+def un_reinicio(s: serial.Serial, f, timeout: float, bloques: list[str] | None):
+    """Resetea y lee hasta tener todos los bloques. Devuelve
+    (cabeceras por bloque, datos por bloque, info, motivo de rechazo)."""
     s.reset_input_buffer()
     s.dtr = False
     s.rts = True
@@ -41,6 +57,8 @@ def un_reinicio(s: serial.Serial, f, timeout: float) -> tuple[dict | None, bytes
     s.rts = False
     t0 = time.time()
     cab, hexs, boot = None, [], []
+    cabs: dict[str, dict] = {}
+    datos: dict[str, bytes] = {}
     while time.time() - t0 < timeout:
         cruda = s.readline()
         if not cruda:
@@ -52,86 +70,113 @@ def un_reinicio(s: serial.Serial, f, timeout: float) -> tuple[dict | None, bytes
             cab, hexs = dict(RE_KV.findall(linea)), []
         elif linea.startswith("### RST_END") and cab is not None:
             fin = dict(RE_KV.findall(linea))
+            nombre = cab.get("bloque", "unico")
             if not all(set(h) <= HEX and len(h) % 2 == 0 for h in hexs):
-                return None, b"", "linea hex corrupta"
-            datos = bytes.fromhex("".join(hexs))
-            if len(datos) != int(cab.get("bytes", "0")):
-                return None, b"", f"longitud {len(datos)}"
-            if zlib.crc32(datos) != int(fin.get("crc32", "0"), 16):
-                return None, b"", "crc"
-            cab["boot"] = boot
-            cab["duracion_s"] = time.time() - t0
-            return cab, datos, ""
+                return None, None, None, f"linea hex corrupta ({nombre})"
+            d = bytes.fromhex("".join(hexs))
+            if len(d) != int(cab.get("bytes", "0")):
+                return None, None, None, f"longitud {len(d)} ({nombre})"
+            if zlib.crc32(d) != int(fin.get("crc32", "0"), 16):
+                return None, None, None, f"crc ({nombre})"
+            cabs[nombre], datos[nombre] = cab, d
+            cab = None
+            if bloques is None:
+                return cabs, datos, {"boot": boot, "duracion_s": time.time() - t0}, ""
+        elif linea.startswith("### RST_FIN") and bloques is not None:
+            if sorted(datos) != sorted(bloques):
+                return None, None, None, f"faltan bloques: {sorted(set(bloques) - set(datos))}"
+            info = dict(RE_KV.findall(linea))
+            info.update({"boot": boot, "duracion_s": time.time() - t0})
+            return cabs, datos, info, ""
         elif cab is not None:
             hexs.append(linea)
-        else:
+        elif not cabs:
             boot.append(linea)
-    return None, b"", "tiempo agotado"
+    return None, None, None, "tiempo agotado"
 
 
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser()
     ap.add_argument("--puerto", default="COM7")
-    ap.add_argument("--variante", required=True, choices=["normal", "sin_ruido"])
+    ap.add_argument("--variante", required=True, choices=list(VARIANTES))
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--timeout", type=float, default=8.0)
     ap.add_argument("--sesion", default=time.strftime("%Y%m%d_%H%M%S"))
     a = ap.parse_args()
     RAIZ.mkdir(parents=True, exist_ok=True)
+    bloques = VARIANTES[a.variante]
+    principal = "despues" if bloques else "unico"
+    otros = [b for b in (bloques or []) if b != principal]
 
     with serial.Serial(a.puerto, 115200, timeout=0.5) as s:
         # primer reinicio solo para saber la MAC y la carpeta
         with open(RAIZ / f"sondeo_{a.sesion}.log", "w", encoding="utf-8") as f0:
-            cab, _, motivo = un_reinicio(s, f0, a.timeout)
-        if cab is None:
-            print(f"sin respuesta del firmware: {motivo}")
+            cabs, _, _, motivo = un_reinicio(s, f0, a.timeout, bloques)
+        if cabs is None:
+            print(f"sin respuesta valida del firmware: {motivo}")
             return 1
+        cab = cabs[principal]
         if cab.get("variante") != a.variante:
             print(f"el chip lleva la variante {cab.get('variante')}, no {a.variante}: flashear antes")
             return 1
         mac = cab["mac"]
+        nbytes = int(cab["bytes"])
         dest = RAIZ / f"mac_{mac.replace(':', '')}" / a.variante
         dest.mkdir(parents=True, exist_ok=True)
         (RAIZ / f"sondeo_{a.sesion}.log").unlink()
-        ruta_csv, ruta_bin = dest / "reinicios.csv", dest / "reinicios.bin"
+        ruta_csv = dest / "reinicios.csv"
+        rutas = {principal: dest / "reinicios.bin", **{b: dest / f"reinicios_{b}.bin" for b in otros}}
         hechos = sum(1 for _ in ruta_csv.open(encoding="utf-8")) - 1 if ruta_csv.exists() else 0
-        if ruta_bin.exists() and ruta_bin.stat().st_size != hechos * int(cab["bytes"]):
-            print(f"reinicios.bin ({ruta_bin.stat().st_size} B) no cuadra con {hechos} filas del CSV")
-            return 1
+        for b, r in rutas.items():
+            if r.exists() and r.stat().st_size != hechos * nbytes:
+                print(f"{r.name} ({r.stat().st_size} B) no cuadra con {hechos} filas del CSV")
+                return 1
         print(f"chip {mac}, variante {a.variante}: {hechos} hechos, faltan {max(0, a.n - hechos)}")
 
         rechazos = 0
-        with (dest / f"serie_{a.sesion}.log").open("w", encoding="utf-8") as f, \
-                ruta_bin.open("ab") as fb, ruta_csv.open("a", newline="", encoding="utf-8") as fc:
-            w = csv.writer(fc)
-            if hechos == 0:
-                w.writerow(COLUMNAS)
-            i = hechos
-            while i < a.n:
-                for intento in range(1, 4):
-                    f.write(f"\n=== reinicio {i} intento {intento} ===\n")
-                    cab, datos, motivo = un_reinicio(s, f, a.timeout)
-                    if cab is not None and cab.get("mac") == mac and cab.get("variante") == a.variante:
-                        break
-                    rechazos += 1
-                    print(f"  reinicio {i} intento {intento} rechazado: {motivo or 'mac/variante'}")
-                else:
-                    print("tres rechazos seguidos: paro")
-                    return 1
-                boot = "\n".join(cab["boot"])
-                encendido = "Enabling RNG early entropy source" in boot and "NO encendida" not in boot
-                aviso = "NO encendida" in boot
-                fb.write(datos)
-                fb.flush()
-                w.writerow([i, mac, a.variante, cab.get("reset"), cab.get("t_us"), cab.get("ccount"),
-                            int(aviso), int(encendido), f"{cab['duracion_s']:.2f}", intento])
-                fc.flush()
-                if i % 50 == 0 or i == a.n - 1:
-                    print(f"  {i + 1}/{a.n}  primeros bytes {datos[:8].hex()}  reset={cab.get('reset')}"
-                          f"  t_us={cab.get('t_us')}  ruido_arranque={'si' if encendido else 'no'}"
-                          f"  {cab['duracion_s']:.2f} s")
-                i += 1
+        fbs = {b: r.open("ab") for b, r in rutas.items()}
+        try:
+            with (dest / f"serie_{a.sesion}.log").open("w", encoding="utf-8") as f, \
+                    ruta_csv.open("a", newline="", encoding="utf-8") as fc:
+                w = csv.writer(fc)
+                if hechos == 0:
+                    w.writerow(COLUMNAS_RADIO if bloques else COLUMNAS)
+                i = hechos
+                while i < a.n:
+                    for intento in range(1, 4):
+                        f.write(f"\n=== reinicio {i} intento {intento} ===\n")
+                        cabs, datos, info, motivo = un_reinicio(s, f, a.timeout, bloques)
+                        if cabs is not None and all(c.get("mac") == mac and c.get("variante") == a.variante
+                                                    for c in cabs.values()):
+                            break
+                        rechazos += 1
+                        print(f"  reinicio {i} intento {intento} rechazado: {motivo or 'mac/variante'}")
+                    else:
+                        print("tres rechazos seguidos: paro")
+                        return 1
+                    boot = "\n".join(info["boot"])
+                    encendido = "Enabling RNG early entropy source" in boot and "NO encendida" not in boot
+                    aviso = "NO encendida" in boot
+                    for b, fb in fbs.items():
+                        fb.write(datos[b])
+                        fb.flush()
+                    cab = cabs[principal]
+                    fila = [i, mac, a.variante, cab.get("reset"), cab.get("t_us"), cab.get("ccount"),
+                            int(aviso), int(encendido), f"{info['duracion_s']:.2f}", intento]
+                    if bloques:
+                        fila += [cabs["antes"].get("t_us"), cabs["antes"].get("ccount"),
+                                 info.get("t_on_us")]
+                    w.writerow(fila)
+                    fc.flush()
+                    if i % 50 == 0 or i == a.n - 1:
+                        print(f"  {i + 1}/{a.n}  primeros bytes {datos[principal][:8].hex()}  reset={cab.get('reset')}"
+                              f"  t_us={cab.get('t_us')}  ruido_arranque={'si' if encendido else 'no'}"
+                              f"  {info['duracion_s']:.2f} s", flush=True)
+                    i += 1
+        finally:
+            for fb in fbs.values():
+                fb.close()
         print(f"hecho: {a.n} reinicios en {dest}; rechazos {rechazos}")
     return 0
 

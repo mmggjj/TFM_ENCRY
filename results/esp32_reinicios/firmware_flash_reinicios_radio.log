@@ -1,0 +1,146 @@
+﻿Executing action: flash
+Running ninja in directory C:\Users\mario\Documents\TFM_FPGA_CRYPTO\firmware\reinicios_radio\build
+Executing "ninja flash"...
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\Users\mario\Documents\TFM_FPGA_CRYPTO\firmware\reinicios_radio\build\esp-idf\esptool_py && C:\Users\mario\.espressif\python_env\idf5.3_py3.14_env\Scripts\python.exe C:/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/reinicios_radio/build/partition_table/partition-table.bin C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/reinicios_radio/build/reinicios_radio.bin"
+
+reinicios_radio.bin binary size 0xb2540 bytes. Smallest app partition is 0x100000 bytes. 0x4dac0 bytes (30%) free.
+
+
+[2/5] Performing build step for 'bootloader'
+
+[1/1] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\Users\mario\Documents\TFM_FPGA_CRYPTO\firmware\reinicios_radio\build\bootloader\esp-idf\esptool_py && C:\Users\mario\.espressif\python_env\idf5.3_py3.14_env\Scripts\python.exe C:/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/reinicios_radio/build/bootloader/bootloader.bin"
+
+
+Bootloader binary size 0x6880 bytes. 0x780 bytes (7%) free.
+
+
+
+[3/5] No install step for 'bootloader'
+
+[4/5] Completed 'bootloader'
+
+[4/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\esp\esp-idf\components\esptool_py && C:\Users\mario\.espressif\tools\cmake\3.30.2\bin\cmake.exe -D IDF_PATH=C:/esp/esp-idf -D SERIAL_TOOL=C:/Users/mario/.espressif/python_env/idf5.3_py3.14_env/Scripts/python.exe;;C:/esp/esp-idf/components/esptool_py/esptool/esptool.py;--chip;esp32 -D SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args -D WORKING_DIRECTORY=C:/Users/mario/Documents/TFM_FPGA_CRYPTO/firmware/reinicios_radio/build -P C:/esp/esp-idf/components/esptool_py/run_serial_tool.cmake"
+
+esptool.py --chip esp32 -p COM7 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x1000 bootloader/bootloader.bin 0x10000 reinicios_radio.bin 0x8000 partition_table/partition-table.bin
+
+esptool.py v4.12.0
+
+Serial port COM7
+
+Connecting....
+
+Chip is ESP32-D0WD-V3 (revision v3.1)
+
+Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
+
+Crystal is 40MHz
+
+MAC: a0:dd:6c:0e:fb:4c
+
+Uploading stub...
+
+Running stub...
+
+Stub running...
+
+Changing baud rate to 460800
+
+Changed.
+
+Configuring flash size...
+
+Flash will be erased from 0x00001000 to 0x00007fff...
+
+Flash will be erased from 0x00010000 to 0x000c2fff...
+
+Flash will be erased from 0x00008000 to 0x00008fff...
+
+SHA digest in image updated
+
+Compressed 26752 bytes to 16345...
+
+Writing at 0x00001000... (100 %)
+
+Wrote 26752 bytes (16345 compressed) at 0x00001000 in 0.6 seconds (effective 389.1 kbit/s)...
+
+Hash of data verified.
+
+Compressed 730432 bytes to 461859...
+
+Writing at 0x00010000... (3 %)
+
+Writing at 0x0001c29c... (6 %)
+
+Writing at 0x00024d59... (10 %)
+
+Writing at 0x0002d601... (13 %)
+
+Writing at 0x00033075... (17 %)
+
+Writing at 0x00038cf6... (20 %)
+
+Writing at 0x0003ea85... (24 %)
+
+Writing at 0x00044aad... (27 %)
+
+Writing at 0x0004a642... (31 %)
+
+Writing at 0x000505fb... (34 %)
+
+Writing at 0x00055811... (37 %)
+
+Writing at 0x0005aeaf... (41 %)
+
+Writing at 0x00060700... (44 %)
+
+Writing at 0x00065c76... (48 %)
+
+Writing at 0x0006b287... (51 %)
+
+Writing at 0x00070edc... (55 %)
+
+Writing at 0x00076785... (58 %)
+
+Writing at 0x0007c3d3... (62 %)
+
+Writing at 0x0008213c... (65 %)
+
+Writing at 0x00087be5... (68 %)
+
+Writing at 0x0008d6cc... (72 %)
+
+Writing at 0x00093497... (75 %)
+
+Writing at 0x00098edf... (79 %)
+
+Writing at 0x0009f739... (82 %)
+
+Writing at 0x000aa513... (86 %)
+
+Writing at 0x000b0121... (89 %)
+
+Writing at 0x000b5d30... (93 %)
+
+Writing at 0x000bbd7b... (96 %)
+
+Writing at 0x000c10f5... (100 %)
+
+Wrote 730432 bytes (461859 compressed) at 0x00010000 in 11.2 seconds (effective 520.9 kbit/s)...
+
+Hash of data verified.
+
+Compressed 3072 bytes to 103...
+
+Writing at 0x00008000... (100 %)
+
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 1133.9 kbit/s)...
+
+Hash of data verified.
+
+
+
+Leaving...
+
+Hard resetting via RTS pin...
+
+Done

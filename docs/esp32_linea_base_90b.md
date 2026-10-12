@@ -417,7 +417,9 @@ base del ESP32 no depende del chip a la resolución de estos estimadores.**
   serie la pasa; sin el ruido que mete el bootloader, la falla: el
   generador no tiene ruido propio en condición D, y la entropía física de
   las capturas D es como mucho la que siembra el arranque, que estos
-  estimadores no ven.
+  estimadores no ven. Con el Wi-Fi encendido la pasa incluso sin el ruido
+  del bootloader, y un control con la misma espera sin radio la falla: la
+  radio sí mete ruido en el generador (condición B).
 - Cuando exista la placa: la misma batería sobre los bits crudos del ERO
   (registro CAPTURA, modo test) a K_D de diseño, y sobre la salida del
   DRBG; contrastar con la cota del modelo (`analysis/ero_model.py`).

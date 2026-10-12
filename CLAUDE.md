@@ -61,7 +61,13 @@ todo. Léelo entero antes de tocar nada.
   `analysis/reinicios_esp32.py`, análisis con `analysis/reinicios_90b.py`.
   Bootloader de serie: pasa. Sin el ruido del bootloader: falla (H_r 0,024),
   759 secuencias distintas en 1000 y todas trozos de una secuencia fija:
-  6,5-10,8 bits por arranque. El chip queda con la variante normal.
+  6,5-10,8 bits por arranque. Con radio (`firmware/reinicios_radio*`,
+  dos lecturas por arranque; control `-DSIN_RADIO=1` en `build_espera`):
+  Wi-Fi encendido sin ruido de arranque → pasa (0 repeticiones; 289
+  parejas con el mismo estado inicial divergen); control con la misma
+  espera sin radio → falla igual que en D. La radio mete ruido; sin ella
+  el RNG no recibe nada en 350 ms. El chip queda con `firmware/reinicios`
+  (bootloader de serie).
 
 ## Estado al 08-10-2026
 

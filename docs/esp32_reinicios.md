@@ -58,7 +58,7 @@ bootloader de serie.
 
 | | normal | sin_ruido |
 |---|---|---|
-| Prueba de la norma, modo bit: comprobación de cordura (máx. 629 / 628) | pasa (554) | pasa (580) |
+| Prueba de la norma, modo bit: comprobación de cordura (límite ≈ 628; la herramienta lo calcula por simulación y varía ±2 entre ejecuciones) | pasa (554) | pasa (580) |
 | Prueba de la norma, modo bit: H_r / H_c | 0,898 / 0,854 | **0,024** / 0,813 |
 | Prueba de la norma, modo bit: veredicto | **pasa**, entropía validada 0,838 | **falla** (H_r < H_I/2) |
 | Prueba de la norma, modo byte: H_r / H_c | 7,31 / 6,64 | **0,020** / 7,13 |
@@ -112,11 +112,88 @@ dice, con un 95 % de confianza, que el arranque elige entre más de unos
    con el problema de arranque en frío que describen Blanco-Romero et al.
    [blancoromero_2026_entropy].
 
-## 5. Límites
+## 5. Con la radio encendida (12-10-2026, mismo chip)
+
+### 5.1 Montaje
+
+- `firmware/reinicios_radio`: dos lecturas de 1024 B por arranque.
+  "antes": lo primero de `app_main`, radio apagada, igual que arriba.
+  "después": tras arrancar el Wi-Fi como el TFM_RNG en sus condiciones A y
+  B (NVS, `esp_netif`, bucle de eventos, `esp_wifi_init`, modo estación,
+  `esp_wifi_start`, sin asociarse a ninguna red) y esperar 200 ms con
+  `vTaskDelay`. Por esa espera, la lectura cae en un tick de FreeRTOS
+  (10 ms): 797 de los 1000 arranques leen a los 350 ms y el resto entre
+  360 y 410 ms, según lo que tarde en arrancar el Wi-Fi.
+- Tres variantes más (1000 reinicios cada una, ningún bloque rechazado):
+  - **radio_sin_ruido**: bootloader sin ruido + Wi-Fi. Es la que dice si la
+    radio mete ruido por sí sola.
+  - **espera_sin_ruido**: el control. Bootloader sin ruido y la misma espera
+    con `vTaskDelay`, pero sin tocar el Wi-Fi (el binario ni siquiera
+    enlaza `esp_wifi_start`). La lectura cae en el mismo tick. Separa el
+    efecto de la radio del de la simple variación de tiempos.
+  - **radio**: bootloader de serie + Wi-Fi, para completar el cuadro.
+- Los tres bootloaders se comprobaron en el desensamblado igual que antes.
+  No son idénticos byte a byte a los de §2 porque llevan grabada la fecha
+  de compilación.
+- H_I de las variantes con Wi-Fi: 0,8586 bit/bit, la estimación no-IID
+  más baja de las capturas de este chip con Wi-Fi (condición B), como pide
+  la norma (mismo generador, mismas condiciones). El control usa la de D.
+
+### 5.2 Resultados (lectura "después")
+
+| Variante | Prueba de la norma, bit: H_r / H_c | Veredicto (bit y byte) | Distintas en 1000 | Trozos compartidos (solapes idénticos) | Min-entropía por arranque |
+|---|---|---|---|---|---|
+| radio_sin_ruido | 0,831 / 0,845 | **pasa** (0,831 bit/bit; 6,64 bit/byte) | 1000 | 0 | ≥ 8,1 bits (techo) |
+| espera_sin_ruido (control) | **0,024** / 0,808 | **falla** | 760 | 5632 | 6,5 bits |
+| radio | 0,844 / 0,807 | **pasa** (0,807 bit/bit; 6,87 bit/byte) | 1000 | 0 | ≥ 8,1 bits (techo) |
+
+Y dos comprobaciones más:
+
+| | Arranques del mismo tick | Variación del instante de lectura | Distintas | Trozos compartidos |
+|---|---|---|---|---|
+| sin_ruido (§3), nada más arrancar | 1000 | 4942 ciclos | 759 | 5424 |
+| espera_sin_ruido, a los 352 ms | 1000 | 3824 ciclos | 760 | 5632 |
+| radio_sin_ruido, a los 352 ms | 797 | 5260 ciclos | **797** | **0** |
+
+- En radio_sin_ruido, **289 parejas de arranques tenían la lectura "antes"
+  idéntica** (el generador estaba en el mismo estado antes de encender la
+  radio) **y las 289 dieron lecturas "después" distintas**. En el control,
+  de 303 parejas con la misma lectura "antes", 275 repiten también la de
+  "después"; las otras 28 caen en otro de los mismos ≈ 1700 estados por
+  una pequeña diferencia de tiempos durante la espera (el número de
+  secuencias distintas no crece: 765 antes, 760 después).
+- La lectura "antes" de las variantes nuevas repite lo de §3: con el
+  bootloader sin ruido, 774 y 765 secuencias distintas en 1000 (≈ 1800
+  estados); con el de serie (variante radio), 1000 distintas.
+
+### 5.3 Lectura
+
+1. **La radio mete ruido en el generador por sí sola.** Con el
+   bootloader sin ruido, encender el Wi-Fi basta para que cada arranque
+   sea distinto: la prueba de la norma pasa, no hay ningún trozo
+   compartido, y arranques que partían del mismo estado acaban en
+   lecturas distintas.
+2. **No es la variación de tiempos.** El control lee en el mismo tick y
+   con una variación del instante de lectura del mismo orden (3824 frente
+   a 5260 ciclos), y repite como nada más arrancar: 760 distintas, 5632
+   solapes idénticos, ≈ 1734 estados. Con tan pocos estados, 797 arranques
+   del mismo tick darían del orden de 180 repeticiones por puro azar de
+   tiempos; con la radio salen 0.
+3. **Sin radio, el generador no recibe ruido de ninguna parte en todo ese
+   tiempo.** En el control, 350 ms después de arrancar, la salida sigue
+   siendo la misma secuencia fija.
+4. Esto confirma la otra mitad de lo que dice Espressif: con la radio
+   encendida, el generador recibe ruido físico. Lo que la prueba no dice
+   es **cuánto por bit**: la cifra validada (0,83 bit/bit) es la de los
+   estimadores de la norma, con su sesgo de siempre, no una medida del
+   ruido de la radio.
+
+## 6. Límites
 
 - Un solo chip (a0:dd:6c:0e:fb:4c); el otro no estaba conectado.
-- Solo condición D. No se ha hecho la prueba de reinicios con la radio
-  encendida.
+- Condiciones D (todo apagado) y B (Wi-Fi sin asociarse). No se ha hecho
+  con el ADC (condición C), con Bluetooth, ni con el Wi-Fi asociado a una
+  red.
 - La variante sin_ruido es un montaje de laboratorio: el bootloader de
   serie siempre enciende la fuente. Lo que mide es el generador sin
   ninguna de sus fuentes, no un fallo de ESP-IDF.
@@ -127,7 +204,7 @@ dice, con un 95 % de confianza, que el arranque elige entre más de unos
   (> 17 bits); el tamaño del estado interno del generador no está
   documentado.
 
-## 6. Reproducir
+## 7. Reproducir
 
 ```
 . C:\esp\esp-idf\export.ps1
@@ -135,5 +212,11 @@ cd firmware\reinicios; idf.py -p COM7 flash
 python analysis/reinicios_esp32.py --variante normal --n 1000
 cd ..\reinicios_sin_ruido; idf.py -p COM7 flash
 python analysis/reinicios_esp32.py --variante sin_ruido --n 1000
+cd ..\reinicios_radio_sin_ruido; idf.py -p COM7 flash
+python analysis/reinicios_esp32.py --variante radio_sin_ruido --n 1000
+idf.py -B build_espera -DSIN_RADIO=1 -p COM7 flash
+python analysis/reinicios_esp32.py --variante espera_sin_ruido --n 1000
+cd ..\reinicios_radio; idf.py -p COM7 flash
+python analysis/reinicios_esp32.py --variante radio --n 1000
 python analysis/reinicios_90b.py --mac a0dd6c0efb4c
 ```

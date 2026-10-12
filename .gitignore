@@ -44,3 +44,4 @@ results/esp32_campana_rng/*/serie_*.log
 # Prueba de reinicios: flujo serie integro y matrices derivadas (se regeneran con analysis/reinicios_90b.py)
 results/esp32_reinicios/*/*/serie_*.log
 results/esp32_reinicios/*/*/restart_*.bin
+firmware/*/build_*/

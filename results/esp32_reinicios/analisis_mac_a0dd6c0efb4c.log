@@ -3,7 +3,7 @@ Agent pid 420
 Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/normal/restart_b1.bin' (SHA-256 hash 4a31369a54cdcdae95e44c00cbf930b9c3d950ac17efc6beb405ba35d1e00b33)
 Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
 H_I: 0.838220
-ALPHA: 5.0251553006530614e-06, X_cutoff: 628
+ALPHA: 5.0251553006530614e-06, X_cutoff: 627
 X_max: 554
 
 Restart Sanity Check Passed...
@@ -133,7 +133,7 @@ Agent pid 420
 Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/sin_ruido/restart_b1.bin' (SHA-256 hash ed6841fefc717ba3608dd3d5d8ff242f0874a2ac5a0356c3e528cb67f98a7fae)
 Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
 H_I: 0.838220
-ALPHA: 5.0251553006530614e-06, X_cutoff: 628
+ALPHA: 5.0251553006530614e-06, X_cutoff: 629
 X_max: 580
 
 Restart Sanity Check Passed...
@@ -252,13 +252,397 @@ H_I: 6.705756
 your 131072x1 screen size is bogus. expect trouble
 your 131072x1 screen size is bogus. expect trouble
 Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+--- ea_restart radio_sin_ruido b1 (H_I = 0.8586): exit 0 ---
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/radio_sin_ruido/restart_b1.bin' (SHA-256 hash fdbb377b0f5af63298299794e3e1d2da955e7dc188e9e2b1c0581f45808aaeac)
+Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
+H_I: 0.858563
+ALPHA: 5.0251553006530614e-06, X_cutoff: 620
+X_max: 558
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500409, p-hat = 0.50040899999999999, p_u = 0.50169691486484469
+	Most Common Value Estimate (Rows) = 0.995112 / 1 bit(s)
+Literal MCV Estimate: mode = 500409, p-hat = 0.50040899999999999, p_u = 0.50169691486484469
+	Most Common Value Estimate (Cols) = 0.995112 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4991690262987558, sigma-hat = 0.4999999342747955, p = 0.53786163517956509
+	Collision Test Estimate (Rows) = 0.894693 / 1 bit(s)
+Literal Collision Estimate: X-bar = 2.4996662942160164, sigma-hat = 0.50000051355866815, p = 0.53442342839522317
+	Collision Test Estimate (Cols) = 0.903945 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50040899999999999, P_1 = 0.49959100000000001, P_0,0 = 0.50102016550461725, P_0,1 = 0.49897983449538275, P_1,0 = 0.49979583258271781, P_1,1 = 0.50020416741728213, p_max = 3.8100992190483037e-39
+	Markov Test Estimate (Rows) = 0.997073 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50040899999999999, P_1 = 0.49959100000000001, P_0,0 = 0.50032473436728753, P_0,1 = 0.49967526563271247, P_1,0 = 0.50049240377109228, P_1,1 = 0.49950759622890772, p_max = 3.1939325654482136e-39
+	Markov Test Estimate (Cols) = 0.999061 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2154349227416361, sigma-hat = 1.017091575572753, p = 0.03158481019100412
+	Compression Test Estimate (Rows) = 0.830771 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2171624257507805, sigma-hat = 1.0145665977229927, p = 0.02971780294940396
+	Compression Test Estimate (Cols) = 0.845421 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Literal LRS Estimate: u = 17, v = 35, p-hat = 0.50018561375129244, p_u = 0.50147352895828098
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5266288655261094952056, p_u = 0.5279149530124247283462
+Literal LRS Estimate: u = 17, v = 43, p-hat = 0.53532969459507888, p_u = 0.53661439074860757
+	T-Tuple Test Estimate (Rows) = 0.919089 / 1 bit(s)
+	T-Tuple Test Estimate (Cols) = 0.921623 / 1 bit(s)
+	LRS Test Estimate (Rows) = 0.995755 / 1 bit(s)
+	LRS Test Estimate (Cols) = 0.898042 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50071241875498695 (C = 499393) Plocal can't affect result (r = 19)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 0.997946 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50156147290589903 (C = 500242) Plocal can't affect result (r = 22)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 0.995502 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50060541405734882 (C = 499317) Plocal can't affect result (r = 19)
+	Lag Prediction Test Estimate (Rows) = 0.998254 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50209741506126981 (C = 500809) Plocal can't affect result (r = 19)
+	Lag Prediction Test Estimate (Cols) = 0.993961 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.5004919133595509 (C = 499203) Plocal can't affect result (r = 20)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 0.998581 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.5013729167350407 (C = 500084) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 0.996044 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50137942777712274 (C = 500083) Plocal can't affect result (r = 19)
+	LZ78Y Prediction Test Estimate (Rows) = 0.996025 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50138242782668641 (C = 500086) Plocal can't affect result (r = 21)
+	LZ78Y Prediction Test Estimate (Cols) = 0.996017 / 1 bit(s)
+
+H_r: 0.830771
+H_c: 0.845421
+H_I: 0.858563
+
+Validation Test Passed...
+
+min(H_r, H_c, H_I): 0.830771
+
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+--- ea_restart radio_sin_ruido b8 (H_I = 6.8685): exit 0 ---
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/radio_sin_ruido/restart_b8.bin' (SHA-256 hash a212b9fc88361bc0cecd61ba2fb3dc471546f26874f8bfdd23993390e8d998aa)
+Loaded 1000000 samples made up of 256 distinct 8-bit-wide symbols.
+H_I: 6.868507
+ALPHA: 5.0251553006530614e-06, X_cutoff: 28
+X_max: 15
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4110, p-hat = 0.0041099999999999999, p_u = 0.0042747949478919118
+	Most Common Value Estimate (Rows) = 7.869929 / 8 bit(s)
+Literal MCV Estimate: mode = 4110, p-hat = 0.0041099999999999999, p_u = 0.0042747949478919118
+	Most Common Value Estimate (Cols) = 7.869929 / 8 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 2, p-hat_max = 0.005916082741141726124156, p_u = 0.006113618597830376001731
+Literal LRS Estimate: u = 3, v = 4, p-hat = 0.0040308973787162858, p_u = 0.0041941052500552867
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004109999999999999999938, p_u = 0.004274794947891911803137
+Literal LRS Estimate: u = 2, v = 4, p-hat = 0.0039079456334066589, p_u = 0.0040686550376972531
+	T-Tuple Test Estimate (Rows) = 7.353758 / 8 bit(s)
+	T-Tuple Test Estimate (Cols) = 7.869929 / 8 bit(s)
+	LRS Test Estimate (Rows) = 7.897421 / 8 bit(s)
+	LRS Test Estimate (Cols) = 7.941232 / 8 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0040118121155787601 (C = 3852) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 7.961530 / 8 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0041097865463518794 (C = 3948) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 7.926721 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0040646326366196679 (C = 3904) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Rows) = 7.942659 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0040278931707916242 (C = 3868) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Cols) = 7.955759 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.0040819847112759707 (C = 3921) Plocal = 0.010037857681169098 (r = 4)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 6.638405 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.0041176988077346842 (C = 3956) Plocal can't affect result (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 7.923946 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.0040810254719896525 (C = 3920) Plocal = 0.01003789541932275 (r = 4)
+	LZ78Y Prediction Test Estimate (Rows) = 6.638399 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.004117760569451458 (C = 3956) Plocal can't affect result (r = 3)
+	LZ78Y Prediction Test Estimate (Cols) = 7.923924 / 8 bit(s)
+
+H_r: 6.638399
+H_c: 7.869929
+H_I: 6.868507
+
+Validation Test Passed...
+
+min(H_r, H_c, H_I): 6.638399
+
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+--- ea_restart espera_sin_ruido b1 (H_I = 0.8382): exit 255 ---
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/espera_sin_ruido/restart_b1.bin' (SHA-256 hash 47b546225bcd92607e1e7f9d35429aaf1f65964b56dc4d8dd6851c629b40398d)
+Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
+H_I: 0.838220
+ALPHA: 5.0251553006530614e-06, X_cutoff: 628
+X_max: 577
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 502029, p-hat = 0.50202899999999995, p_u = 0.50331690469140355
+	Most Common Value Estimate (Rows) = 0.990461 / 1 bit(s)
+Literal MCV Estimate: mode = 502029, p-hat = 0.50202899999999995, p_u = 0.50331690469140355
+	Most Common Value Estimate (Cols) = 0.990461 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5032604967970782, sigma-hat = 0.49998999485061218, p = 0.5
+	Collision Test Estimate (Rows) = 1.000000 / 1 bit(s)
+Literal Collision Estimate: X-bar = 2.5002437737679424, sigma-hat = 0.50000056563638784, p = 0.5299391022076918
+	Collision Test Estimate (Cols) = 0.916102 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50202899999999995, P_1 = 0.49797100000000005, P_0,0 = 0.49974901798306071, P_0,1 = 0.50025098201693929, P_1,0 = 0.5043285653180607, P_1,1 = 0.4956714346819393, p_max = 5.2446101051486529e-39
+	Markov Test Estimate (Rows) = 0.993472 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50202899999999995, P_1 = 0.49797100000000005, P_0,0 = 0.50133857075700961, P_0,1 = 0.49866142924299039, P_1,0 = 0.50272606236106121, P_1,1 = 0.49727393763893879, p_max = 4.1436290108096137e-39
+	Markov Test Estimate (Cols) = 0.996127 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2181683394476366, sigma-hat = 1.0141973325933009, p = 0.028550902379689713
+	Compression Test Estimate (Rows) = 0.855053 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2121566262207368, sigma-hat = 1.0178774848681329, p = 0.034736397945585584
+	Compression Test Estimate (Cols) = 0.807901 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 24, p-hat_max = 0.6536453179851921435248, p_u = 0.6548709184174997735149
+Literal LRS Estimate: u = 25, v = 1010, p-hat = 0.98297403447096238, p_u = 0.9833072645488314
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5293426435735436450447, p_u = 0.530628339190238371907
+Literal LRS Estimate: u = 17, v = 37, p-hat = 0.50006683686182957, p_u = 0.50135475214605517
+	T-Tuple Test Estimate (Rows) = 0.610718 / 1 bit(s)
+	T-Tuple Test Estimate (Cols) = 0.914226 / 1 bit(s)
+	LRS Test Estimate (Rows) = 0.024286 / 1 bit(s)
+	LRS Test Estimate (Cols) = 0.996096 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50576668635778654 (C = 504447) Plocal can't affect result (r = 17)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 0.983456 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50505365657952006 (C = 503734) Plocal can't affect result (r = 21)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 0.985491 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50430139556133613 (C = 503013) Plocal can't affect result (r = 17)
+	Lag Prediction Test Estimate (Rows) = 0.987642 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50120341583679884 (C = 499915) Plocal can't affect result (r = 18)
+	Lag Prediction Test Estimate (Cols) = 0.996532 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.72221664468396762 (C = 721060) Plocal = 0.88049171127091608 (r = 128)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 0.183619 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50269091431933288 (C = 501402) Plocal can't affect result (r = 19)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 0.992256 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50273644546335561 (C = 501440) Plocal can't affect result (r = 16)
+	LZ78Y Prediction Test Estimate (Rows) = 0.992126 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.5030194479562341 (C = 501723) Plocal can't affect result (r = 21)
+	LZ78Y Prediction Test Estimate (Cols) = 0.991314 / 1 bit(s)
+
+H_r: 0.024286
+H_c: 0.807901
+H_I: 0.838220
+
+*** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+--- ea_restart espera_sin_ruido b8 (H_I = 6.7058): exit 255 ---
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/espera_sin_ruido/restart_b8.bin' (SHA-256 hash 3a8c9c074ea0d364d5533e089ba89ed76fbcc7225bf94e6a1d1e9a07f1e834b2)
+Loaded 1000000 samples made up of 256 distinct 8-bit-wide symbols.
+H_I: 6.705756
+ALPHA: 5.0251553006530614e-06, X_cutoff: 30
+X_max: 22
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4481, p-hat = 0.0044809999999999997, p_u = 0.0046530400441260793
+	Most Common Value Estimate (Rows) = 7.747611 / 8 bit(s)
+Literal MCV Estimate: mode = 4481, p-hat = 0.0044809999999999997, p_u = 0.0046530400441260793
+	Most Common Value Estimate (Cols) = 7.747611 / 8 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 3, p-hat_max = 0.03583050259717712098738, p_u = 0.03630926544403853999864
+Literal LRS Estimate: u = 4, v = 1001, p-hat = 0.98466316972457779, p_u = 0.98497970998070027
+Literal t-Tuple Estimate: t = 2, p-hat_max = 0.006000003000002250001758, p_u = 0.006198926559604729706657
+Literal LRS Estimate: u = 3, v = 4, p-hat = 0.0039842895762433638, p_u = 0.0041465549441134798
+	T-Tuple Test Estimate (Rows) = 4.783518 / 8 bit(s)
+	T-Tuple Test Estimate (Cols) = 7.333766 / 8 bit(s)
+	LRS Test Estimate (Rows) = 0.021834 / 8 bit(s)
+	LRS Test Estimate (Cols) = 7.913871 / 8 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0043260626781075409 (C = 4160) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 7.852730 / 8 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0062064297814068111 (C = 6007) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 7.332021 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0047793980973230357 (C = 4605) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Rows) = 7.708955 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0070533248906008697 (C = 6841) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Cols) = 7.147481 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.90404514795801472 (C = 903282) Plocal = 0.98591996064706677 (r = 998)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 0.020458 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.0042452234059818707 (C = 4081) Plocal can't affect result (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 7.879944 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.014989035506224112 (C = 14679) Plocal can't affect result (r = 4)
+	LZ78Y Prediction Test Estimate (Rows) = 6.059949 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.0042452870803697572 (C = 4081) Plocal can't affect result (r = 3)
+	LZ78Y Prediction Test Estimate (Cols) = 7.879922 / 8 bit(s)
+
+H_r: 0.020458
+H_c: 7.147481
+H_I: 6.705756
+
+*** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+--- ea_restart radio b1 (H_I = 0.8586): exit 0 ---
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/radio/restart_b1.bin' (SHA-256 hash 2eff16943d8f5b665447f57c98b5fb2cef9d44825f168170d1293a08a486f4cc)
+Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
+H_I: 0.858563
+ALPHA: 5.0251553006530614e-06, X_cutoff: 621
+X_max: 560
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500506, p-hat = 0.50050600000000001, p_u = 0.50179391463622669
+	Most Common Value Estimate (Rows) = 0.994833 / 1 bit(s)
+Literal MCV Estimate: mode = 500506, p-hat = 0.50050600000000001, p_u = 0.50179391463622669
+	Most Common Value Estimate (Cols) = 0.994833 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5003538004165593, sigma-hat = 0.50000049991534057, p = 0.5290061941003259
+	Collision Test Estimate (Rows) = 0.918643 / 1 bit(s)
+Literal Collision Estimate: X-bar = 2.5001162555221375, sigma-hat = 0.50000061151549702, p = 0.53098521582769176
+	Collision Test Estimate (Cols) = 0.913256 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49949399999999999, P_1 = 0.50050600000000001, P_0,0 = 0.49927526656976862, P_0,1 = 0.50072473343023138, P_1,0 = 0.4997132895775267, P_1,1 = 0.5002867104224733, p_max = 3.1638656253092489e-39
+	Markov Test Estimate (Rows) = 0.999168 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49949399999999999, P_1 = 0.50050600000000001, P_0,0 = 0.4994634570185027, P_0,1 = 0.5005365429814973, P_1,0 = 0.49952547926594137, P_1,1 = 0.50047452073405863, p_max = 3.3183315546056634e-39
+	Markov Test Estimate (Cols) = 0.998631 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2170292259443833, sigma-hat = 1.0159682109549499, p = 0.029876517179731277
+	Compression Test Estimate (Rows) = 0.844141 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2119889778773505, sigma-hat = 1.0190446053790569, p = 0.034894197658403181
+	Compression Test Estimate (Cols) = 0.806812 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5266288655261094952056, p_u = 0.5279149530124247283462
+Literal LRS Estimate: u = 17, v = 38, p-hat = 0.50098816908640506, p_u = 0.50227608186689259
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5266288655261094952056, p_u = 0.5279149530124247283462
+Literal LRS Estimate: u = 17, v = 38, p-hat = 0.50132031109936277, p_u = 0.50260822190484419
+	T-Tuple Test Estimate (Rows) = 0.921623 / 1 bit(s)
+	T-Tuple Test Estimate (Cols) = 0.921623 / 1 bit(s)
+	LRS Test Estimate (Rows) = 0.993448 / 1 bit(s)
+	LRS Test Estimate (Cols) = 0.992494 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50213050711923579 (C = 500811) Plocal can't affect result (r = 24)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 0.993866 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50134445941852201 (C = 500025) Plocal can't affect result (r = 19)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 0.996126 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50175541584422612 (C = 500467) Plocal can't affect result (r = 20)
+	Lag Prediction Test Estimate (Rows) = 0.994944 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50084841500264121 (C = 499560) Plocal can't affect result (r = 22)
+	Lag Prediction Test Estimate (Cols) = 0.997554 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50067191437422864 (C = 499383) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 0.998063 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50155491693402254 (C = 500266) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 0.995520 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50119642466606995 (C = 499900) Plocal can't affect result (r = 24)
+	LZ78Y Prediction Test Estimate (Rows) = 0.996552 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50138342784319712 (C = 500087) Plocal can't affect result (r = 20)
+	LZ78Y Prediction Test Estimate (Cols) = 0.996014 / 1 bit(s)
+
+H_r: 0.844141
+H_c: 0.806812
+H_I: 0.858563
+
+Validation Test Passed...
+
+min(H_r, H_c, H_I): 0.806812
+
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+--- ea_restart radio b8 (H_I = 6.8685): exit 0 ---
+Agent pid 420
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/radio/restart_b8.bin' (SHA-256 hash d17caf99f89ea65edd5998cbd5dad855380fffc9ce21a585062593f43b1717bf)
+Loaded 1000000 samples made up of 256 distinct 8-bit-wide symbols.
+H_I: 6.868507
+ALPHA: 5.0251553006530614e-06, X_cutoff: 28
+X_max: 16
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4059, p-hat = 0.0040590000000000001, p_u = 0.0042227734991151407
+	Most Common Value Estimate (Rows) = 7.887593 / 8 bit(s)
+Literal MCV Estimate: mode = 4059, p-hat = 0.0040590000000000001, p_u = 0.0042227734991151407
+	Most Common Value Estimate (Cols) = 7.887593 / 8 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004058999999999999999917, p_u = 0.004222773499115140808331
+Literal LRS Estimate: u = 2, v = 5, p-hat = 0.0045730587507903561, p_u = 0.0047468489906174301
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004058999999999999999917, p_u = 0.004222773499115140808331
+Literal LRS Estimate: u = 2, v = 4, p-hat = 0.0039073343961035937, p_u = 0.0040680312810203481
+	T-Tuple Test Estimate (Rows) = 7.887593 / 8 bit(s)
+	T-Tuple Test Estimate (Cols) = 7.887593 / 8 bit(s)
+	LRS Test Estimate (Rows) = 7.718814 / 8 bit(s)
+	LRS Test Estimate (Cols) = 7.941454 / 8 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0040587612565775163 (C = 3898) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 7.944745 / 8 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.0040628435229638901 (C = 3902) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 7.943294 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0042105364258802304 (C = 4047) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Rows) = 7.891780 / 8 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.0040901441268769816 (C = 3929) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate (Cols) = 7.933633 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.004138105428203892 (C = 3976) Plocal can't affect result (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 7.916814 / 8 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.004155450242639862 (C = 3993) Plocal can't affect result (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 7.910779 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.0041330658615582536 (C = 3971) Plocal can't affect result (r = 3)
+	LZ78Y Prediction Test Estimate (Rows) = 7.918572 / 8 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.0041555125705699698 (C = 3993) Plocal can't affect result (r = 3)
+	LZ78Y Prediction Test Estimate (Cols) = 7.910758 / 8 bit(s)
+
+H_r: 7.718814
+H_c: 7.887593
+H_I: 6.868507
+
+Validation Test Passed...
+
+min(H_r, H_c, H_I): 6.868507
+
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
 # Prueba de reinicios del RNG del ESP32, chip a0dd6c0efb4c
 
-Generado por analysis/reinicios_90b.py. H_I: estimación no-IID de la captura en condición D más baja del chip (fb4c_condD_rep2): 0.8382 bit/bit, 6.706 bit/byte.
+Generado por analysis/reinicios_90b.py. H_I: estimación no-IID más baja de las capturas de la campaña de este chip en la misma condición (D sin radio, B con Wi-Fi).
 
 ## Variante normal
 
-1000 reinicios de 1024 B; motivo de reset ['1'] (1 = encendido); ruido del arranque encendido: ['0', '1']; instante de la lectura 3192-3204 µs desde el arranque del programa.
+1000 reinicios de 1024 B, lectura nada más arrancar, radio apagada; motivo de reset ['1'] (1 = encendido); arranques con la línea de la fuente de ruido encendida en el log: 999 de 1000; instante de la lectura 3192-3204 µs desde el arranque del programa. H_I = 0.8382 bit/bit (fb4c_condD_rep2).
 
 | Comprobación directa | Valor | Esperado con datos al azar |
 |---|---|---|
@@ -285,7 +669,7 @@ Prueba oficial (ea_restart, no-IID), salida íntegra en `normal/ea_restart_b1.lo
 
 ## Variante sin_ruido
 
-1000 reinicios de 1024 B; motivo de reset ['1'] (1 = encendido); ruido del arranque encendido: ['0']; instante de la lectura 3197-3209 µs desde el arranque del programa.
+1000 reinicios de 1024 B, lectura nada más arrancar, radio apagada; motivo de reset ['1'] (1 = encendido); arranques con la línea de la fuente de ruido encendida en el log: 0 de 1000; instante de la lectura 3197-3209 µs desde el arranque del programa. H_I = 0.8382 bit/bit (fb4c_condD_rep2).
 
 | Comprobación directa | Valor | Esperado con datos al azar |
 |---|---|---|
@@ -309,4 +693,179 @@ Prueba oficial (ea_restart, no-IID), salida íntegra en `sin_ruido/ea_restart_b1
 
 - bit: H_I: 0.838220 / Restart Sanity Check Passed... / H_r: 0.024412 / H_c: 0.813218 / H_I: 0.838220 / *** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
 - byte: H_I: 6.705756 / Restart Sanity Check Passed... / H_r: 0.020458 / H_c: 7.132399 / H_I: 6.705756 / *** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
+
+## Variante radio_sin_ruido
+
+1000 reinicios de 1024 B, lectura tras encender el Wi-Fi y esperar 200 ms; motivo de reset ['1'] (1 = encendido); arranques con la línea de la fuente de ruido encendida en el log: 0 de 1000; instante de la lectura 352618-412637 µs desde el arranque del programa. H_I = 0.8586 bit/bit (fb4c_condB_rep3).
+
+| Comprobación directa | Valor | Esperado con datos al azar |
+|---|---|---|
+| bloques distintos | 1000 de 1000 | 1000 |
+| primeros 8 bytes distintos | 1000 de 1000 | 1000 |
+| distancia de Hamming entre arranques, media ± desv. | 4096.1 ± 45.3 | 4096 ± 45.3 |
+| distancia mínima entre dos arranques | 3881 | ≈ 3887 |
+| posición más sesgada (unos en 1000 arranques) | z = 3.67, p corregida = 1 | p corregida ≈ uniforme |
+| primer byte, χ² frente a uniforme | p = 0.0334 | p ≈ uniforme |
+
+| Mismo flujo leído desde otro punto | Valor |
+|---|---|
+| arranques cuyo inicio aparece desplazado dentro de otro arranque | 0 relaciones |
+| de ellas, con el solape entero idéntico | 0 |
+| grupos de arranques alineables / el mayor | 1000 / 1 |
+| secuencias distintas; la más repetida sale | 1000; 1 veces |
+| min-entropía por arranque (cota inferior al 99 %, MCV; con 1000 arranques el techo es 8,1 bits) | 8.1 bits |
+| estados equiprobables que darían esas repeticiones | sin repeticiones: no se puede estimar |
+
+Lectura de nada más arrancar en esta misma variante ("antes"):
+
+| Comprobación directa | Valor | Esperado con datos al azar |
+|---|---|---|
+| bloques distintos | 774 de 1000 | 1000 |
+| primeros 8 bytes distintos | 774 de 1000 | 1000 |
+| distancia de Hamming entre arranques, media ± desv. | 4093.2 ± 108.4 | 4096 ± 45.3 |
+| distancia mínima entre dos arranques | 0 | ≈ 3887 |
+| posición más sesgada (unos en 1000 arranques) | z = 5.38, p corregida = 0.000695 | p corregida ≈ uniforme |
+| primer byte, χ² frente a uniforme | p = 3.16e-10 | p ≈ uniforme |
+
+| Mismo flujo leído desde otro punto | Valor |
+|---|---|
+| arranques cuyo inicio aparece desplazado dentro de otro arranque | 0 relaciones |
+| de ellas, con el solape entero idéntico | 0 |
+| grupos de arranques alineables / el mayor | 1000 / 1 |
+| secuencias distintas; la más repetida sale | 774; 5 veces |
+| min-entropía por arranque (cota inferior al 99 %, MCV; con 1000 arranques el techo es 8,1 bits) | 6.5 bits |
+| estados equiprobables que darían esas repeticiones | 1864 (≈ 10.9 bits) |
+
+Lectura "despues" agrupada por el tick de FreeRTOS en que cae:
+
+| Tick de la lectura (ms) | Arranques | Secuencias distintas | Relaciones de desplazamiento |
+|---|---|---|---|
+| 350 | 797 | 797 | 0 |
+| 360 | 14 | 14 | 0 |
+| 370 | 81 | 81 | 0 |
+| 390 | 28 | 28 | 0 |
+| 400 | 76 | 76 | 0 |
+| 410 | 3 | 3 | 0 |
+
+Pares de arranques con la lectura "antes" idéntica: 289; de ellos con la lectura "despues" también idéntica: 0.
+
+Prueba oficial (ea_restart, no-IID), salida íntegra en `radio_sin_ruido/ea_restart_b1.log` y `ea_restart_b8.log`:
+
+- bit: H_I: 0.858563 / Restart Sanity Check Passed... / H_r: 0.830771 / H_c: 0.845421 / H_I: 0.858563 / Validation Test Passed... / min(H_r, H_c, H_I): 0.830771
+- byte: H_I: 6.868507 / Restart Sanity Check Passed... / H_r: 6.638399 / H_c: 7.869929 / H_I: 6.868507 / Validation Test Passed... / min(H_r, H_c, H_I): 6.638399
+
+## Variante espera_sin_ruido
+
+1000 reinicios de 1024 B, lectura tras la misma espera, sin encender la radio; motivo de reset ['1'] (1 = encendido); arranques con la línea de la fuente de ruido encendida en el log: 0 de 1000; instante de la lectura 352250-352259 µs desde el arranque del programa. H_I = 0.8382 bit/bit (fb4c_condD_rep2).
+
+| Comprobación directa | Valor | Esperado con datos al azar |
+|---|---|---|
+| bloques distintos | 760 de 1000 | 1000 |
+| primeros 8 bytes distintos | 760 de 1000 | 1000 |
+| distancia de Hamming entre arranques, media ± desv. | 4093.3 ± 112.3 | 4096 ± 45.3 |
+| distancia mínima entre dos arranques | 0 | ≈ 3887 |
+| posición más sesgada (unos en 1000 arranques) | z = 4.87, p corregida = 0.0102 | p corregida ≈ uniforme |
+| primer byte, χ² frente a uniforme | p = 7.21e-10 | p ≈ uniforme |
+
+| Mismo flujo leído desde otro punto | Valor |
+|---|---|
+| arranques cuyo inicio aparece desplazado dentro de otro arranque | 5632 relaciones |
+| de ellas, con el solape entero idéntico | 5632 |
+| grupos de arranques alineables / el mayor | 87 / 24 |
+| secuencias distintas; la más repetida sale | 760; 5 veces |
+| min-entropía por arranque (cota inferior al 99 %, MCV; con 1000 arranques el techo es 8,1 bits) | 6.5 bits |
+| estados equiprobables que darían esas repeticiones | 1734 (≈ 10.8 bits) |
+
+Lectura de nada más arrancar en esta misma variante ("antes"):
+
+| Comprobación directa | Valor | Esperado con datos al azar |
+|---|---|---|
+| bloques distintos | 765 de 1000 | 1000 |
+| primeros 8 bytes distintos | 765 de 1000 | 1000 |
+| distancia de Hamming entre arranques, media ± desv. | 4093.7 ± 110.5 | 4096 ± 45.3 |
+| distancia mínima entre dos arranques | 0 | ≈ 3887 |
+| posición más sesgada (unos en 1000 arranques) | z = 4.68, p corregida = 0.0263 | p corregida ≈ uniforme |
+| primer byte, χ² frente a uniforme | p = 4.78e-10 | p ≈ uniforme |
+
+| Mismo flujo leído desde otro punto | Valor |
+|---|---|
+| arranques cuyo inicio aparece desplazado dentro de otro arranque | 5586 relaciones |
+| de ellas, con el solape entero idéntico | 5586 |
+| grupos de arranques alineables / el mayor | 87 / 24 |
+| secuencias distintas; la más repetida sale | 765; 5 veces |
+| min-entropía por arranque (cota inferior al 99 %, MCV; con 1000 arranques el techo es 8,1 bits) | 6.5 bits |
+| estados equiprobables que darían esas repeticiones | 1778 (≈ 10.8 bits) |
+
+Lectura "despues" agrupada por el tick de FreeRTOS en que cae:
+
+| Tick de la lectura (ms) | Arranques | Secuencias distintas | Relaciones de desplazamiento |
+|---|---|---|---|
+| 350 | 1000 | 760 | 5632 |
+
+Pares de arranques con la lectura "antes" idéntica: 303; de ellos con la lectura "despues" también idéntica: 275.
+
+Prueba oficial (ea_restart, no-IID), salida íntegra en `espera_sin_ruido/ea_restart_b1.log` y `ea_restart_b8.log`:
+
+- bit: H_I: 0.838220 / Restart Sanity Check Passed... / H_r: 0.024286 / H_c: 0.807901 / H_I: 0.838220 / *** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
+- byte: H_I: 6.705756 / Restart Sanity Check Passed... / H_r: 0.020458 / H_c: 7.147481 / H_I: 6.705756 / *** min(H_r, H_c) < H_I/2, Validation Testing Failed ***
+
+## Variante radio
+
+1000 reinicios de 1024 B, lectura tras encender el Wi-Fi y esperar 200 ms; motivo de reset ['1'] (1 = encendido); arranques con la línea de la fuente de ruido encendida en el log: 1000 de 1000; instante de la lectura 352611-402632 µs desde el arranque del programa. H_I = 0.8586 bit/bit (fb4c_condB_rep3).
+
+| Comprobación directa | Valor | Esperado con datos al azar |
+|---|---|---|
+| bloques distintos | 1000 de 1000 | 1000 |
+| primeros 8 bytes distintos | 1000 de 1000 | 1000 |
+| distancia de Hamming entre arranques, media ± desv. | 4096.0 ± 45.3 | 4096 ± 45.3 |
+| distancia mínima entre dos arranques | 3867 | ≈ 3887 |
+| posición más sesgada (unos en 1000 arranques) | z = 4.11, p corregida = 0.362 | p corregida ≈ uniforme |
+| primer byte, χ² frente a uniforme | p = 0.0519 | p ≈ uniforme |
+
+| Mismo flujo leído desde otro punto | Valor |
+|---|---|
+| arranques cuyo inicio aparece desplazado dentro de otro arranque | 0 relaciones |
+| de ellas, con el solape entero idéntico | 0 |
+| grupos de arranques alineables / el mayor | 1000 / 1 |
+| secuencias distintas; la más repetida sale | 1000; 1 veces |
+| min-entropía por arranque (cota inferior al 99 %, MCV; con 1000 arranques el techo es 8,1 bits) | 8.1 bits |
+| estados equiprobables que darían esas repeticiones | sin repeticiones: no se puede estimar |
+
+Lectura de nada más arrancar en esta misma variante ("antes"):
+
+| Comprobación directa | Valor | Esperado con datos al azar |
+|---|---|---|
+| bloques distintos | 1000 de 1000 | 1000 |
+| primeros 8 bytes distintos | 1000 de 1000 | 1000 |
+| distancia de Hamming entre arranques, media ± desv. | 4096.0 ± 45.3 | 4096 ± 45.3 |
+| distancia mínima entre dos arranques | 3883 | ≈ 3887 |
+| posición más sesgada (unos en 1000 arranques) | z = 4.17, p corregida = 0.275 | p corregida ≈ uniforme |
+| primer byte, χ² frente a uniforme | p = 0.418 | p ≈ uniforme |
+
+| Mismo flujo leído desde otro punto | Valor |
+|---|---|
+| arranques cuyo inicio aparece desplazado dentro de otro arranque | 0 relaciones |
+| de ellas, con el solape entero idéntico | 0 |
+| grupos de arranques alineables / el mayor | 1000 / 1 |
+| secuencias distintas; la más repetida sale | 1000; 1 veces |
+| min-entropía por arranque (cota inferior al 99 %, MCV; con 1000 arranques el techo es 8,1 bits) | 8.1 bits |
+| estados equiprobables que darían esas repeticiones | sin repeticiones: no se puede estimar |
+
+Lectura "despues" agrupada por el tick de FreeRTOS en que cae:
+
+| Tick de la lectura (ms) | Arranques | Secuencias distintas | Relaciones de desplazamiento |
+|---|---|---|---|
+| 350 | 840 | 840 | 0 |
+| 360 | 14 | 14 | 0 |
+| 370 | 61 | 61 | 0 |
+| 380 | 2 | 2 | 0 |
+| 390 | 22 | 22 | 0 |
+| 400 | 61 | 61 | 0 |
+
+Pares de arranques con la lectura "antes" idéntica: 0; de ellos con la lectura "despues" también idéntica: 0.
+
+Prueba oficial (ea_restart, no-IID), salida íntegra en `radio/ea_restart_b1.log` y `ea_restart_b8.log`:
+
+- bit: H_I: 0.858563 / Restart Sanity Check Passed... / H_r: 0.844141 / H_c: 0.806812 / H_I: 0.858563 / Validation Test Passed... / min(H_r, H_c, H_I): 0.806812
+- byte: H_I: 6.868507 / Restart Sanity Check Passed... / H_r: 7.718814 / H_c: 7.887593 / H_I: 6.868507 / Validation Test Passed... / min(H_r, H_c, H_I): 6.868507
 

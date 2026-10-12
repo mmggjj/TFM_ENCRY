@@ -2,7 +2,7 @@ Agent pid 420
 Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_a0dd6c0efb4c/normal/restart_b1.bin' (SHA-256 hash 4a31369a54cdcdae95e44c00cbf930b9c3d950ac17efc6beb405ba35d1e00b33)
 Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
 H_I: 0.838220
-ALPHA: 5.0251553006530614e-06, X_cutoff: 628
+ALPHA: 5.0251553006530614e-06, X_cutoff: 627
 X_max: 554
 
 Restart Sanity Check Passed...

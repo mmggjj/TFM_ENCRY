@@ -495,31 +495,35 @@ boot ROM reported a power-on reset every time. Two variants share the
 application and differ only in the second-stage bootloader: the stock
 one, which feeds SAR ADC noise into the generator for about 126~ms while
 it runs, and the same bootloader with that call diverted to an empty
-function at link time, which the disassembly confirms.
-Table~\ref{tab:esp32_restart} gives the outcome.
+function at link time, which the disassembly confirms. Three further
+variants read a second time after starting the Wi-Fi as in conditions A
+and B, without associating to any network, and waiting 200~ms, with each
+of the two bootloaders; the third is a control that waits the same time
+without touching the radio, so that the read falls on the same scheduler
+tick. Table~\ref{tab:esp32_restart} gives the outcome.
 
 \begin{table}[htbp]
 \centering
 \caption{Restart test of the ESP32 generator \meas{}: 1000 cold restarts
-per variant, condition D, one chip. $H_r$ and $H_c$ are the minimum of the
-non-IID estimators over the row and column datasets of the standard
-(1000 restarts $\times$ 1000 samples); the test fails when either is below
-half the initial estimate, $H_I = 0.838$ bit per bit (6.71 bits per byte),
-the lowest non-IID figure of this chip in condition D. With no repeat in
-1000 restarts the per-restart bound is a resolution ceiling, not a
-measurement.}
+per variant, one chip. $H_r$ and $H_c$ are the minimum of the non-IID
+estimators over the row and column datasets of the standard
+(1000 restarts $\times$ 1000 bits); the test fails when either is below
+half the initial estimate $H_I$, the lowest non-IID figure of this chip in
+the same condition (0.838 bit per bit in D, 0.859 in B). The byte layout
+gives the same verdicts. Overlaps are restarts whose output appears
+shifted inside another's, all identical word for word. The late reads
+fall 352 to 412~ms after the application starts, most of them at 352~ms.}
 \label{tab:esp32_restart}
 \footnotesize
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}llrrrl@{}}
 \toprule
- & Stock bootloader & Boot noise removed \\
+Bootloader & Read & $H_r$ / $H_c$ & Distinct & Overlaps & Verdict \\
 \midrule
-$H_r$ / $H_c$, bit layout & 0.898 / 0.854 & 0.024 / 0.813 \\
-$H_r$ / $H_c$, byte layout (bit per byte) & 7.31 / 6.64 & 0.020 / 7.13 \\
-Verdict of the standard & passes & fails \\
-Distinct 1024-byte outputs & 1000 & 759 \\
-Shifted overlaps between restarts & none & 5424, all identical \\
-Min-entropy per restart, 99\,\% bound & $\ge 8.1$ bits (ceiling) & 6.5 bits \\
+Stock & at boot, radio off & 0.898 / 0.854 & 1000 & 0 & passes \\
+Boot noise removed & at boot, radio off & 0.024 / 0.813 & 759 & 5424 & fails \\
+Boot noise removed & late, radio off (control) & 0.024 / 0.808 & 760 & 5632 & fails \\
+Boot noise removed & late, Wi-Fi on & 0.831 / 0.845 & 1000 & 0 & passes \\
+Stock & late, Wi-Fi on & 0.844 / 0.807 & 1000 & 0 & passes \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -549,8 +553,25 @@ the bootloader injected, which those estimators do not measure. And an
 application that derives a key right after boot with the radio off
 depends entirely on the stock bootloader's noise; without it, the key
 could be guessed in a few thousand attempts, the cold-boot problem
-described by Blanco-Romero et al.~\cite{blancoromero_2026_entropy}. The
-author has not found this test published for the ESP32 before.
+described by Blanco-Romero et al.~\cite{blancoromero_2026_entropy}.
+
+The radio rows answer the other half of Espressif's statement. With the
+boot noise removed, starting the Wi-Fi is enough for the test to pass:
+the 1000 outputs are all distinct, no window is shared, and the 289 pairs
+of restarts that read identical values before the radio was started read
+289 different values after it. Timing alone does not explain this. The
+control waits the same time and reads on the same scheduler tick, with a
+read instant that varies as much (3824 against 5260 clock cycles among
+the restarts that share the tick), and it repeats exactly as at boot:
+760 distinct outputs, 5632 identical overlaps, about 1700 states. With so
+few states, the 797 restarts that share a tick in the radio variant would
+show about 180 repeats by timing alone; they show none. Without the
+radio the generator receives no noise in its first 350~ms of operation;
+with the radio it does. What the test does not give is how much entropy
+per bit the radio delivers: the validated 0.83 bit per bit is the
+estimators' figure, with their usual bias, not a measurement of the
+radio noise. The author has not found this test published for the ESP32
+before.
 
 Three consequences follow for O8. First, the figure this thesis carries
 forward as the ESP32 reference is the non-IID one, 0.81 to 0.92 bit per
@@ -618,8 +639,9 @@ conditions; an analysis of variance finds no condition effect
 ($p \ge 0.083$ on every estimator) and no chip effect ($p \ge 0.038$,
 against 0.0045 after correction). Two devices show that the reference
 does not hinge on one of them; they do not bound the spread across a
-production population. The restart test was run on one chip and in
-condition~D only. It bounds the entropy that the stock bootloader injects
+production population. The restart test was run on one chip, in
+condition~D and with the Wi-Fi started but not associated; the ADC
+condition, Bluetooth and an associated radio were not tested. It bounds the entropy that the stock bootloader injects
 only from below: no repeat in 1000 restarts means more than about
 $1.7\times10^5$ equally likely starting states, some 17 bits, at 95\,\%
 confidence. The size of the generator's internal state is not documented.
