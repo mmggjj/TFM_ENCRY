@@ -1,0 +1,515 @@
+% ============================================================
+% referencias_encontradas.bib
+% TFM: Characterization of the Hardware TRNG of the ESP32 and
+%      Design of a Multi-Source Entropy Harvester for Secure IoT
+% Revision bibliografica: agosto 2026.
+% Nota: los DOI incluidos fueron verificados en la fuente citada.
+%       Para recursos web sin autoria/fecha formal se usa @misc
+%       con la URL real comprobada.
+% ============================================================
+
+% ---------- 1. RNG del ESP32: documentacion oficial ----------
+
+@misc{espressif2026trm,
+  author       = {{Espressif Systems}},
+  title        = {{ESP32} Technical Reference Manual --- chapter {Random Number Generator (RNG)}},
+  howpublished = {\url{https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf}},
+  note         = {Registro RNG\_DATA\_REG en 0x3FF75144; fuentes: ruido t\'ermico de los ADC y desajuste de relojes as\'incronos. Consultado: agosto 2026}
+}
+
+@misc{espressif2026random,
+  author       = {{Espressif Systems}},
+  title        = {Random Number Generation --- {ESP-IDF} Programming Guide ({ESP32}, stable/v5.x)},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/random.html}},
+  note         = {Documenta esp\_random(), esp\_fill\_random(), bootloader\_random\_enable() y la advertencia: sin RF (Wi-Fi/BT) ni SAR ADC habilitados la salida ``should be considered as pseudo-random only''. Menciona muestra de 2 GB que pas\'o Dieharder con Wi-Fi habilitado. Consultado: agosto 2026}
+}
+
+@misc{espressif2026randomv50,
+  author       = {{Espressif Systems}},
+  title        = {Random Number Generation --- {ESP-IDF} Programming Guide v5.0 ({ESP32})},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/v5.0/esp32/api-reference/system/random.html}},
+  note         = {Versi\'on v5.0 de la p\'agina anterior, con texto equivalente. Consultado: agosto 2026}
+}
+
+@misc{espressif2026bootrandom,
+  author       = {{Espressif Systems}},
+  title        = {esp-idf/components/bootloader\_support/src/bootloader\_random.c},
+  howpublished = {\url{https://github.com/espressif/esp-idf/blob/master/components/bootloader_support/src/bootloader_random.c}},
+  note         = {C\'odigo fuente de la habilitaci\'on de la fuente de entrop\'ia (SAR ADC en modo ruido). Consultado: agosto 2026}
+}
+
+@misc{espressif2026esphardware,
+  author       = {{Espressif Systems}},
+  title        = {esp-idf/components/mbedtls/port/esp\_hardware.c: mbedtls\_hardware\_poll()},
+  howpublished = {\url{https://github.com/espressif/esp-idf/blob/master/components/mbedtls/port/esp_hardware.c}},
+  note         = {El m\'odulo de entrop\'ia de mbedTLS se alimenta de esp\_fill\_random(): TLS hereda la calidad del RNG hardware. Consultado: agosto 2026}
+}
+
+@misc{kaell2024hwrng,
+  author       = {{KaeLL and Espressif Systems}},
+  title        = {Clarification on the {HW} {RNG} ({IDFGH}-13813), espressif/esp-idf issue \#14665},
+  year         = {2024},
+  howpublished = {\url{https://github.com/espressif/esp-idf/issues/14665}},
+  note         = {Discusi\'on sobre cu\'ando el subsistema RF cuenta como ``habilitado'' para que esp\_random() sea verdaderamente aleatorio. Resuelto por Espressif (oct. 2024)}
+}
+
+@misc{espressif2021entropyissue,
+  author       = {{Espressif Systems (GitHub community)}},
+  title        = {boot: Disabling {RNG} early entropy source? ({IDFGH}-5906), espressif/esp-idf issue \#7598},
+  year         = {2021},
+  howpublished = {\url{https://github.com/espressif/esp-idf/issues/7598}},
+  note         = {Sobre la fuente de entrop\'ia temprana del bootloader y su desactivaci\'on. Consultado: agosto 2026}
+}
+
+@misc{cheich2025esp32,
+  author       = {Cheich, Michael},
+  title        = {Just how random is the {ESP32} random number generator?},
+  year         = {2025},
+  howpublished = {\url{https://www.programmingelectronics.com/esp32-random-number-generator/}},
+  note         = {An\'alisis informal por histogramas con Wi-Fi on/off y reinicios; sin bater\'ia estad\'istica formal. Consultado: agosto 2026}
+}
+
+@misc{androidcrypto2026esp32,
+  author       = {{AndroidCrypto}},
+  title        = {{ESP32}: How to generate True Random Numbers (``{True} {RNG}'')},
+  howpublished = {\url{https://medium.com/@androidcrypto/esp32-how-to-generate-true-random-numbers-true-rng-951fcda58e9b}},
+  note         = {Tutorial en Medium; recoge la advertencia de Espressif y el uso de bootloader\_random\_enable(). Consultado: agosto 2026}
+}
+
+% ---------- 2. Osciladores en anillo como TRNG ----------
+
+@article{sunar2007provably,
+  author  = {Sunar, Berk and Martin, William J. and Stinson, Douglas R.},
+  title   = {A Provably Secure True Random Number Generator with Built-In Tolerance to Active Attacks},
+  journal = {IEEE Transactions on Computers},
+  volume  = {56},
+  number  = {1},
+  pages   = {109--119},
+  year    = {2007},
+  url     = {https://cs.uwaterloo.ca/~dstinson/papers/rng-IEEE.pdf}
+}
+
+@article{wold2009analysis,
+  author  = {Wold, Knut and Tan, Chik How},
+  title   = {Analysis and Enhancement of Random Number Generator in {FPGA} Based on Oscillator Rings},
+  journal = {International Journal of Reconfigurable Computing},
+  volume  = {2009},
+  pages   = {501672},
+  year    = {2009},
+  doi     = {10.1155/2009/501672},
+  url     = {https://onlinelibrary.wiley.com/doi/10.1155/2009/501672},
+  note    = {Versi\'on de conferencia: ReConFig 2008}
+}
+
+@article{bochard2010truerandomness,
+  author  = {Bochard, Nathalie and Bernard, Florent and Fischer, Viktor and Valtchanov, Boyan},
+  title   = {True-Randomness and Pseudo-Randomness in Ring Oscillator-Based True Random Number Generators},
+  journal = {International Journal of Reconfigurable Computing},
+  volume  = {2010},
+  pages   = {879281},
+  year    = {2010},
+  doi     = {10.1155/2010/879281},
+  url     = {https://onlinelibrary.wiley.com/doi/10.1155/2010/879281}
+}
+
+@article{baudet2011security,
+  author  = {Baudet, Mathieu and Lubicz, David and Micolod, Julien and Tassiaux, Andr{\'e}},
+  title   = {On the Security of Oscillator-Based Random Number Generators},
+  journal = {Journal of Cryptology},
+  volume  = {24},
+  number  = {2},
+  pages   = {398--425},
+  year    = {2011},
+  doi     = {10.1007/s00145-010-9089-3},
+  url     = {https://link.springer.com/article/10.1007/s00145-010-9089-3}
+}
+
+@misc{valtchanov2008modeling,
+  author       = {Valtchanov, Boyan and Aubert, Alain and Bernard, Florent and Fischer, Viktor},
+  title        = {Modeling and Observing the Jitter in Ring Oscillators Implemented in {FPGAs}},
+  year         = {2008},
+  howpublished = {\url{https://www.researchgate.net/publication/4341841_Modeling_and_Observing_the_Jitter_in_Ring_Oscillators_Implemented_in_FPGAs}},
+  note         = {Modelo de jitter con componentes locales (t\'ermico, flicker) y globales; presentado en IEEE DDECS 2008}
+}
+
+@article{hajimiri1999jitter,
+  author  = {Hajimiri, Ali and Limotyrakis, Sotirios and Lee, Thomas H.},
+  title   = {Jitter and Phase Noise in Ring Oscillators},
+  journal = {IEEE Journal of Solid-State Circuits},
+  volume  = {34},
+  number  = {6},
+  pages   = {790--804},
+  year    = {1999},
+  url     = {http://smirc.stanford.edu/papers/JSSC99JUN-ali.pdf}
+}
+
+@article{benea2024flicker,
+  author  = {Benea, Licinius and Carmona, Mikael and Fischer, Viktor and Pebay-Peyroula, Florian and Wacquez, Romain},
+  title   = {Impact of the Flicker Noise on the Ring Oscillator-based {TRNGs}},
+  journal = {IACR Transactions on Cryptographic Hardware and Embedded Systems},
+  volume  = {2024},
+  number  = {2},
+  pages   = {870--889},
+  year    = {2024},
+  doi     = {10.46586/tches.v2024.i2.870-889},
+  url     = {https://tches.iacr.org/index.php/TCHES/article/view/11450}
+}
+
+% ---------- 3. NIST SP 800-22 / SP 800-90B ----------
+
+@techreport{rukhin2010statistical,
+  author      = {Rukhin, Andrew and Soto, Juan and Nechvatal, James and Smid, Miles and Barker, Elaine and Leigh, Stefan and Levenson, Mark and Vangel, Mark and Banks, David and Heckert, Alan and Dray, James and Vo, San},
+  title       = {A Statistical Test Suite for Random and Pseudorandom Number Generators for Cryptographic Applications},
+  institution = {National Institute of Standards and Technology},
+  number      = {NIST Special Publication 800-22 Revision 1a},
+  year        = {2010},
+  month       = apr,
+  url         = {https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf}
+}
+
+@techreport{turan2018sp80090b,
+  author      = {Turan, Meltem S{\"o}nmez and Barker, Elaine and Kelsey, John and McKay, Kerry A. and Baish, Mary L. and Boyle, Michael},
+  title       = {Recommendation for the Entropy Sources Used for Random Bit Generation},
+  institution = {National Institute of Standards and Technology},
+  number      = {NIST Special Publication 800-90B},
+  year        = {2018},
+  month       = jan,
+  url         = {https://nvlpubs.nist.gov/nistpubs/SpecialPublications/nist.sp.800-90b.pdf}
+}
+
+@misc{nist2018entropytool,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{SP800-90B\_EntropyAssessment}: implementation of the min-entropy assessment methods of {SP} 800-90B},
+  howpublished = {\url{https://github.com/usnistgov/SP800-90B_EntropyAssessment}},
+  note         = {Herramienta oficial en C++ (rutas IID y no-IID). Consultado: agosto 2026}
+}
+
+@misc{nist2026sts,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {{NIST} {SP} 800-22: Documentation and Software --- Random Bit Generation},
+  howpublished = {\url{https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software}},
+  note         = {P\'agina oficial de descarga de la Statistical Test Suite (STS 2.1.2). Consultado: agosto 2026}
+}
+
+@misc{nist2021comments,
+  author       = {{National Institute of Standards and Technology}},
+  title        = {Public Comments on {SP} 800-22 Rev. 1a (Crypto Publication Review Project)},
+  year         = {2021},
+  howpublished = {\url{https://csrc.nist.gov/csrc/media/Projects/crypto-publication-review-project/documents/initial-comments/sp800-22r1a-initial-public-comments-2021.pdf}},
+  note         = {Comentarios p\'ublicos iniciales del proceso de revisi\'on de SP 800-22 Rev. 1a}
+}
+
+@misc{saarinen2022obsolete,
+  author       = {Saarinen, Markku-Juhani O.},
+  title        = {{SP} 800-22 and {GM/T} 0005-2012 Tests: Clearly Obsolete, Possibly Harmful},
+  year         = {2022},
+  howpublished = {\url{https://eprint.iacr.org/2022/169}},
+  note         = {IACR Cryptology ePrint Archive, Report 2022/169}
+}
+
+@misc{iwasaki2017analysis,
+  author       = {Iwasaki, Atsushi},
+  title        = {Analysis of {NIST} {SP800-22} focusing on randomness of each sequence},
+  year         = {2017},
+  howpublished = {\url{https://arxiv.org/abs/1710.01441}},
+  note         = {arXiv:1710.01441; muestra la no-independencia entre tests de la suite}
+}
+
+% ---------- 4. Caracterizaciones previas de TRNGs en SoCs IoT ----------
+
+@inproceedings{hidayatulloh2024esp32,
+  author    = {Hidayatulloh, Papat and Qolbiyah, Nada Syifa and Nugroho, Asep and Mukhtar, Husneni and Purnama, Irwan and Simanjuntak, Firman Mangasa},
+  title     = {Performance Evaluation of {ESP32} Random Number Generator for {LoRa} Communication Security},
+  booktitle = {2024 International Conference on Radar, Antenna, Microwave, Electronics, and Telecommunications (ICRAMET)},
+  year      = {2024},
+  publisher = {IEEE},
+  doi       = {10.1109/ICRAMET62801.2024.10809333},
+  url       = {https://ieeexplore.ieee.org/document/10809333/}
+}
+
+@article{castillo2026automated,
+  author  = {Castillo, Juan and others},
+  title   = {Automated Framework for Testing Random Number Generators for {IoT} Security Applications Using {NIST} {SP} 800-22},
+  journal = {IoT},
+  volume  = {7},
+  number  = {1},
+  pages   = {26},
+  year    = {2026},
+  doi     = {10.3390/iot7010026},
+  url     = {https://www.mdpi.com/2624-831X/7/1/26},
+  note    = {Valida el framework con 55 secuencias de $10^6$ bits extra\'idas de 2 GB generados por un ESP32-C3}
+}
+
+@techreport{stmicro2026an4230,
+  author      = {{STMicroelectronics}},
+  title       = {{AN4230}: Introduction to random number generation validation using the {NIST} statistical test suite for {STM32} {MCUs} and {MPUs}},
+  institution = {STMicroelectronics},
+  number      = {AN4230},
+  url         = {https://www.st.com/resource/en/application_note/an4230-introduction-to-random-number-generation-validation-using-the-nist-statistical-test-suite-for-stm32-mcus-and-mpus-stmicroelectronics.pdf},
+  note        = {Validaci\'on con SP 800-22 rev1a / SP 800-90B; el perif\'erico RNG fue evaluado adem\'as frente a AIS-31 PTG.2. Consultado: agosto 2026}
+}
+
+@inproceedings{ngo2022sidechannel,
+  author    = {Ngo, Kalle and Dubrova, Elena},
+  title     = {Side-Channel Analysis of the Random Number Generator in {STM32} {MCUs}},
+  booktitle = {Proceedings of the Great Lakes Symposium on VLSI 2022 (GLSVLSI '22)},
+  year      = {2022},
+  publisher = {ACM},
+  doi       = {10.1145/3526241.3530324},
+  url       = {https://dl.acm.org/doi/10.1145/3526241.3530324}
+}
+
+@misc{nordic2026nrf52840,
+  author       = {{Nordic Semiconductor}},
+  title        = {{nRF52840} Product Specification --- {RNG}: Random number generator},
+  howpublished = {\url{https://infocenter.nordicsemi.com/topic/ps_nrf52840/rng.html}},
+  note         = {TRNG basado en ruido t\'ermico interno, sin semilla, con correcci\'on de sesgo por hardware. Consultado: agosto 2026}
+}
+
+@misc{raspberrypi2026rp2040,
+  author       = {{Raspberry Pi Ltd}},
+  title        = {{RP2040} Datasheet --- {ROSC} (Ring Oscillator) and {RANDOMBIT}},
+  howpublished = {\url{https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf}},
+  note         = {El datasheet advierte que el bit aleatorio del ROSC no cumple los requisitos de aleatoriedad de los sistemas de seguridad. Consultado: agosto 2026}
+}
+
+@misc{dmo2022rp2040,
+  author       = {{DMO}},
+  title        = {{RP2040} Randomness and Ring Oscillator},
+  year         = {2022},
+  howpublished = {\url{https://dmo.page/2022/10/02/rp2040-randomness-and-ring-oscillator/}},
+  note         = {Uso del registro RANDOMBIT del ROSC como fuente de entrop\'ia en el RP2040}
+}
+
+@misc{raspberrypiforums2024csprng,
+  author       = {{Raspberry Pi Forums}},
+  title        = {Cryptographically Secure Pseudorandom Number Generator (RP2040/pico\_rand)},
+  howpublished = {\url{https://forums.raspberrypi.com/viewtopic.php?t=362076}},
+  note         = {Discute la autocorrelaci\'on del muestreo del ROSC y la mezcla multi-fuente con hash de pico\_rand ($\leq$100 kbit/s con espaciado de 10 $\mu$s). Consultado: agosto 2026}
+}
+
+@misc{scruss2013raspberrypi,
+  author       = {Russell, Stewart C.},
+  title        = {``Well, that was unexpected...'': The {Raspberry} {Pi}'s Hardware Random Number Generator},
+  year         = {2013},
+  howpublished = {\url{https://scruss.com/blog/2013/06/07/well-that-was-unexpected-the-raspberry-pis-hardware-random-number-generator/}},
+  note         = {Evaluaci\'on comunitaria del HWRNG del BCM2835 (/dev/hwrng, rng-tools)}
+}
+
+@inproceedings{tillmanns2020firmware,
+  author    = {Tillmanns, J{\"o}rn and Classen, Jiska and Rohrbach, Felix and Hollick, Matthias},
+  title     = {Firmware Insider: Bluetooth Randomness is Mostly Random},
+  booktitle = {14th USENIX Workshop on Offensive Technologies (WOOT '20)},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2006.16921},
+  note      = {An\'alisis de los RNG de chips Bluetooth Broadcom/Cypress; fallback PRNG inseguro en dispositivos populares}
+}
+
+% ---------- 5. Extractores y acondicionadores de entropia ----------
+
+@incollection{vonneumann1951various,
+  author    = {von Neumann, John},
+  title     = {Various Techniques Used in Connection with Random Digits},
+  booktitle = {Monte Carlo Method, National Bureau of Standards Applied Mathematics Series},
+  volume    = {12},
+  pages     = {36--38},
+  publisher = {U.S. Government Printing Office},
+  address   = {Washington, D.C.},
+  year      = {1951},
+  note      = {Notas de G. E. Forsythe. Origen del corrector de Von Neumann (descartar pares 00/11; 01$\to$0, 10$\to$1)}
+}
+
+@inproceedings{impagliazzo1989pseudorandom,
+  author    = {Impagliazzo, Russell and Levin, Leonid A. and Luby, Michael},
+  title     = {Pseudo-random Generation from One-way Functions},
+  booktitle = {Proceedings of the 21st Annual ACM Symposium on Theory of Computing (STOC '89)},
+  pages     = {12--24},
+  year      = {1989},
+  publisher = {ACM},
+  doi       = {10.1145/73007.73009},
+  url       = {https://dl.acm.org/doi/10.1145/73007.73009},
+  note      = {Primera formulaci\'on del Leftover Hash Lemma}
+}
+
+@inproceedings{dodis2004randomness,
+  author    = {Dodis, Yevgeniy and Gennaro, Rosario and H{\aa}stad, Johan and Krawczyk, Hugo and Rabin, Tal},
+  title     = {Randomness Extraction and Key Derivation Using the {CBC}, Cascade and {HMAC} Modes},
+  booktitle = {Advances in Cryptology --- CRYPTO 2004},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {3152},
+  pages     = {494--510},
+  year      = {2004},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-540-28628-8_30},
+  url       = {https://cs.nyu.edu/~dodis/ps/hmac.pdf}
+}
+
+@inproceedings{krawczyk2010hkdf,
+  author    = {Krawczyk, Hugo},
+  title     = {Cryptographic Extraction and Key Derivation: The {HKDF} Scheme},
+  booktitle = {Advances in Cryptology --- CRYPTO 2010},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {6223},
+  year      = {2010},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-642-14623-7_34},
+  url       = {https://link.springer.com/chapter/10.1007/978-3-642-14623-7_34}
+}
+
+@article{pawlowski2015harvesting,
+  author  = {Pawlowski, Marcin Piotr and Jara, Antonio and Ogorzalek, Maciej},
+  title   = {Harvesting Entropy for Random Number Generation for Internet of Things Constrained Devices Using On-Board Sensors},
+  journal = {Sensors},
+  volume  = {15},
+  number  = {10},
+  pages   = {26838--26865},
+  year    = {2015},
+  doi     = {10.3390/s151026838},
+  url     = {https://pmc.ncbi.nlm.nih.gov/articles/PMC4634515/}
+}
+
+@article{zhang2023heterogeneous,
+  author  = {Zhang, Jinxin and Wu, Meng},
+  title   = {Random Number Generation Based on Heterogeneous Entropy Sources Fusion in Multi-Sensor Networks},
+  journal = {Sensors},
+  volume  = {23},
+  number  = {20},
+  pages   = {8497},
+  year    = {2023},
+  doi     = {10.3390/s23208497},
+  url     = {https://pmc.ncbi.nlm.nih.gov/articles/PMC10611373/}
+}
+
+@article{kietzmann2021guideline,
+  author  = {Kietzmann, Peter and Schmidt, Thomas C. and W{\"a}hlisch, Matthias},
+  title   = {A Guideline on Pseudorandom Number Generation ({PRNG}) in the {IoT}},
+  journal = {ACM Computing Surveys},
+  volume  = {54},
+  number  = {6},
+  pages   = {112:1--112:38},
+  year    = {2021},
+  doi     = {10.1145/3453159},
+  url     = {https://dl.acm.org/doi/10.1145/3453159}
+}
+
+@article{foreman2024statistical,
+  author  = {Foreman, Cameron and Yeung, Richie and Curchod, Florian J.},
+  title   = {Statistical Testing of Random Number Generators and Their Improvement Using Randomness Extraction},
+  journal = {Entropy},
+  volume  = {26},
+  number  = {12},
+  pages   = {1053},
+  year    = {2024},
+  url     = {https://arxiv.org/abs/2403.18716},
+  note    = {Tambi\'en disponible como arXiv:2403.18716}
+}
+
+% ---------- 6. SRAM-PUF como fuente de entropia ----------
+
+@article{holcomb2009powerup,
+  author  = {Holcomb, Daniel E. and Burleson, Wayne P. and Fu, Kevin},
+  title   = {Power-Up {SRAM} State as an Identifying Fingerprint and Source of True Random Numbers},
+  journal = {IEEE Transactions on Computers},
+  volume  = {58},
+  number  = {9},
+  pages   = {1198--1210},
+  year    = {2009},
+  doi     = {10.1109/TC.2008.212},
+  url     = {https://ieeexplore.ieee.org/document/4674345/},
+  note    = {Sistema FERNS: huella + entrop\'ia de la SRAM al encendido}
+}
+
+@inproceedings{guajardo2007fpga,
+  author    = {Guajardo, Jorge and Kumar, Sandeep S. and Schrijen, Geert-Jan and Tuyls, Pim},
+  title     = {{FPGA} Intrinsic {PUFs} and Their Use for {IP} Protection},
+  booktitle = {Cryptographic Hardware and Embedded Systems --- CHES 2007},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {4727},
+  pages     = {63--80},
+  year      = {2007},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-540-74735-2_5},
+  url       = {https://link.springer.com/chapter/10.1007/978-3-540-74735-2_5}
+}
+
+@incollection{vanderleest2012efficient,
+  author    = {van der Leest, Vincent and van der Sluis, Erik and Schrijen, Geert-Jan and Tuyls, Pim and Handschuh, Helena},
+  title     = {Efficient Implementation of True Random Number Generator Based on {SRAM} {PUFs}},
+  booktitle = {Cryptography and Security: From Theory to Applications},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {6805},
+  year      = {2012},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-642-28368-0_20},
+  url       = {https://link.springer.com/chapter/10.1007/978-3-642-28368-0_20}
+}
+
+@misc{staniond2026puflib,
+  author       = {Stan\'i\v{c}ek, D. and others},
+  title        = {esp32\_puflib: {SRAM}-based physical unclonable function on the {ESP32} microcontroller family},
+  howpublished = {\url{https://github.com/staniond/esp32_puflib}},
+  note         = {Implementaci\'on open-source de SRAM-PUF en ESP32 (RTC SLOW memory). Consultado: agosto 2026}
+}
+
+@misc{esp32com2026wakestub,
+  author       = {{ESP32 Forum community}},
+  title        = {Wake-up-stub --- uninitialized {SRAM} ({SRAM} {PUF})},
+  howpublished = {\url{https://esp32.com/viewtopic.php?t=24384}},
+  note         = {Los primeros 0x1320 bytes de SRAM1 y 0x6E0 de SRAM2 del ESP32 llegan inicializados por la ROM: restricci\'on para SRAM-PUF. Consultado: agosto 2026}
+}
+
+% ---------- 7. MQTT-TLS en ESP32 y papel del RNG en seguridad ----------
+
+@misc{espressif2026esptls,
+  author       = {{Espressif Systems}},
+  title        = {{ESP-TLS} --- {ESP-IDF} Programming Guide ({ESP32})},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/protocols/esp_tls.html}},
+  note         = {Capa de abstracci\'on TLS sobre mbedTLS (wolfSSL opcional). Consultado: agosto 2026}
+}
+
+@misc{espressif2026mbedtls,
+  author       = {{Espressif Systems}},
+  title        = {Mbed {TLS} --- {ESP-IDF} Programming Guide ({ESP32})},
+  howpublished = {\url{https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/protocols/mbedtls.html}},
+  note         = {TLS 1.2/1.3, X.509 y aceleraci\'on criptogr\'afica hardware en ESP32. Consultado: agosto 2026}
+}
+
+@article{salles2023iotst,
+  author  = {Salles, Rafael and Farias, Ricardo},
+  title   = {{TLS} Protocol Analysis Using {IoTST} --- An {IoT} Benchmark Based on Scheduler Traces},
+  journal = {Sensors},
+  volume  = {23},
+  number  = {5},
+  pages   = {2538},
+  year    = {2023},
+  doi     = {10.3390/s23052538},
+  url     = {https://www.mdpi.com/1424-8220/23/5/2538},
+  note    = {Benchmark de handshakes TLS 1.3 en ESP32; Curve25519+RSA hasta 4x m\'as r\'apido que la peor suite}
+}
+
+@misc{mdpi2025mqttv2x,
+  author       = {{MDPI Applied Sciences}},
+  title        = {Empirical Evaluation of {TLS}-Enhanced {MQTT} on {IoT} Devices for {V2X} Use Cases},
+  year         = {2025},
+  howpublished = {\url{https://www.mdpi.com/2076-3417/15/15/8398}},
+  note         = {Applied Sciences 15(15):8398. Medidas de corriente, energ\'ia, latencia y memoria de MQTT+TLS 1.2 (mbedTLS/ESP-IDF) en nodos ESP32}
+}
+
+@misc{eastlake2005rfc4086,
+  author       = {Eastlake III, Donald E. and Schiller, Jeffrey and Crocker, Steve},
+  title        = {Randomness Requirements for Security},
+  year         = {2005},
+  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc4086}},
+  note         = {RFC 4086, BCP 106, IETF, junio 2005. Obsoleta RFC 1750}
+}
+
+@inproceedings{heninger2012mining,
+  author    = {Heninger, Nadia and Durumeric, Zakir and Wustrow, Eric and Halderman, J. Alex},
+  title     = {Mining Your {Ps} and {Qs}: Detection of Widespread Weak Keys in Network Devices},
+  booktitle = {Proceedings of the 21st USENIX Security Symposium},
+  pages     = {205--220},
+  year      = {2012},
+  publisher = {USENIX Association},
+  url       = {https://www.usenix.org/conference/usenixsecurity12/technical-sessions/presentation/heninger},
+  note      = {Best Paper Award. 0.75\% de certificados TLS con claves compartidas por entrop\'ia insuficiente en el arranque de dispositivos embebidos}
+}

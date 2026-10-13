@@ -1,0 +1,61 @@
+condition,rep,test,p_value,passed
+A,1,Frequency,0.113650,1
+A,1,Block Frequency,0.752763,1
+A,1,Runs,0.240994,1
+A,1,Longest Run,0.769484,1
+A,1,Matrix Rank,0.685649,1
+A,1,Spectral DFT,0.646355,1
+A,1,Non-overlapping Template,0.017291,1
+A,1,Overlapping Template,0.210255,1
+A,1,Universal,0.426252,1
+A,1,Linear Complexity,0.694935,1
+A,1,Serial,0.673006,1
+A,1,Approximate Entropy,0.156171,1
+A,1,Cumulative Sums,0.097677,1
+A,1,Random Excursions,0.115064,1
+A,1,Random Excursions Variant,0.175616,1
+B,1,Frequency,0.340084,1
+B,1,Block Frequency,0.456788,1
+B,1,Runs,0.948102,1
+B,1,Longest Run,0.877639,1
+B,1,Matrix Rank,0.878372,1
+B,1,Spectral DFT,0.040718,1
+B,1,Non-overlapping Template,0.055340,1
+B,1,Overlapping Template,0.894655,1
+B,1,Universal,0.821178,1
+B,1,Linear Complexity,0.164312,1
+B,1,Serial,0.186601,1
+B,1,Approximate Entropy,0.391298,1
+B,1,Cumulative Sums,0.088651,1
+B,1,Random Excursions,0.019031,1
+B,1,Random Excursions Variant,0.035359,1
+C,1,Frequency,0.819646,1
+C,1,Block Frequency,0.580982,1
+C,1,Runs,0.560532,1
+C,1,Longest Run,0.243842,1
+C,1,Matrix Rank,0.732494,1
+C,1,Spectral DFT,0.620220,1
+C,1,Non-overlapping Template,0.043760,1
+C,1,Overlapping Template,0.626817,1
+C,1,Universal,0.513196,1
+C,1,Linear Complexity,0.264187,1
+C,1,Serial,0.333322,1
+C,1,Approximate Entropy,0.718890,1
+C,1,Cumulative Sums,0.670819,1
+C,1,Random Excursions,0.152705,1
+C,1,Random Excursions Variant,0.019832,1
+D,1,Frequency,0.768758,1
+D,1,Block Frequency,0.632717,1
+D,1,Runs,0.461678,1
+D,1,Longest Run,0.875897,1
+D,1,Matrix Rank,0.733884,1
+D,1,Spectral DFT,0.532620,1
+D,1,Non-overlapping Template,0.037638,1
+D,1,Overlapping Template,0.825504,1
+D,1,Universal,0.362850,1
+D,1,Linear Complexity,0.799850,1
+D,1,Serial,0.333261,1
+D,1,Approximate Entropy,0.103088,1
+D,1,Cumulative Sums,0.526378,1
+D,1,Random Excursions,0.070729,1
+D,1,Random Excursions Variant,0.082570,1

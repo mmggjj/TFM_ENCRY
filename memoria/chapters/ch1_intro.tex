@@ -50,9 +50,12 @@ sources is built, and a restart test with and without the documented
 noise sources opens the box as far as it can be opened from outside
 (Section~\ref{sec:esp32_90b}). Its central finding is methodological: the
 tests pass under conditions in which the entropy cannot be what the tests
-imply. With the radio and the ADC off, the output is a fixed sequence read
-from a slightly different point at every boot, and every statistical test
-scores it like noise --- which is exactly the blind spot described above.
+imply. With the radio and the ADC off the generator receives no noise:
+it only continues a pseudo-random sequence seeded by the bootloader, and
+once that boot noise is removed its output is a fixed sequence read from
+a slightly different point at every boot. Every statistical test still
+scores the output like noise --- which is exactly the blind spot
+described above.
 Two figures of the first campaign also had to be revised during the work
 --- a temperature correlation was read from a sensor whose resolution was
 a single step over the observed range, and a stability figure was

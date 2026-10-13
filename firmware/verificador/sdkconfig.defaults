@@ -11,7 +11,7 @@ CONFIG_MBEDTLS_HARDWARE_AES=y
 CONFIG_MBEDTLS_HARDWARE_SHA=y
 
 # Consola: solo errores, para no contaminar las tramas hacia el PC
-# (leccion del TFM_RNG). UART a 115200, la unica velocidad fiable con el
+# (leccion de las campanas del ESP32). UART a 115200, la unica velocidad fiable con el
 # CP2102 en los montajes anteriores.
 CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
 CONFIG_LOG_DEFAULT_LEVEL=1

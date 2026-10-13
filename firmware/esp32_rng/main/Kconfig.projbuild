@@ -1,0 +1,15 @@
+menu "TFM RNG Campaign Configuration"
+
+    config TFM_WIFI_SSID
+        string "WiFi SSID (for optional MQTT telemetry and TLS demo)"
+        default "myssid"
+
+    config TFM_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+
+    config TFM_MQTT_BROKER_URI
+        string "MQTT Broker URI"
+        default "mqtt://192.168.1.100:1883"
+
+endmenu

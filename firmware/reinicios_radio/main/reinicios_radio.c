@@ -4,7 +4,7 @@
  *  - "antes": lo primero de app_main, con la radio apagada (igual que en
  *    firmware/reinicios). Es la huella del estado del RNG al arrancar.
  *  - "despues": tras arrancar el Wi-Fi (esp_wifi_start, sin asociarse, como
- *    el TFM_RNG en sus condiciones A y B) y esperar RADIO_ESPERA_MS. La
+ *    firmware/esp32_rng en sus condiciones A y B) y esperar RADIO_ESPERA_MS. La
  *    espera es un vTaskDelay, asi que la lectura cae en un tick de FreeRTOS.
  * Las dos se leen antes de sacar nada por la UART. Cada bloque va en hex
  * con su CRC32 y al final "### RST_FIN".

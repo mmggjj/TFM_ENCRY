@@ -1,0 +1,20 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "rng_sampler.c"
+        "sram_puf.c"
+        "adc_noise.c"
+        "entropy_harvester.c"
+        "temp_monitor.c"
+        "mqtt_reporter.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        esp_adc
+        esp_wifi
+        esp_netif
+        esp_event
+        esp_timer
+        mqtt
+        nvs_flash
+        mbedtls
+)

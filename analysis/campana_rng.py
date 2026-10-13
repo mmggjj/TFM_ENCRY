@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Captura de la campana del firmware del TFM_RNG (repeticiones nuevas).
+"""Captura de la campana del ESP32 con firmware/esp32_rng (repeticiones nuevas).
 
-Habla el protocolo de aquel firmware (tfm_esp32_rng/firmware/main/main.c):
+Habla el protocolo de ese firmware (firmware/esp32_rng/main/main.c):
 bloques `### RNG_BEGIN cond=X rep=N bytes=125000 temp_c=.. throughput_Bps=..`,
 lineas hex de 64 bytes y `### RNG_END cond=X rep=N crc32=0x.. temp_c=..`.
-Se diferencia de su capture_rng.py en dos cosas que este proyecto exige:
-guarda el flujo serie INTEGRO en un log y numera las repeticiones a partir
-de --primera-rep, para que las secuencias nuevas no pisen las de la
-campana original (cond?_rep1.bin del 2026-08-04).
+Se diferencia de analysis/esp32_rng/capture_rng.py, el de la primera
+campana, en dos cosas: guarda el flujo serie INTEGRO en un log y numera las
+repeticiones a partir de --primera-rep, para que las secuencias nuevas no
+pisen las de la primera campana (results/esp32_rng_agosto/cond?_rep1.bin,
+2026-08-04).
 
     python analysis/campana_rng.py --puerto COM7 --reps 2 --primera-rep 2
 

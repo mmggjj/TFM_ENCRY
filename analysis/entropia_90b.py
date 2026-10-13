@@ -35,19 +35,19 @@ BITS = DIR90B / "bits"
 CSV = RES / "entropia_90b.csv"
 HERRAMIENTA = "~/SP800-90B_EntropyAssessment/cpp"   # en WSL
 
-TFM_RNG = Path(r"C:\Users\mario\Documents\TFM_RNG\tfm_esp32_rng\results")
+AGOSTO = RES / "esp32_rng_agosto"
 FUENTES = {
-    # condiciones del TFM_RNG (2026-08-04, ESP32-D0WD, esp_fill_random):
+    # primera campana (2026-08-04, ESP32-D0WD, esp_fill_random, firmware/esp32_rng):
     # A = WiFi+ADC, B = WiFi, C = ADC, D = nada (RF apagada)
-    "condA_rep1": TFM_RNG / "condA_rep1.bin",
-    "condB_rep1": TFM_RNG / "condB_rep1.bin",
-    "condC_rep1": TFM_RNG / "condC_rep1.bin",
-    "condD_rep1": TFM_RNG / "condD_rep1.bin",
+    "condA_rep1": AGOSTO / "condA_rep1.bin",
+    "condB_rep1": AGOSTO / "condB_rep1.bin",
+    "condC_rep1": AGOSTO / "condC_rep1.bin",
+    "condD_rep1": AGOSTO / "condD_rep1.bin",
     # verificador de este TFM, 2026-09-19, sin radio (equivale a D);
     # _1 se corto a los 400 s (440.384 B), _2 es la captura completa de 1 MB
     "esp_rf_off_1": RES / "esp32_tramas_E_esp_rf_off_1.bin",
     "esp_rf_off_2": RES / "esp32_tramas_E_esp_rf_off_2.bin",
-    # segunda campana con el firmware del TFM_RNG (mismo protocolo, 2026-09-19):
+    # segunda campana con el mismo firmware (firmware/esp32_rng, 2026-09-19):
     # dos ciclos D->C->B->A seguidos; rep2 y rep3 de cada condicion
     **{f"cond{c}_rep{r}": RES / "esp32_campana_rng" / f"cond{c}_rep{r}.bin"
        for c in "ABCD" for r in (2, 3)},

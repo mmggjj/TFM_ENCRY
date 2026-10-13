@@ -112,7 +112,8 @@ suites are run on their output and a pass is taken as evidence of
 randomness. This thesis first shows, on the hardware random number
 generator of the ESP32, why that is not enough: its output passes NIST
 SP~800-22 and scores like noise under the SP~800-90B estimators even
-when, as a restart test reveals, it is a fixed pseudo-random sequence ---
+when, as a restart test reveals, the generator receives no noise at all
+and only continues a pseudo-random sequence seeded at boot ---
 and NIST itself has since rejected the first suite for assessing
 cryptographic generators. It then takes the opposite route: a white-box
 key-generation engine whose entropy
@@ -146,7 +147,8 @@ sobre su salida y un aprobado se toma como prueba de aleatoriedad. Este
 TFM muestra primero, sobre el generador hardware del ESP32, por qu\'e no
 basta: su salida pasa NIST SP~800-22 y punt\'ua como ruido en los
 estimadores de SP~800-90B incluso cuando, como revela una prueba de
-reinicios, es una secuencia pseudoaleatoria fija --- y el propio NIST ha
+reinicios, el generador no recibe ning\'un ruido y solo contin\'ua una
+secuencia pseudoaleatoria sembrada al arrancar --- y el propio NIST ha
 rechazado despu\'es la primera bater\'ia para evaluar generadores
 criptogr\'aficos. Despu\'es toma el camino contrario: un motor de
 generaci\'on de claves de caja blanca cuya

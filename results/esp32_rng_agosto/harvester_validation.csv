@@ -1,0 +1,14 @@
+metric,value
+n_seeds,1000
+unique,1000
+byte_chi2_p,0.300811
+hamming_mean_bits,128.050
+hamming_std_bits,8.027
+nist_Frequency,0.162909
+nist_Block_Frequency,0.147738
+nist_Runs,0.955784
+nist_Spectral_DFT,0.446209
+nist_Serial,0.472259
+nist_Approximate_Entropy,0.149576
+nist_Cumulative_Sums,0.250196
+puf_interboot_hamming_pct,23.9160
