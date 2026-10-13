@@ -37,27 +37,32 @@ derived from that model, and health tests that watch the source itself
 rather than its output. That is a microelectronics problem before it is a
 cryptography problem, and it is the problem this thesis addresses.
 
-\section{From the black-box ESP32 study to a white-box engine}
+\section{From a black-box study of the ESP32 to a white-box engine}
 \label{sec:background}
 
-This work continues a previous project by the author that characterized
-the hardware random number generator of the ESP32 as a black box: the
-same peripheral was exercised under four operating conditions, its output
-was run through a self-validated implementation of the fifteen tests of
-SP~800-22, and a key-harvesting scheme combining several on-chip sources
-was proposed. Its central finding was methodological: the tests passed
-under conditions in which the entropy could not have been what the tests
-implied, which is exactly the blind spot described above. Two of its
-numbers also had to be revisited with hindsight --- a temperature
-correlation was reported from a sensor whose resolution was a single
-step over the observed range, and a stability figure was inferred where
-it could have been measured --- and both lessons are turned into rules in
-Section~\ref{sec:conventions}.
+This work has two parts, and the first is the justification of the
+second. The first part characterizes the hardware random number generator
+of the ESP32 as a black box: the same peripheral is exercised under four
+operating conditions, its output is run through a self-validated
+implementation of the fifteen tests of SP~800-22 and through the
+SP~800-90B estimators, a key-harvesting scheme combining several on-chip
+sources is built, and a restart test with and without the documented
+noise sources opens the box as far as it can be opened from outside
+(Section~\ref{sec:esp32_90b}). Its central finding is methodological: the
+tests pass under conditions in which the entropy cannot be what the tests
+imply. With the radio and the ADC off, the output is a fixed sequence read
+from a slightly different point at every boot, and every statistical test
+scores it like noise --- which is exactly the blind spot described above.
+Two figures of the first campaign also had to be revised during the work
+--- a temperature correlation was read from a sensor whose resolution was
+a single step over the observed range, and a stability figure was
+inferred where it could have been measured --- and both lessons are
+turned into rules in Section~\ref{sec:conventions}.
 
-The natural next step was to build the generator instead of measuring
-someone else's: an engine whose entropy source is designed, whose jitter
-is measured inside the device, whose min-entropy follows from a model,
-and whose keys are produced and used by primitives verified against the
+The second part builds the generator instead of measuring someone
+else's: an engine whose entropy source is designed, whose jitter is
+measured inside the device, whose min-entropy follows from a model, and
+whose keys are produced and used by primitives verified against the
 standards. The ESP32 changes role from subject to judge. It has its own
 AES and SHA accelerators and a mature cryptographic library, so it can
 recompute everything the engine produces with an implementation that

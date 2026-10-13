@@ -1,6 +1,8 @@
-# TFM — Motor criptográfico de generación de claves para circuito integrado
+# TFM — Diseño y caracterización de aleatoriedad de un TRNG basado en osciladores en anillos
 
-Mario García Jiménez · Máster en Microelectrónica (US / IMSE-CNM) · 2026
+*Design and randomness assessment of a Ring Oscillator-based TRNG*
+
+Mario García Jiménez · Máster en Microelectrónica (US / IMSE-CNM) · 2026-27
 
 Diseño de un motor que fabrica sus propias claves a partir de ruido físico
 y las sirve a un ESP32 por I2C, pensado para acabar como circuito
@@ -10,8 +12,9 @@ acondicionado y CTR_DRBG con función de derivación (SP 800-90A) → AES-128 y
 AES-CMAC → esclavo I2C. Una sola primitiva, el AES, para acondicionar,
 generar y autenticar. El ESP32 (mbedtls + aceleradores) es el verificador
 independiente. La FPGA (Basys 3) es el banco de verificación, no el
-producto. El estudio previo del RNG del ESP32 (repo `TFM_RNG`) es el
-capítulo de referencia.
+producto. La primera parte del TFM caracteriza como caja negra el
+generador del propio ESP32 (SP 800-22, estimadores SP 800-90B, prueba de
+reinicios) y es la justificación del diseño de caja blanca.
 
 ## Estructura
 
@@ -25,7 +28,7 @@ capítulo de referencia.
 | `sim/spice/` | descripciones de circuito del anillo a nivel de transistor |
 | `tests/vectors/` | vectores oficiales de NIST usados en la verificación |
 | `results/` | datos de campañas y logs íntegros |
-| `memoria/` | LaTeX, plantilla común de los TFM del autor |
+| `memoria/` | LaTeX de la memoria (`tfm_main.tex`, en inglés) y versión de lectura en español (`tfm_main_es.tex`) |
 
 ## Estado (15-09-2026)
 

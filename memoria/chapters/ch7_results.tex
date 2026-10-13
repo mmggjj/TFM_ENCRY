@@ -344,10 +344,11 @@ SP~800-90 at all. Their randomness is trusted because the vendor and the
 evaluation scheme are trusted. The engine described here makes the opposite
 trade: it has no certificate, and it can show where each bit of entropy
 comes from, what physical measurement bounds it, and what the bound becomes
-when the temperature or the divider changes. That is the same distinction that the
-author's earlier characterization of the ESP32 generator ran into from the
-other side --- a black box can be tested statistically but cannot be
-bounded --- and it is the reason this engine was built as a white box.
+when the temperature or the divider changes. That is the same distinction
+that the black-box study of the ESP32 generator in this work runs into from
+the other side (Section~\ref{sec:esp32_90b}) --- a black box can be tested
+statistically but cannot be bounded --- and it is the reason this engine
+was built as a white box.
 
 Which of the two is preferable depends on the question being asked. For
 shipping a product, the certified part. For knowing what the randomness in
@@ -357,13 +358,13 @@ that product is worth, only the open one answers.
 \label{sec:esp32_90b}
 
 O8 asks for a numerical comparison against the ESP32, and half of it can
-be closed without the board: the reference side. The author's earlier
-characterization of the ESP32 generator captured $10^6$ bits of
+be closed without the board: the reference side. The first capture
+campaign of this work, in August 2026, took $10^6$ bits of
 \texttt{esp\_fill\_random} output under four operating conditions ---
-Wi-Fi and ADC active, Wi-Fi only, ADC only, neither --- and applied
-Shannon entropy and SP 800-22 to them; it did not apply the SP 800-90B
-estimators, and that is the gap closed here. For this work the same
-firmware, rebuilt unchanged, was run from cold boot on two chips of the
+Wi-Fi and ADC active, Wi-Fi only, ADC only, neither --- and ran Shannon
+entropy and SP 800-22 on them; the SP 800-90B estimators are applied
+here. The same firmware, rebuilt unchanged, was then run from cold boot
+on two chips of the
 same model (ESP32-D0WD-V3), identified by their MAC addresses: twice on
 one and three times on the other. With the August capture, whose board
 was not identified, that gives six repetitions of $10^6$ bits per
@@ -582,8 +583,8 @@ condition~D it is a statistical figure and not physical entropy; the engine's ra
 Section~\ref{sec:protocol} produces them, must be run through the same
 battery at the same $N$, and compared estimator by estimator, since the
 same conservative bias will act on them; the calibration of the IID tests
-at that length applies to them unchanged. Second, the earlier
-characterization's Shannon figure of 0.99999 bit per bit and the
+at that length applies to them unchanged. Second, the Shannon figure of
+0.99999 bit per bit obtained in the first campaign and the
 min-entropy figures above are not in contradiction --- $H_\infty \le H$
 always --- but they are different currencies: crediting 256 bits of
 entropy costs 256 output bits in the first and up to 316 in the second,

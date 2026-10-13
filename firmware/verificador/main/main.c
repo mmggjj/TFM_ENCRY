@@ -4,9 +4,10 @@
  * docs/mapa_registros.md, provisiona la clave en modo test y comprueba
  * el reto-respuesta recalculando el CMAC con mbedtls, que es una
  * implementacion independiente del VHDL. Tambien vuelca al PC bits
- * crudos y salidas del DRBG en tramas con CRC32, el mismo formato que el
- * trabajo previo del autor (TFM_RNG), para que la cadena de analisis
- * estadistico sea la misma para el motor y para el propio ESP32.
+ * crudos y salidas del DRBG en tramas con CRC32, el mismo formato que las
+ * capturas del generador del ESP32 en la primera parte del TFM, para que
+ * la cadena de analisis estadistico sea la misma para el motor y para el
+ * propio ESP32.
  *
  * Reglas del proyecto: nada de credenciales, salida sin filtrar, y los
  * fallos se registran integros, nunca se descartan.

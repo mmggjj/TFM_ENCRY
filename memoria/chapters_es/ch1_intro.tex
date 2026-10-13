@@ -38,26 +38,31 @@ min-entropía derivada de ese modelo y tests de salud que vigilen la propia
 fuente en lugar de su salida. Es un problema de microelectrónica antes que
 de criptografía, y es el problema que aborda este TFM.
 
-\section{Del estudio de caja negra del ESP32 a un motor de caja blanca}
+\section{De un estudio de caja negra del ESP32 a un motor de caja blanca}
 \label{sec:background}
 
-Este trabajo continúa un proyecto anterior del autor que caracterizó como
-caja negra el generador hardware de números aleatorios del ESP32: se
-ejercitó el mismo periférico en cuatro condiciones de funcionamiento, su
-salida se pasó por una implementación autovalidada de los quince tests de
-SP~800-22 y se propuso un esquema de recolección de claves que combinaba
-varias fuentes internas del chip. Su hallazgo central fue metodológico:
-los tests se superaron en condiciones en las que la entropía no podía ser
-la que los tests daban a entender, que es exactamente el punto ciego
-descrito antes. Dos de sus cifras también tuvieron que revisarse a
-posteriori --- se informó de una correlación con la temperatura a partir
-de un sensor cuya resolución era un solo escalón en todo el rango
-observado, y se infirió una cifra de estabilidad donde podría haberse
-medido --- y ambas lecciones se convierten en reglas en la
-Sección~\ref{sec:conventions}.
+Este trabajo tiene dos partes, y la primera es la justificación de la
+segunda. La primera caracteriza como caja negra el generador hardware de
+números aleatorios del ESP32: se ejercita el mismo periférico en cuatro
+condiciones de funcionamiento, su salida se pasa por una implementación
+autovalidada de los quince tests de SP~800-22 y por los estimadores de
+SP~800-90B, se construye un esquema de recolección de claves que combina
+varias fuentes internas del chip, y una prueba de reinicios con y sin las
+fuentes de ruido documentadas abre la caja todo lo que se puede abrir
+desde fuera (Sección~\ref{sec:esp32_90b}). Su hallazgo central es
+metodológico: los tests se superan en condiciones en las que la entropía
+no puede ser la que los tests dan a entender. Con la radio y el ADC
+apagados, la salida es una secuencia fija leída desde un punto algo
+distinto en cada arranque, y todos los tests estadísticos la puntúan como
+ruido --- que es exactamente el punto ciego descrito antes. Dos cifras de
+la primera campaña también tuvieron que revisarse durante el trabajo ---
+se leyó una correlación con la temperatura en un sensor cuya resolución
+era un solo escalón en todo el rango observado, y se infirió una cifra de
+estabilidad donde podía haberse medido --- y ambas lecciones se
+convierten en reglas en la Sección~\ref{sec:conventions}.
 
-El paso natural siguiente era construir el generador en lugar de medir el
-de otro: un motor cuya fuente de entropía esté diseñada, cuyo jitter se
+La segunda parte construye el generador en lugar de medir el de otro: un
+motor cuya fuente de entropía esté diseñada, cuyo jitter se
 mida dentro del dispositivo, cuya min-entropía se deduzca de un modelo y
 cuyas claves produzcan y usen primitivas verificadas frente a las normas.
 El ESP32 cambia de papel: de objeto de estudio pasa a juez. Tiene sus

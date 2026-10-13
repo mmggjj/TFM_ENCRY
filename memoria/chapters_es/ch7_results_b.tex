@@ -2,13 +2,13 @@
 \label{sec:esp32_90b}
 
 O8 pide una comparación numérica con el ESP32, y la mitad puede cerrarse
-sin la placa: el lado de la referencia. La caracterización anterior del
-generador del ESP32 hecha por el autor capturó $10^6$ bits de salida de
+sin la placa: el lado de la referencia. La primera campaña de captura de
+este trabajo, en agosto de 2026, tomó $10^6$ bits de salida de
 \texttt{esp\_fill\_random} en cuatro condiciones de funcionamiento ---
 Wi-Fi y ADC activos, solo Wi-Fi, solo ADC, ninguno --- y les aplicó la
-entropía de Shannon y SP 800-22; no aplicó los estimadores de SP 800-90B,
-y esa es la laguna que se cierra aquí. Para este trabajo, el mismo
-firmware, recompilado sin cambios, se ejecutó desde arranque en frío en dos
+entropía de Shannon y SP 800-22; los estimadores de SP 800-90B se aplican
+aquí. Después, el mismo firmware, recompilado sin cambios, se ejecutó
+desde arranque en frío en dos
 chips del mismo modelo (ESP32-D0WD-V3), identificados por sus direcciones
 MAC: dos veces en uno y tres veces en el otro. Con la captura de agosto,
 cuya placa no se identificó, eso da seis repeticiones de $10^6$ bits por
@@ -239,7 +239,7 @@ Sección~\ref{sec:protocol} los produzca, deben pasarse por la misma
 batería con el mismo $N$, y compararse estimador por estimador, ya que el
 mismo sesgo conservador actuará sobre ellos; la calibración de las pruebas
 IID a esa longitud se les aplica sin cambios. Segunda, la cifra de Shannon
-de la caracterización anterior, 0,99999 bit por bit, y las cifras de
+de la primera campaña, 0,99999 bit por bit, y las cifras de
 min-entropía de más arriba no se contradicen --- $H_\infty \le H$
 siempre --- pero son monedas distintas: acreditar 256 bits de entropía
 cuesta 256 bits de salida en la primera y hasta 316 en la segunda, y solo

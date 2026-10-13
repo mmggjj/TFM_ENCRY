@@ -34,8 +34,8 @@ realiza una tercera implementación, sin relación con las otras, sobre un
 bus real.
 \end{enumerate}
 
-Dos reglas de trabajo se aplican en todo momento, ambas heredadas del
-trabajo experimental previo del autor: la salida de una compilación,
+Dos reglas de trabajo se aplican en todo momento, ambas aprendidas en el
+estudio de caja negra del ESP32 con el que empieza este trabajo: la salida de una compilación,
 simulación o medida nunca se filtra antes de haberla leído entera --- un
 filtro oculta justo el aviso que importaba --- y los fallos se registran
 completos, nunca se descartan. Dos veces en este trabajo un filtro sobre
@@ -187,12 +187,13 @@ nonces de \texttt{esp\_random()}, recalculando cada etiqueta con
 y las discrepancias se imprimen completas; \texttt{crudo N} vuelca $N$
 fragmentos de bits en bruto y \texttt{esp N} vuelca bloques del propio
 generador del ESP32, ambos en el formato en tramas protegido con CRC32
-que usó el autor en su trabajo anterior, para que la misma cadena de
+de las campañas de captura del ESP32 (Sección~\ref{sec:esp32_90b}), para
+que la misma cadena de
 procesado estadístico trate las dos fuentes. CMAC no viene habilitado
 por defecto en la compilación de mbedtls de ESP-IDF y se activa en la
 configuración por defecto del proyecto; la consola funciona a
 115\,200~baudios, la única velocidad que resultó fiable con el puente
-USB de la placa en campañas anteriores, y el nivel de log se fija en
+USB de la placa en esas campañas, y el nivel de log se fija en
 solo errores para que las líneas de log no puedan corromper las tramas.
 El firmware compila con ESP-IDF~5.3.2 en una imagen de 255~kB;
 ejecutarlo queda a la espera del hardware.
