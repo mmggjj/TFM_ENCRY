@@ -118,7 +118,7 @@ dice, con un 95 % de confianza, que el arranque elige entre más de unos
 
 - `firmware/reinicios_radio`: dos lecturas de 1024 B por arranque.
   "antes": lo primero de `app_main`, radio apagada, igual que arriba.
-  "después": tras arrancar el Wi-Fi como el TFM_RNG en sus condiciones A y
+  "después": tras arrancar el Wi-Fi como `firmware/esp32_rng` en sus condiciones A y
   B (NVS, `esp_netif`, bucle de eventos, `esp_wifi_init`, modo estación,
   `esp_wifi_start`, sin asociarse a ninguna red) y esperar 200 ms con
   `vTaskDelay`. Por esa espera, la lectura cae en un tick de FreeRTOS

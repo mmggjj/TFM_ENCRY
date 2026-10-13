@@ -11,15 +11,15 @@ motor sigue pendiente de O6.
 
 | Nombre | Origen | Condición | Bytes | Símbolos binarios |
 |---|---|---|---|---|
-| condA_rep1 | TFM_RNG, 2026-08-04 | Wi-Fi + ADC activos | 125 000 | 1 000 000 |
-| condB_rep1 | TFM_RNG, 2026-08-04 | Wi-Fi activo | 125 000 | 1 000 000 |
-| condC_rep1 | TFM_RNG, 2026-08-04 | ADC activo | 125 000 | 1 000 000 |
-| condD_rep1 | TFM_RNG, 2026-08-04 | nada activo (RF apagada) | 125 000 | 1 000 000 |
+| condA_rep1 | primera campaña, 2026-08-04 | Wi-Fi + ADC activos | 125 000 | 1 000 000 |
+| condB_rep1 | primera campaña, 2026-08-04 | Wi-Fi activo | 125 000 | 1 000 000 |
+| condC_rep1 | primera campaña, 2026-08-04 | ADC activo | 125 000 | 1 000 000 |
+| condD_rep1 | primera campaña, 2026-08-04 | nada activo (RF apagada) | 125 000 | 1 000 000 |
 | esp_rf_off_1 | este TFM, 2026-09-19 | nada activo (verificador, `esp N`) | 440 384 | 3 523 072 |
 | esp_rf_off_2 | este TFM, 2026-09-19 | nada activo (verificador, `esp N`) | 1 047 296 | 8 378 368 |
-| cond{A,B,C,D}_rep2 | firmware del TFM_RNG, 2026-09-19 | las cuatro, ciclo D→C→B→A desde arranque en frío | 125 000 | 1 000 000 |
-| cond{A,B,C,D}_rep3 | firmware del TFM_RNG, 2026-09-19 | ídem, segundo arranque en frío | 125 000 | 1 000 000 |
-| fb4c_cond{A,B,C,D}_rep{1,2,3} | firmware del TFM_RNG, 2026-10-12, chip de MAC a0:dd:6c:0e:fb:4c | las cuatro, tres arranques en frío | 125 000 | 1 000 000 |
+| cond{A,B,C,D}_rep2 | `firmware/esp32_rng`, 2026-09-19 | las cuatro, ciclo D→C→B→A desde arranque en frío | 125 000 | 1 000 000 |
+| cond{A,B,C,D}_rep3 | `firmware/esp32_rng`, 2026-09-19 | ídem, segundo arranque en frío | 125 000 | 1 000 000 |
+| fb4c_cond{A,B,C,D}_rep{1,2,3} | `firmware/esp32_rng`, 2026-10-12, chip de MAC a0:dd:6c:0e:fb:4c | las cuatro, tres arranques en frío | 125 000 | 1 000 000 |
 
 Veintiséis capturas en total: veinticuatro de las condiciones A-D (seis
 por condición) y dos largas sin radio, de dos chips ESP32-D0WD-V3
@@ -27,9 +27,13 @@ revisión 3.1 identificados por su MAC:
 
 | Chip (MAC) | Capturas |
 |---|---|
-| ec:e3:34:9a:d1:18 | rep2 y rep3 de A-D, y las dos largas sin radio |
+| ec:e3:34:9a:d1:18 | rep1 (agosto), rep2 y rep3 de A-D, y las dos largas sin radio |
 | a0:dd:6c:0e:fb:4c | fb4c_* (tres repeticiones de A-D) |
-| sin anotar (agosto) | rep1 de A-D; puede ser cualquiera de los dos o un tercero |
+
+La placa de agosto es el chip ec:e3:34:9a:d1:18: el firmware imprime la MAC
+al arrancar y quedó anotada con los resultados de aquella campaña; lo que no
+tenía era columna de MAC en su `capture_log.csv`. Hasta el 13-10-2026 este
+documento la trataba como "sin anotar" y la dejaba aparte.
 
 El mismo binario del firmware (recompilado sin cambios) y el mismo script
 de captura en los dos chips. Los datos de cada chip se guardan aparte
@@ -37,12 +41,11 @@ de captura en los dos chips. Los datos de cada chip se guardan aparte
 temperatura marca ≈ 50 °C en uno y ≈ 63 °C en el otro (resolución
 0,556 °C; dato orientativo, no se usa).
 
-**Repeticiones 2 y 3 (pedidas por Mario el 19-09).** El firmware del
-TFM_RNG (`tfm_esp32_rng/firmware`, sin tocar una línea) se compiló con el
+**Repeticiones 2 y 3 (pedidas por Mario el 19-09).** El firmware de la
+primera campaña (`firmware/esp32_rng`, sin tocar una línea) se compiló con el
 ESP-IDF 5.3.2 de Windows en un directorio de build aparte y se flasheó en
-el mismo ESP32 del verificador (MAC ec:e3:34:9a:d1:18; la campaña original
-de agosto no anotó la MAC de su placa, así que no se puede afirmar que sea
-la misma). La captura la hace `analysis/campana_rng.py`, que habla el
+el mismo ESP32 del verificador (MAC ec:e3:34:9a:d1:18, el mismo chip de la
+campaña de agosto). La captura la hace `analysis/campana_rng.py`, que habla el
 protocolo de aquel firmware, guarda el flujo serie íntegro
 (`results/esp32_campana_rng/serie_*.log`, no versionado) y numera las
 secuencias a partir de la repetición 2 para no pisar las de agosto. Cada
@@ -57,9 +60,9 @@ Temperatura del sensor ROM (resolución 0,556 °C, entero en °F): agosto
 medido por el firmware: 5,21 MB/s sin ADC, 2,77 MB/s con ADC (la bomba del
 ADC roba CPU), idéntico al de agosto.
 
-Las cuatro primeras son las del TFM anterior del autor (`TFM_RNG`,
-`tfm_esp32_rng/results/cond?_rep1.bin`, una repetición por condición). Aquel
-trabajo les aplicó Shannon (7,9985 bit/byte), autocorrelación, planitud
+Las cuatro primeras son las de la primera campaña de este trabajo
+(`results/esp32_rng_agosto/cond?_rep1.bin`, una repetición por condición). Aquella
+campaña les aplicó Shannon (7,9985 bit/byte), autocorrelación, planitud
 espectral, compresión y χ² de bytes, y la batería SP 800-22 (15/15 en las
 cuatro condiciones); **nunca** los estimadores de min-entropía de SP 800-90B.
 Esa es la corrección que Mario dictó para aquella memoria ("Shannon no es
@@ -126,7 +129,7 @@ es 488 y su desviación 22, así que el máximo esperado ronda 543 (los
 medidos: 548, 550, 542, 561) y el techo práctico queda en ≈ 7,70 bit. En
 modo byte con 125 kB **el MCV no puede distinguir una fuente perfecta de
 una con 7,7 bit/byte**: por eso la vía de comparación válida es la binaria
-con ≥ 1 Mbit, y por eso el TFM_RNG capturó exactamente 125 000 B por
+con ≥ 1 Mbit, y por eso la primera campaña capturó exactamente 125 000 B por
 condición (1 000 000 bits, el mínimo de la norma).
 
 **Sesgo de unos** (σ(p̂) = √(0,25/N) = 5,0·10⁻⁴ para 1 Mbit):
@@ -240,9 +243,13 @@ bytes alineadas con la palabra de 32 bits (desfase 0) y desplazadas un byte
 
 | Chip | Datos | p, desfase 0 | p, desfase 1 |
 |---|---|---|---|
-| a0:dd:6c:0e:fb:4c | 12 capturas, 1,5 MB | 0,82 | 0,96 |
-| ec:e3:34:9a:d1:18 | 8 capturas, 1,0 MB | 0,38 | 0,86 |
-| agosto, MAC sin anotar | 4 capturas, 0,5 MB | 0,05 | 0,14 |
+| a0:dd:6c:0e:fb:4c | 12 capturas, 1,5 MB | 0,81 | 0,96 |
+| ec:e3:34:9a:d1:18 | 12 capturas, 1,5 MB | 0,53 | 0,68 |
+
+(Rehecho el 13-10-2026 con la placa de agosto dentro del chip
+ec:e3:34:9a:d1:18; `results/chi2_90b/agrupado_1000.csv`. Los p empíricos
+varían en la segunda cifra de una ejecución a otra porque la referencia se
+genera de nuevo cada vez.)
 
 No hay dependencia entre bytes vecinos en ningún chip: los p bajos de las
 capturas sueltas eran el defecto de la prueba más el azar.
@@ -295,8 +302,8 @@ elevado a la longitud que examina.
 
 Tabla completa de las veintiséis capturas, estimador a estimador, en
 `results/entropia_90b_resumen.md` (la genera `analysis/resumen_90b.py`).
-Por condición, media ± desviación (poblacional, n = 6, los dos chips y la
-placa de agosto juntos) y ANOVA de un factor, F(3, 20); con once
+Por condición, media ± desviación (poblacional, n = 6, tres por chip) y
+ANOVA de un factor, F(3, 20); con once
 estimadores el umbral de Bonferroni es p < 0,0045:
 
 | Estimador | A (n=6) | B (n=6) | C (n=6) | D (n=6) | F | p |
@@ -329,34 +336,33 @@ estimador a otro sin ningún orden estable.
 ### 3.5 Dos chips: ¿se distinguen?
 
 Capturas A-D con las condiciones agrupadas (no hay efecto de condición).
-ANOVA de un factor entre los dos chips de MAC conocida (8 y 12 capturas);
-la placa de agosto se muestra aparte porque no se sabe cuál es:
+ANOVA de un factor entre los dos chips, doce capturas de cada uno:
 
-| Estimador | agosto, MAC sin anotar (n=4) | ec:e3:34:9a:d1:18 (n=8) | a0:dd:6c:0e:fb:4c (n=12) | F | p |
-|---|---|---|---|---|---|
-| MCV | 0,9952 ± 0,0008 | 0,9949 ± 0,0011 | 0,9957 ± 0,0005 | 4,61 | 0,046 |
-| Collision | 0,9250 ± 0,0060 | 0,9118 ± 0,0184 | 0,9089 ± 0,0239 | 0,08 | 0,783 |
-| Markov | 0,9987 ± 0,0003 | 0,9977 ± 0,0012 | 0,9986 ± 0,0006 | 4,99 | 0,038 |
-| Compression | 0,8749 ± 0,0523 | 0,8523 ± 0,0346 | 0,8471 ± 0,0169 | 0,18 | 0,678 |
-| t-Tuple | 0,9280 ± 0,0082 | 0,9305 ± 0,0077 | 0,9304 ± 0,0103 | 0,00 | 0,983 |
-| LRS | 0,9460 ± 0,0303 | 0,9868 ± 0,0104 | 0,9718 ± 0,0302 | 1,66 | 0,214 |
-| MultiMCW | 0,9968 ± 0,0013 | 0,9957 ± 0,0009 | 0,9969 ± 0,0016 | 3,36 | 0,083 |
-| Lag | 0,9950 ± 0,0009 | 0,9821 ± 0,0398 | 0,9964 ± 0,0013 | 1,38 | 0,255 |
-| MultiMMC | 0,9972 ± 0,0020 | 0,9954 ± 0,0017 | 0,9967 ± 0,0012 | 3,20 | 0,091 |
-| LZ78Y | 0,9971 ± 0,0006 | 0,9956 ± 0,0015 | 0,9966 ± 0,0012 | 2,35 | 0,143 |
-| **mínimo (H no-IID)** | 0,8648 ± 0,0425 | **0,8454** ± 0,0205 | **0,8471** ± 0,0169 | 0,04 | 0,847 |
+| Estimador | ec:e3:34:9a:d1:18 (n=12) | a0:dd:6c:0e:fb:4c (n=12) | F | p |
+|---|---|---|---|---|
+| MCV | 0,9950 ± 0,0010 | 0,9957 ± 0,0005 | 4,42 | 0,047 |
+| Collision | 0,9162 ± 0,0166 | 0,9089 ± 0,0239 | 0,70 | 0,413 |
+| Markov | 0,9980 ± 0,0011 | 0,9986 ± 0,0006 | 2,37 | 0,138 |
+| Compression | 0,8598 ± 0,0427 | 0,8471 ± 0,0169 | 0,84 | 0,368 |
+| t-Tuple | 0,9296 ± 0,0080 | 0,9304 ± 0,0103 | 0,04 | 0,853 |
+| LRS | 0,9732 ± 0,0274 | 0,9718 ± 0,0302 | 0,01 | 0,906 |
+| MultiMCW | 0,9961 ± 0,0012 | 0,9969 ± 0,0016 | 1,87 | 0,185 |
+| Lag | 0,9864 ± 0,0330 | 0,9964 ± 0,0013 | 0,99 | 0,330 |
+| MultiMMC | 0,9960 ± 0,0020 | 0,9967 ± 0,0012 | 0,85 | 0,368 |
+| LZ78Y | 0,9961 ± 0,0015 | 0,9966 ± 0,0012 | 0,64 | 0,432 |
+| **mínimo (H no-IID)** | **0,8518** ± 0,0311 | **0,8471** ± 0,0169 | 0,20 | 0,663 |
 
-Ningún estimador distingue los chips al nivel corregido (p < 0,0045). Dos
-quedan por debajo de 0,05 sin corregir (Markov 0,038 y MCV 0,046), lo que
-con once pruebas es lo esperable por azar (0,55 de media), y lo que
-separan son diferencias de 0,0008-0,0009 bit/bit pegadas al techo de
-resolución del MCV. La cifra que importa, el mínimo no-IID, es la misma en
-los dos chips: 0,845 y 0,847. **Con dos chips del mismo modelo, la línea
+Ningún estimador distingue los chips al nivel corregido (p < 0,0045). Uno
+queda por debajo de 0,05 sin corregir (MCV, 0,047), lo que con once pruebas
+es lo esperable por azar (0,55 de media), y lo que separa es una diferencia
+de 0,0007 bit/bit pegada al techo de resolución del MCV. La cifra que
+importa, el mínimo no-IID, es la misma en los dos chips: 0,852 y 0,847.
+**Con dos chips del mismo modelo, la línea
 base del ESP32 no depende del chip a la resolución de estos estimadores.**
 
 ## 4. Lectura
 
-1. **Shannon ≠ min-entropía, con números.** El TFM_RNG dio 0,99999 bit/bit
+1. **Shannon ≠ min-entropía, con números.** La primera campaña dio 0,99999 bit/bit
    de Shannon. Las mismas capturas, por la letra de SP 800-90B, valen
    0,993-0,996 bit/bit si se admite IID y **0,81-0,92 bit/bit** (media 0,85
    sobre veinticuatro capturas) si no. El orden H_min ≤ H_Shannon se cumple siempre;
@@ -401,17 +407,15 @@ base del ESP32 no depende del chip a la resolución de estos estimadores.**
    vías × 2 modos); las 48 del chip a0:dd:6c:0e:fb:4c, 284 s en serie con
    la herramienta oficial; el
    cuello no es el cómputo sino la captura: 125 kB por condición tardan
-   unos 25 s con el firmware del TFM_RNG (hex a 115200 baudios) y un ciclo
+   unos 25 s con `firmware/esp32_rng` (hex a 115200 baudios) y un ciclo
    de cuatro condiciones, unos dos minutos con arranque incluido.
 
 ## 5. Pendiente
 
-- El firmware del TFM_RNG recompilado con IDF 5.3.2 se queda parado en el
+- El firmware de la campaña (`firmware/esp32_rng`) recompilado con IDF 5.3.2 se queda parado en el
   *harvester* tras el primer ciclo (no en agosto): sin investigar, no afecta
   a estas capturas. Si se quisieran más repeticiones seguidas sin resetear,
   habría que mirarlo.
-- La placa de la campaña de agosto no dejó anotada su MAC: sus capturas
-  (rep1) se tratan aparte en la comparación entre chips.
 - Prueba de reinicios (§3.1.4 de la norma): **hecha** el 12-10-2026 en el
   chip a0:dd:6c:0e:fb:4c, `docs/esp32_reinicios.md`. Con el bootloader de
   serie la pasa; sin el ruido que mete el bootloader, la falla: el

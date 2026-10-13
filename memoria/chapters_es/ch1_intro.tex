@@ -49,7 +49,7 @@ autovalidada de los quince tests de SP~800-22 y por los estimadores de
 SP~800-90B, se construye un esquema de recolección de claves que combina
 varias fuentes internas del chip, y una prueba de reinicios con y sin las
 fuentes de ruido documentadas abre la caja todo lo que se puede abrir
-desde fuera (Sección~\ref{sec:esp32_90b}). Su hallazgo central es
+desde fuera (Capítulo~\ref{ch:esp32}). Su hallazgo central es
 metodológico: los tests se superan en condiciones en las que la entropía
 no puede ser la que los tests dan a entender. Con la radio y el ADC
 apagados el generador no recibe ningún ruido: solo continúa una secuencia
@@ -170,7 +170,10 @@ prueba oficiales utilizados y los datos brutos de cada campaña, con las
 
 El Capítulo~\ref{ch:ch2_soa} revisa los generadores basados en
 osciladores en anillo, sus modelos estocásticos, las normas y el panorama
-comercial. El Capítulo~\ref{ch:ch3_entropy} construye la cadena desde el
+comercial. El Capítulo~\ref{ch:esp32} es la primera parte del trabajo:
+caracteriza el generador del ESP32 como caja negra y muestra lo que un
+estudio así puede y no puede establecer. El Capítulo~\ref{ch:ch3_entropy}
+construye la cadena desde el
 transistor hasta la min-entropía y valida cada eslabón. El
 Capítulo~\ref{ch:ch4_engine} describe el motor digital y el
 Capítulo~\ref{ch:ch5_verification}, su verificación. El

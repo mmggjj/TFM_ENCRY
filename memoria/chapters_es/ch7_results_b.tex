@@ -1,232 +1,9 @@
-\section{La referencia del ESP32 frente a SP 800-90B}
-\label{sec:esp32_90b}
+\section{La referencia del ESP32}
+\label{sec:esp32_ref}
 
-O8 pide una comparación numérica con el ESP32, y la mitad puede cerrarse
-sin la placa: el lado de la referencia. La primera campaña de captura de
-este trabajo, en agosto de 2026, tomó $10^6$ bits de salida de
-\texttt{esp\_fill\_random} en cuatro condiciones de funcionamiento ---
-Wi-Fi y ADC activos, solo Wi-Fi, solo ADC, ninguno --- y les aplicó la
-entropía de Shannon y SP 800-22; los estimadores de SP 800-90B se aplican
-aquí. Después, el mismo firmware, recompilado sin cambios, se ejecutó
-desde arranque en frío en dos
-chips del mismo modelo (ESP32-D0WD-V3), identificados por sus direcciones
-MAC: dos veces en uno y tres veces en el otro. Con la captura de agosto,
-cuya placa no se identificó, eso da seis repeticiones de $10^6$ bits por
-condición. Otras dos capturas con la radio apagada, de $3{,}52\times10^6$
-y $8{,}38\times10^6$ bits, se tomaron con el firmware verificador del
-Capítulo~\ref{ch:ch5_verification}. Las
-veintiséis se pasaron por la implementación de referencia del \ac{NIST} de
-los estimadores de SP 800-90B~\cite{nist_ea_github, turan_2018_sp80090b}
-(versión 1.1.8), por la vía IID y por la vía no IID, en el formato
-binario que la norma prescribe para fuentes de bits. La
-Tabla~\ref{tab:esp32_90b} recoge el resultado.
-
-\begin{table}[htbp]
-\centering
-\caption{El generador del ESP32 frente a los estimadores de SP 800-90B \meas{}.
-Condiciones A--D: seis repeticiones de $10^6$ bits cada una en dos chips y
-la placa de agosto, media y rango sobre las repeticiones; E y F: capturas
-únicas de $3{,}5\times10^6$ y $8{,}4\times10^6$ bits. El techo es el
-valor más alto que el estimador del valor más común (MCV) puede devolver
-para una fuente perfectamente uniforme de esa longitud con un 99\,\% de
-confianza; la cifra no IID es el mínimo de los diez estimadores de la
-Sección~6.3 de la norma, y la última columna nombra el estimador que la
-fijó (veces de seis). Los veredictos de la vía IID se discuten en el texto.}
-\label{tab:esp32_90b}
-\footnotesize
-\begin{tabular}{@{}llrrll@{}}
-\toprule
-Captura & Condición & $H$ (IID) & Techo & $H$ (no IID) & Limitante \\
-\midrule
-A & Wi-Fi + ADC & 0,9954 & 0,9963 & 0,844 (0,812--0,877) & Compresión 5, Lag 1 \\
-B & Wi-Fi       & 0,9951 & 0,9963 & 0,862 (0,824--0,898) & Compresión 5, LRS 1 \\
-C & ADC         & 0,9952 & 0,9963 & 0,836 (0,812--0,867) & Compresión 6 \\
-D & ninguna     & 0,9957 & 0,9963 & 0,857 (0,832--0,916) & Compresión 5, Colisión 1 \\
-E (este trabajo) & ninguna & 0,9977 & 0,9980 & 0,867 & Compresión \\
-F (este trabajo) & ninguna & 0,9982 & 0,9987 & 0,911 & Compresión \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-La resolución va primero, como en todo este trabajo. El estimador MCV
-devuelve $-\log_2 p_u$ con $p_u = \hat p + 2{,}576\sqrt{\hat p(1-\hat p)/N}$,
-de modo que ni siquiera una fuente perfecta puede puntuar por encima de
-0,9963 con $10^6$ bits, de 0,9980 con $3{,}5\times10^6$ ni de 0,9987 con
-$8{,}4\times10^6$. Cada una de las veintiséis capturas queda a menos de
-0,0035 de ese techo, y ninguna implica un sesgo de unos superior a
-$2{,}4\sigma$, que es lo que se observa en veintiséis extracciones de una
-fuente sin sesgo.
-
-La vía IID necesita una calibración antes de que puedan leerse sus
-veredictos. De las cincuenta y dos ejecuciones (veintiséis capturas en los
-formatos de bits y de bytes), cuatro fallan una sola prueba, nunca el
-mismo fichero en ambos formatos: una prueba de permutación en cada formato
-y dos pruebas $\chi^2$ en el formato de bytes. La frecuencia con que datos
-buenos fallan estas pruebas a esa misma longitud no es el $10^{-3}$
-nominal, así que se midió, ejecutando la misma herramienta sobre 1000
-ficheros de 125\,000 bytes y 200 ficheros de $10^6$ bits del generador del
-sistema operativo. En el formato de bytes, la batería de permutación falla
-en el 1,9\,\% de los ficheros buenos y el par $\chi^2$ en el 2,4\,\%; en el
-formato de bits, la batería de permutación falla en el 2,5\,\% y el par
-$\chi^2$ en ninguno de los 200. La cifra de $\chi^2$ se rastreó hasta su
-causa reimplementando ambas pruebas, lo que reproduce los cincuenta y dos
-valores $p$ de la herramienta hasta la sexta cifra decimal, y ejecutándolas
-sobre 5000 ficheros buenos. La prueba de independencia del formato de
-bytes reparte 62\,500 pares sin solape entre 65\,536 celdas y agrupa celdas
-hasta que cada grupo espera cinco cuentas, pero a esta longitud su $p$ no
-es uniforme: la mediana es 0,175 en lugar de 0,5, y cae por debajo de
-$10^{-3}$ en el 1,7\,\% de los ficheros, diecisiete veces la tasa nominal.
-Las otras tres pruebas $\chi^2$ están bien calibradas, y el defecto
-desaparece a partir de $10^6$ bytes. Frente a estas tasas, los fallos del
-ESP32 no tienen nada de particular: un fallo de permutación en veintiséis
-ejecuciones en formato de bytes donde se esperan 0,49 ($P = 0{,}39$), dos
-fallos $\chi^2$ donde se esperan 0,62 ($P = 0{,}13$), y un fallo de
-permutación en el formato de bits donde se esperan 0,65 ($P = 0{,}48$). En
-un chip, la prueba de independencia de bytes dio $p < 0{,}05$ en seis
-capturas de doce, frente a 2,9 esperadas; agrupar las capturas de cada
-chip, donde la prueba está calibrada y es más potente, da valores $p$
-empíricos de 0,82 y 0,96 en ese chip para pares de bytes alineados con la
-palabra de 32 bits y desplazados un byte, y de 0,38 y 0,86 en el otro, así
-que no hay dependencia entre bytes vecinos. El suceso más raro es el fallo
-de bondad de ajuste de la primera captura de la condición~D
-($p = 2{,}4\times10^{-4}$): esa prueba falla en el 0,04\,\% de los ficheros
-buenos, así que un fallo así en veintiséis tiene una probabilidad cercana
-al 1\,\%. No se reprodujo en las cinco capturas posteriores de la misma
-condición ($p = 0{,}32$ a $0{,}96$) ni en E y F, y se registra como azar;
-la advertencia de Espressif de que la aleatoriedad del generador no está
-garantizada sin la radio o el ADC sigue en pie como una advertencia que
-estas pruebas no ven. Formalmente, un único fallo retira la hipótesis IID
-para esa captura; como la cifra que se retiene es la no IID, nada de lo
-que sigue depende de ello. Leída con su calibración, la vía IID encuentra
-la salida del ESP32 indistinguible de una fuente binaria de entropía
-completa con este tamaño de muestra. Es el mismo veredicto que dio
-SP 800-22, alcanzado por otro camino, y dice lo mismo: no se ve nada mal.
-
-La vía no IID dice otra cosa, y leerla bien importa más que el número. En
-veinticinco de las veintiséis capturas, su mínimo lo fija uno de tres
-estimadores --- compresión, colisión o subcadena repetida más larga --- con
-0,81 a 0,92 bit por bit; en la restante, el predictor Lag, con 0,88; los
-estimadores MCV y de Markov nunca bajan de 0,99. Se sabe que esos tres
-estimadores son conservadores con datos casi uniformes~\cite{zhu_2017_analysis};
-los predictores de Kelsey, McKay y S\"onmez Turan~\cite{kelsey_2015_predictive}
-se introdujeron precisamente porque los estimadores anteriores de la norma
-juzgan mal fuentes de ese tipo. Las repeticiones muestran que esto es un
-comportamiento de los estimadores y no una propiedad de las condiciones.
-La estimación por compresión tiene una desviación típica de 0,02 a 0,04
-\emph{dentro} de una condición, tan grande como el 0,03 que separa las
-medias de las cuatro condiciones, y un análisis de la varianza de un factor
-(ANOVA) sobre cada uno de los once estimadores no encuentra diferencia
-entre condiciones: el $p$ más pequeño es 0,083, para el predictor
-MultiMCW, por encima del 0,05 sin corregir y muy por encima del 0,0045 que
-exigen once pruebas. Lo mismo vale entre chips. Agrupando las condiciones,
-que no difieren, ningún estimador separa las ocho capturas de un chip y
-las doce del otro al nivel corregido; los dos $p$ más pequeños, 0,038 para
-Markov y 0,046 para MCV, corresponden a diferencias de 0,0009 bit por bit
-junto al techo de resolución, y dos valores por debajo de 0,05 entre once
-pruebas es lo que da el azar. El mínimo no IID es 0,845 en un chip y 0,847
-en el otro: con dos dispositivos, la referencia no depende de cuál se mida,
-a la resolución de estos estimadores. La captura más grande añade una
-segunda muestra del efecto de la resolución: en el formato de bytes, su
-estimador limitante es la prueba de $t$-tupla con $t = 2$, que devuelve
-7,39 bits por byte porque $10^6$ bytes contienen demasiado pocos de los
-65\,536 pares posibles para que el más frecuente sea representativo,
-exactamente como le ocurre al techo del MCV con $t = 1$. Ningún estimador
-resuelve con seis repeticiones diferencia alguna entre Wi-Fi encendido,
-ADC encendido y ninguno de los dos, y no se afirma ninguna.
-
-La prueba de reinicios de la Sección~3.1.4 de la norma responde a lo que
-la estadística anterior no puede: si un generador no tiene ruido propio,
-su salida tras un reinicio en frío debe repetirse. Un firmware dedicado
-leyó 1024~bytes con \texttt{esp\_fill\_random} como primera acción de la
-aplicación, con la radio y el ADC apagados (condición~D), y el chip de MAC
-a0:dd:6c:0e:fb:4c se reinició 1000 veces por su patilla de habilitación
-(EN); la ROM de arranque notificó un reinicio por encendido todas las
-veces. Dos variantes comparten la aplicación y difieren solo en el
-bootloader de segunda etapa: el de serie, que inyecta ruido del SAR ADC en
-el generador durante unos 126~ms mientras se ejecuta, y el mismo
-bootloader con esa llamada desviada a una función vacía en tiempo de
-enlazado, lo que confirma el desensamblado. Otras tres variantes hacen una
-segunda lectura tras arrancar el Wi-Fi como en las condiciones A y B, sin
-asociarse a ninguna red, y esperar 200~ms, con cada uno de los dos
-bootloaders; la tercera es un control que espera el mismo tiempo sin tocar
-la radio, de modo que la lectura cae en el mismo tick del planificador. La
-Tabla~\ref{tab:esp32_restart} recoge el resultado.
-
-\begin{table}[htbp]
-\centering
-\caption{Prueba de reinicios del generador del ESP32 \meas{}: 1000 reinicios
-en frío por variante, un chip. $H_r$ y $H_c$ son el mínimo de los
-estimadores no IID sobre el conjunto de filas y el conjunto de columnas de
-la norma (1000 reinicios $\times$ 1000 bits); la prueba falla cuando
-cualquiera de los dos queda por debajo de la mitad de la estimación
-inicial $H_I$, la cifra no IID más baja de este chip en la misma condición
-(0,838 bit por bit en D, 0,859 en B). El formato de bytes da los mismos
-veredictos. Los solapes son reinicios cuya salida aparece desplazada
-dentro de la de otro, todos idénticos palabra por palabra. Las lecturas
-tardías caen entre 352 y 412~ms después de que arranque la aplicación, la
-mayoría a 352~ms.}
-\label{tab:esp32_restart}
-\footnotesize
-\begin{tabular}{@{}llrrrl@{}}
-\toprule
-Bootloader & Lectura & $H_r$ / $H_c$ & Distintas & Solapes & Veredicto \\
-\midrule
-De serie & en el arranque, radio apagada & 0,898 / 0,854 & 1000 & 0 & pasa \\
-Sin ruido de arranque & en el arranque, radio apagada & 0,024 / 0,813 & 759 & 5424 & falla \\
-Sin ruido de arranque & tardía, radio apagada (control) & 0,024 / 0,808 & 760 & 5632 & falla \\
-Sin ruido de arranque & tardía, Wi-Fi encendido & 0,831 / 0,845 & 1000 & 0 & pasa \\
-De serie & tardía, Wi-Fi encendido & 0,844 / 0,807 & 1000 & 0 & pasa \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Con el bootloader de serie el generador pasa en ambos formatos, y las
-1000 salidas difieren entre sí exactamente como lo harían datos
-aleatorios: la distancia de Hamming media entre dos reinicios es de 4096,0
-bits de 8192, frente a $4096 \pm 45$ esperados. Sin el ruido de arranque
-falla de forma tajante, y los datos muestran por qué. Cada reinicio es una
-ventana sobre una única secuencia fija, leída desde un punto de partida
-ligeramente distinto: dondequiera que el comienzo de la salida de un
-reinicio aparece dentro de la de otro, desplazado unas pocas palabras de
-32 bits, todo el solape coincide palabra por palabra, 5424 veces sin una
-sola diferencia. Lo único que cambia entre reinicios es el instante en que
-la aplicación empieza a leer, que varía en unos pocos miles de ciclos de
-reloj de un arranque al siguiente. Eso vale entre 6,5 bits por reinicio,
-la cota de la norma a partir de la salida más repetida, y 10,8 bits si
-todos los puntos de partida fueran igual de probables, de 8192 bits leídos.
-Con la radio y el ADC apagados el generador no tiene ruido propio, y la
-afirmación de Espressif de que entonces su salida es solo
-pseudoaleatoria~\cite{espressif_idf_random} queda confirmada directamente,
-cosa que ninguna prueba estadística sobre un flujo continuo podría hacer.
-De ello se siguen dos consecuencias. Las capturas de la condición~D de la
-Tabla~\ref{tab:esp32_90b} son la salida de un generador determinista
-sembrado durante el arranque: los estimadores les acreditan 0,85 bit por
-bit, tanto como con la radio encendida, mientras que su entropía física es
-como mucho la que inyectó el bootloader, que esos estimadores no miden. Y
-una aplicación que deriva una clave justo después del arranque con la
-radio apagada depende por completo del ruido del bootloader de serie; sin
-él, la clave podría adivinarse en unos pocos miles de intentos, el
-problema del arranque en frío descrito por Blanco-Romero
-et al.~\cite{blancoromero_2026_entropy}.
-
-Las filas con radio responden a la otra mitad de la afirmación de
-Espressif. Sin el ruido de arranque, arrancar el Wi-Fi basta para que la
-prueba pase: las 1000 salidas son todas distintas, no se comparte ninguna
-ventana, y los 289 pares de reinicios que leían valores idénticos antes de
-arrancar la radio leen 289 valores diferentes después. La temporización
-por sí sola no lo explica. El control espera el mismo tiempo y lee en el
-mismo tick del planificador, con un instante de lectura que varía otro
-tanto (3824 frente a 5260 ciclos de reloj entre los reinicios que
-comparten el tick), y se repite exactamente como en el arranque: 760
-salidas distintas, 5632 solapes idénticos, unos 1700 estados. Con tan
-pocos estados, los 797 reinicios que comparten un tick en la variante con
-radio mostrarían unas 180 repeticiones solo por temporización; no muestran
-ninguna. Sin la radio, el generador no recibe ruido en sus primeros
-350~ms de funcionamiento; con la radio, sí. Lo que la prueba no da es
-cuánta entropía por bit aporta la radio: los 0,83 bit por bit validados
-son la cifra de los estimadores, con su sesgo habitual, no una medida del
-ruido de la radio. El autor no ha encontrado esta prueba publicada antes
-para el ESP32.
+El Capítulo~\ref{ch:esp32} caracteriza el generador del ESP32 en cuatro
+condiciones de funcionamiento y en dos chips; la comparación de O8 toma
+de allí sus cifras.
 
 De ello se siguen tres consecuencias para O8. Primera, la cifra que este
 TFM retiene como referencia del ESP32 es la no IID, de 0,81 a 0,92 bit por
@@ -286,8 +63,8 @@ Capítulo~\ref{ch:ch6_asic} son \est{} y explícitamente no se presentan
 como medidos.
 \item[Min-entropía de la referencia del ESP32.] Medida \meas{} en
 veintiséis capturas de $10^6$ a $8{,}4\times10^6$ bits, seis por condición,
-de dos chips del mismo modelo identificados por dirección MAC y una placa
-del mismo modelo que no se identificó. La
+tres en cada uno de dos chips del mismo modelo identificados por dirección
+MAC. La
 cifra de la vía IID está en el techo de resolución del estimador MCV para
 ese $N$ (0,9963 con $10^6$ bits), así que es un suelo situado en el techo
 más que una medida de la fuente, y los veredictos IID se leen frente a la
@@ -295,7 +72,7 @@ tasa de falsos fallos medida de cada prueba a esa longitud, no frente a la
 nominal. La cifra no IID la fijan estimadores cuyo sesgo conservador con
 datos casi uniformes supera la dispersión entre condiciones; un análisis
 de la varianza no encuentra efecto de la condición ($p \ge 0{,}083$ en
-todos los estimadores) ni efecto del chip ($p \ge 0{,}038$, frente a
+todos los estimadores) ni efecto del chip ($p \ge 0{,}047$, frente a
 0,0045 tras la corrección). Dos dispositivos muestran que la referencia no
 depende de uno de ellos; no acotan la dispersión en una población de
 producción. La prueba de reinicios se ejecutó en un chip, en la

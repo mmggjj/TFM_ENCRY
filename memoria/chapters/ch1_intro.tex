@@ -48,7 +48,7 @@ implementation of the fifteen tests of SP~800-22 and through the
 SP~800-90B estimators, a key-harvesting scheme combining several on-chip
 sources is built, and a restart test with and without the documented
 noise sources opens the box as far as it can be opened from outside
-(Section~\ref{sec:esp32_90b}). Its central finding is methodological: the
+(Chapter~\ref{ch:esp32}). Its central finding is methodological: the
 tests pass under conditions in which the entropy cannot be what the tests
 imply. With the radio and the ADC off the generator receives no noise:
 it only continues a pseudo-random sequence seeded by the bootloader, and
@@ -161,7 +161,9 @@ each table.
 
 Chapter~\ref{ch:ch2_soa} reviews ring-oscillator generators, their
 stochastic models, the standards and the commercial landscape.
-Chapter~\ref{ch:ch3_entropy} builds the chain from transistor to
+Chapter~\ref{ch:esp32} is the first part of the work: it characterizes the
+generator of the ESP32 as a black box and shows what such a study can and
+cannot establish. Chapter~\ref{ch:ch3_entropy} builds the chain from transistor to
 min-entropy and validates every link. Chapter~\ref{ch:ch4_engine}
 describes the digital engine and Chapter~\ref{ch:ch5_verification} its
 verification. Chapter~\ref{ch:ch6_asic} synthesizes the engine on standard

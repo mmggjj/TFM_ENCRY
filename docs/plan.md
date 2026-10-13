@@ -36,8 +36,8 @@ funcionalmente en FPGA con un ESP32 como comprobador independiente.
   (NorCAS 2024, con continuación en 2026). Este TFM no abre camino: se
   incorpora a uno trazado, lo que además resuelve la cuestión de tutela y
   de continuidad. Detalle y referencias en `via_asic.md`.
-- **Continúa el trabajo previo del autor.** El estudio de caja negra del
-  generador del ESP32 (repo `TFM_RNG`) demostró que los tests
+- **Primera parte: el ESP32 como caja negra.** El estudio de caja negra del
+  generador del ESP32 (`firmware/esp32_rng`, `analysis/esp32_rng`) demostró que los tests
   estadísticos no distinguen entropía real. NIST lo respalda: en abril de
   2022 anunció la revisión de SP 800-22 rechazando su uso para evaluar
   generadores criptográficos. Aquel trabajo pasa a ser el capítulo de

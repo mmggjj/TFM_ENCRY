@@ -55,20 +55,20 @@ p mínima entre los 11 estimadores: 0.083. Ningún estimador separa las condicio
 
 ## Por chip (capturas A-D, condiciones agrupadas)
 
-ANOVA de un factor entre los chips de MAC conocida (ec:e3:34:9a:d1:18: n=8, a0:dd:6c:0e:fb:4c: n=12); umbral de Bonferroni p < 0.0045. La placa de agosto se muestra aparte porque no se anotó su MAC y podría ser cualquiera.
+ANOVA de un factor entre chips (ec:e3:34:9a:d1:18: n=12, a0:dd:6c:0e:fb:4c: n=12); umbral de Bonferroni p < 0.0045.
 
-| Estimador | MAC sin anotar (agosto) (n=4) | ec:e3:34:9a:d1:18 (n=8) | a0:dd:6c:0e:fb:4c (n=12) | F | p |
-|---|---|---|---|---|---|
-| MCV | 0.9952 ± 0.0008 | 0.9949 ± 0.0011 | 0.9957 ± 0.0005 | 4.61 | 0.046 |
-| Collision | 0.9250 ± 0.0060 | 0.9118 ± 0.0184 | 0.9089 ± 0.0239 | 0.08 | 0.783 |
-| Markov | 0.9987 ± 0.0003 | 0.9977 ± 0.0012 | 0.9986 ± 0.0006 | 4.99 | 0.038 |
-| Compression | 0.8749 ± 0.0523 | 0.8523 ± 0.0346 | 0.8471 ± 0.0169 | 0.18 | 0.678 |
-| t-Tuple | 0.9280 ± 0.0082 | 0.9305 ± 0.0077 | 0.9304 ± 0.0103 | 0.00 | 0.983 |
-| LRS | 0.9460 ± 0.0303 | 0.9868 ± 0.0104 | 0.9718 ± 0.0302 | 1.66 | 0.214 |
-| MultiMCW | 0.9968 ± 0.0013 | 0.9957 ± 0.0009 | 0.9969 ± 0.0016 | 3.36 | 0.083 |
-| Lag | 0.9950 ± 0.0009 | 0.9821 ± 0.0398 | 0.9964 ± 0.0013 | 1.38 | 0.255 |
-| MultiMMC | 0.9972 ± 0.0020 | 0.9954 ± 0.0017 | 0.9967 ± 0.0012 | 3.20 | 0.091 |
-| LZ78Y | 0.9971 ± 0.0006 | 0.9956 ± 0.0015 | 0.9966 ± 0.0012 | 2.35 | 0.143 |
-| min | 0.8648 ± 0.0425 | 0.8454 ± 0.0205 | 0.8471 ± 0.0169 | 0.04 | 0.847 |
+| Estimador | ec:e3:34:9a:d1:18 (n=12) | a0:dd:6c:0e:fb:4c (n=12) | F | p |
+|---|---|---|---|---|
+| MCV | 0.9950 ± 0.0010 | 0.9957 ± 0.0005 | 4.42 | 0.047 |
+| Collision | 0.9162 ± 0.0166 | 0.9089 ± 0.0239 | 0.70 | 0.413 |
+| Markov | 0.9980 ± 0.0011 | 0.9986 ± 0.0006 | 2.37 | 0.138 |
+| Compression | 0.8598 ± 0.0427 | 0.8471 ± 0.0169 | 0.84 | 0.368 |
+| t-Tuple | 0.9296 ± 0.0080 | 0.9304 ± 0.0103 | 0.04 | 0.853 |
+| LRS | 0.9732 ± 0.0274 | 0.9718 ± 0.0302 | 0.01 | 0.906 |
+| MultiMCW | 0.9961 ± 0.0012 | 0.9969 ± 0.0016 | 1.87 | 0.185 |
+| Lag | 0.9864 ± 0.0330 | 0.9964 ± 0.0013 | 0.99 | 0.330 |
+| MultiMMC | 0.9960 ± 0.0020 | 0.9967 ± 0.0012 | 0.85 | 0.368 |
+| LZ78Y | 0.9961 ± 0.0015 | 0.9966 ± 0.0012 | 0.64 | 0.432 |
+| min | 0.8518 ± 0.0311 | 0.8471 ± 0.0169 | 0.20 | 0.663 |
 
-p mínima entre chips: 0.038. Ningún estimador distingue un chip de otro al nivel corregido.
+p mínima entre chips: 0.047. Ningún estimador distingue un chip de otro al nivel corregido.

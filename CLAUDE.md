@@ -43,11 +43,13 @@ todo. Léelo entero antes de tocar nada.
   anillos seguían oscilando y GHDL no acababa nunca).
 - Hecho sin placa: línea base del ESP32 bajo SP 800-90B (abajo), con
   **veintiséis capturas**: seis repeticiones por condición A-D (la de
-  agosto del TFM_RNG, dos del 19-09 en el chip ec:e3:34:9a:d1:18 y tres del
-  12-10 en el chip a0:dd:6c:0e:fb:4c, todas con el mismo firmware y
-  `analysis/campana_rng.py`; los datos de cada chip van en su carpeta) y
-  dos largas sin radio. ANOVA por estimador: ningún efecto de condición
-  (p ≥ 0,083) ni de chip (p ≥ 0,038, Bonferroni 0,0045). Resumen en
+  agosto, primera campaña, y dos del 19-09 en el chip ec:e3:34:9a:d1:18;
+  tres del 12-10 en el chip a0:dd:6c:0e:fb:4c; todas con
+  `firmware/esp32_rng`; los datos de cada chip van en su carpeta) y dos
+  largas sin radio. ANOVA por estimador: ningún efecto de condición
+  (p ≥ 0,083) ni de chip (12 + 12 capturas, p ≥ 0,047, Bonferroni 0,0045).
+  La placa de agosto ES el chip ec:e3:34:9a:d1:18 (lo recoge el informe de
+  agosto; su CSV no tenía columna de MAC). Resumen en
   `results/entropia_90b_resumen.md`; lectura en `docs/esp32_linea_base_90b.md`.
   Los chips se nombran por su MAC ("dos chips del mismo modelo").
   Calibración de la vía IID con datos buenos del mismo tamaño

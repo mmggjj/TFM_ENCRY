@@ -199,7 +199,7 @@ def chip(n: str) -> str | None:
     m = re.fullmatch(r"cond[A-D]_rep(\d+)", n)
     if not m:
         return None
-    return "agosto (MAC sin anotar)" if m.group(1) == "1" else "ec:e3:34:9a:d1:18"
+    return "ec:e3:34:9a:d1:18"   # rep1 (agosto) tambien: ver resumen_90b.py
 
 
 def compara(ruta_ref: Path) -> int:

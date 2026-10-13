@@ -52,8 +52,8 @@ FUENTES = {
     **{f"cond{c}_rep{r}": RES / "esp32_campana_rng" / f"cond{c}_rep{r}.bin"
        for c in "ABCD" for r in (2, 3)},
     # mismo firmware y protocolo en el chip de MAC a0:dd:6c:0e:fb:4c
-    # (2026-10-12); los de arriba rep2/rep3 son del chip ec:e3:34:9a:d1:18 y
-    # rep1 (agosto) de una placa cuya MAC no se anoto
+    # (2026-10-12); los de arriba (rep1 de agosto, rep2 y rep3) son del chip
+    # ec:e3:34:9a:d1:18
     **{f"fb4c_cond{c}_rep{r}": RES / "esp32_campana_rng" / "mac_a0dd6c0efb4c" / f"cond{c}_rep{r}.bin"
        for c in "ABCD" for r in (1, 2, 3)},
 }

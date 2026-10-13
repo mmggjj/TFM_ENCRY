@@ -7,8 +7,8 @@ hoy: 24 y 20 comprobaciones respectivamente).
 
 Todo lo de este documento es **teoría y simulación**, no hay hardware por
 medio. Su función es exactamente esa: comprobar que el método de medida
-funciona *antes* de aplicarlo a la placa, igual que la suite NIST del
-TFM_RNG se autovalidó contra los vectores del estándar antes de tocar el
+funciona *antes* de aplicarlo a la placa, igual que la suite NIST de la
+primera parte (`analysis/esp32_rng/nist_sp800_22.py`) se autovalidó contra los vectores del estándar antes de tocar el
 ESP32. Si el estimador no recupera un jitter que le inyectamos nosotros,
 no sirve para medir el que no conocemos.
 

@@ -354,225 +354,12 @@ Which of the two is preferable depends on the question being asked. For
 shipping a product, the certified part. For knowing what the randomness in
 that product is worth, only the open one answers.
 
-\section{The ESP32 reference under SP 800-90B}
-\label{sec:esp32_90b}
+\section{The ESP32 reference}
+\label{sec:esp32_ref}
 
-O8 asks for a numerical comparison against the ESP32, and half of it can
-be closed without the board: the reference side. The first capture
-campaign of this work, in August 2026, took $10^6$ bits of
-\texttt{esp\_fill\_random} output under four operating conditions ---
-Wi-Fi and ADC active, Wi-Fi only, ADC only, neither --- and ran Shannon
-entropy and SP 800-22 on them; the SP 800-90B estimators are applied
-here. The same firmware, rebuilt unchanged, was then run from cold boot
-on two chips of the
-same model (ESP32-D0WD-V3), identified by their MAC addresses: twice on
-one and three times on the other. With the August capture, whose board
-was not identified, that gives six repetitions of $10^6$ bits per
-condition. Two further captures with the radio off, of $3.52\times10^6$
-and $8.38\times10^6$ bits, were taken with the verifier firmware of
-Chapter~\ref{ch:ch5_verification}. All
-twenty-six were run through the \ac{NIST} reference implementation of the
-SP 800-90B estimators~\cite{nist_ea_github, turan_2018_sp80090b}
-(version 1.1.8), on both the IID and the non-IID tracks, in the binary
-layout the standard prescribes for bit sources. Table~\ref{tab:esp32_90b}
-gives the outcome.
-
-\begin{table}[htbp]
-\centering
-\caption{The ESP32 generator under the SP 800-90B estimators \meas{}.
-Conditions A--D: six repetitions of $10^6$ bits each on two chips and
-the August board, mean and range over the repetitions; E and F: single
-captures of $3.5\times10^6$ and $8.4\times10^6$ bits. The ceiling is the
-highest value the most-common-value (MCV) estimator can return for a
-perfectly uniform source of that length at 99\,\% confidence; the non-IID
-figure is the minimum of the ten estimators of Section~6.3 of the
-standard, and the last column names the estimator that set it (times out
-of six). The IID-track verdicts are discussed in the text.}
-\label{tab:esp32_90b}
-\footnotesize
-\begin{tabular}{@{}llrrll@{}}
-\toprule
-Capture & Condition & $H$ (IID) & Ceiling & $H$ (non-IID) & Limiting \\
-\midrule
-A & Wi-Fi + ADC & 0.9954 & 0.9963 & 0.844 (0.812--0.877) & Compression 5, Lag 1 \\
-B & Wi-Fi       & 0.9951 & 0.9963 & 0.862 (0.824--0.898) & Compression 5, LRS 1 \\
-C & ADC         & 0.9952 & 0.9963 & 0.836 (0.812--0.867) & Compression 6 \\
-D & none        & 0.9957 & 0.9963 & 0.857 (0.832--0.916) & Compression 5, Collision 1 \\
-E (this work) & none & 0.9977 & 0.9980 & 0.867 & Compression \\
-F (this work) & none & 0.9982 & 0.9987 & 0.911 & Compression \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The resolution comes first, as everywhere in this work. The MCV estimator
-returns $-\log_2 p_u$ with $p_u = \hat p + 2.576\sqrt{\hat p(1-\hat p)/N}$,
-so even a perfect source cannot score above 0.9963 with $10^6$ bits,
-0.9980 with $3.5\times10^6$ or 0.9987 with $8.4\times10^6$. Every one of
-the twenty-six captures sits within 0.0035 of that ceiling, and none
-implies a bias of ones beyond $2.4\sigma$, which is what twenty-six draws
-from an unbiased source look like.
-
-The IID track needs a calibration before its verdicts can be read. Of the
-fifty-two runs (twenty-six captures in the bit and byte layouts), four
-fail a single test, never the same file in both layouts: one permutation
-test in each layout and two $\chi^2$ tests in the byte layout. How often
-good data fail these tests at the same length is not the nominal
-$10^{-3}$, so it was measured, running the same tool on 1000 files of
-125\,000 bytes and 200 files of $10^6$ bits from the operating-system
-generator. In the byte layout the permutation battery fails on 1.9\,\% of
-good files and the $\chi^2$ pair on 2.4\,\%; in the bit layout
-the permutation battery fails on 2.5\,\% and the $\chi^2$ pair on none of the 200. The $\chi^2$ figure was traced to its cause by reimplementing
-both tests, which reproduces the tool's fifty-two $p$ values to the sixth
-decimal, and running them on 5000 good files. The byte-layout independence
-test spreads 62\,500 non-overlapping pairs over 65\,536 cells and merges
-cells until each group expects five counts, but at this length its $p$ is
-not uniform: the median is 0.175 instead of 0.5, and it falls below
-$10^{-3}$ on 1.7\,\% of the files, seventeen times the nominal rate. The
-other three $\chi^2$ tests are well calibrated, and the defect disappears
-from $10^6$ bytes upwards. Against these rates the ESP32 failures are
-unremarkable: one permutation failure in twenty-six byte runs where 0.49
-are expected ($P = 0.39$), two $\chi^2$ failures where 0.62 are expected
-($P = 0.13$), and one bit-layout permutation failure where 0.65 are expected
-($P = 0.48$). On one chip the byte independence test gave
-$p < 0.05$ in six captures of twelve, against 2.9 expected; pooling each
-chip's captures, where the test is calibrated and more powerful, gives
-empirical $p$ values of 0.82 and 0.96 on that chip for byte pairs aligned
-with the 32-bit word and offset by one byte, and 0.38 and 0.86 on the
-other, so no dependence between neighbouring bytes is present. The rarest
-event is the goodness-of-fit failure of the first capture of condition~D
-($p = 2.4\times10^{-4}$): that test fails on 0.04\,\% of good files, so
-one such failure in twenty-six has a probability near 1\,\%. It did not
-reproduce in the five later captures of the same condition ($p = 0.32$ to
-$0.96$) nor in E and F, and it is recorded as chance; Espressif's warning
-that the generator is not guaranteed random without the radio or the ADC
-stands as a warning that these tests do not see. Formally, a single
-failure withdraws the IID assumption for that capture; since the figure
-carried forward is the non-IID one, nothing below depends on it. Read
-with its calibration, the IID track finds the ESP32 output
-indistinguishable from a full-entropy binary source at this sample size.
-That is the same verdict SP 800-22 gave, reached by a different route,
-and it says the same thing: nothing wrong is visible.
-
-The non-IID track says something else, and reading it correctly matters
-more than the number. In twenty-five of the twenty-six captures its
-minimum is set by one of three estimators --- compression, collision or
-longest repeated substring --- at 0.81 to 0.92 bit per bit; in the
-remaining one by the lag predictor, at 0.88; the MCV and Markov
-estimators never drop below 0.99. Those three estimators are known to be
-conservative on nearly uniform data~\cite{zhu_2017_analysis}; the
-predictors of Kelsey, McKay and S\"onmez Turan~\cite{kelsey_2015_predictive}
-were introduced precisely because the earlier estimators of the standard
-misjudge sources of that kind. The repetitions show that this is
-estimator behaviour and not a property of the conditions. The compression
-estimate has a standard deviation of 0.02 to 0.04 \emph{within} a
-condition, as large as the 0.03 that separates the four condition means,
-and a one-way analysis of variance on each of the eleven estimators finds
-no difference between conditions: the smallest $p$ is 0.083, for the
-MultiMCW predictor, above the uncorrected 0.05 and far above the 0.0045
-that eleven tests demand. The same holds between chips. Grouping the
-conditions, which do not differ, the eight captures of one chip and the
-twelve of the other are separated by no estimator at the corrected level;
-the two smallest $p$, 0.038 for Markov and 0.046 for MCV, correspond to
-differences of 0.0009 bit per bit next to the resolution ceiling, and two
-values below 0.05 among eleven tests is what chance provides. The non-IID
-minimum is 0.845 on one chip and 0.847 on the other: with two devices,
-the reference does not depend on which one is measured, at the resolution
-of these estimators. The largest capture adds a
-second illustration of the resolution effect: in the byte layout its
-limiting estimator is the $t$-tuple test at $t = 2$, which returns 7.39
-bits per byte because $10^6$ bytes hold too few of the 65\,536 possible
-pairs for the most frequent one to be representative, exactly as the MCV
-ceiling does at $t = 1$. No difference between Wi-Fi on, ADC on and
-neither is resolvable by any estimator with six repetitions, and none
-is claimed.
-
-The restart test of Section~3.1.4 of the standard answers what the
-statistics above cannot: if a generator has no noise of its own, its
-output after a cold restart must repeat. A dedicated firmware read
-1024~bytes with \texttt{esp\_fill\_random} as the first action of the
-application, with the radio and the ADC off (condition~D), and the chip of
-MAC a0:dd:6c:0e:fb:4c was reset through its enable pin 1000 times; the
-boot ROM reported a power-on reset every time. Two variants share the
-application and differ only in the second-stage bootloader: the stock
-one, which feeds SAR ADC noise into the generator for about 126~ms while
-it runs, and the same bootloader with that call diverted to an empty
-function at link time, which the disassembly confirms. Three further
-variants read a second time after starting the Wi-Fi as in conditions A
-and B, without associating to any network, and waiting 200~ms, with each
-of the two bootloaders; the third is a control that waits the same time
-without touching the radio, so that the read falls on the same scheduler
-tick. Table~\ref{tab:esp32_restart} gives the outcome.
-
-\begin{table}[htbp]
-\centering
-\caption{Restart test of the ESP32 generator \meas{}: 1000 cold restarts
-per variant, one chip. $H_r$ and $H_c$ are the minimum of the non-IID
-estimators over the row and column datasets of the standard
-(1000 restarts $\times$ 1000 bits); the test fails when either is below
-half the initial estimate $H_I$, the lowest non-IID figure of this chip in
-the same condition (0.838 bit per bit in D, 0.859 in B). The byte layout
-gives the same verdicts. Overlaps are restarts whose output appears
-shifted inside another's, all identical word for word. The late reads
-fall 352 to 412~ms after the application starts, most of them at 352~ms.}
-\label{tab:esp32_restart}
-\footnotesize
-\begin{tabular}{@{}llrrrl@{}}
-\toprule
-Bootloader & Read & $H_r$ / $H_c$ & Distinct & Overlaps & Verdict \\
-\midrule
-Stock & at boot, radio off & 0.898 / 0.854 & 1000 & 0 & passes \\
-Boot noise removed & at boot, radio off & 0.024 / 0.813 & 759 & 5424 & fails \\
-Boot noise removed & late, radio off (control) & 0.024 / 0.808 & 760 & 5632 & fails \\
-Boot noise removed & late, Wi-Fi on & 0.831 / 0.845 & 1000 & 0 & passes \\
-Stock & late, Wi-Fi on & 0.844 / 0.807 & 1000 & 0 & passes \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-With the stock bootloader the generator passes in both layouts, and the
-1000 outputs differ from one another exactly as random data would: the
-mean Hamming distance between two restarts is 4096.0 bits of 8192,
-against $4096 \pm 45$ expected. Without the boot noise it fails
-decisively, and the data show why. Each restart is a window on one fixed
-sequence, read from a slightly different starting point: wherever the
-beginning of one restart's output appears inside another's, displaced by
-a few 32-bit words, the whole overlap matches word for word, 5424 times
-without a single difference. The only thing that changes between restarts
-is the instant at which the application starts reading, which varies by a
-few thousand clock cycles from one boot to the next. That is worth between
-6.5 bits per restart, the bound of the standard from the most repeated
-output, and 10.8 bits if every starting point were equally likely, out of
-8192 bits read. With the radio and the ADC off the generator has no noise
-of its own, and Espressif's statement that its output is then
-pseudo-random only~\cite{espressif_idf_random} is confirmed directly,
-which no statistical test on a continuous stream could do. Two
-consequences follow. The condition~D captures of
-Table~\ref{tab:esp32_90b} are the output of a deterministic generator
-seeded during boot: the estimators credit them with 0.85 bit per bit, as
-much as with the radio on, while their physical entropy is at most what
-the bootloader injected, which those estimators do not measure. And an
-application that derives a key right after boot with the radio off
-depends entirely on the stock bootloader's noise; without it, the key
-could be guessed in a few thousand attempts, the cold-boot problem
-described by Blanco-Romero et al.~\cite{blancoromero_2026_entropy}.
-
-The radio rows answer the other half of Espressif's statement. With the
-boot noise removed, starting the Wi-Fi is enough for the test to pass:
-the 1000 outputs are all distinct, no window is shared, and the 289 pairs
-of restarts that read identical values before the radio was started read
-289 different values after it. Timing alone does not explain this. The
-control waits the same time and reads on the same scheduler tick, with a
-read instant that varies as much (3824 against 5260 clock cycles among
-the restarts that share the tick), and it repeats exactly as at boot:
-760 distinct outputs, 5632 identical overlaps, about 1700 states. With so
-few states, the 797 restarts that share a tick in the radio variant would
-show about 180 repeats by timing alone; they show none. Without the
-radio the generator receives no noise in its first 350~ms of operation;
-with the radio it does. What the test does not give is how much entropy
-per bit the radio delivers: the validated 0.83 bit per bit is the
-estimators' figure, with their usual bias, not a measurement of the
-radio noise. The author has not found this test published for the ESP32
-before.
+Chapter~\ref{ch:esp32} characterizes the generator of the ESP32 under
+four operating conditions and on two chips; the comparison of O8 takes
+its figures from there.
 
 Three consequences follow for O8. First, the figure this thesis carries
 forward as the ESP32 reference is the non-IID one, 0.81 to 0.92 bit per
@@ -627,9 +414,8 @@ on this library are $\approx 2.35$ for an \ac{AES}, and the optimization
 savings of Chapter~\ref{ch:ch6_asic} are \est{} and explicitly not claimed
 as measured.
 \item[Min-entropy of the ESP32 reference.] Measured \meas{} on twenty-six
-captures of $10^6$ to $8.4\times10^6$ bits, six per condition, from two
-chips of the same model identified by MAC address and one board of the
-same model that was not identified. The
+captures of $10^6$ to $8.4\times10^6$ bits, six per condition, three on
+each of two chips of the same model identified by MAC address. The
 IID-track figure is at the resolution ceiling of the MCV estimator for
 that $N$ (0.9963 at $10^6$ bits), so it is a floor on the ceiling rather
 than a measurement of the source, and the IID verdicts are read against
@@ -637,7 +423,7 @@ the measured false-failure rate of each test at that length, not against
 the nominal one. The non-IID figure is set by estimators whose
 conservative bias on nearly uniform data exceeds the spread between
 conditions; an analysis of variance finds no condition effect
-($p \ge 0.083$ on every estimator) and no chip effect ($p \ge 0.038$,
+($p \ge 0.083$ on every estimator) and no chip effect ($p \ge 0.047$,
 against 0.0045 after correction). Two devices show that the reference
 does not hinge on one of them; they do not bound the spread across a
 production population. The restart test was run on one chip, in

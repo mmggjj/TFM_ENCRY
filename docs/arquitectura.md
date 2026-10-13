@@ -309,7 +309,7 @@ El borrador hacía pasar TODO por el ESP32: FPGA → SPI → ESP32 → UART →
 PC. Eso pone el cuello de botella en el sitio equivocado. Las campañas de
 entropía mueven megabytes (5,1 MB por punto de jitter, y SP 800-90B exige
 ≥ 10⁶ muestras crudas más una matriz de 1000×1000 reinicios), y la UART
-del ESP32 solo resultó fiable a 115200 bit/s en los TFM anteriores con el
+del ESP32 solo resultó fiable a 115200 bit/s en las campañas de captura con el
 CP2102, o sea 11,5 kB/s: siete minutos por punto solo de transferencia.
 
 La Basys 3 tiene su **propio puente USB-UART (FT2232HQ)**, y su manual
@@ -359,8 +359,8 @@ SP 800-90B, que los exige, y para poder publicar los datos.
   acopladas y filtros anti-alias). Masa común corta entre placas;
   alimentaciones USB independientes.
 - **Trama**: byte de comando + longitud + payload + CRC-8 opcional (el
-  CRC32 se aplica en la trama UART ESP32→PC, reutilizando el formato del
-  TFM_RNG). Comandos previstos:
+  CRC32 se aplica en la trama UART ESP32→PC, reutilizando el formato de las
+  capturas del ESP32). Comandos previstos:
 
 | Cmd | Nombre | Función |
 |---|---|---|
@@ -383,7 +383,7 @@ SP 800-90B, que los exige, y para poder publicar los datos.
 Tres modos, elegidos por comando UART desde el PC:
 
 1. **Campaña**: lee `GET_RAW`/`GET_RING`/`GET_COUNTS`/`GET_XADC` en bucle y
-   reenvía al PC en tramas CRC32 (formato del TFM_RNG). Sin interpretar.
+   reenvía al PC en tramas CRC32 (formato de las capturas del ESP32). Sin interpretar.
 2. **Verificación**: ejecuta KAT (envía vectores oficiales a la FPGA y
    compara), interoperabilidad (cifra con mbedtls → descifra en FPGA y al
    revés, N bloques aleatorios), reto-respuesta (nonce de `esp_random()` →
@@ -400,8 +400,8 @@ stream.
 
 ## 7. Análisis en PC (Python)
 
-- `nist_sp800_22.py` del TFM_RNG, sin cambios (ruta:
-  `TFM_RNG/tfm_esp32_rng/python/`; punto de entrada
+- `nist_sp800_22.py` de la primera parte, sin cambios (ruta:
+  `analysis/esp32_rng/`; punto de entrada
   `run_all_nist_tests(data: bytes, label) -> list[TestResult]`, 15 tests,
   con `self_test()` de autovalidación). Se importa como módulo, no se
   copia: así cualquier corrección se propaga a ambos TFM.

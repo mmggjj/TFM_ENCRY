@@ -346,9 +346,7 @@ ruido térmico y a2 es flicker. Es una separación más completa que el
 ajuste lineal de la sección 3, porque aísla además el suelo de
 cuantización del instrumento. El análisis de este TFM adopta ese método
 (ver `analysis/spice_ring.py`, que usa diferencias de segundo orden por
-esta razón). Conviene señalar que el autor ya usó desviación de Allan en
-su trabajo previo sobre el sensor de CO2, así que la herramienta no es
-nueva para él.
+esta razón).
 
 **8.3 Dato de jitter comparable entre plataformas.** Mismo observable
 (varianza de fase acumulada por unidad de tiempo): Spartan-6 45 nm,

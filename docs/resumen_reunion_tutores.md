@@ -15,7 +15,7 @@ supuesta, y verificarla en FPGA con un ESP32 como comprobador independiente.
 
 ## 2. De dónde viene: el generador del ESP32 como caja negra
 
-- TFM anterior (agosto de 2026): el RNG hardware del ESP32 pasa **15/15** tests de
+- Primera parte del TFM (campaña de agosto de 2026): el RNG hardware del ESP32 pasa **15/15** tests de
   SP 800-22 en las cuatro condiciones (Wi-Fi + ADC, solo Wi-Fi, solo ADC, nada), incluida
   la que el fabricante desaconseja. Conclusión: SP 800-22 no mide entropía. NIST lo dijo
   en 2022.

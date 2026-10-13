@@ -91,25 +91,27 @@ def main() -> int:
 
     # Por chip: solo capturas A-D de la campana (mismo firmware y protocolo).
     # Las condiciones se agrupan porque no hay efecto de condicion (arriba).
+    # La primera campana (rep1, agosto) se hizo en el chip ec:e3:34:9a:d1:18:
+    # su linea ### DEVICE la recoge el informe de aquella campana
+    # (resultados de agosto, MAC ec:e3:34:9a:d1:18); el CSV no tenia columna.
     def chip(n):
         if n.startswith("fb4c_"):
             return "a0:dd:6c:0e:fb:4c"
         m = re.fullmatch(r"cond[A-D]_rep(\d+)", n)
         if not m:
             return None
-        return "MAC sin anotar (agosto)" if m.group(1) == "1" else "ec:e3:34:9a:d1:18"
+        return "ec:e3:34:9a:d1:18"
     chips: dict[str, list[str]] = {}
     for n in nombres:
         c = chip(n)
         if c:
             chips.setdefault(c, []).append(n)
-    conocidos = [c for c in chips if not c.startswith("MAC sin")]
+    conocidos = list(chips)
     if len(conocidos) >= 2:
         lineas += ["", "## Por chip (capturas A-D, condiciones agrupadas)", "",
-                   "ANOVA de un factor entre los chips de MAC conocida "
+                   "ANOVA de un factor entre chips "
                    f"({', '.join(f'{c}: n={len(chips[c])}' for c in conocidos)}); "
-                   f"umbral de Bonferroni p < {0.05 / len(ESTIMADORES):.4f}. La placa de agosto "
-                   "se muestra aparte porque no se anotó su MAC y podría ser cualquiera.", "",
+                   f"umbral de Bonferroni p < {0.05 / len(ESTIMADORES):.4f}.", "",
                    "| Estimador | " + " | ".join(f"{c} (n={len(chips[c])})" for c in chips)
                    + " | F | p |",
                    "|---|" + "---|" * len(chips) + "---|---|"]

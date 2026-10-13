@@ -33,6 +33,8 @@ COND_DESC = {
     "C": "WiFi OFF + ADC ON",
     "D": "WiFi OFF + ADC OFF",
 }
+# short labels for the heatmap axis (the long ones overlap)
+COND_SHORT = {"A": "Wi-Fi\n+ ADC", "B": "Wi-Fi", "C": "ADC", "D": "none"}
 
 plt.rcParams.update({"figure.dpi": 130, "font.size": 9,
                      "savefig.bbox": "tight"})
@@ -110,12 +112,12 @@ def main():
             ax.text(j, i, f"{M[i, j]:.2f}", ha="center", va="center",
                     fontsize=6)
         ax.set_xticks(range(len(conds)))
-        ax.set_xticklabels([f"{c}\n{COND_DESC[c]}" for c in conds],
+        ax.set_xticklabels([f"{c}\n{COND_SHORT[c]}" for c in conds],
                            fontsize=7)
         ax.set_yticks(range(len(test_names)))
         ax.set_yticklabels(test_names, fontsize=7)
-        ax.set_title("NIST SP 800-22 p-values by operating condition "
-                     "(red = FAIL, p < 0.01)")
+        ax.set_title("NIST SP 800-22 p-values by operating condition\n"
+                     "(red = FAIL, p < 0.01)", fontsize=9)
         fig.colorbar(im, ax=ax, shrink=0.7, label="p-value")
         outs = [d]
         if args.figdir:
