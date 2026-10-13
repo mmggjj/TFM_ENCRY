@@ -1,0 +1,247 @@
+\chapter{Motor digital}
+\label{ch:ch4_engine}
+
+% [BORRADOR v1] Material de partida: docs/arquitectura.md (sec. 9), docs/mapa_registros.md,
+% docs/estado_del_arte_cripto.md, rtl/ (aes, drbg, trng, io, top).
+
+El motor digital convierte los bits en bruto de la fuente de entropía en
+claves y las usa, y está escrito de forma que el mismo \ac{RTL} funcione
+en la FPGA usada para la verificación y, más adelante, en celdas
+estándar. Nada en él depende de un fabricante: ni primitivas, ni macros
+de memoria, ni bloques de gestión de reloj. El único bloque dependiente
+de la tecnología en todo el diseño es la pareja de osciladores en anillo
+del Capítulo~\ref{ch:ch3_entropy}.
+
+\section{Arquitectura y la decisión de una única primitiva}
+\label{sec:arch}
+
+La Figura~\ref{fig:engine} resume la ruta de datos. Los bits en bruto
+salen del \ac{ERO} en el dominio de reloj del anillo de muestreo, cruzan
+al reloj del sistema de bit en bit y alimentan a tres consumidores: los
+tests de salud, el colector de semilla del generador determinista y un
+búfer de captura que solo se usa para la caracterización. Las claves
+salen de un \ac{CTRDRBG}; la clave actual se carga en un bloque AES-CMAC
+que responde a retos; y un esclavo \ac{I2C} lo expone todo como un
+mapa de registros.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[node distance=6mm and 8mm, >=Stealth,
+  bloque/.style={draw, rounded corners=2pt, minimum height=8mm, minimum width=19mm, align=center, font=\small},
+  flecha/.style={->, thick}]
+\node[bloque] (ro) {RO1, RO2\\(LUT / transistor)};
+\node[bloque, right=of ro] (ero) {ERO\\muestreador $\div K_D$};
+\node[bloque, right=of ero] (cdc) {CDC de bit};
+\node[bloque, above right=of cdc] (ht) {Tests de salud\\RCT, APT};
+\node[bloque, right=of cdc] (seed) {Colector de semilla\\384 bits};
+\node[bloque, below right=of cdc] (cap) {Captura\\4096 bits};
+\node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
+\node[bloque, right=of drbg] (cmac) {AES-CMAC};
+\node[bloque, below=12mm of drbg] (i2c) {Esclavo I2C\\mapa de registros};
+\draw[flecha] (ro) -- (ero); \draw[flecha] (ero) -- (cdc);
+\draw[flecha] (cdc) -- (ht); \draw[flecha] (cdc) -- (seed);
+\draw[flecha] (ero) |- (cap);
+\draw[flecha] (seed) -- (drbg) node[midway, above, font=\scriptsize] {entropía, nonce};
+\draw[flecha] (drbg) -- (cmac) node[midway, above, font=\scriptsize] {clave};
+\draw[flecha, <->] (i2c) -- (drbg); \draw[flecha, <->] (i2c) -| (cmac);
+\draw[flecha, <->] (i2c) -| (cap); \draw[flecha] (ht) -| (i2c);
+\end{tikzpicture}}
+\caption{Ruta de datos del motor. Solo los osciladores en anillo dependen
+de la tecnología; todos los demás bloques son RTL portable.}
+\label{fig:engine}
+\end{figure}
+
+La decisión que da forma a todo el motor es usar \textbf{una sola
+primitiva criptográfica, AES-128, para las tres tareas}: acondicionar la
+entropía, generar claves y autenticar. La primera arquitectura tenía un
+núcleo SHA-256 como acondicionador; las estimaciones de síntesis del
+Capítulo~\ref{ch:ch6_asic} mostraron que ocuparía casi la mitad del área
+digital, y SP~800-90B incluye construcciones basadas en AES --- CMAC,
+CBC-MAC y la función de derivación basada en cifrado de bloque de
+SP~800-90A --- entre sus componentes de acondicionamiento
+\emph{aprobados}~\cite{turan_2018_sp80090b}. Prescindir del hash lleva el
+motor de un valor estimado de $\sim$25 a $\sim$13~\acp{GE} (miles), a
+costa de pasar de un \ac{CTRDRBG} \emph{sin} función de derivación, que
+necesita una entrada con entropía completa, a uno \emph{con} ella, que es
+la configuración habitual en la práctica y admite directamente entradas
+sin entropía completa. El núcleo AES solo cifra: el modo contador y CMAC
+nunca descifran, y ofrecer el descifrado como servicio al ESP32 no
+tendría sentido, ya que el ESP32 tiene su propio acelerador. La
+verificación cruzada no se ve afectada: el motor cifra y el ESP32
+descifra con mbedtls.
+
+\section{Núcleo de cifrado AES-128}
+\label{sec:aes}
+
+El núcleo es iterativo, una ronda por ciclo de reloj, once ciclos por
+bloque (suma inicial de clave más diez rondas), con las claves de ronda
+expandidas al vuelo a partir de la anterior --- el cifrado solo necesita
+la expansión hacia delante, y así se evita almacenar once claves de
+ronda. A 100~MHz eso supone 1,16~Gbit/s de tasa de bits del núcleo, muy
+por encima de lo que puede transportar cualquier enlace \ac{I2C}, así que
+segmentar el núcleo (pipelining) sería área desperdiciada; en su lugar se
+elige la forma iterativa porque una ronda es una función combinacional
+pura que puede comprobarse directamente contra la
+norma~\cite{nist_2023_fips197}. La S-box es una tabla de 256 entradas
+sintetizada como lógica, MixColumns se escribe como la red \texttt{xtime}
+habitual, y el estado sigue la convención por columnas de FIPS~197 con
+el byte~0 a la izquierda, de modo que las cadenas hexadecimales de la
+norma se corresponden una a una con los vectores VHDL.
+
+El núcleo se verificó con los cinco vectores oficiales disponibles para
+el cifrado AES-128 (apéndices~B y~C.1 de FIPS~197, y los tres bloques ECB
+de SP~800-38A F.1.1) y con una cadena de mil cifrados para poner de
+manifiesto cualquier estado residual entre bloques. Una comprobación que
+no estaba prevista resultó ser la más convincente: el cifrado del bloque
+todo ceros con la clave de ejemplo de SP~800-38A dio
+\texttt{7df76b0c\ldots546f}, que es exactamente el valor intermedio $L$
+publicado por el NIST en sus ejemplos de CMAC~\cite{nist_cmac_examples}.
+
+\section{AES-CMAC}
+\label{sec:cmac}
+
+AES-CMAC~\cite{nist_2016_sp80038b, song_2006_rfc4493} es la primitiva del
+reto-respuesta: el ESP32 envía un nonce y el motor devuelve su
+etiqueta con la clave actual. El bloque calcula las subclaves $K_1$,
+$K_2$ una sola vez al cargar una clave (un cifrado del bloque cero y dos
+desplazamientos condicionales a la izquierda con la constante polinómica
+\texttt{0x87}) y después ejecuta CBC-MAC sobre el mensaje, aplicando
+$K_1$ si el último bloque está completo o rellenando con \texttt{0x80} y
+aplicando $K_2$ en caso contrario. Se eligió frente a HMAC-SHA-256 porque
+reutiliza la única primitiva y cuesta un cifrado por bloque frente a dos
+compresiones del hash. El bloque supera los cuatro vectores de la
+RFC~4493 (mensaje vacío, un bloque, 40 y 64 bytes), que ejercitan las dos
+ramas de relleno.
+
+\section{CTR\_DRBG con función de derivación}
+\label{sec:drbg}
+
+El generador implementa CTR\_DRBG con AES-128 y la función de derivación
+basada en cifrado de bloque de SP~800-90A~\cite{barker_2015_sp80090ar1}.
+Su formato de entrada es fijo a propósito: 256~bits de entropía en bruto
+y 128~bits de nonce, de modo que $S = L\,\|\,N\,\|\,E\,\|\,\mathit{nonce}\,\|\,\texttt{0x80}\,\|\,0\ldots$
+ocupa exactamente cuatro bloques y la función de derivación se convierte
+en una secuencia cerrada de catorce cifrados; una entrada de longitud
+variable costaría una ruta de datos orientada a bytes sin ningún
+beneficio. La instanciación (o el resembrado) cuesta 14~operaciones AES,
+183~ciclos; generar 256~bits cuesta cuatro, 53~ciclos. El estado (Key, V)
+nunca se expone; el contador de resembrados es legible para que el
+anfitrión pueda imponer una política de resembrado muy por debajo del
+límite de $2^{48}$ de la norma.
+
+La verificación se hizo en dos pasos. Primero, se escribió en Python un
+modelo de referencia exacto al bit --- con su propio AES, independiente
+del VHDL --- y se ejecutó contra los vectores del CAVP: 960 casos AES-128
+con y sin función de derivación, con y sin resembrado, todos superados.
+Segundo, ese modelo generó las salidas esperadas para el formato de
+entrada fijo del hardware, y el VHDL las reprodujo: dos generaciones
+consecutivas, un resembrado seguido de una generación, el contador de
+resembrados y el hecho de que una nueva instanciación borra el estado
+anterior.
+
+\section{Tests de salud}
+\label{sec:health}
+
+Los dos tests aprobados por SP~800-90B se ejecutan de forma continua
+sobre los bits en bruto~\cite{turan_2018_sp80090b}. El test de recuento
+de repeticiones (\emph{Repetition Count Test}) falla cuando llegan
+seguidas $C_{\mathrm{RCT}} = 1 + \lceil -\log_2\alpha / H \rceil$
+muestras idénticas; el test de proporción adaptativa (\emph{Adaptive
+Proportion Test}) cuenta, en una ventana de $W = 1024$ muestras (el valor
+para fuentes binarias; 512 es para fuentes no binarias), cuántas repiten
+la primera, y falla al llegar a
+$C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. Para el
+objetivo de diseño $H = 0{,}98$ y $\alpha = 2^{-20}$ resultan
+$C_{\mathrm{RCT}} = 22$ y $C_{\mathrm{APT}} = 596$; ambos son parámetros
+genéricos (generics), porque $H$ se fija a partir de la min-entropía
+\emph{medida}, no se supone. El test de proporción comprueba también el
+complemento de la cuenta, algo que la norma permite para fuentes
+binarias: de lo contrario, una fuente atascada en el valor opuesto a la
+primera muestra de la ventana puntuaría cero y pasaría. Las alarmas
+quedan enclavadas hasta que se borran explícitamente, y mientras haya
+alguna alarma activa el secuenciador se niega a cargar la semilla.
+
+El banco de pruebas inyecta los modos de fallo para los que existen los
+tests: una fuente sana supera veinte ventanas (peor racha 13, peor
+proporción 540); una fuente atascada dispara el test de repeticiones
+exactamente en la muestra~22; una fuente sesgada al 70\,\% dispara el
+test de proporción en 713 sin disparar el test de repeticiones; y una
+fuente atascada en el complemento se detecta. La primera fuente
+``sana'' del banco --- un registro de desplazamiento inicializado con un
+único uno --- fue detectada por los propios tests, con una racha inicial
+de 27 ceros y una primera ventana al 76\,\%. El detector tenía razón y
+el banco estaba mal; ahora la fuente parte de una semilla densa y se
+calienta antes de usarse.
+
+\section{Ruta de captura y cruces de dominios de reloj}
+\label{sec:cdc}
+
+Los bits en bruto se producen en el dominio de reloj de RO2 y se
+consumen en el dominio del sistema. La ruta serie, bit a bit, hacia los
+tests de salud y el colector de semilla usa un sincronizador por
+conmutación (toggle): el origen registra el bit e invierte una bandera;
+el destino sincroniza la bandera a través de tres flip-flops y lee el bit
+en el flanco de la bandera. Requiere que cada bit dure al menos ocho
+ciclos del sistema, es decir, $K_D \ge 64$ para un anillo de muestreo de
+$\sim$700~MHz a 100~MHz, lo que el modo generador cumple por órdenes de
+magnitud. La ruta de caracterización no cruza bit a bit: el búfer de
+captura se escribe en el dominio del anillo a plena velocidad en una
+memoria de 4096 bits y se lee después en el dominio del sistema, con las
+dos direcciones del protocolo de acuerdo (handshake) transportadas por
+banderas de conmutación. La escritura y la lectura nunca se solapan, así
+que no hace falta una FIFO asíncrona, y el tamaño del búfer se deduce de
+la Sección~\ref{sec:estimator}: un fragmento de $N + M_{\max}$ bits es
+todo lo que necesita el estimador.
+
+\section{Interfaz de registros I2C y secuenciador de órdenes}
+\label{sec:i2c}
+
+La interfaz del producto es \ac{I2C}, como en los elementos seguros
+comerciales: dos pines, direccionable y el bus que el ESP32 usa para sus
+periféricos. El esclavo implementa el protocolo de puntero de registro
+con autoincremento, un filtro de pulsos espurios (glitches) de cinco
+muestras en ambas líneas, como exige la especificación, y salidas en
+drenador abierto. No alarga el reloj (clock stretching): a 400~kHz hay
+250 ciclos del sistema por bit, de sobra para cualquier acceso a
+registro, y las operaciones largas (carga de semilla, generación) se
+lanzan como órdenes y se consultan por sondeo a través de un registro de
+estado, que es como se comportan los dispositivos comerciales. El
+esclavo se probó con un maestro funcional de bus (bus-functional);
+aparecieron dos defectos reales --- el puntero no se autoincrementaba en
+las escrituras de varios bytes, y el bit más significativo de cada byte
+leído se generaba un flanco de reloj tarde, de modo que todas las
+lecturas habrían salido desplazadas --- y se corrigieron.
+
+El mapa de registros (Apéndice~\ref{app:regs}) expone la identificación,
+el estado y el control, la configuración del divisor y de la página de
+captura, los diagnósticos de los tests de salud, el contador de
+resembrados, el reto y su etiqueta, un registro de salida aleatoria
+de 256 bits y, \emph{solo mientras está activo un pin de prueba}, la
+clave actual y el búfer de captura. El registro de salida aleatoria se
+llena mediante su propia orden con una generación separada del DRBG,
+nunca con la que produjo la clave: una versión anterior del diseño
+dejaba en ese registro los 256 bits de la llamada que generaba la clave,
+legibles sin el pin de prueba, y así filtraba la clave. La revisión que
+lo detectó se describe en el Capítulo~\ref{ch:ch5_verification}. En la FPGA el pin
+de prueba es un interruptor; en un circuito integrado sería un fusible
+que se funde en producción, porque exponer la clave o la entropía en
+bruto es una vulnerabilidad. Un pequeño secuenciador serializa las
+órdenes: la carga de semilla recoge 384 bits en bruto, aborta si
+mientras tanto salta una alarma de salud, e instancia o resiembra el
+generador; la generación toma 256 bits, guarda los 128 primeros como clave, descarta el resto y recarga las subclaves
+de CMAC; una orden aparte llena el registro de salida aleatoria a partir
+de una generación independiente; la autenticación ejecuta el CMAC sobre
+el bloque de reto.
+
+El motor completo se ejercitó tal como lo hará el ESP32: un maestro
+\ac{I2C} funcional de bus lee la identificación, configura el divisor,
+carga la semilla, genera, lee la clave en modo de prueba, escribe dos
+retos y lee sus etiquetas, vuelve a generar, captura bits en bruto y
+verifica que la clave no puede leerse sin el pin de prueba --- dieciséis
+comprobaciones. Lo que un banco VHDL no puede saber es si las etiquetas
+son \emph{correctas}, porque la clave procede del ruido de los
+osciladores en anillo; el banco vuelca la clave, los retos y las
+etiquetas a un fichero y un script de Python recalcula los CMAC con el
+AES independiente. Coinciden. Es la misma comprobación cruzada que el
+ESP32 realiza en hardware con mbedtls.

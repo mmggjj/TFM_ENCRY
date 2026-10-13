@@ -69,7 +69,7 @@ figures~\cite{opentrng_2025_docs}.
 \centering
 \caption{AIS-compatible TRNG cores on Xilinx Spartan-6 (45~nm), after
 Petura \emph{et al.}~\cite{petura_2016_survey}, Table~II. Entropy is the
-T8 estimate; ``feasibility'' is the authors' rank (1 best).}
+T8 estimate; ``feasibility'' is the authors' rank (higher is easier).}
 \label{tab:petura}
 \begin{tabular}{@{}lrrrrl@{}}
 \toprule
@@ -183,8 +183,9 @@ $T_{\mathrm{irn}}$ now includes two of NIST's predictors (MultiMMC and
 LZ78Y), a deliberate harmonization~\cite{peter_2024_ais31, schindler_2024_ecw}.
 
 The American \textbf{SP~800-90B}~\cite{turan_2018_sp80090b} estimates
-\emph{min-entropy} --- the adversarial quantity, $-\log_2$ of the most
-probable value --- from at least one million raw samples and a
+\emph{min-entropy} --- the adversarial quantity, $-\log_2$ of the
+probability of the most probable value --- from at least one million raw
+samples and a
 1000$\times$1000 restart matrix, using the most-common-value estimator
 if the source is shown to be i.i.d.\ and otherwise the minimum of ten
 estimators, four of them predictors that try to guess the next sample.

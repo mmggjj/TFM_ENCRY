@@ -1,0 +1,239 @@
+% =========================================================================
+% Diseno y caracterizacion de aleatoriedad de un TRNG basado en
+% osciladores en anillos -- VERSION EN ESPANOL (de lectura)
+%
+% Traduccion de tfm_main.tex y chapters/*.tex, que siguen siendo la
+% version de referencia mientras no se confirme con los tutores el idioma
+% de la entrega. Los capitulos traducidos estan en chapters_es/; las
+% etiquetas (\label), citas y figuras son las mismas que en la version
+% inglesa. Al cambiar un capitulo en ingles hay que trasladar el cambio
+% aqui.
+%
+% Master Universitario en Microelectronica: Diseno y Aplicaciones de
+% Sistemas Micro/Nanometricos. Universidad de Sevilla / IMSE-CNM-CSIC,
+% curso 2026-2027. Autor: Mario Garcia Jimenez.
+% Compilar: pdfLaTeX + BibTeX (fichero principal: tfm_main_es.tex)
+% =========================================================================
+\documentclass[12pt, a4paper, oneside]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% es-noshorthands: los atajos de < > del espanol rompen TikZ.
+% es-nodecimaldot: los decimales en modo matematico se escriben {,}.
+\usepackage[spanish,es-tabla,es-noshorthands,es-nodecimaldot]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, chains}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nottoc]{tocbibind}
+\usepackage{acronym}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+\onehalfspacing
+% El espanol tiene palabras mas largas: deja estirar algo mas los espacios
+% antes de que una linea se salga del margen.
+\setlength{\emergencystretch}{3em}
+
+\graphicspath{{figures/}}
+
+% ---- estilo de listados (igual que la version inglesa) ------------------
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0,0.5,0.2}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+\lstdefinestyle{code}{
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen}\itshape,
+  keywordstyle=\color{blue},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{purple},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true, numbers=left, numbersep=6pt,
+  frame=single, framerule=0.2pt, tabsize=2, captionpos=b,
+  literate={—}{{--}}1 {–}{{-}}1 {±}{{$\pm$}}1 {°}{{$^\circ$}}1
+           {·}{{$\cdot$}}1 {→}{{$\rightarrow$}}1 {≈}{{$\approx$}}1
+           {σ}{{$\sigma$}}1 {τ}{{$\tau$}}1 {µ}{{$\mu$}}1 {í}{{\'i}}1
+           {á}{{\'a}}1 {é}{{\'e}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1,
+}
+\lstset{style=code}
+\lstdefinelanguage{VHDL2008}[]{VHDL}{morekeywords={process,all,generic,port}}
+\renewcommand{\lstlistingname}{Listado}
+\renewcommand{\lstlistlistingname}{\'Indice de listados}
+
+% ---- ordenes ------------------------------------------------------------
+\newcommand{\thetitle}{Design and randomness assessment of a Ring
+Oscillator-based TRNG}
+\newcommand{\thetitlees}{Dise\~no y caracterizaci\'on de aleatoriedad de un
+TRNG basado en osciladores en anillos}
+\newcommand{\theauthor}{Mario Garc\'ia Jim\'enez}
+\newcommand{\thedate}{Junio de 2027 / June 2027}
+% Marcas de medido / simulado / estimado usadas en todo el texto.
+\newcommand{\meas}{\textsc{[medido]}}
+\newcommand{\simu}{\textsc{[simulado]}}
+\newcommand{\est}{\textsc{[estimado]}}
+
+\begin{document}
+
+% =========================================================================
+% Portada oficial del Master (igual que en la version inglesa)
+\begin{titlepage}
+\begin{center}
+\includegraphics[width=\textwidth]{logoUS_IMSE.png}
+\par\vspace*{\stretch{2}}
+{\huge Trabajo de Fin de M\'aster\par}\vspace{0.5em}
+{\huge ``M\'aster Universitario en Microelectr\'onica:\par}\vspace{0.5em}
+{\huge Dise\~no y Aplicaciones de Sistemas\par}\vspace{0.5em}
+{\huge Micro/Nanom\'etricos''\par}
+\par\vspace{\stretch{4}}
+{\LARGE\bfseries \thetitlees\par}\vspace{1em}
+{\Large\itshape \thetitle\par}
+\par\vspace{\stretch{8}}
+\end{center}
+\begin{flushright}
+{\Large Autor / Author: \theauthor\par}\vspace{0.8em}
+{\Large Tutores / Advisors\par}\vspace{0.8em}
+{\Large Fecha / Date: \thedate\par}
+\end{flushright}
+\vspace*{\stretch{3}}
+\end{titlepage}
+
+% =========================================================================
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+% [BORRADOR -- se cierra con los resultados medidos]
+Las claves criptogr\'aficas valen lo que vale la entrop\'ia que hay
+detr\'as, y sin embargo la mayor\'ia de los generadores embebidos se
+eval\'uan como cajas negras: se pasan bater\'ias de tests estad\'isticos
+sobre su salida y un aprobado se toma como prueba de aleatoriedad. El
+trabajo previo del autor sobre el generador hardware del ESP32 mostr\'o
+por qu\'e no basta --- una fuente con poca min-entrop\'ia puede pasar
+NIST SP~800-22 --- y el propio NIST ha rechazado despu\'es esa bater\'ia
+para evaluar generadores criptogr\'aficos. Este TFM toma el camino
+contrario: un motor de generaci\'on de claves de caja blanca cuya
+entrop\'ia se justifica desde la f\'isica del dispositivo. Se dise\~na a
+nivel de transistor una fuente de entrop\'ia por oscilador de anillo, se
+extrae su jitter por simulaci\'on y se convierte, mediante un modelo
+estoc\'astico validado, en una cota inferior de min-entrop\'ia por bit y
+en los par\'ametros de dise\~no del muestreador. A su alrededor, un
+n\'ucleo digital totalmente portable --- tests de salud SP~800-90B,
+acondicionado y \acs{CTRDRBG} con funci\'on de derivaci\'on basados en
+AES, autenticaci\'on AES-CMAC e interfaz de registros \acs{I2C} --- se
+escribe una sola vez y se verifica de tres maneras: contra los vectores
+oficiales, en simulaci\'on sobre una FPGA Basys~3 que hace de veh\'iculo
+de verificaci\'on, y frente a un ESP32 que recalcula cada resultado con
+una implementaci\'on independiente (mbedtls). El mismo VHDL se sintetiza
+por \'ultimo sobre una biblioteca abierta de celdas est\'andar de 130~nm
+para dar el \'area en puertas equivalentes y el camino hacia un circuito
+integrado dedicado. Todo el c\'odigo, modelos, vectores y datos se
+publican.
+
+\paragraph{Palabras clave} generador de n\'umeros verdaderamente
+aleatorios, oscilador en anillo, jitter, min-entrop\'ia, modelo
+estoc\'astico, AIS~20/31, SP~800-90B, CTR\_DRBG, AES-CMAC, elemento
+seguro, FPGA, ASIC, ESP32.
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+% [DRAFT -- to be finalized with measured results]
+Cryptographic keys are only as good as the entropy behind them, yet most
+embedded key generators are evaluated as black boxes: statistical test
+suites are run on their output and a pass is taken as evidence of
+randomness. The author's previous work on the hardware random number
+generator of the ESP32 showed why that is not enough --- a source with
+low min-entropy can pass NIST SP~800-22 --- and NIST itself has since
+rejected the suite for assessing cryptographic generators. This thesis
+takes the opposite route: a white-box key-generation engine whose entropy
+is justified from the physics of the device. A ring-oscillator entropy
+source is designed at transistor level and its jitter is extracted from
+simulation and turned, through a validated stochastic model, into a lower
+bound on min-entropy per bit and into the design parameters of the
+sampler. Around it, a fully portable digital core --- SP~800-90B health
+tests, an AES-based conditioning and \acs{CTRDRBG} with derivation
+function, AES-CMAC authentication and an \acs{I2C} register interface ---
+is written once and verified three ways: against the official test
+vectors, in simulation on a Basys~3 FPGA acting as the verification
+vehicle, and against an ESP32 that recomputes every result with an
+independent implementation (mbedtls). The same VHDL is finally
+synthesized on an open 130~nm standard-cell library to give the area in
+gate equivalents and the path to a dedicated integrated circuit. All
+code, models, vectors and data are released.
+
+\paragraph{Keywords} true random number generator, ring oscillator,
+jitter, min-entropy, stochastic model, AIS~20/31, SP~800-90B, CTR\_DRBG,
+AES-CMAC, secure element, FPGA, ASIC, ESP32.
+
+\chapter*{Agradecimientos}
+\addcontentsline{toc}{chapter}{Agradecimientos}
+A mi familia, a mis compa\~neros de Airzone y al profesorado del M\'aster en
+Microelectr\'onica del IMSE-CNM, por su apoyo durante este trabajo.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% =========================================================================
+\chapter*{Lista de acr\'onimos}
+\addcontentsline{toc}{chapter}{Lista de acr\'onimos}
+\begin{acronym}[CTR\_DRBG]
+\acro{AES}{Advanced Encryption Standard, est\'andar de cifrado avanzado}
+\acro{AIS}{Anwendungshinweise und Interpretationen zum Schema (BSI)}
+\acro{APT}{Adaptive Proportion Test, prueba de proporci\'on adaptativa}
+\acro{ASIC}{circuito integrado de aplicaci\'on espec\'ifica}
+\acro{BSI}{Bundesamt f\"ur Sicherheit in der Informationstechnik}
+\acro{CAVP}{Cryptographic Algorithm Validation Program del NIST}
+\acro{CDC}{cruce de dominios de reloj}
+\acro{CMAC}{c\'odigo de autenticaci\'on de mensajes basado en cifrado}
+\acro{CTRDRBG}[CTR\_DRBG]{generador determinista de bits aleatorios en modo contador}
+\acro{DRBG}{generador determinista de bits aleatorios}
+\acro{ERO}{oscilador en anillo elemental}
+\acro{FPGA}{matriz de puertas programable en campo}
+\acro{GE}{puerta equivalente}
+\acro{I2C}{bus entre circuitos integrados}
+\acro{KAT}{prueba de respuesta conocida}
+\acro{LUT}{tabla de consulta}
+\acro{MEMS}{sistema microelectromec\'anico}
+\acro{MPW}{oblea multiproyecto}
+\acro{NIST}{National Institute of Standards and Technology}
+\acro{PDK}{kit de dise\~no del proceso}
+\acro{PLL}{lazo de enganche de fase}
+\acro{PUF}{funci\'on f\'isicamente no clonable}
+\acro{RCT}{Repetition Count Test, prueba de recuento de repeticiones}
+\acro{RO}{oscilador en anillo}
+\acro{RTL}{nivel de transferencia de registros}
+\acro{SPI}{interfaz perif\'erica serie}
+\acro{TRNG}{generador de n\'umeros verdaderamente aleatorios}
+\acro{XADC}{convertidor anal\'ogico-digital de Xilinx}
+\end{acronym}
+
+% =========================================================================
+\input{chapters_es/ch1_intro}
+\input{chapters_es/ch2_soa}
+\input{chapters_es/ch3_entropy}
+\input{chapters_es/ch4_engine}
+\input{chapters_es/ch5_verification}
+\input{chapters_es/ch6_asic}
+\input{chapters_es/ch7_results_a}
+\input{chapters_es/ch7_results_b}
+\input{chapters_es/ch8_concl}
+
+% =========================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+% =========================================================================
+\appendix
+\input{chapters_es/appendices}
+
+\end{document}

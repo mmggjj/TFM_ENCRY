@@ -23,6 +23,27 @@ del campus). Sin anuncios publicados a esa fecha.
 - Cambiar el título exige el Anexo IV.B con 3 meses de antelación a la
   entrega (1 mes si es solo un matiz que no cambia el tema).
 
+## Ficha publicada en Términus (13-10-2026)
+
+La Facultad publicó el TFM en la aplicación Términus (curso 2026-27) con
+el mismo título y estos datos:
+
+- **Departamento:** Electrónica y Electromagnetismo. **Área:** Electrónica.
+- **Objetivo** (texto oficial, literal; la memoria tiene que cuadrar con
+  él):
+
+  > The master's thesis addresses the design of a cryptographic
+  > key-generation engine intended for integration as an ASIC. The entropy
+  > source is based on transistor-level ring oscillators and is simulated
+  > using noise; the resulting jitter is converted into an entropy source
+  > via a stochastic model. The master's thesis addresses the integration
+  > of the entropy source into an FPGA containing an ESP32 microcontroller.
+  > The goal is to characterize and compare the random sequences generated
+  > by the entropy source and by the ESP32.
+
+- La ficha tiene un apartado de mensajes tutor-estudiante (vacío a esa
+  fecha) con adjuntos.
+
 ## Calendario 2026-27
 
 | Convocatoria | Entrega | Defensa |

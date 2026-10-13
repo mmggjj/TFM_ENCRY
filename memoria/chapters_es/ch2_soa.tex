@@ -1,0 +1,407 @@
+\chapter{Estado del arte}
+\label{ch:ch2_soa}
+
+% [BORRADOR v1] Material de partida: docs/estado_del_arte_trng.md, estado_del_arte_cripto.md,
+% plataforma_y_flujo.md, via_asic.md. Cada afirmación numérica de este capítulo lleva una
+% referencia que se cotejó con su fuente al redactar la revisión;
+% lo que la revisión no pudo consultar está marcado como tal en las notas de trabajo.
+
+La revisión se organiza siguiendo la cadena que construye el TFM: cómo
+se convierten los osciladores en anillo en bits aleatorios, cómo se
+modela y se acota su entropía, cómo se mide su jitter desde dentro del
+dispositivo, qué exigen las dos normas que rigen el campo, qué primitivas
+simétricas encajan en un motor con recursos limitados, qué ofrecen los
+componentes comerciales y qué cambia cuando el diseño sale de la FPGA
+hacia el silicio. La última sección expone el hueco que aborda este
+trabajo, en la forma prudente que exigen las reglas de trabajo.
+
+\section{Arquitecturas de TRNG basadas en osciladores en anillo}
+\label{sec:soa_archs}
+
+Un oscilador en anillo es una cadena impar de inversores cerrada sobre sí
+misma; su periodo fluctúa porque cada transición se retrasa una cantidad
+aleatoria, y esa fluctuación --- el jitter --- es la fuente de ruido de
+toda una familia de generadores. Lo que distingue a las arquitecturas es
+cómo se acumula y se muestrea el jitter~\cite{petura_2016_survey, lubicz_2024_recommendations}.
+
+El \textbf{oscilador en anillo elemental} (ERO) muestrea un anillo con un
+flip-flop cuyo reloj es un segundo anillo dividido por $K_D$; el divisor
+fija el tiempo de acumulación. Tiene el modelo estocástico más
+maduro~\cite{baudet_2011_security, killmann_2008_design, ma_2014_entropy} y
+una medida embebida del jitter~\cite{fischer_2014_embedded}, a costa de
+una tasa de salida muy baja ($K_D$ de $10^4$ a $10^5$: 80\,000 en
+Spartan-6 y 135\,000 en Cyclone~V en la implementación de Petura, unos
+430\,000 en el diseño de Fischer y Lubicz para 0,997~bit de entropía). El
+generador \textbf{multianillo} de Sunar, Martin y
+Stinson~\cite{sunar_2007_provably} combina mediante XOR muchos anillos
+muestreados por un reloj de referencia; Wold y Tan~\cite{wold_2009_analysis}
+añadieron un flip-flop por anillo antes de la XOR y publicaron 100~Mbit/s
+con menos de 100 elementos lógicos. Su debilidad la pusieron de manifiesto
+Bochard \emph{et al.}~\cite{bochard_2010_true}: parte de la aleatoriedad
+aparente es \emph{pseudo}aleatoriedad debida a la interacción entre
+anillos de frecuencias distintas, y la independencia que supone la
+demostración no se cumple en una FPGA. El \textbf{muestreo coherente}
+(COSO) usa dos anillos de periodo casi igual y cuenta el batido~\cite{kohlbrenner_2004_embedded,
+valtchanov_2009_enhanced}; su modelo da la min-entropía directamente a
+partir de la distribución de la cuenta~\cite{peetermans_2021_configurable},
+y la calibración dinámica de anillos reconfigurables lo hace portable
+entre dispositivos y emplazamientos (3,30~Mbit/s en Spartan-6,
+4,65~Mbit/s en Spartan-7)~\cite{peetermans_2019_portable, peetermans_2021_configurable}.
+El \textbf{anillo de efecto de transición} (TERO) cuenta cuántas veces
+oscila una estructura biestable antes de estabilizarse~\cite{varchola_2010_new},
+con un modelo completo que va de lo físico a lo
+estocástico~\cite{bernard_2019_physical}; el \textbf{anillo
+autotemporizado} (STR) hace circular varios eventos por un anillo
+asíncrono para obtener fases separadas del orden del
+jitter~\cite{cherkaoui_2013_very}, y alcanza 154~Mbit/s; y el
+\textbf{ES-TRNG} de Yang \emph{et al.} usa la cadena de acarreo como
+convertidor de tiempo a digital para codificar la posición del flanco con
+10~LUT y 5~flip-flops~\cite{yang_2018_estrng, rozic_2015_highly}.
+
+La Tabla~\ref{tab:petura} reproduce la comparación que hicieron Petura
+\emph{et al.} de los núcleos conformes a AIS sobre un mismo
+dispositivo~\cite{petura_2016_survey}. La columna de entropía es una
+estimación estadística (el test T8 de AIS~31), no una cota del modelo; la
+columna de viabilidad es la valoración cualitativa de los autores, en la
+que COSO y TERO puntúan peor porque necesitan un ajuste manual por
+dispositivo. No existe una tabla comparable para Artix-7; el proyecto
+abierto OpenTRNG implementa ERO, multianillo y COSO en una Arty~A7 con el
+mismo dado XC7A35T que la Basys~3, pero no publica cifras ni de entropía
+ni de tasa de bits~\cite{opentrng_2025_docs}.
+
+\begin{table}[htbp]
+\centering
+\caption{Núcleos TRNG compatibles con AIS en Xilinx Spartan-6 (45~nm),
+según Petura \emph{et al.}~\cite{petura_2016_survey}, tabla~II. La
+entropía es la estimación T8; la ``viabilidad'' es la clasificación de los
+autores (cuanto más alta, más fácil).}
+\label{tab:petura}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Núcleo & LUT/reg. & Potencia (mW) & Tasa (Mbit/s) & Entropía/bit & Viab. \\
+\midrule
+ERO  & 46/19   & 2,16  & 0,0042 & 0,999 & 5 \\
+COSO & 18/3    & 1,22  & 0,54   & 0,999 & 1 \\
+MURO & 521/131 & 54,72 & 2,57   & 0,999 & 4 \\
+PLL  & 34/14   & 10,6  & 0,44   & 0,981 & 3 \\
+TERO & 39/12   & 3,31  & 0,625  & 0,999 & 1 \\
+STR  & 346/256 & 65,9  & 154    & 0,998 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Modelos estocásticos y cotas de entropía}
+\label{sec:soa_models}
+
+La exigencia de que un generador físico vaya acompañado de un
+\emph{modelo estocástico} --- una descripción matemática de la fuente de
+ruido a partir de la cual puede derivarse la entropía de la salida --- la
+introdujeron Killmann y Schindler~\cite{killmann_2008_design, schindler_2002_evaluation}
+y es obligatoria en AIS~20/31. Para los osciladores en anillo, el modelo
+de referencia es el de Baudet \emph{et al.}~\cite{baudet_2011_security}:
+la fase del anillo muestreado es un proceso de Wiener con deriva $\mu$ y
+volatilidad $\sigma^2$, el bit muestreado es el semiperiodo en el que cae
+la fase, y todo depende del factor de calidad $Q=\sigma^2\Delta t$
+(varianza de fase acumulada entre muestras) y de la razón de frecuencias
+$\nu=\mu\Delta t$. El modelo da la probabilidad del bit condicionada a la
+fase anterior, la probabilidad de cualquier vector de salida y una cota
+inferior de la tasa de entropía de Shannon,
+$H \ge 1 - \frac{4}{\pi^2\ln 2}e^{-4\pi^2 Q}$, cuyo alcance exacto se
+examina en el Capítulo~\ref{ch:ch3_entropy}. Petura \emph{et al.} la
+reescriben en magnitudes de diseño, $H = 1 - \frac{4}{\pi^2\ln2}\exp(-\pi^2
+\sigma_{th}^2 K T_2/T_1^3)$, y Fischer y Lubicz la invierten para obtener
+el divisor $K_D$ a partir de un jitter medido~\cite{fischer_2014_embedded}.
+Ma \emph{et al.} proponen un modelo alternativo que usa el grupo de
+Lovaina~\cite{ma_2014_entropy}; Haddad \emph{et al.} cuestionan la
+independencia mutua de las realizaciones del jitter en la que se apoyan
+estas cancelaciones~\cite{haddad_2014_assumption}; y Saarinen advierte de
+que la cota de Baudet ``nunca es inferior a 0,415, ni siquiera cuando $Q$
+tiende a cero'' y solo es segura bajo hipótesis adicionales, y propone
+una cota válida en todo el intervalo~\cite{saarinen_2021_entropy}.
+
+Hay dos matices que importan en el diseño. Primero, no todo el jitter es
+entropía. Fischer y Lubicz separan la varianza de fase acumulada en un
+término de paseo aleatorio, lineal en el tiempo, producido por el ruido
+térmico (blanco), y unos términos de parpadeo ($1/f^\beta$) cuya varianza
+crece cuadráticamente y que dominan con tiempos de acumulación
+largos~\cite{fischer_2014_embedded}; el jitter determinista y global que
+procede de la alimentación y del sustrato se comporta como estos últimos
+y puede ser conocido o inducido por un
+adversario~\cite{fischer_2008_enhancing}. Solo puede computarse el
+término lineal, y por eso no se puede hacer el divisor arbitrariamente
+grande para compensar una fuente débil. Segundo, toda medida embebida es
+\emph{diferencial}: dos anillos que comparten alimentación ven el mismo
+jitter global, que se cancela en su fase relativa y deja la suma de sus
+jitters locales. Lubicz y Sk\'orski formalizan este ``principio de
+transferencia del jitter'' y muestran que con dos anillos solo se obtiene
+la suma, mientras que con tres anillos y tres medidas por pares se
+recuperan las varianzas individuales; su experimento muestra además que
+la hipótesis de varianza lineal con el periodo falla en un factor dos en
+uno de los casos~\cite{lubicz_2024_jitter}.
+
+\section{Medida embebida del jitter}
+\label{sec:soa_jitter}
+
+Los osciloscopios no pueden resolver los picosegundos de jitter de un
+anillo dentro de un chip sin un divisor externo~\cite{benea_2024_flicker},
+así que los métodos útiles miden desde dentro. El \textbf{método del
+contador} cuenta periodos de un anillo en una ventana fija del otro; la
+varianza de la cuenta crece con el jitter relativo
+acumulado~\cite{killmann_2008_design,
+lubicz_2015_towards}, con un suelo de cuantificación de una cuenta y con
+contaminación por ruido de parpadeo en ventanas largas. El método de
+\textbf{Fischer y Lubicz}~\cite{fischer_2014_embedded} no necesita
+divisor: en $K\approx10^4$ bloques de $N\approx100$ bits muestreados con
+$K_D=1$, la fracción de pares $(b_j,b_{j+M})$ que difieren sigue a la
+fase acumulada en $M$ periodos, y su varianza entre bloques, representada
+frente a $M$ entre 200 y 1600, da el jitter por periodo con un error
+inferior al 5\,\% en simulación; en una Cyclone~III midieron
+$\sigma=5{,}01$~ps por periodo de 7,81~ns, y mostraron que enfriar el chip
+reduce $\sigma$ --- lo que convierte esa misma medida en un test en
+línea. El \textbf{muestreo coherente} proporciona el jitter acumulado a
+partir de la varianza de la cuenta de batido sin hardware
+adicional~\cite{peetermans_2021_configurable}. Más recientemente, Benea
+\emph{et al.} caracterizan el jitter de los anillos con la
+\textbf{varianza de Allan}, ajustando $\sigma_t^2(t)=a_0+a_1 t+a_2 t^2$
+para separar los términos de cuantificación, térmico y de parpadeo, y lo
+hacen tanto en una Artix-7 --- la familia de FPGA de este trabajo --- como
+en un circuito FD-SOI de 28~nm, con los datos y los scripts
+publicados~\cite{benea_2024_flicker}. Las cifras publicadas de jitter por
+periodo se agrupan en 2--4~ps para periodos de 4--8~ns en Spartan-6 y
+Cyclone~V~\cite{petura_2016_survey}, 5~ps en Cyclone~III con medida
+embebida~\cite{fischer_2014_embedded}, y 2--2,5~ps en Cyclone~III y
+Virtex-5 para anillos autotemporizados~\cite{cherkaoui_2013_very}; los
+coeficientes de Benea \emph{et al.} para Artix-7 se publican en unidades
+del contador, no en segundos, así que queda por medir una cifra absoluta
+para la XC7A35T.
+
+\section{Normas: AIS 20/31 v3.0 y NIST SP 800-90B}
+\label{sec:soa_standards}
+
+Dos documentos rigen cómo se evalúa un generador físico. La norma alemana
+\textbf{AIS~20/31}, en su versión~3.0 de septiembre de 2024~\cite{peter_2024_ais31},
+sustituye la exigencia de 2011 de 0,997~bit de entropía de Shannon por
+bit interno~\cite{killmann_2011_ais31} por una alternativa en la clase
+PTG.2: entropía de Shannon $\ge0{,}9998$ y/o min-entropía $\ge0{,}98$,
+junto con $P(1)\in(0{,}493;\ 0{,}507)$; la política de transición del BSI
+solo permite nuevas evaluaciones con la versión antigua hasta marzo de
+2026~\cite{bsi_2025_transition}. Sus requisitos son tan estructurales
+como numéricos: un modelo estocástico verificable es obligatorio; el test
+en línea debe derivarse del modelo y fallar con alta probabilidad cuando
+el parámetro de la fuente sale del conjunto admisible; un test de fallo
+total debe detectar que la entropía cae a cero, y para ello se acepta
+explícitamente la prueba de recuento de repeticiones de SP~800-90B; y la
+batería de caja negra $T_{\mathrm{irn}}$ incluye ahora dos de los
+predictores del NIST (MultiMMC y LZ78Y), una armonización
+deliberada~\cite{peter_2024_ais31, schindler_2024_ecw}.
+
+La norma estadounidense \textbf{SP~800-90B}~\cite{turan_2018_sp80090b}
+estima la \emph{min-entropía} --- la magnitud que cuenta frente a un
+adversario, $-\log_2$ de la probabilidad del valor más probable --- a
+partir de al menos un
+millón de muestras en bruto y de una matriz de reinicios de
+1000$\times$1000, con el estimador del valor más común si se demuestra
+que la fuente es i.i.d.\ y, en caso contrario, con el mínimo de diez
+estimadores, cuatro de ellos predictores que intentan adivinar la muestra
+siguiente. Aprueba dos tests de salud continuos y no exige ningún otro:
+la prueba de recuento de repeticiones, con umbral
+$C=1+\lceil-\log_2\alpha/H\rceil$, y la prueba de proporción adaptativa
+sobre una ventana de 1024 muestras para fuentes binarias (512 para las no
+binarias), $C=1+\mathrm{CRITBINOM}(W,2^{-H},1-\alpha)$, con
+$\alpha=2^{-20}$ como valor recomendado. Enumera los componentes de
+acondicionamiento cuya salida puede declarar entropía completa --- HMAC,
+CMAC, CBC-MAC, las funciones hash aprobadas y las dos funciones de
+derivación de SP~800-90A --- y da la fórmula de la entropía de una salida
+acondicionada en función de la longitud de la entrada, la entropía de la
+entrada y la anchura interna. La implementación de referencia de los
+estimadores es pública~\cite{nist_ea_github}.
+
+Las dos normas coinciden en lo que no pueden hacer las baterías
+estadísticas más antiguas. SP~800-22~\cite{bassham_2010_sp80022}
+comprueba la uniformidad y la independencia de un flujo de bits; un
+generador determinista con entropía nula la supera por construcción, y
+también una fuente física débil situada detrás de un postprocesado
+criptográfico~\cite{saarinen_2021_entropy}. La decisión del NIST de 2022
+de revisar la publicación lo dice expresamente: ``rechazando su uso para
+evaluar generadores criptográficos de números aleatorios''~\cite{nist_2022_decision}.
+Los datos empíricos lo confirman: un generador certificado de tarjeta
+inteligente mostró sesgos persistentes aun superando la mayoría de los
+tests~\cite{hurleysmith_2018_certifiably,
+hurleysmith_2018_great}, y el generador del ESP32 supera esas mismas
+baterías con la radio apagada, cuando la propia documentación de
+Espressif dice que devuelve valores pseudoaleatorios~\cite{espressif_idf_random, espressif_trm_esp32,
+blancoromero_2026_entropy}. La literatura académica sobre ese generador
+solo aplica SP~800-22 o Dieharder~\cite{castillo_2026_automated,
+hidayatulloh_2024_performance}; no se encontró ninguna caracterización
+suya según SP~800-90B.
+
+\section{Núcleos simétricos para hardware con recursos limitados}
+\label{sec:soa_cores}
+
+El motor necesita un cifrador de bloque y, si lo usa, una función hash.
+Para AES-128 (diez rondas~\cite{nist_2023_fips197}), el espacio de diseño
+va desde cauces segmentados totalmente desenrollados, orientados a la
+tasa de bits, hasta rutas de datos de 8 bits, orientadas al área: Good y
+Benaissa publican 124 slices y dos block RAM a 2,2~Mbit/s en una
+Spartan-II en un extremo y 25~Gbit/s en el
+otro~\cite{good_2005_fastest}; el diseño compacto de Chodowiec y Gaj usa
+222 slices y tres block RAM~\cite{chodowiec_2003_compact}; y las
+realizaciones ASIC más pequeñas llegan a 2,4~kGE con una ruta de datos de
+8 bits a 226 ciclos por bloque~\cite{moradi2011pushing}, en la línea de
+las S-box en cuerpo compuesto de Satoh~\cite{satoh_2001_compact},
+Canright~\cite{canright_2005_compact} y
+Boyar--Peralta~\cite{boyar_2010_minimization}. Las construcciones en
+cuerpo compuesto optimizan el número de puertas en ASIC y pierden su
+ventaja en una LUT de FPGA, donde una tabla directa es a la vez más
+rápida y más sencilla. Existen diseños de referencia abiertos con cifras
+publicadas para Artix-7: un cifrador de una ronda por ciclo con 1104~LUT
+a 294~MHz~\cite{hadipour_aesvhdl}, y un cifrador/descifrador iterativo de
+32 bits con 2298 slices a 97~MHz~\cite{strombergson_aes}. Para un motor
+cuya salida sale por un enlace I2C, cualquiera de ellos es mucho más
+rápido que el enlace, y la elección la dictan la verificabilidad y el
+área, no la velocidad.
+
+SHA-256~\cite{nist_2015_fips1804}, en su forma iterativa, cuesta unos 750
+slices a 108~MHz en Artix-7~\cite{strombergson_sha256}, lo que es
+comparable a un AES compacto; su papel en un generador sería el de
+acondicionador aprobado de SP~800-90B. Los generadores deterministas de
+SP~800-90A~\cite{barker_2015_sp80090ar1} --- Hash\_DRBG, HMAC\_DRBG y
+CTR\_DRBG --- se diferencian sobre todo en el coste: CTR\_DRBG con
+AES-128 mantiene un estado de 256~bits más un contador y produce
+128~bits por cada cifrado de bloque, Hash\_DRBG necesita sumas modulares
+de 440 bits, y HMAC\_DRBG, dos compresiones de hash por bloque de salida.
+Sin función de derivación, CTR\_DRBG requiere una entrada con entropía
+completa de exactamente la longitud de la semilla; con ella, que es la
+configuración habitual en la práctica, acepta entradas arbitrarias. El
+análisis de Woodage y Shumow advierte de que la flexibilidad de la norma
+permite elecciones que empeoran la fuga del estado, y recomienda
+actualizar tras cada operación de generación y resembrar muy por debajo
+del límite de $2^{48}$~\cite{woodage_2019_analysis}; SP~800-90C,
+definitiva desde 2025, establece el marco en el que se combinan una
+fuente física y un DRBG~\cite{barker_2025_sp80090c}. Para la
+autenticación, AES-CMAC (SP~800-38B~\cite{nist_2016_sp80038b},
+RFC~4493~\cite{song_2006_rfc4493}) cuesta un cifrado de bloque por cada
+bloque de mensaje y es en sí mismo un acondicionador aprobado. Los
+vectores oficiales de todos ellos son
+públicos~\cite{nist_cavp_blockciphers, nist_cavp_modes, nist_cavp_drbg,
+nist_acvp_server}.
+
+\section{Elementos seguros comerciales}
+\label{sec:soa_se}
+
+La categoría de producto a la que pertenece este motor existe. Un
+elemento seguro es un pequeño circuito integrado que genera y almacena
+claves y realiza operaciones simétricas y asimétricas para un
+microcontrolador anfitrión, casi siempre por I2C. Cuatro componentes
+dominan el segmento de bajo coste: el ATECC608B de Microchip, el SE050 de
+NXP, el OPTIGA Trust~M de Infineon y el STSAFE-A110 de ST~\cite{microchip_atecc608b_ds,
+nxp_se050_ds, infineon_optiga_trustm_ds, st_stsafe_a110_ds}. El
+ATECC608B, a 0,90~\$ por unidad suelta~\cite{digikey_prices_2026}, ofrece
+AES-128, SHA-256/HMAC, ECDSA/ECDH sobre P-256, dieciséis ranuras de clave
+y una interfaz I2C, y su fuente de entropía cuenta con una validación del
+NIST según SP~800-90B, obtenida precisamente con osciladores en
+anillo~\cite{nist_esv_e46}. Dos de sus competidores no hacen ninguna
+referencia a SP~800-90 en sus hojas de datos; el tercero afirma que su
+generador está ``diseñado para cumplir'' la norma. La lección para este
+trabajo es dónde puede competir un diseño académico y dónde no: no en
+precio, donde un componente certificado cuesta menos de un euro, sino en
+la transparencia de la entropía, que es justo lo que un componente de
+caja negra no puede ofrecer y lo que las normas exigen ahora.
+
+\section{De la FPGA al ASIC: qué cambia en la fuente de entropía}
+\label{sec:soa_asic}
+
+La lógica digital se traslada de una FPGA a celdas estándar con una
+penalización conocida --- Kuon y Rose midieron 40$\times$ en área,
+3,2$\times$ en retardo y 12$\times$ en potencia dinámica para diseños solo
+de lógica en 90~nm, y 27--49$\times$ en área para AES en
+concreto~\cite{kuon2006}; el oscilador en anillo no se traslada en
+absoluto, porque en silicio se construye con celdas
+inversoras cuyo ruido, variabilidad y acoplamiento difieren de los de una
+cadena de LUT. Tres resultados publicados definen lo que debe añadir una
+implementación en silicio. Benea \emph{et al.} muestran que el ruido de
+parpadeo, cuyo peso crece en los nodos más recientes, cambia el carácter
+del jitter y, contra lo esperado, que tratarlo como fuente legítima puede
+cuadruplicar la tasa de bits a igual entropía~\cite{benea_2024_flicker}.
+Yang, Blaauw y Sylvester muestran que la variación de proceso --- mayor en
+40~nm que en 180~nm --- debe absorberse con un anillo configurable y un
+lazo de ajuste para que el generador sobreviva entre $-40$ y
+120~$^\circ$C y entre 0,6 y 0,9~V~\cite{yang_2016_jssc}. Y dos ataques
+muestran por qué un dispositivo de seguridad no puede ignorar su entorno:
+una frecuencia inyectada en la alimentación engancha los anillos y
+eliminó el jitter de un microcontrolador seguro comercial, con lo que su
+espacio de claves pasó de $2^{64}$ a 3300~\cite{markettos_2009_frequency},
+y unos pocos cientos de microvatios de campo radiado sesgaron un
+generador de cincuenta anillos hasta que falló todos los
+tests~\cite{bayon_2012_contactless}; la defensa publicada combina el
+filtrado de la alimentación con el mismo lazo de
+calibración~\cite{yang_2016_jssc}, y el envejecimiento del dispositivo
+por inestabilidad por polarización y temperatura y por inyección de
+portadores calientes degrada con los años los generadores mal
+temporizados, mientras deja intactos los bien temporizados.
+
+El acceso al silicio es más abierto de lo que parece. La Universidad de
+Sevilla y el IMSE-CNM son miembros de Europractice~\cite{europractice_memberlist},
+cuya lista de precios académicos es pública: un bloque mini@sic cuesta
+3\,430~\texteuro{} en UMC~180~nm y 3\,691~\texteuro{} en TSMC~65~nm, y el
+SG13G2 de IHP se ofrece a 5\,110~\texteuro{}/mm$^2$, con una tirada
+gratuita para diseños de código abierto de menos de 2~mm$^2$~\cite{europractice_prices2026, europractice_minisic,
+ihp_openpdk}. El área de seguridad hardware del instituto ya ha llevado
+primitivas de osciladores en anillo desde FPGA Xilinx de la serie 7,
+evaluadas con SP~800-22 y SP~800-90B, hasta silicio de 65~nm
+caracterizado~\cite{imse_area_hwsec,
+martinez2022efficientropuf, ortega2024vlsi65nm, ortega2026ropuf65nm}, y
+ha fabricado antes circuitos criptográficos~\cite{mora2020trivium}. Las
+bibliotecas abiertas de celdas estándar que hacen posible un capítulo de
+síntesis --- IHP SG13G2, SkyWater SKY130, GlobalFoundries GF180MCU y la
+predictiva Nangate 45~nm --- vienen con vistas liberty, LEF y GDS, y la
+literatura compara este tipo de diseños en puertas equivalentes
+normalizadas a la NAND2 mínima de la biblioteca~\cite{ihp_openpdk_repo, skywater_pdk_cells, gf180mcu_pdk,
+nangate45, kaps2019lwc}, con la advertencia de que el área de síntesis
+lógica es una cota inferior que crece en un factor de 1,7 a 4,6 al pasar
+al área de núcleo tras el rutado.
+
+\section{Hueco que aborda este trabajo}
+\label{sec:gap}
+
+No se reivindica una novedad absoluta. El ERO y su modelo, la medida
+embebida del jitter, el estudio comparativo de núcleos conformes a AIS,
+el COSO calibrado en dispositivos de la serie 7 y una implementación
+abierta sobre el mismo dado de la Basys~3 existen todos, y el propio
+grupo del instituto ha pasado de las FPGA de la serie 7 al silicio de
+65~nm con primitivas de osciladores en anillo. Lo que \emph{no se
+encontró} en la literatura consultada, y lo que este trabajo se propone
+aportar de forma modesta pero verificable, es lo siguiente.
+
+\begin{enumerate}
+\item Una cifra de jitter por periodo para la Artix-7 XC7A35T en
+unidades absolutas, obtenida dentro del dispositivo con un método
+diferencial, con las componentes térmica y de parpadeo separadas y con su
+incertidumbre declarada, dado que los coeficientes publicados para
+Artix-7 están en unidades del contador.
+\item La cadena completa \emph{jitter medido $\to$ factor de calidad $\to$
+cota de min-entropía $\to$ divisor $\to$ umbrales de los tests de salud},
+aplicada a una plataforma y contrastada con los diez estimadores no
+i.i.d.\ de SP~800-90B y con los requisitos PTG.2 de AIS~20/31
+\emph{versión~3.0}, que la mayor parte de la literatura anterior no pudo
+usar.
+\item Una caracterización según SP~800-90B del generador del ESP32 en sus
+estados de funcionamiento, y una comparación controlada, con la misma
+metodología, entre una fuente de caja blanca en FPGA y una comercial de
+caja negra.
+\item El uso de un microcontrolador de uso común, con sus propios
+aceleradores criptográficos, como oráculo independiente de un motor en
+FPGA, sobre un bus real, con pruebas de respuesta conocida, de
+interoperabilidad y de reto-respuesta.
+\item Un motor de generación de claves de una sola primitiva --- AES para
+el acondicionamiento, la generación y la autenticación --- escrito como
+RTL portable, verificado contra vectores oficiales, sintetizado sobre una
+biblioteca abierta de 130~nm con el resultado expresado como cota
+inferior, y presupuestado para una lanzadera académica.
+\end{enumerate}
+
+Cada punto se formula como ``no encontrado'' y no como ``no existe''. Una
+afirmación anterior de este tipo en las notas de trabajo --- que no se
+había publicado ninguna medida del jitter en Artix-7 --- tuvo que
+corregirse cuando se encontró el artículo de Benea \emph{et al.}, y la
+corrección se mantiene visible allí.

@@ -1,0 +1,179 @@
+\chapter{Camino hacia un circuito integrado}
+\label{ch:ch6_asic}
+
+% [BORRADOR v1] Material de partida: docs/sintesis_resultados.md, docs/via_asic.md,
+% synth/sintetiza.py, results/sintesis_sg13g2.csv.
+
+El motor está diseñado para acabar siendo un circuito integrado dedicado que
+sirve claves a un microcontrolador, y la FPGA es su vehículo de
+verificación, no su destino. Este capítulo toma el mismo VHDL que pasa los
+bancos de pruebas del Capítulo~\ref{ch:ch5_verification}, lo sintetiza
+sobre una biblioteca de celdas estándar abierta y expone cuánto costaría una
+tirada de fabricación y qué tendría que cambiar en la fuente de entropía. Un
+envío a fabricación (tape-out) queda explícitamente fuera del alcance de este TFM
+--- no por coste ni por área, como se verá, sino por plazos --- y todo lo que
+aquí aparece se etiqueta como lo que es: una cota inferior del área obtenida de
+la síntesis lógica, con los factores de crecimiento hasta el área del núcleo
+tomados de datos publicados.
+
+\section{Flujo de síntesis con celdas estándar}
+\label{sec:synthflow}
+
+El flujo es reproducible a propósito con herramientas libres. Yosys lee el
+VHDL a través del front end de GHDL, sintetiza cada bloque aplanado, mapea
+los flip-flops y la lógica sobre el fichero liberty de la biblioteca objetivo
+e informa del número de celdas y del área. La biblioteca es el \ac{PDK}
+abierto de IHP, SG13G2, un proceso BiCMOS de 130~nm con una biblioteca de
+celdas estándar mantenida, macros de SRAM compiladas, celdas de E/S y soporte
+de OpenROAD. Se ha elegido porque es el único \ac{PDK} abierto que está vivo,
+es europeo y es accesible a través de la misma afiliación a Europractice que
+la universidad ya tiene. La puerta equivalente se lee del propio fichero
+liberty y no de memoria:
+$1~\mathrm{GE} = $ área de \texttt{sg13g2\_nand2\_1} $= 7{,}2576~\mu\mathrm{m}^2$.
+No se aplica ninguna restricción de reloj: Yosys no la usa para el área, así
+que las cifras no dependen de una frecuencia objetivo. Los osciladores en
+anillo no se sintetizan; son el único bloque diseñado a nivel de transistor
+(Capítulo~\ref{ch:ch3_entropy}).
+
+\section{Área por bloque en puertas equivalentes}
+\label{sec:area}
+
+La Tabla~\ref{tab:synth} da el resultado de cada bloque. El motor digital
+--- todo salvo el búfer de captura --- ocupa unos \textbf{68~kGE}: 62,9~kGE
+en los bloques de la tabla y 5,2~kGE en el secuenciador del nivel superior y
+el banco de registros, que solo aparecen cuando se sintetiza el motor
+completo. AES supone cerca de la mitad: el autenticador y el generador
+instancian cada uno su propio núcleo de cifrado, de 15,8~kGE cada uno. El
+búfer de captura se incluye para que la tabla esté completa, pero no debe
+leerse como parte del producto: sus 46,7~kGE son una memoria de 4096 bits
+mapeada sobre flip-flops porque el flujo no tiene macros de SRAM. En la FPGA
+ocupa una block RAM sin coste de lógica; en silicio sería una SRAM compilada
+o, con más sentido, un búfer mucho más pequeño, porque es una ruta de prueba
+que se desactiva en producción.
+
+\begin{table}[htbp]
+\centering
+\caption{Síntesis lógica sobre IHP SG13G2, aplanada, sin rutado.
+1~GE $=7{,}2576~\mu\mathrm{m}^2$. Cota inferior del área \simu{}.}
+\label{tab:synth}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Bloque & Celdas & Flip-flops & Área ($\mu\mathrm{m}^2$) & kGE \\
+\midrule
+Núcleo de cifrado AES-128      & 10\,439 & 262   & 114\,771 & 15,81 \\
+AES-CMAC (con su AES)          & 13\,210 & 909   & 169\,766 & 23,39 \\
+CTR\_DRBG con df (con su AES)  & 17\,953 & 2\,355 & 267\,262 & 36,83 \\
+Tests de salud (RCT, APT)      & 568     & 85    & 8\,986   & 1,24 \\
+Muestreador ERO y divisor de 24 bits & 132 & 28  & 2\,397   & 0,33 \\
+Cruce de dominio de reloj del bit & 11   & 7     & 408      & 0,06 \\
+Esclavo I2C (con guarda de bus bloqueado) & 431 & 85 & 7\,408 & 1,02 \\
+\midrule
+Búfer de captura (4096 bits en flip-flops) & 12\,592 & 4\,140 & 339\,698 & 46,81 \\
+Motor completo, anillos como cables & 47\,252 & 8\,409 & 834\,033 & 114,92 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Los números son coherentes entre sí, y esa coherencia es la que permitió
+detectar un error en el flujo: antes de aplanar, el informe devolvía para el
+autenticador y para el generador solo el área de su submódulo AES. Un
+autenticador que pese exactamente lo mismo que un AES desnudo es imposible,
+así que el que fallaba era el informe, no el diseño. Tras aplanar, el
+autenticador añade al AES 647 flip-flops (subclaves, estado de
+encadenamiento, clave) y 7,6~kGE, y el generador añade 2093 flip-flops y
+21~kGE, de los que cerca de la mitad son sus registros.
+
+\section{Optimizaciones y sus ahorros esperados}
+\label{sec:opt}
+
+La síntesis es ingenua a propósito --- el \ac{RTL} se escribió para ser
+verificable, no pequeño --- y apunta a tres optimizaciones, por orden de
+rentabilidad del esfuerzo:
+
+\begin{enumerate}
+\item \textbf{Un único núcleo AES compartido.} El secuenciador del nivel
+superior ya serializa las órdenes: el generador y el autenticador nunca
+funcionan a la vez. Compartir el núcleo ahorra $\approx$15,8~kGE, una cuarta
+parte del motor, a cambio de un árbitro trivial.
+\item \textbf{Ruta de datos compacta para la S-box.} Veinte tablas S-box
+independientes se sintetizan en 15,8~kGE para el núcleo completo; los
+diseños optimizados en área de la literatura van desde 2,4~kGE para una
+ruta de datos de 8 bits a 226 ciclos por bloque~\cite{moradi2011pushing}
+hasta unos 5~kGE para rutas de datos de 32 bits. Aquí la velocidad es
+irrelevante, así que una ruta de datos de 32 bits con cuatro S-boxes
+compartidas es el punto razonable; ahorro estimado, 10~kGE por núcleo.
+\item \textbf{Menos registros en el generador.} De sus 2355 flip-flops, la
+entropía capturada y el nonce (384), el material de semilla (256), la salida
+(256) y los temporales de la función de derivación pueden reducirse
+consumiendo la semilla como un flujo y compartiendo temporales; unos 800
+flip-flops, cerca de 4~kGE.
+\end{enumerate}
+
+Con las tres, el motor digital baja a \textbf{$\approx$20--25~kGE}
+(los 5~kGE del control del nivel superior apenas se reducen), que es el
+orden de magnitud que anticipaba el estado del arte (de 13 a 25~kGE para
+motores de este tipo) y que, con el factor de crecimiento publicado de
+$\approx$2,35 del área de celdas al área del núcleo para un AES en esta misma
+biblioteca, supone unos 0,34~mm$^2$ de núcleo. Cada uno de estos ahorros se
+presenta como una estimación; medirlos sintetizando las variantes
+optimizadas se recoge como trabajo futuro y no se da por hecho.
+
+\section{Lo que necesita el oscilador en anillo en silicio}
+\label{sec:ro_silicon}
+
+Los bloques digitales se llevan a silicio con el flujo estándar. La fuente
+de entropía no, y la literatura que ha dado ese salto --- en particular un
+estudio de 2024 que caracteriza el mismo modelo de anillo en una Artix-7 y
+en un circuito FD-SOI de 28~nm~\cite{benea_2024_flicker} --- plantea tres
+puntos que el diseño del chip debe asumir.
+
+En primer lugar, el anillo se reconstruye con celdas inversoras en lugar de
+tablas de consulta, y su jitter cambia en valor y en naturaleza: el ruido
+de parpadeo gana peso en los nodos más recientes, y el estudio encuentra, en
+contra de lo esperado, que contarlo como fuente legítima puede aumentar el
+tasa de bits para la misma entropía. El modelo estocástico y el estimador del
+Capítulo~\ref{ch:ch3_entropy} se trasladan sin cambios; la $\sigma$ medida
+no. En segundo lugar, la variación de proceso hace que cada dado sea
+distinto, así que la frecuencia y el jitter de cada anillo deben calibrarse
+chip a chip; los diseños totalmente digitales publicados que superan
+barridos de tensión y temperatura lo hacen con un anillo configurable y un
+lazo de ajuste~\cite{yang_2016_jssc}. En tercer lugar, y lo más importante
+para un dispositivo de seguridad, inyectar una frecuencia en la alimentación
+engancha los anillos y elimina el jitter: una señal de 500~mV en el raíl
+redujo el espacio de claves de un microcontrolador seguro comercial de
+$2^{64}$ a unas 3300~\cite{markettos_2009_frequency}, y unos pocos cientos de
+microvatios de campo radiado destruyeron la estadística de un generador de
+cincuenta anillos~\cite{bayon_2012_contactless}. El mismo lazo de
+calibración, junto con el filtrado de la alimentación, es la defensa
+publicada, y los tests de salud de la Sección~\ref{sec:health} son el
+detector de último recurso. Nada de esto está en el prototipo en FPGA; es el
+trabajo que añade una implementación en silicio.
+
+\section{Coste y plazos de una lanzadera académica}
+\label{sec:shuttle}
+
+La fabricación es más accesible de lo que sugiere el peso de la palabra. La
+Universidad de Sevilla y el IMSE-CNM son miembros de Europractice, cuya
+lista de precios académicos es pública: un bloque mini@sic en UMC~180~nm
+cuesta 3\,430~\texteuro{}, uno en TSMC~65~nm 3\,691~\texteuro{}, e IHP SG13G2
+se ofrece a 5\,110~\texteuro{}/mm$^2$ con una tirada multiproyecto gratuita
+para diseños de código abierto de menos de 2~mm$^2$~\cite{europractice_prices2026}.
+Un motor de 0,3--0,4~mm$^2$ cabe muchas veces en el bloque más pequeño de
+cualquiera de ellos; el chip estaría limitado por sus pads, no por su
+lógica. El propio grupo de seguridad hardware del instituto ya ha llevado
+primitivas de oscilador en anillo desde FPGAs Xilinx~7-series hasta silicio
+de 65~nm caracterizado, lo que hace que continuar este trabajo sea cuestión
+de sumarse a una línea existente más que de abrir una.
+
+Lo que no cabe en un trabajo fin de máster son los plazos: desde el envío a
+fabricación (tape-out) hasta tener muestras encapsuladas pasan de meses a
+más de un año, el precio no incluye el encapsulado y la caracterización de
+los dados devueltos es un proyecto en sí misma. Como comparación, un
+elemento seguro comercial como el ATECC608B cuesta 0,90~\$ por unidad suelta
+y se vende con una validación NIST de la fuente de entropía~\cite{microchip_atecc608b_ds};
+dos de sus competidores directos no mencionan SP~800-90 en ninguna parte de
+sus hojas de datos. Por tanto, la posición honesta de este trabajo no es
+competir en precio sino en \emph{transparencia de la entropía}: cada bit de
+una clave producida por este motor puede trazarse hasta un jitter medido y
+una cota declarada, que es precisamente lo que una pieza de caja negra no
+puede ofrecer.

@@ -1,0 +1,173 @@
+\chapter{Introducción}
+\label{ch:ch1_intro}
+
+% [BORRADOR v1] Material de partida: docs/plan.md, docs/arquitectura.md, docs/via_asic.md.
+
+\section{Motivación: una clave vale lo que vale su entropía}
+\label{sec:motivation}
+
+Toda conexión segura que abre un dispositivo embebido, toda imagen de
+firmware que autentica y toda credencial que almacena descansan sobre una
+clave, y toda clave descansa sobre una fuente de aleatoriedad. Si esa
+fuente es más débil de lo supuesto, ninguna sofisticación criptográfica
+posterior recupera lo que se perdió al principio: una clave de 128 bits
+extraída de un generador con 40 bits efectivos de entropía es una clave
+de 40 bits. No es una preocupación teórica. La inyección de frecuencia en
+la línea de alimentación de un microcontrolador seguro comercial redujo
+su espacio de claves de $2^{64}$ a unas
+3300~\cite{markettos_2009_frequency}; un generador certificado de tarjeta
+inteligente resultó estar sesgado pese a superar las baterías estadísticas
+estándar~\cite{hurleysmith_2018_certifiably}; y el generador hardware de
+uno de los microcontroladores IoT más extendidos, el ESP32, devuelve en
+silencio valores pseudoaleatorios cuando su radio está apagada sin dejar
+de superar todos los tests de caja negra~\cite{blancoromero_2026_entropy},
+algo que este trabajo mide directamente con la prueba de reinicios de
+SP~800-90B (Sección~\ref{sec:esp32_90b}).
+
+El hilo común es que la aleatoriedad se ha juzgado mirando la salida. Las
+baterías estadísticas como NIST SP~800-22 comprueban si un flujo de bits
+\emph{parece} uniforme e independiente; no pueden distinguir una fuente de
+ruido física de un generador determinista cuya semilla es una constante, y
+el NIST lo dijo formalmente en 2022 al anunciar la revisión de esa
+publicación, ``rechazando su uso para evaluar generadores criptográficos
+de números aleatorios''~\cite{nist_2022_decision}. Las normas actuales
+--- AIS~20/31 en Europa~\cite{peter_2024_ais31} y SP~800-90B en
+Estados Unidos~\cite{turan_2018_sp80090b} --- piden algo distinto: un
+modelo estocástico de la fuente de ruido, una estimación de su
+min-entropía derivada de ese modelo y tests de salud que vigilen la propia
+fuente en lugar de su salida. Es un problema de microelectrónica antes que
+de criptografía, y es el problema que aborda este TFM.
+
+\section{Del estudio de caja negra del ESP32 a un motor de caja blanca}
+\label{sec:background}
+
+Este trabajo continúa un proyecto anterior del autor que caracterizó como
+caja negra el generador hardware de números aleatorios del ESP32: se
+ejercitó el mismo periférico en cuatro condiciones de funcionamiento, su
+salida se pasó por una implementación autovalidada de los quince tests de
+SP~800-22 y se propuso un esquema de recolección de claves que combinaba
+varias fuentes internas del chip. Su hallazgo central fue metodológico:
+los tests se superaron en condiciones en las que la entropía no podía ser
+la que los tests daban a entender, que es exactamente el punto ciego
+descrito antes. Dos de sus cifras también tuvieron que revisarse a
+posteriori --- se informó de una correlación con la temperatura a partir
+de un sensor cuya resolución era un solo escalón en todo el rango
+observado, y se infirió una cifra de estabilidad donde podría haberse
+medido --- y ambas lecciones se convierten en reglas en la
+Sección~\ref{sec:conventions}.
+
+El paso natural siguiente era construir el generador en lugar de medir el
+de otro: un motor cuya fuente de entropía esté diseñada, cuyo jitter se
+mida dentro del dispositivo, cuya min-entropía se deduzca de un modelo y
+cuyas claves produzcan y usen primitivas verificadas frente a las normas.
+El ESP32 cambia de papel: de objeto de estudio pasa a juez. Tiene sus
+propios aceleradores AES y SHA y una biblioteca criptográfica madura, de
+modo que puede recalcular todo lo que produce el motor con una
+implementación que no comparte nada con él, a través de un bus real.
+
+El motor está diseñado para silicio. Los elementos seguros --- pequeños
+circuitos integrados que generan, almacenan y usan claves en nombre de un
+microcontrolador anfitrión a través de I2C --- son una categoría de
+producto madura; la \emph{transparencia} de su entropía no lo es. De tres
+componentes de uso extendido, uno se vende con una validación NIST de su
+fuente de entropía y dos no mencionan SP~800-90 en ningún lugar de su
+documentación~\cite{microchip_atecc608b_ds}. La FPGA de este trabajo es,
+por tanto, el vehículo de verificación, no el objetivo: permite ejecutar
+millones de vectores de prueba contra el diseño en minutos, algo que
+ningún simulador a nivel de transistor puede hacer, antes de que la misma
+descripción se sintetice sobre celdas estándar.
+
+\section{Objetivos}
+\label{sec:objectives}
+
+\begin{enumerate}
+\item[O1] Diseñar a nivel de transistor una fuente de entropía de
+oscilador en anillo, con habilitación y muestreador, y simularla con
+ruido, declarando la resolución numérica del banco antes de leer de él
+ninguna cifra.
+\item[O2] Extraer el jitter de las formas de onda simuladas con un
+estimador que separe las componentes de cuantificación, térmica y de
+parpadeo, validado previamente sobre datos sintéticos de jitter conocido.
+\item[O3] Convertir el jitter en una cota de min-entropía mediante un
+modelo estocástico contrastado con un cálculo exacto, y deducir el
+divisor del muestreador que cumple con margen el objetivo de AIS~20/31.
+\item[O4] Escribir el motor digital --- tests de salud, acondicionamiento
+basado en AES y CTR\_DRBG, AES-CMAC y una interfaz de registros I2C ---
+como RTL independiente de la tecnología, verificado frente a vectores
+oficiales.
+\item[O5] Verificar funcionalmente el motor en una FPGA con el ESP32 como
+oráculo independiente: pruebas de respuesta conocida, interoperabilidad
+cruzada y reto-respuesta.
+\item[O6] Realizar una campaña de entropía sobre silicio real (los anillos
+de la FPGA) con los estimadores de SP~800-90B y comparar con el generador
+del ESP32 bajo la misma metodología.
+\item[O7] Sintetizar el motor sobre una biblioteca de celdas estándar
+abierta e informar de su área en puertas equivalentes, con los factores
+de crecimiento hasta el área de núcleo.
+\item[O8] Comparar el diseño con el generador del ESP32, con elementos
+seguros comerciales y con circuitos publicados, con incertidumbres
+declaradas.
+\end{enumerate}
+
+El resultado mínimo defendible es O1--O3 junto con O5: una fuente de
+entropía diseñada desde el transistor, con su jitter extraído y convertido
+en una cota, y un motor digital verificado frente a una implementación
+independiente. Un resultado negativo bien medido cierra el trabajo igual
+que uno positivo: si el exponente de acumulación en hardware es dos en
+lugar de uno, domina el ruido de parpadeo y el divisor no puede crecer
+indefinidamente, y eso es un hallazgo.
+
+\section{Alcance y exclusiones}
+\label{sec:scope}
+
+Cuatro cosas quedan deliberadamente fuera del alcance, cada una por una
+razón explícita. \emph{Fabricación}: una lanzadera académica es asequible
+y el motor cabe en el bloque más pequeño que se ofrece, pero el plazo
+desde el tape-out hasta tener muestras encapsuladas y caracterizadas
+excede lo que cabe en un TFM; el coste y el camino se documentan, no se
+ejecutan. \emph{Criptografía asimétrica}: un multiplicador de curva
+elíptica es un proyecto en sí mismo y consumiría todo el presupuesto de
+área; el motor proporciona claves simétricas y autenticación.
+\emph{Resistencia a canales laterales}: el modelo de amenaza es un
+adversario lógico y remoto; las fugas de temporización se evitan por
+construcción, pero no se intenta ningún enmascaramiento ni evaluación
+basada en trazas, y se señala el propio laboratorio del instituto para
+ese tipo de trabajo como la continuación natural. \emph{Certificación
+formal}: los criterios de AIS~20/31 y SP~800-90B y los vectores oficiales
+se usan en todo el trabajo, y no se reivindica ninguna validación.
+
+\section{Metodología y convenciones de reproducibilidad}
+\label{sec:conventions}
+
+Cuatro convenciones se aplican a toda cifra de este documento. Primera,
+cada número lleva la etiqueta \meas{}, \simu{} o \est{}, y va acompañado
+de su incertidumbre o de la fuente de la que procede. Segunda,
+\textbf{la resolución del instrumento se declara antes de interpretar
+cualquier tendencia}, sea el instrumento un sensor, un estimador o un
+simulador --- el suelo de ruido numérico del banco SPICE y la
+cuantificación de un sensor de temperatura se tratan igual. Tercera, las
+magnitudes se miden en lugar de inferirse siempre que exista una medida
+directa. Cuarta, la novedad se expresa como ``no encontrado en la
+literatura consultada'', nunca como ``no existe''; una afirmación de este
+tipo en un borrador temprano de este trabajo tuvo que corregirse al
+encontrarse un artículo de 2024 que medía exactamente la magnitud en
+cuestión, y la corrección se deja visible en las notas de trabajo.
+
+Todo se publica: el VHDL y sus bancos de pruebas, los modelos y el
+análisis en Python, el firmware, el flujo de síntesis, los vectores de
+prueba oficiales utilizados y los datos brutos de cada campaña, con las
+órdenes que reproducen cada tabla.
+
+\section{Estructura del documento}
+\label{sec:structure}
+
+El Capítulo~\ref{ch:ch2_soa} revisa los generadores basados en
+osciladores en anillo, sus modelos estocásticos, las normas y el panorama
+comercial. El Capítulo~\ref{ch:ch3_entropy} construye la cadena desde el
+transistor hasta la min-entropía y valida cada eslabón. El
+Capítulo~\ref{ch:ch4_engine} describe el motor digital y el
+Capítulo~\ref{ch:ch5_verification}, su verificación. El
+Capítulo~\ref{ch:ch6_asic} sintetiza el motor sobre celdas estándar y
+expone el camino y el coste de un circuito integrado. El
+Capítulo~\ref{ch:ch7_results} presenta la campaña en hardware y las
+comparaciones, y el Capítulo~\ref{ch:ch8_concl} concluye.

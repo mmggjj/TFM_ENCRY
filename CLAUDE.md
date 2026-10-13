@@ -80,6 +80,24 @@ todo. Léelo entero antes de tocar nada.
   con ese título. Normas, calendario (entrega 16-06-2027, defensa semana
   del 28-06-2027) y lo que se entrega: **`docs/normas_tfm.md`**. Resumen
   para la reunión en `docs/resumen_reunion_tutores.md`.
+- **13-10-2026: TFM publicado en Términus** con objetivo oficial (texto
+  literal en `docs/normas_tfm.md`): motor de claves para ASIC, anillos a
+  nivel de transistor simulados con ruido, jitter → entropía por modelo
+  estocástico, integración en FPGA con ESP32, y comparar las secuencias de
+  la fuente con las del ESP32. Departamento Electrónica y
+  Electromagnetismo, área Electrónica. La memoria se revisa contra ese
+  texto.
+- **Versión en español de la memoria** (13-10-2026, para que Mario la lea):
+  `memoria/tfm_main_es.tex` + `memoria/chapters_es/` (cap. 7 partido en
+  `ch7_results_a/_b`), PDF `memoria/tfm_main_es.pdf`. La inglesa sigue
+  siendo la de referencia hasta confirmar el idioma con los tutores.
+  **Todo cambio en un capítulo inglés se traslada al español.** Trampas
+  de babel spanish: opciones `es-noshorthands` (si no, TikZ se rompe) y
+  `es-nodecimaldot`; decimales con coma en texto y `{,}` en fórmulas;
+  `\%` fuera de las fórmulas (`$0{,}6$\,\%`), dentro da "Incompatible glue
+  units". Vocabulario fijado: reto-respuesta, ruido de parpadeo, tasa de
+  bits, bancos de pruebas, `Q_{\mathrm{bruto}}`, "Capítulo~/Sección~/
+  Tabla~" con mayúscula.
 - **Anillo con transistores reales del PDK abierto IHP SG13G2**
   (`analysis/anillo_ihp.py`, `docs/anillo_ihp.md`): el ruido inyectado sale
   del propio modelo; 5 etapas a 2,73 GHz, σ = 180 fs por periodo,

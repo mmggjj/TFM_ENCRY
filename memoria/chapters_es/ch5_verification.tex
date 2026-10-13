@@ -1,0 +1,216 @@
+\chapter{Verificación}
+\label{ch:ch5_verification}
+
+% [BORRADOR v1] Material de partida: rtl/tb/*, rtl/run_tb.py, analysis/ctr_drbg_ref.py,
+% analysis/verifica_top.py, firmware/verificador/, docs/mapa_registros.md.
+% Sección de puesta en marcha en la FPGA pendiente del hardware.
+
+\section{Estrategia: vectores, simulación, verificador independiente}
+\label{sec:verif_strategy}
+
+Un motor criptográfico que solo se verifica contra sí mismo no demuestra
+nada: un error en la S-box se reproduciría idéntico en el modelo usado
+para comprobarlo. Por eso, la verificación de este trabajo se apoya en
+tres pilares que no comparten implementación.
+
+\begin{enumerate}
+\item \textbf{Vectores oficiales.} Cada primitiva se comprueba frente a
+los vectores de prueba publicados con su norma: FIPS~197 y SP~800-38A
+para AES, RFC~4493 y el fichero de ejemplos del NIST para CMAC, y los
+ficheros de respuesta del CAVP para CTR\_DRBG (con y sin función de
+derivación, con y sin resembrado). Son pruebas de respuesta conocida y
+zanjan la corrección del algoritmo.
+\item \textbf{Modelos de referencia independientes.} Se escribió en
+Python un modelo exacto al bit del generador, con su propio AES,
+derivado de la norma sin mirar el VHDL. Primero se valida frente a los
+vectores del CAVP, y solo entonces se usa para generar los valores
+esperados para la disposición fija de entradas del hardware y para
+recalcular las etiquetas del banco de pruebas de sistema. Dos
+implementaciones que coinciden valen más que una que pasa las pruebas.
+\item \textbf{Un verificador independiente en el lazo.} En hardware, el
+ESP32 recalcula con mbedtls, y con su propio acelerador AES, cada
+resultado que produce el motor, de modo que la comprobación final la
+realiza una tercera implementación, sin relación con las otras, sobre un
+bus real.
+\end{enumerate}
+
+Dos reglas de trabajo se aplican en todo momento, ambas heredadas del
+trabajo experimental previo del autor: la salida de una compilación,
+simulación o medida nunca se filtra antes de haberla leído entera --- un
+filtro oculta justo el aviso que importaba --- y los fallos se registran
+completos, nunca se descartan. Dos veces en este trabajo un filtro sobre
+el log del simulador ocultó un resultado, y las dos veces la solución fue
+quitar el filtro.
+
+\section{Modelos de referencia en Python}
+\label{sec:refmodels}
+
+\texttt{ctr\_drbg\_ref.py} implementa el cifrado AES-128, la función de
+derivación basada en cifrado por bloques, CBC-MAC y CTR\_DRBG con y sin
+función de derivación, en Python puro y a partir del texto de
+SP~800-90A. El AES comprueba con aserciones los dos vectores de FIPS~197
+al importarse; el DRBG se prueba frente a los ficheros de respuesta del
+CAVP siguiendo el procedimiento CAVS (instanciar, resembrado opcional,
+dos llamadas de generación, comparar la segunda): \textbf{960 casos
+AES-128, todos superados}. Se encontró un defecto en el analizador de
+ficheros y no en el modelo --- una cabecera de sección debe cerrar el
+caso de prueba pendiente antes de que cambien los parámetros; si no, el
+último caso de cada bloque de parámetros se evalúa con los parámetros del
+bloque siguiente --- y merece la pena dejarlo anotado porque su síntoma,
+un único fallo en count~14 de cada bloque, parecía exactamente un error
+del algoritmo.
+
+Un segundo script, \texttt{gen\_drbg\_vectores.py}, hace pasar al modelo
+validado por la secuencia que admite el hardware (instanciar con 32
+bytes de entropía y 16 de nonce, generar dos veces, resembrar, generar)
+y emite un paquete VHDL con los valores esperados; si alguna vez cambia
+la disposición de las entradas del hardware, ese script es el único
+sitio donde hay que cambiarla. Un tercero, \texttt{verifica\_top.py},
+recalcula AES-CMAC a partir del mismo AES y se valida a sí mismo frente
+a RFC~4493 antes de comprobar nada.
+
+\section{Bancos de pruebas y resultados}
+\label{sec:testbenches}
+
+Todo el VHDL se simula con GHDL~6 mediante un único script de ejecución
+que analiza las fuentes en orden de dependencias y ejecuta cada banco,
+imprimiendo la salida del simulador sin filtrar. La
+Tabla~\ref{tab:tb} resume los siete bancos y su estado en el momento de
+la redacción.
+
+\begin{table}[htbp]
+\centering
+\caption{Bancos de pruebas, qué comprueban y su resultado (GHDL 6.0, VHDL-2008).}
+\label{tab:tb}
+\small
+\begin{tabular}{@{}lp{9.2cm}c@{}}
+\toprule
+Banco & Comprobaciones & Resultado \\
+\midrule
+Oscilador en anillo & arranque/parada, $f = 1/(2N t_{pd})$, suelo nulo, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 4/4 \\
+Esclavo I2C & direccionamiento, dirección ajena, escritura multibyte, lectura con inicio repetido & 14/14 \\
+Núcleo AES-128 & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 bloques); cadena de 1000 bloques & 6/6 \\
+AES-CMAC & RFC~4493 ejemplos 1--4; repetibilidad & 5/5 \\
+CTR\_DRBG & instanciación, 2$\times$generación, resembrado, contador, reinstanciación, rechazo sin semilla & 13/13 \\
+Tests de salud & fuente sana, atascada, sesgada al 70\,\%, atascada en el complemento, retención/borrado & 10/10 \\
+Motor completo & secuencia del ESP32 por I2C: id, semilla (divisor por debajo del mínimo rechazado, divisor congelado mientras está ocupado), clave, registro aleatorio libre de la clave, 2 retos, 2.ª clave, captura, clave oculta & 18/18 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Parte de lo que encontraron los bancos merece contarse, porque un
+capítulo de verificación que solo informa de aciertos no ha verificado
+gran cosa.
+
+\paragraph{Modelo del anillo.} Las primitivas LUT usadas para simular el
+anillo se modelaron al principio con una regla estricta de propagación
+de valores desconocidos: cualquier entrada desconocida daba una salida
+desconocida. Al comienzo de una simulación todas las señales son
+desconocidas, así que el anillo nunca salía de ese estado y nunca
+arrancaba. Una NAND real con su entrada de habilitación a cero da un uno
+a la salida sea cual sea la otra entrada; el modelo ahora evalúa todas
+las combinaciones compatibles con las entradas conocidas y resuelve la
+salida cuando todas coinciden. Sin esto, todo el banco de pruebas de
+sistema habría sido imposible.
+
+\paragraph{Esclavo I2C.} Dos errores de diseño reales: el puntero de
+registro no avanzaba en las escrituras multibyte, de modo que los bytes
+consecutivos sobrescribían la misma dirección; y en las lecturas el bit
+más significativo se presentaba en el bus un flanco de reloj demasiado
+tarde, lo que desplazaba todos los bytes. El primero se corrigió
+incrementando el puntero un estado después del pulso de escritura, de
+forma que la dirección sigue siendo válida durante el pulso; el segundo,
+cargando el registro de desplazamiento y presentando su primer bit en el
+mismo flanco de bajada que libera el bit de reconocimiento. Un tercer
+defecto estaba en el propio banco: inicializar la memoria de registros
+desde el proceso de estímulos creaba un segundo driver sobre la misma
+señal, y todo bit en conflicto se resolvía a desconocido.
+
+\paragraph{Tests de salud.} La fuente ``sana'' del primer banco, un
+registro de desplazamiento inicializado con un solo uno, empezaba con
+una racha de 27 ceros y una primera ventana al 76\,\%; el detector saltó.
+El detector tenía razón.
+
+\paragraph{Fuga de la clave por el registro aleatorio.} El hallazgo más
+grave no salió de un banco, sino de releer el diseño antes de
+entregarlo. La orden que generaba la clave escribía la salida completa
+de 256 bits del DRBG en el registro de salida aleatoria, que se puede
+leer sin el pin de prueba; los primeros 128 de esos bits \emph{eran} la
+clave. El banco de sistema incluso imponía esa igualdad mediante una
+aserción, como ``comprobación''. La corrección separa ambas cosas: la
+generación de la clave no deja nada legible, y una orden nueva llena el
+registro aleatorio a partir de una generación independiente, después de
+que el DRBG haya actualizado su estado. Ahora el banco comprueba con una
+aserción lo contrario, que el registro no contiene la clave en ninguna
+de sus mitades, y la comprobación cruzada en Python hace lo mismo.
+
+\paragraph{Motor completo.} Con los anillos a su velocidad física, el
+banco de sistema, que genera casi un milisegundo de tráfico I2C, no
+terminaba en veinte minutos de CPU: cada transición del anillo cuesta
+dos sorteos aleatorios en el modelo de jitter. Solo en ese banco el
+retardo de etapa se fija diez veces mayor, con el mismo jitter relativo,
+y así se indica en el propio banco. Las dieciocho comprobaciones se
+superan, y la clave, los dos retos y sus etiquetas se escriben en un
+fichero que comprueba \texttt{verifica\_top.py}: las dos etiquetas son
+iguales al CMAC recalculado por el AES independiente en Python, el
+registro de salida aleatoria legible no contiene la clave en ninguna de
+sus mitades, y dos generaciones dan claves distintas. Este es el primer
+punto en que una clave nacida del ruido de osciladores en anillo,
+acondicionada, generada y usada para autenticar, queda confirmada por
+una implementación que no comparte nada con el VHDL.
+Dos de las dieciocho comprobaciones se añadieron cuando dos obligaciones
+que el mapa de registros imponía al anfitrión se trasladaron al
+hardware: una orden de siembra emitida con el divisor por debajo de su
+mínimo ahora se rechaza, y una escritura en el registro del divisor
+mientras se ejecuta una orden se ignora. Una regla que solo impone la
+documentación es una regla que un anfitrión descuidado incumple; el
+banco ahora prueba ambas. Además, hubo que indicarle al banco que se
+detuviera: con los anillos funcionando tras el reset, una simulación
+cuyos estímulos han terminado nunca se queda sin eventos, y la primera
+repetición consumió cuarenta y cinco minutos de CPU después de haber
+superado su última comprobación.
+
+\section{Firmware verificador del ESP32}
+\label{sec:firmware}
+
+El firmware es una aplicación ESP-IDF~5 para el ESP32 clásico que se
+comunica con el motor a través del mapa de registros del
+Apéndice~\ref{app:regs} y ofrece una consola por la UART. Sus órdenes se
+corresponden con el plan de verificación: \texttt{id} lee la
+identificación y el estado; \texttt{sembrar} y \texttt{generar} lanzan
+las órdenes largas y consultan el indicador de ocupado; en modo de
+prueba, \texttt{generar} además relee la clave (aprovisionamiento) y
+comprueba que es igual a los dieciséis primeros bytes del bloque
+generado; \texttt{reto N} realiza $N$ rondas de reto-respuesta con
+nonces de \texttt{esp\_random()}, recalculando cada etiqueta con
+\texttt{mbedtls\_cipher\_cmac} y contando coincidencias y discrepancias,
+y las discrepancias se imprimen completas; \texttt{crudo N} vuelca $N$
+fragmentos de bits en bruto y \texttt{esp N} vuelca bloques del propio
+generador del ESP32, ambos en el formato en tramas protegido con CRC32
+que usó el autor en su trabajo anterior, para que la misma cadena de
+procesado estadístico trate las dos fuentes. CMAC no viene habilitado
+por defecto en la compilación de mbedtls de ESP-IDF y se activa en la
+configuración por defecto del proyecto; la consola funciona a
+115\,200~baudios, la única velocidad que resultó fiable con el puente
+USB de la placa en campañas anteriores, y el nivel de log se fija en
+solo errores para que las líneas de log no puedan corromper las tramas.
+El firmware compila con ESP-IDF~5.3.2 en una imagen de 255~kB;
+ejecutarlo queda a la espera del hardware.
+
+\section{Puesta en marcha en la FPGA}
+\label{sec:bringup}
+
+% [PENDIENTE DE HARDWARE] Proyecto de Vivado, restricciones (DONT_TOUCH, pblocks,
+% ALLOW_COMBINATORIAL_LOOPS, set_disable_timing), primer bitstream: ¿oscilan los
+% anillos y a qué frecuencia?; después, el ESP32 en el lazo.
+Pendiente del hardware. Las restricciones que necesitan los anillos se
+conocen por la bibliografía y por la documentación del fabricante ---
+\texttt{DONT\_TOUCH} en las celdas y redes de cada anillo (a diferencia
+de \texttt{KEEP}, sobrevive a la implementación),
+\texttt{ALLOW\_COMBINATORIAL\_LOOPS} en una red de cada lazo,
+\texttt{set\_disable\_timing} para romper el lazo de cara al análisis
+estático de tiempos, y un bloque de emplazamiento por anillo para que
+anillos idénticos ni se fusionen ni se coloquen uno junto a otro --- y
+el primer bitstream tiene un único propósito: leer los contadores de
+frecuencia y confirmar que todos los anillos oscilan. Antes de eso no se
+afirma nada sobre la entropía.

@@ -1,0 +1,367 @@
+\chapter{Resultados y comparación}
+\label{ch:ch7_results}
+
+Este capítulo reúne lo que el trabajo establece y lo separa, sin
+suavizarlo, de lo que no establece. El motor se ha modelado, escrito,
+verificado en simulación frente a vectores oficiales y sintetizado sobre
+una biblioteca de celdas estándar real; todavía no ha funcionado en la
+\ac{FPGA}. Por eso cada cifra que sigue lleva su marca de procedencia, y
+la campaña de entropía --- el único resultado que necesita silicio en el
+banco --- se presenta como un protocolo por ejecutar, no como datos.
+
+\section{Estado frente a los objetivos}
+\label{sec:status}
+
+La Tabla~\ref{tab:status} relaciona los objetivos de la
+Sección~\ref{sec:objectives} con las evidencias.
+
+\begin{table}[htbp]
+\centering
+\caption{Objetivos y evidencia que respalda cada uno.}
+\label{tab:status}
+\small
+\begin{tabular}{@{}llp{7.4cm}@{}}
+\toprule
+Obj. & Estado & Evidencia \\
+\midrule
+O1 & cumplido  & Anillo a nivel de transistor en el \ac{PDK} abierto IHP SG13G2,
+              con el ruido de sus propios modelos de dispositivo
+              (Sección~\ref{sec:ihp_ring}); pendiente el \ac{PDK} de fundición \\
+O2 & cumplido  & Jitter extraído de las formas de onda; térmico y $1/f$
+              separados (banco y función de sensibilidad al impulso);
+              estimador validado sobre datos sintéticos con $Q$ conocido \\
+O3 & cumplido  & Modelo estocástico cerrado: cálculo exacto con la gaussiana envuelta,
+              punto de diseño $Q \ge 0{,}2286$ (Sección~\ref{sec:opoint}) \\
+O4 & cumplido  & Motor escrito en VHDL-2008 portable; siete bancos de pruebas pasan
+              con los vectores de FIPS-197, SP 800-38B, RFC 4493 y \ac{CAVP} \\
+O5 & parcial   & El firmware del verificador compila y el protocolo está cerrado;
+              falta la ejecución en placa \\
+O6 & pendiente & Requiere la \ac{FPGA} en el banco
+              (Sección~\ref{sec:protocol}) \\
+O7 & cumplido  & Síntesis en IHP SG13G2, área por bloque y vía de optimización
+              (Capítulo~\ref{ch:ch6_asic}) \\
+O8 & parcial   & Comparación estructural cerrada (Sección~\ref{sec:se_comparison});
+              el lado ESP32 de la comparación numérica está medido según
+              SP 800-90B (Sección~\ref{sec:esp32_90b}); el lado del motor necesita O6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El resultado mínimo defendible declarado en el Capítulo~\ref{ch:ch1_intro} ---
+O1--O3 junto con O5 --- se alcanza en su parte de modelado y diseño.
+Lo que aún le falta a O5 es la puesta en marcha, no el diseño.
+
+\section{Ruido del anillo a nivel de transistor}
+\label{sec:spice_results}
+
+El anillo se simuló con una fuente de ruido de corriente de densidad
+espectral controlada inyectada en el nodo de conmutación, barriendo la
+densidad y midiendo la desviación típica de los cruces de flanco de
+subida a lo largo de 500 periodos. La Tabla~\ref{tab:spice} da el
+resultado para un anillo de cinco etapas con una carga de 10~fF.
+
+\begin{table}[htbp]
+\centering
+\caption{Jitter por periodo del anillo de cinco etapas frente a la densidad
+de ruido inyectada \simu{}. $\sigma_{\mathrm{rel}} = \sigma/T$.}
+\label{tab:spice}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Densidad de ruido (A$^2$/Hz) & Cruces & $T$ (ps) & $\sigma$ (fs) &
+$\sigma_{\mathrm{rel}}$ \\
+\midrule
+ninguno (suelo numérico) & 500 & 230,30 & 1,38   & $6{,}0\times10^{-6}$ \\
+$1\times10^{-20}$        & 501 & 230,37 & 1200   & $5{,}2\times10^{-3}$ \\
+$4\times10^{-20}$        & 507 & 229,98 & 2416   & $1{,}1\times10^{-2}$ \\
+$1{,}6\times10^{-19}$    & 509 & 227,77 & 25588  & $1{,}1\times10^{-1}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Tres lecturas, y la tercera es la que importa.
+
+\paragraph{El suelo numérico queda lo bastante por debajo de la señal.} Con
+la fuente de ruido apagada, la medida devuelve 1,38~fs, que es la
+resolución de la propia simulación, no física. Está unas 870 veces por
+debajo del menor jitter que hay que medir, así que el suelo no contamina
+el barrido. Llegar a él exigió cuidado: el primer intento devolvió
+0,33~ps, del mismo orden que la magnitud estudiada, y la causa era que el
+transitorio de arranque del anillo entraba en la estadística. Descartar
+los veinte primeros ciclos lo eliminó. Un suelo de medida que coincide con
+la señal no se distingue de un resultado, y precisamente por eso el suelo
+se caracterizó antes del barrido y no después.
+
+\paragraph{La ley de escala se cumple donde debe.} El jitter térmico se
+acumula como la raíz cuadrada de la densidad de ruido, así que cuadruplicar
+la densidad debe duplicar $\sigma$. De $1\times10^{-20}$ a
+$4\times10^{-20}$ la medida da un factor de 2,01 frente a los 2,00
+previstos. Esa coincidencia es la prueba de que lo que se mide es el ruido
+inyectado y no un artefacto del resolvedor.
+
+\paragraph{Y se rompe, a la vista, en lo alto del barrido.} Con
+$1{,}6\times10^{-19}$, dieciséis veces la densidad de referencia, $\sigma$
+crece en un factor de 21,3 donde la ley predice 4,0, y el periodo medio
+baja de 230,4 a 227,8~ps. Una fuente de ruido de media nula no puede
+desplazar un periodo medio. Por tanto, el punto queda fuera del régimen
+que describe el modelo --- la perturbación es lo bastante grande como para
+cambiar el punto de funcionamiento de los inversores --- y se presenta en
+lugar de descartarse, porque el límite de validez de un modelo es en sí
+mismo un resultado. Solo los dos puntos centrales se usan en lo que sigue.
+
+\section{El anillo con los transistores de un PDK abierto}
+\label{sec:ihp_ring}
+
+El mismo anillo de cinco etapas se simuló con los transistores de baja
+tensión del \ac{PDK} abierto IHP SG13G2 ($W_n = 0{,}5~\mu$m,
+$W_p = 1{,}2~\mu$m, $L = 0{,}13~\mu$m, 1,2~V, 27~$^\circ$C, esquina
+típica, 1~fF por nodo como estimación del cableado previa al layout), con
+la densidad de ruido medida en los mismos dispositivos
+(Sección~\ref{sec:spice}) inyectada en cada nodo. La
+Tabla~\ref{tab:ihp_ring} da el resultado sobre 400~ns, unos 1070
+periodos por punto.
+
+\begin{table}[htbp]
+\centering
+\caption{Anillo de cinco etapas en IHP SG13G2 \simu{}. La densidad de ruido
+no se supone: es el suelo blanco del propio modelo de ruido de los
+transistores en el punto de conmutación. La potencia es la media sobre
+periodos completos.}
+\label{tab:ihp_ring}
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Ruido inyectado & $T$ (ps) & $\sigma$ (fs) & $\sigma/T$ & Exponente & $P$ ($\mu$W) \\
+\midrule
+ninguno (suelo numérico)        & 366,04 & 0,70   & $1{,}9\times10^{-6}$ & 0,47 & 143,0 \\
+térmico del \ac{PDK}, $4{,}13\times10^{-24}$~A$^2$/Hz & 365,97 & 180,37 & $4{,}93\times10^{-4}$ & 1,05 & 143,0 \\
+térmico $\times4$               & 365,97 & 358,64 & $9{,}80\times10^{-4}$ & 1,08 & 143,0 \\
+térmico + $1/f$ del \ac{PDK}    & 365,97 & 183,33 & $5{,}01\times10^{-4}$ & 1,01 & 143,0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Primero, la resolución: 0,70~fs, 259 veces por debajo del jitter que
+produce el ruido de los dispositivos, y con un exponente de 0,47 que la
+identifica como ruido numérico y no como un paseo aleatorio. Cuadruplicar
+la densidad duplica el jitter con un 0,6\,\% de diferencia
+($\times1{,}988$), y el periodo medio no se mueve, así que el banco se
+mantiene en el régimen lineal que el banco provisional abandonaba en su
+punto más alto. El exponente de acumulación es 1,05: ruido blanco, como
+supone el modelo estocástico. Como comprobación independiente, la
+expresión cerrada de Abidi para osciladores en
+anillo~\cite{abidi_2006_ring}, evaluada con magnitudes medidas en el
+mismo punto de polarización, predice $\sigma/T = 1{,}2\times10^{-3}$; la
+simulación da 0,42 veces ese valor, el mismo orden. La forma de canal
+largo de esa fórmula, que pasa por la tensión umbral, no se aplica aquí:
+en el punto de conmutación los dispositivos están solo 0,07~V por encima
+del umbral.
+
+Con $\sigma/T = 4{,}93\times10^{-4}$, el divisor para $Q \ge 0{,}2286$ es
+$K_D = 941\,107$, un intervalo de muestreo de 344~$\mu$s con un anillo de
+muestreo idéntico, y 2,9~kbit/s por \ac{ERO}; si además se cuenta el
+jitter independiente del anillo de muestreo, $K_D$ se reduce a la mitad y
+la tasa se duplica, pero eso exige que los dos anillos no compartan ruido
+a través de la alimentación o del sustrato, algo que solo el silicio
+puede mostrar. Una consecuencia de diseño se aplicó de inmediato: el
+contador del divisor tenía 20 bits, así que el mayor $K_D$ era
+$2^{20} = 1\,048\,576$, un margen del 11\,\% sobre lo requerido en la
+esquina típica a temperatura ambiente. Ahora tiene 24 bits (cuatro
+flip-flops, 0,04~kGE), y el banco del motor completo y su verificación
+cruzada se volvieron a ejecutar con él.
+
+\paragraph{Ruido de parpadeo.} Añadir el ruido $1/f$ del \ac{PDK} no
+cambia nada en 400~ns: la separación $E[D^2] = a_1 M + a_2 M^2$, validada
+antes sobre fases sintéticas (componente térmica recuperada al 0,1\,\%
+con y sin $1/f$), da un $a_2$ compatible con cero. Amplificar la fuente
+$1/f$ para hacerla visible no funciona, y el motivo es instructivo: la
+fuente es de banda ancha y, amplificada mil veces, su densidad cerca de la
+frecuencia de oscilación ya es siete veces el suelo térmico, así que el
+anillo la convierte como ruido blanco y el término lineal crece en el
+factor esperado mientras que el término cuadrático no escala. La
+respuesta llega, en cambio, de la función de sensibilidad al impulso de
+Hajimiri y Lee~\cite{hajimiri_1998_general}, medida inyectando el
+1\,\% de la carga del nodo en 40 fases (lineal al 0,1\,\% entre 0,5 y
+2\,\%). Es casi simétrica, $|\Gamma_{dc}/\Gamma_{rms}| \approx 0{,}03$--$0{,}05$,
+así que el ruido de baja frecuencia inyectado de forma uniforme a lo largo
+del periodo apenas se convierte. Pero los transistores no son simétricos:
+medidos por separado, el dispositivo de canal p tiene tres veces el ruido
+$1/f$ del de canal n, y cada uno inyecta ruido sobre todo mientras
+conduce, durante uno de los dos lóbulos opuestos. Los dos límites acotan
+la realidad: con ruido estacionario, como en el banco, la frecuencia de
+esquina $1/f^3$ es 36~kHz y el parpadeo iguala al jitter térmico tras
+27\,000 periodos; con cada dispositivo confinado a su lóbulo, la
+frecuencia de esquina es 5,3~MHz y el cruce, 185 periodos. En ambos
+casos, con el divisor de funcionamiento el parpadeo domina la varianza
+acumulada, por un factor de entre 35 y 5\,000. De ahí se siguen dos
+consecuencias. El jitter que fija la cota de entropía debe medirse con
+acumulación corta, por debajo de unos cien periodos para este anillo, y
+separarse del término cuadrático --- deducirlo del jitter acumulado total
+en $K_D$ atribuiría una entropía que no existe. Y el banco estacionario
+puede sobrestimar la varianza térmica hasta en un factor dos, lo que
+duplicaría $K_D$; el contador de 24 bits lo cubre, y la herramienta que lo
+resuelve es un análisis de ruido transitorio cicloestacionario, un uso
+concreto de un simulador comercial.
+
+\section{Punto de funcionamiento: divisor y tasa de bits}
+\label{sec:opoint}
+
+El modelo estocástico fija el objetivo. Para los umbrales PTG.2 de AIS
+20/31 v3.0, el criterio de min-entropía ($H_\infty \ge 0{,}98$) exige
+$Q \ge 0{,}2286$ y es más exigente que el criterio de Shannon
+($H \ge 0{,}9998$, $Q \ge 0{,}2022$); por eso el diseño apunta al primero,
+con $Q = 0{,}30$ como valor de consigna de trabajo, que da
+$H_\infty = 0{,}9951$. Dos propiedades del modelo se demostraron en lugar
+de suponerse: la serie truncada de la ecuación~14
+de~\cite{baudet_2011_security} \emph{sobrestima} la entropía y, por
+tanto, no es una cota inferior, así que se usa en su lugar el cálculo
+exacto con la gaussiana envuelta; y la deducción de la min-entropía con el
+primer armónico coincide con la exacta en seis cifras en todo el rango de
+interés.
+
+Como $Q_{\mathrm{gen}} = K_D \cdot Q_{\mathrm{bruto}}$, el divisor se
+deduce del jitter que mida la campaña. La Tabla~\ref{tab:opoint} da los
+puntos de funcionamiento para el rango de jitter esperable en esta
+tecnología~\cite{petura_2016_survey}, suponiendo RO2 a 500~MHz.
+
+\begin{table}[htbp]
+\centering
+\caption{Divisor y tasa de bits resultante por anillo para
+$Q \ge 0{,}2286$ \est{}.}
+\label{tab:opoint}
+\small
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+$\sigma/T$ por periodo & $Q_{\mathrm{bruto}}$ & $K_D$ & Tasa de bits \\
+\midrule
+$7{,}1\times10^{-4}$ & $5\times10^{-7}$ & 457\,200 & 1,09~kbit/s \\
+$1{,}4\times10^{-3}$ & $2\times10^{-6}$ & 114\,300 & 4,37~kbit/s \\
+$2{,}8\times10^{-3}$ & $8\times10^{-6}$ & 28\,575  & 17,5~kbit/s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Estos valores encierran el punto de diseño publicado por Fischer y
+Lubicz~\cite{fischer_2014_embedded} ($K_D \approx 430\,000$ para
+$\sigma = 5{,}01$~ps sobre $T = 7{,}81$~ns), y esa es la comprobación de
+coherencia de que el modelo se aplica como pretendían sus autores.
+
+La consecuencia para la arquitectura se dice sin rodeos: un solo \ac{ERO}
+entrega kbit/s, no Mbit/s. Ese es el precio de una entropía demostrable,
+y aquí se puede pagar porque el producto del motor es una semilla de
+256 bits para el \ac{DRBG}, no un flujo de bits. Más tasa de bits
+significa más anillos independientes, cada uno con su propia cota, no un
+anillo más rápido.
+
+\section{Verificación funcional consolidada}
+\label{sec:verif_results}
+
+El Capítulo~\ref{ch:ch5_verification} describe la estrategia; esta
+sección recoge los totales. Cada cifra de la Tabla~\ref{tab:verif} se
+obtuvo ejecutando la batería de pruebas, no leyendo un registro anterior.
+
+\begin{table}[htbp]
+\centering
+\caption{Totales de la verificación \simu{}.}
+\label{tab:verif}
+\small
+\begin{tabular}{@{}lp{7.6cm}l@{}}
+\toprule
+Batería & Qué comprueba & Resultado \\
+\midrule
+Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO}, captura, tests de salud,
+  \ac{I2C}, \ac{AES}, \ac{CMAC}, \ac{CTRDRBG}, nivel superior & 7/7 pasan \\
+\texttt{ctr\_drbg\_ref.py} & vectores \ac{CAVP}, con y sin
+  función de derivación & 960/960 \\
+\texttt{ero\_model.py} & modelo estocástico, exactitud y cotas & 24/24 \\
+\texttt{jitter\_estimator.py} & recuperación del jitter sobre datos
+  sintéticos de $Q$ conocido & 20/20 \\
+\texttt{cortes\_salud.py} & umbrales de los tests de salud frente a las
+  fórmulas de SP 800-90B & 6/6 \\
+\texttt{verifica\_top.py} & verificación cruzada del banco de nivel
+  superior con un \ac{AES} independiente & 5/5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Dos de ellas merecen una frase. Los 960 casos \ac{CAVP} son la prueba
+individual más sólida del trabajo: el generador no solo es coherente
+consigo mismo, sino que reproduce las salidas que el \ac{NIST} publica
+para \ac{CTRDRBG} con AES-128, tanto en la configuración con función de
+derivación como en la de entropía en bruto. Y los umbrales de los tests de
+salud, $C_{RCT} = 22$ y $C_{APT} = 596$, se habían calculado a mano a
+partir de la norma y nunca se habían comprobado; volver a obtenerlos con
+las fórmulas de SP 800-90B~\cite{turan_2018_sp80090b} confirma ambos. La
+misma comprobación cuantifica el coste de la prueba del complemento
+añadida al \ac{APT}, que es una aportación de este trabajo y no de la
+norma: eleva la tasa de falsas alarmas por ventana de $2^{-20{,}15}$ a
+$2^{-20{,}14}$, un aumento del 0,8\,\%, porque la cola complementaria está
+a 5,7 desviaciones típicas. Por tanto, el umbral sigue siendo válido tal
+como está y la adición sale gratis en la práctica.
+
+\section{Comparación con elementos seguros comerciales}
+\label{sec:se_comparison}
+
+El motor ocupa el mismo hueco funcional que un elemento seguro comercial:
+un pequeño dispositivo acompañante que genera y guarda claves para un
+microcontrolador anfitrión a través de un bus de dos hilos. La
+Tabla~\ref{tab:se} lo sitúa junto a los tres componentes que dominan el
+mercado de elementos seguros \ac{I2C}.
+
+\begin{table}[htbp]
+\centering
+\caption{El motor frente a elementos seguros comerciales. Datos de
+certificación tomados de las hojas de datos de los fabricantes y de los
+registros de validación del NIST~\cite{microchip_atecc608b_ds, nist_esv_e46, nxp_se050_ds,
+infineon_optiga_trustm_ds}.}
+\label{tab:se}
+\small
+\begin{tabular}{@{}lp{2.6cm}p{2.4cm}p{2.2cm}p{2.6cm}@{}}
+\toprule
+ & ATECC608B & SE050 & OPTIGA Trust M & Este trabajo \\
+\midrule
+Bus            & \ac{I2C} & \ac{I2C} & \ac{I2C} & \ac{I2C} \\
+Certificación  & JIL High; NIST ESV \#E46 para la fuente de entropía & CC EAL6+ (hasta el SO) & CC EAL6+ (hardware) & ninguna \\
+Fuente de entropía & osciladores en anillo, según el registro ESV & ``TRNG, SP~800-90B'' en la hoja de datos & no indicada & \ac{ERO}, publicada \\
+Entropía declarada & 0,5071~bit/muestra, validada por el NIST & no publicada & no publicada & cota obtenida del jitter medido \\
+Modelo estocástico & no publicado & no publicado & no publicado & publicado \\
+Exportación de claves & no es posible & no es posible & no es posible & solo en modo de prueba \\
+Inspeccionable & no & no & no & sí, \ac{RTL} publicado \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La lectura honesta de esa tabla tiene dos mitades.
+
+En prestaciones y nivel de garantía ganan los componentes comerciales, y
+con mucha diferencia. Dos de ellos tienen evaluaciones CC EAL6+, que
+suponen un grado de escrutinio por terceros --- incluida la resistencia a
+ataques físicos --- que ningún proyecto académico reproduce. Ofrecen
+criptografía asimétrica, flujos de aprovisionamiento certificados y
+soporte para la fabricación. Este trabajo ofrece generación de claves
+simétricas y autenticación, y no tiene ninguna certificación.
+
+En lo que de verdad trata este TFM, la comparación tiene más matices que
+``abierto frente a cerrado'', y conviene ser exacto. De los tres, solo el
+ATECC608B tiene su fuente de entropía validada según SP~800-90B: el
+registro del NIST cita osciladores en anillo y declara 0,5071~bit de
+entropía por muestra~\cite{nist_esv_e46}. Es una cifra real, de un
+tercero, y hay que reconocerla. Lo que ningún fabricante publica ---
+tampoco Microchip --- es el modelo estocástico que hay detrás de la cifra,
+la medida de jitter que la respalda ni el propio circuito; la hoja de
+datos de un competidor afirma cumplir la norma sin un registro de
+validación y la del otro no menciona SP~800-90 en absoluto. Se confía en
+su aleatoriedad porque se confía en el fabricante y en el esquema de
+evaluación. El motor descrito aquí hace el intercambio contrario: no tiene
+certificado, y puede mostrar de dónde viene cada bit de entropía, qué
+medida física lo acota y en qué se convierte la cota cuando cambian la
+temperatura o el divisor. Es la misma distinción con la que tropezó,
+desde el otro lado, la caracterización previa del generador del ESP32
+hecha por el autor --- una caja negra se puede probar estadísticamente,
+pero no se puede acotar --- y es la razón por la que este motor se
+construyó como una caja blanca.
+
+Cuál de los dos es preferible depende de la pregunta que se haga. Para
+sacar un producto al mercado, el componente certificado. Para saber cuánto
+vale la aleatoriedad de ese producto, solo responde el abierto.
+

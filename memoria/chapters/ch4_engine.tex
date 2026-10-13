@@ -24,6 +24,7 @@ key is loaded into an AES-CMAC block that answers challenges; and an
 
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[node distance=6mm and 8mm, >=Stealth,
   bloque/.style={draw, rounded corners=2pt, minimum height=8mm, minimum width=19mm, align=center, font=\small},
   flecha/.style={->, thick}]
@@ -43,7 +44,7 @@ key is loaded into an AES-CMAC block that answers challenges; and an
 \draw[flecha] (drbg) -- (cmac) node[midway, above, font=\scriptsize] {key};
 \draw[flecha, <->] (i2c) -- (drbg); \draw[flecha, <->] (i2c) -| (cmac);
 \draw[flecha, <->] (i2c) -| (cap); \draw[flecha] (ht) -| (i2c);
-\end{tikzpicture}
+\end{tikzpicture}}
 \caption{Data path of the engine. Only the ring oscillators are technology
 dependent; every other block is portable RTL.}
 \label{fig:engine}

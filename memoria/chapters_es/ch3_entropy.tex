@@ -1,0 +1,298 @@
+\chapter{Fuente de entropía: del transistor a la min-entropía}
+\label{ch:ch3_entropy}
+
+% [BORRADOR v1 -- solo teoría y simulación; cifras de hardware pendientes]
+% Material de partida: docs/modelo_ero_resultados.md, docs/arquitectura.md,
+% analysis/ero_model.py, analysis/jitter_estimator.py, analysis/spice_ring.py
+
+Este capítulo construye la cadena sobre la que descansa el resto del TFM:
+del jitter físico de un oscilador en anillo a una cifra defendible de
+min-entropía por bit de salida, y de esa cifra a los parámetros de diseño
+del muestreador. Cada paso se valida antes de usarse. Los estimadores
+estadísticos se validan con datos sintéticos de jitter conocido; las cotas
+analíticas se validan frente a un cálculo numérico exacto; y el banco a
+nivel de transistor se valida midiendo su propia resolución antes de medir
+nada con él. Todas las cifras de este capítulo son \simu{} salvo que se
+indique lo contrario; la campaña de hardware se presenta en el
+Capítulo~\ref{ch:ch7_results}.
+
+\section{El oscilador en anillo elemental}
+\label{sec:ero}
+
+La fuente de entropía es un \ac{ERO}: un oscilador en anillo libre RO1
+cuya salida se muestrea con un flip-flop que recibe como reloj un segundo
+oscilador en anillo RO2 dividido por un entero $K_D$~\cite{baudet_2011_security,
+fischer_2014_embedded}. Entre dos muestras, la fase de RO1 acumula jitter
+durante $K_D$ periodos de RO2; cuando el jitter acumulado es comparable al
+periodo de RO1, el bit muestreado se vuelve impredecible. Se eligió el
+\ac{ERO} frente a alternativas de mayor tasa de bits (XOR de varios
+anillos, muestreo coherente, anillos de efecto de transición) por una sola
+razón: es la arquitectura para la que existe un modelo estocástico con una
+cota de entropía demostrable y para la que se ha publicado y validado un
+método embebido de medida del jitter~\cite{petura_2016_survey}. La tasa de
+bits no es un requisito aquí ---el motor solo consume entropía para dar
+semilla a un generador determinista---, mientras que una cota demostrable
+sí lo es.
+
+Una decisión de diseño que se deriva de la plataforma es que \emph{el
+oscilador de la placa nunca se usa como referencia}. La fuente de reloj de
+la Basys~3 es un oscilador MEMS con un \ac{PLL} fraccional cuya hoja de
+características especifica un jitter ciclo a ciclo de hasta 95~ps
+\est{}~\cite{digilent_2014_basys3rm}, entre uno y dos órdenes de magnitud
+por encima del jitter por periodo de un oscilador en anillo en un proceso
+de 28~nm (2--4~ps \est{}~\cite{petura_2016_survey}). Muestrear RO1 con ese
+reloj mediría el ruido de fase del PLL, una componente global y
+potencialmente inducible, en lugar del ruido térmico del anillo. Por eso
+RO2 muestrea a RO1, y el reloj de sistema de 100~MHz solo gobierna la
+lógica síncrona.
+
+\section{Modelo estocástico y factor de calidad}
+\label{sec:model}
+
+Siguiendo a Baudet \emph{et al.}~\cite{baudet_2011_security}, la fase
+$\varphi(t)$ de RO1, medida en periodos, se modela como un proceso de
+Wiener con deriva $\mu$ y volatilidad $\sigma^2$. Entre dos muestras
+separadas $\Delta t$, la fase avanza en promedio $\nu = \mu\,\Delta t$
+periodos y acumula una varianza
+\begin{equation}
+  Q = \sigma^2\,\Delta t ,
+  \label{eq:Q}
+\end{equation}
+el \emph{factor de calidad}. El bit de salida es $s = 1$ cuando la fase
+fraccionaria está en $[1/2, 1)$. Condicionado a la fase anterior
+$\varphi_0$, el bit sigue una distribución de Bernoulli con
+\begin{equation}
+  P(s=1 \mid \varphi_0) = \sum_{k\in\mathbb{Z}}
+  \left[\Phi\!\left(\tfrac{k+1-\varphi_0-\nu}{\sqrt{Q}}\right) -
+        \Phi\!\left(\tfrac{k+\tfrac12-\varphi_0-\nu}{\sqrt{Q}}\right)\right],
+  \label{eq:puno}
+\end{equation}
+donde $\Phi$ es la función de distribución normal estándar; se trata de la
+gaussiana envuelta evaluada de forma exacta. Su primer armónico da el sesgo
+máximo $\varepsilon_{\max} \approx (2/\pi)\,e^{-2\pi^2 Q}$, a partir del
+cual el Corolario~1 de Baudet proporciona la conocida expresión
+\begin{equation}
+  H(s \mid \varphi_0) = 1 - \frac{4}{\pi^2 \ln 2}\, e^{-4\pi^2 Q}
+  + O\!\left(e^{-6\pi^2 Q}\right).
+  \label{eq:baudet14}
+\end{equation}
+
+\section{Entropía condicional exacta frente a la cota asintótica}
+\label{sec:exact}
+
+La ecuación~\eqref{eq:baudet14} se cita habitualmente como una \emph{cota
+inferior} de la entropía por bit. Leída con atención, la desigualdad del
+corolario solo afirma que la tasa de entropía de la secuencia es al menos
+la entropía de un bit condicionada a la fase anterior exacta; el miembro
+derecho es un desarrollo asintótico \emph{de} esa entropía condicional, no
+una cota de ella. Desarrollando la entropía binaria en función del sesgo,
+$h_2(\tfrac12+\varepsilon) = 1 - \tfrac{1}{\ln 2}\sum_{n\ge1}
+\tfrac{(2\varepsilon)^{2n}}{2n(2n-1)}$, y promediando sobre una $\varphi_0$
+uniforme con $\varepsilon = A\sin(2\pi\varphi)$,
+$A = (2/\pi)e^{-2\pi^2 Q}$, se obtiene
+\begin{equation}
+  H(s\mid\varphi_0) = 1 - \frac{4}{\pi^2\ln 2}\,e^{-4\pi^2 Q}
+                        - \frac{8}{\pi^4\ln 2}\,e^{-8\pi^2 Q} - \cdots
+  \label{eq:orden2}
+\end{equation}
+Todos los términos omitidos son negativos, así que \emph{cualquier}
+truncamiento sobrestima la entropía; el término siguiente decae como
+$e^{-8\pi^2 Q}$, no como $e^{-6\pi^2 Q}$. La Tabla~\ref{tab:exact}
+compara el valor exacto, calculado a partir de \eqref{eq:puno} sobre una
+malla de 8192 fases, con los desarrollos de primer y segundo orden. Añadir
+el término de segundo orden reduce el error de \eqref{eq:baudet14} en un
+factor de 95 para $Q=0{,}10$ y de 4970 para $Q=0{,}20$, lo que confirma la
+deducción.
+
+\begin{table}[htbp]
+\centering
+\caption{Entropía de Shannon condicional por bit: cálculo exacto con la
+gaussiana envuelta frente a desarrollos truncados \simu{}.}
+\label{tab:exact}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$Q$ & Exacta & Orden 2 & Orden 1 (Ec.~\ref{eq:baudet14}) & Error del orden 1 \\
+\midrule
+0,02 & 0,7013194 & 0,7100952 & 0,7345213 & $+3{,}3\times10^{-2}$ \\
+0,05 & 0,9163001 & 0,9164920 & 0,9187783 & $+2{,}5\times10^{-3}$ \\
+0,10 & 0,9886728 & 0,9886733 & 0,9887174 & $+4{,}5\times10^{-5}$ \\
+0,15 & 0,9984319 & 0,9984319 & 0,9984327 & $+8{,}5\times10^{-7}$ \\
+0,20 & 0,9997823 & 0,9997823 & 0,9997823 & $+1{,}6\times10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En la región de funcionamiento ($Q\approx0{,}2$) la discrepancia es de
+$10^{-8}$ e irrelevante; para un generador infradimensionado
+($Q\approx0{,}02$) la fórmula truncada atribuye un 3,3\,\% de entropía que
+no existe. Por ello, este TFM usa el cálculo exacto como valor conservador
+y cita \eqref{eq:baudet14} como lo que es: una aproximación asintótica
+excelente para $Q \gtrsim 0{,}1$. La misma herramienta numérica muestra que
+la min-entropía obtenida a partir del sesgo del primer armónico,
+$H_\infty = -\log_2(\tfrac12 + \varepsilon_{\max})$, coincide con el valor
+exacto del peor caso con un error inferior a $10^{-4}$~bit en
+$Q\in[0{,}05;\,0{,}30]$.
+
+\subsection{Objetivo de diseño}
+
+La versión~3.0 de AIS~20/31~\cite{peter_2024_ais31} admite dos criterios
+alternativos para la clase PTG.2: entropía de Shannon $\ge 0{,}9998$ o
+min-entropía $\ge 0{,}98$ por bit interno. Resolver ambos por bisección
+sobre las entropías exactas da $Q \ge 0{,}2022$ y $Q \ge 0{,}2286$,
+respectivamente. El criterio de min-entropía es el más exigente y es
+también la magnitud con la que trabaja NIST SP~800-90B, por lo que es el
+que se adopta aquí: \textbf{el objetivo de diseño es $Q \ge 0{,}23$, con
+un punto de consigna de $Q = 0{,}30$} ($H_\infty = 0{,}9951$), con un
+margen que cubre la reducción del jitter térmico a baja temperatura, que
+es la prueba adversaria estándar de Fischer y
+Lubicz~\cite{fischer_2014_embedded}.
+
+\section{Estimador embebido del jitter y sus dos correcciones}
+\label{sec:estimator}
+
+Para elegir $K_D$ hay que conocer $\sigma^2$, y el método de Fischer y
+Lubicz~\cite{fischer_2014_embedded} la mide a partir de los propios bits:
+con $K_D = 1$, la fracción $c$ de pares $(b_j, b_{j+M})$ que difieren
+dentro de un bloque de $N$ pares estima la fase acumulada a lo largo de
+$M$ muestras, y su varianza entre $K$ bloques crece como
+$4 M Q_{\mathrm{bruto}}$. Implementado al pie de la letra, con un ajuste a
+una recta, el estimador \emph{subestima} $Q_{\mathrm{bruto}}$ entre un
+13\,\% y un 38\,\% según el nivel de jitter. Se identificaron dos causas
+sobre datos sintéticos con $Q$ conocido, y se corrigieron:
+
+\begin{enumerate}
+\item \textbf{Efecto de vértice.} $c$ no es lineal en la fase acumulada;
+es una onda \emph{triangular} de periodo uno y pendiente $\pm2$. Cuando la
+fase determinista $M\nu \bmod 1$ cae cerca de un vértice, la distribución
+queda a ambos lados de él y la varianza se desploma ---hasta 0,38 de su
+valor nominal en un caso medido---. El vértice se detecta a partir de la
+propia media medida ($\bar c \approx 0$ o $1$ es un vértice;
+$\bar c \approx \tfrac12$, el centro de la rampa), de modo que las
+distancias $M$ con $\bar c$ fuera de $[0{,}15;\,0{,}85]$, o para las que
+$3\sqrt{MQ}$ alcanza el vértice, se descartan de forma iterativa.
+\item \textbf{Ruido de estimación no constante.} Estimar una fracción a
+partir de $N$ pares añade una varianza proporcional a $\bar c(1-\bar c)$,
+que cambia con $M$. Ajustarla como una ordenada en el origen constante
+sesga la pendiente; en su lugar se ajusta como un segundo regresor,
+$\mathrm{Var}(c) = Q\,(4M) + \kappa\,\bar c(1-\bar c)/N$.
+\end{enumerate}
+
+Tras ambas correcciones, el estimador recupera el $Q_{\mathrm{bruto}}$
+inyectado dentro de un $\pm2$\,\% en un rango de $150\times$
+(Tabla~\ref{tab:estimator}), con un sesgo de $-0{,}6$\,\% y una dispersión
+de 4,0\,\% sobre ocho semillas independientes para $K=20\,000$ bloques. El
+exponente de acumulación ajustado es $1{,}009$ para un simulador sin ruido
+de parpadeo; medido en hardware, el mismo exponente separa la componente
+térmica ($b=1$, que cuenta como entropía) del ruido de parpadeo y el
+jitter global ($b=2$, que no cuenta).
+
+\begin{table}[htbp]
+\centering
+\caption{Recuperación de un $Q_{\mathrm{bruto}}$ conocido mediante el
+estimador embebido corregido ($K=20\,000$ bloques de $N=100$ pares)
+\simu{}.}
+\label{tab:estimator}
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$Q_{\mathrm{bruto}}$ inyectado & Estimado & Error & Valores de $M$ usados \\
+\midrule
+$2{,}0\times10^{-7}$ & $1{,}979\times10^{-7}$ & $-1{,}07$\,\% & 19 \\
+$5{,}0\times10^{-7}$ & $5{,}060\times10^{-7}$ & $+1{,}21$\,\% & 18 \\
+$2{,}0\times10^{-6}$ & $2{,}037\times10^{-6}$ & $+1{,}86$\,\% & 16 \\
+$8{,}0\times10^{-6}$ & $8{,}039\times10^{-6}$ & $+0{,}48$\,\% & 9 \\
+$3{,}0\times10^{-5}$ & $2{,}977\times10^{-5}$ & $-0{,}78$\,\% & 5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Una consecuencia práctica para el hardware es que los bloques no tienen por
+qué ser contiguos: cada uno requiere solo $N+M$ bits consecutivos, y los
+bloques independientes dan una estimación algo mejor (error de
+$-0{,}30$\,\% con 20\,000 fragmentos independientes). Por eso el búfer de
+captura de la FPGA contiene un único fragmento de unos pocos kilobits, que
+se llena a la velocidad del anillo y se lee despacio, en lugar de megabits
+de muestras contiguas.
+
+\section{Banco a nivel de transistor y su resolución}
+\label{sec:spice}
+
+La fuente de entropía es el único bloque del motor ligado a la tecnología,
+y en un circuito integrado se diseña a nivel de transistor. Se construyó
+un banco SPICE en torno a un anillo de cinco etapas con una puerta NAND de
+habilitación, con todos los parámetros dependientes de la tecnología
+(modelos de dispositivo, anchuras, longitud mínima, alimentación)
+confinados en una cabecera, de modo que pasar de los modelos genéricos
+provisionales usados aquí al \ac{PDK} de una fundición cambia un único
+bloque de la netlist. El jitter se extrae de los instantes de cruce por el
+umbral de la salida mediante la segunda diferencia
+$D(M) = t_{k+2M} - 2t_{k+M} + t_k$, es decir, la varianza de Allan
+aplicada a datos de fase. Su esperanza, $2M\sigma^2$, está libre del sesgo
+que arrastra una diferencia simple sobre ventanas solapadas (medido en un
+5\,\%), y es el método que usan Benea \emph{et al.} para caracterizar
+anillos tanto en Artix-7 como en silicio de 28~nm~\cite{benea_2024_flicker}.
+Las estimaciones a distintos $M$ se combinan con pesos de varianza inversa
+proporcionales al número de ventanas independientes; sin esa ponderación,
+la dispersión se quedaba en el 15\,\% con independencia de la longitud
+simulada.
+
+El banco mide primero su propia resolución: con todas las fuentes de ruido
+desactivadas, el jitter residual es el ruido numérico del simulador. El
+primer intento dio 0,33~ps, del mismo orden que el jitter que se quiere
+medir; se debía por completo al transitorio de arranque del oscilador, y
+descartar los primeros veinte ciclos lleva el suelo de resolución a
+\textbf{1,38~fs}, tres órdenes de magnitud por debajo de la señal. Solo
+entonces se inyectó ruido. El jitter es proporcional a la raíz cuadrada de
+la densidad espectral inyectada ($\times2{,}01$ medido para $\times4$ en
+densidad, frente a $\times2{,}00$ esperado) hasta el punto en que la
+corriente de ruido eficaz alcanza aproximadamente el 80\,\% de la
+corriente de conducción de la etapa; ahí deja de valer el régimen de
+pequeña señal, el periodo medio se desplaza y la ley de escala falla por
+un factor de cinco. De ello se deduce un criterio de validez para toda
+campaña, incluidas las que se hagan sobre un \ac{PDK} real: mantener el
+ruido inyectado por debajo de $\sim40$\,\% de la corriente de la etapa y
+comprobar que el periodo medio no se mueve al activar el ruido. Con los
+modelos provisionales el anillo oscila a 4,3~GHz, lo que no es físico; las
+cifras que entran en este TFM proceden de modelos de dispositivo reales.
+
+Los primeros modelos de ese tipo son los del \ac{PDK} abierto IHP SG13G2
+(130~nm, núcleo de 1,2~V, modelo compacto PSP~103.6, licencia
+Apache-2.0)~\cite{ihp_openpdk_repo}, que pueden publicarse junto con todo
+lo demás. Hay dos diferencias respecto al banco con modelos provisionales.
+Primero, los modelos están escritos en Verilog-A y hay que compilarlos a
+la interfaz OSDI; esto obligó a compilar ngspice~47 y el compilador
+OpenVAF-Reloaded en espacio de usuario, ya que ningún canal de paquetes
+ofrecía versiones lo bastante recientes. Segundo, y más importante, el
+ruido ya no se elige: ngspice no inyecta el ruido de los dispositivos
+durante un análisis transitorio, así que la densidad de las fuentes de
+corriente se toma de un análisis de ruido en pequeña señal de los mismos
+transistores, un inversor polarizado en su punto de conmutación con la
+entrada unida a la salida, donde ambos dispositivos conducen y el ruido
+desplaza el instante de cruce. El ruido referido a la entrada de ese nodo
+es exactamente la corriente que debe reproducir la fuente del transitorio.
+Su espectro es un término $1/f$ puro más un suelo de ruido blanco de
+$4{,}13\times10^{-24}~\mathrm{A^2/Hz}$, plano de 100~kHz a 10~GHz, con la
+frecuencia de esquina del $1/f$ en 19,8~MHz y un factor de ruido efectivo
+$\gamma = 1{,}04$, por encima del 2/3 de canal largo, como se espera en un
+dispositivo corto. Antes de usarla, la parte $1/f$ de la fuente de ruido
+de ngspice se calibró frente a una resistencia conocida: su densidad es
+$\mathrm{NAMP}^2/(\pi f)$ con un margen del 0,4\,\%. Los resultados están
+en la Sección~\ref{sec:ihp_ring}.
+
+\section{Objetivo de diseño y selección del divisor}
+\label{sec:kd}
+
+Con $\sigma/T$ medido por periodo, $Q_{\mathrm{bruto}} = (\sigma/T)^2$ y
+el divisor se obtiene de $K_D = \lceil Q_{\mathrm{objetivo}} /
+Q_{\mathrm{bruto}} \rceil$. Para el rango de jitter esperado en un proceso
+de 28~nm, el divisor queda entre $3\times10^4$ y $5\times10^5$, y la tasa
+de bits por anillo entre 1 y 20~kbit/s. El modelo reproduce el punto de
+diseño publicado por Fischer y Lubicz ($K_D \approx 430\,000$ para
+$\sigma = 5{,}01$~ps sobre $T = 7{,}81$~ns)~\cite{fischer_2014_embedded}.
+Estas tasas bastan aquí: dar semilla al generador determinista con
+256~bits de entropía completa requiere unos 512 bits brutos con
+$H_\infty \approx 0{,}98$, es decir, entre 0,03 y 0,5~s por semilla, y el
+motor solo emite una semilla en el arranque y en los intervalos de
+resembrado. Si alguna vez hiciera falta más tasa de bits, el camino limpio
+son varios \acp{ERO} independientes, cada uno con su propia cota, en lugar
+de un XOR de varios anillos cuya independencia no puede
+demostrarse~\cite{bochard_2010_true}.
