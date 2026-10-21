@@ -41,10 +41,24 @@ HEX = set("0123456789abcdef")
 COLUMNAS = ["i", "mac", "variante", "reset", "t_us", "ccount", "aviso_bootloader",
             "ruido_arranque_encendido", "duracion_s", "intentos"]
 COLUMNAS_RADIO = COLUMNAS + ["t_us_antes", "ccount_antes", "t_on_us"]
+# firmware/reinicios_fuentes (variantes fuente_*): ademas cuando se apago la
+# fuente, cuanto duro y si la lectura llego tarde a su instante fijo; en las
+# de radio, cuando se encendio la radio segun la PHY (tras start y tras stop);
+# en la del ADC, lecturas correctas y la ultima (-1 donde no aplica)
+EXTRA_FUENTES = ["t_off_us", "fuente_ms", "tarde", "rf_ts_ini", "rf_ts_fin", "n_adc", "adc_ultimo"]
+COLUMNAS_FUENTES = COLUMNAS_RADIO + EXTRA_FUENTES
+# firmware/reinicios_paso: variante de retardo y ciclos de cada tramo
+EXTRA_PASO = ["var", "n_nops", "c_ini", "c_a", "c_r", "c_d"]
+COLUMNAS_PASO = COLUMNAS_RADIO + EXTRA_PASO
 # bloques que saca cada variante (None: firmware de un solo bloque, sin RST_FIN)
 VARIANTES = {"normal": None, "sin_ruido": None,
              "radio": ["antes", "despues"], "radio_sin_ruido": ["antes", "despues"],
-             "espera_sin_ruido": ["antes", "despues"]}
+             "espera_sin_ruido": ["antes", "despues"],
+             **{v: ["antes", "despues"] for v in (
+                 "fuente_control", "fuente_wifi_init", "fuente_radio_0", "fuente_radio_1",
+                 "fuente_radio_10", "fuente_radio_100", "fuente_adc_200", "fuente_bootrand_200",
+                 "fuente_adc_0", "fuente_adc_1")},
+             "paso": ["antes", "despues"]}
 
 
 def un_reinicio(s: serial.Serial, f, timeout: float, bloques: list[str] | None):
@@ -74,9 +88,16 @@ def un_reinicio(s: serial.Serial, f, timeout: float, bloques: list[str] | None):
             if not all(set(h) <= HEX and len(h) % 2 == 0 for h in hexs):
                 return None, None, None, f"linea hex corrupta ({nombre})"
             d = bytes.fromhex("".join(hexs))
-            if len(d) != int(cab.get("bytes", "0")):
+            # una cabecera o un final estropeados por el enlace se rechazan
+            # como cualquier otro bloque corrupto (antes hacian saltar int())
+            try:
+                esperado = int(cab.get("bytes", "0"))
+                crc = int(fin.get("crc32", "0"), 16)
+            except ValueError:
+                return None, None, None, f"cabecera o final corruptos ({nombre})"
+            if len(d) != esperado:
                 return None, None, None, f"longitud {len(d)} ({nombre})"
-            if zlib.crc32(d) != int(fin.get("crc32", "0"), 16):
+            if zlib.crc32(d) != crc:
                 return None, None, None, f"crc ({nombre})"
             cabs[nombre], datos[nombre] = cab, d
             cab = None
@@ -141,10 +162,15 @@ def main() -> int:
                     ruta_csv.open("a", newline="", encoding="utf-8") as fc:
                 w = csv.writer(fc)
                 if hechos == 0:
-                    w.writerow(COLUMNAS_RADIO if bloques else COLUMNAS)
+                    w.writerow(COLUMNAS_FUENTES if a.variante.startswith("fuente_")
+                               else COLUMNAS_PASO if a.variante == "paso"
+                               else COLUMNAS_RADIO if bloques else COLUMNAS)
                 i = hechos
                 while i < a.n:
-                    for intento in range(1, 4):
+                    # hasta 10 intentos: el enlace serie de algunas placas repite
+                    # trozos de lo que llega al PC (el CRC lo detecta); cada
+                    # intento es un reinicio nuevo
+                    for intento in range(1, 11):
                         f.write(f"\n=== reinicio {i} intento {intento} ===\n")
                         cabs, datos, info, motivo = un_reinicio(s, f, a.timeout, bloques)
                         if cabs is not None and all(c.get("mac") == mac and c.get("variante") == a.variante
@@ -153,7 +179,7 @@ def main() -> int:
                         rechazos += 1
                         print(f"  reinicio {i} intento {intento} rechazado: {motivo or 'mac/variante'}")
                     else:
-                        print("tres rechazos seguidos: paro")
+                        print("diez rechazos seguidos: paro")
                         return 1
                     boot = "\n".join(info["boot"])
                     encendido = "Enabling RNG early entropy source" in boot and "NO encendida" not in boot
@@ -167,6 +193,10 @@ def main() -> int:
                     if bloques:
                         fila += [cabs["antes"].get("t_us"), cabs["antes"].get("ccount"),
                                  info.get("t_on_us")]
+                    if a.variante.startswith("fuente_"):
+                        fila += [info.get(k) for k in EXTRA_FUENTES]
+                    elif a.variante == "paso":
+                        fila += [info.get(k) for k in EXTRA_PASO]
                     w.writerow(fila)
                     fc.flush()
                     if i % 50 == 0 or i == a.n - 1:

@@ -1,0 +1,59 @@
+Agent pid 416
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_f8b3b72a0928/tanda2/condA_rep2.bin' (SHA-256 hash 6308e0eb71c3f692665da1f8534892fea82b0cefef0e915413d9a61aa8ce7444)
+Loaded 125000 samples of 256 distinct 8-bit-wide symbols
+Number of Binary Symbols: 1000000
+
+*** Warning: data contains less than 1000000 samples ***
+
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Bitstring MCV Estimate: mode = 500060, p-hat = 0.50005999999999995, p_u = 0.50134791528645917
+	Most Common Value Estimate (bit string) = 0.996116 / 1 bit(s)
+Literal MCV Estimate: mode = 537, p-hat = 0.0042960000000000003, p_u = 0.0047724979894560142
+	Most Common Value Estimate = 7.711040 / 8 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Bitstring Collision Estimate: X-bar = 2.4994001439654481, sigma-hat = 0.50000026502336647, p = 0.53630416407867409
+	Collision Test Estimate (bit string) = 0.898877 / 1 bit(s)
+Bitstring Markov Estimate: P_0 = 0.50005999999999995, P_1 = 0.49994000000000005, P_0,0 = 0.50029696495813492, P_0,1 = 0.49970303504186508, P_1,0 = 0.49982397887746527, P_1,1 = 0.50017602112253479, p_max = 3.1692856526496115e-39
+	Markov Test Estimate (bit string) = 0.999149 / 1 bit(s)
+Bitstring Compression Estimate: X-bar = 5.2135134135845878, sigma-hat = 1.0174759617675859, p = 0.033478843999781516
+	Compression Test Estimate (bit string) = 0.816768 / 1 bit(s)
+
+Running Tuple Estimates...
+Bitstring t-Tuple Estimate: t = 16, p-hat_max = 0.5266288655261094952056, p_u = 0.5279149530124247283462
+Bitstring LRS Estimate: u = 17, v = 40, p-hat = 0.51020649795350425, p_u = 0.51149414489030685
+	T-Tuple Test Estimate (bit string) = 0.921623 / 1 bit(s)
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004295999999999999999992, p_u = 0.004772497989456013841853
+Literal LRS Estimate: u = 2, v = 4, p-hat = 0.0039083723731286558, p_u = 0.0043629535226450737
+	T-Tuple Test Estimate = 7.711040 / 8 bit(s)
+	LRS Test Estimate (bit string) = 0.967210 / 1 bit(s)
+	LRS Test Estimate = 7.840479 / 8 bit(s)
+
+Running Predictor Estimates...
+Bitstring MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50131445753481763 (C = 499995) Plocal can't affect result (r = 18)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (bit string) = 0.996212 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 124937, Pglobal' = 0.0046143532733435577 (C = 518) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 7.759656 / 8 bit(s)
+Bitstring Lag Prediction Estimate: N = 999999, Pglobal' = 0.50163941597294082 (C = 500351) Plocal can't affect result (r = 21)
+	Lag Prediction Test Estimate (bit string) = 0.995277 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 124999, Pglobal' = 0.0044091365192013279 (C = 494) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate = 7.825288 / 8 bit(s)
+Bitstring MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50072091462154289 (C = 499432) Plocal can't affect result (r = 22)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (bit string) = 0.997921 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 124998, Pglobal' = 0.0040873010761677039 (C = 456) Plocal = 0.0043223691745210161 (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 7.853962 / 8 bit(s)
+Bitstring LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50065441443969727 (C = 499358) Plocal can't affect result (r = 18)
+	LZ78Y Prediction Test Estimate (bit string) = 0.998113 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 124983, Pglobal' = 0.0041217113159653642 (C = 460) Plocal = 0.0043225423391850901 (r = 3)
+	LZ78Y Prediction Test Estimate = 7.853904 / 8 bit(s)
+
+H_original: 7.711040
+H_bitstring: 0.816768
+min(H_original, 8 X H_bitstring): 6.534142
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+tiempo_s=8.69 maxrss_kB=288640

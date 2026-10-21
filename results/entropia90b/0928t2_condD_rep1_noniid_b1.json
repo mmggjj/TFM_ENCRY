@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/0928t2_condD_rep1_noniid_b1.json /mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/0928t2_condD_rep1.bits 1",
+   "dateTimeStamp" : "20261021193237",
+   "errorLevel" : 0,
+   "filename" : "/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/0928t2_condD_rep1.bits",
+   "sha256" : "dc655cdcf9b4612dcdacde5ee97d98c9bdad1edd9a39b7fda39353fb75083405",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99429558273587859,
+         "mcvEstimateMode" : 500693.0,
+         "mcvEstimatePHat" : 0.50069300000000005,
+         "mcvEstimatePU" : 0.50198091405869161,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.88260242381917287,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99480203507115106,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.88319955575091502,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.94154042862257592,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.994075994183381,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99768366673428566,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.9973034836427066,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99633756267783091,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99367342176006757,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.88260242381917287,
+         "hOriginal" : 0.88260242381917287,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

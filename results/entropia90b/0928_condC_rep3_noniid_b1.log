@@ -1,0 +1,39 @@
+Agent pid 463
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/entropia90b/bits/0928_condC_rep3.bits' (SHA-256 hash bca4c24cf28d4a4c3e0661ef995e84f029014b8701b20b991469f9eef30696a0)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500654, p-hat = 0.50065400000000004, p_u = 0.50194191419400791
+	Most Common Value Estimate = 0.994408 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.498304898431313, sigma-hat = 0.49999775119684525, p = 0.54319013086395962
+	Collision Test Estimate = 0.880471 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49934600000000001, P_1 = 0.50065399999999993, P_0,0 = 0.50078402707546887, P_0,1 = 0.49921597292453113, P_1,0 = 0.49791273014896514, P_1,1 = 0.5020872698510348, p_max = 4.9945617575241104e-39
+	Markov Test Estimate = 0.994022 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2184775592561996, sigma-hat = 1.0146495826128996, p = 0.028180577500531712
+	Compression Test Estimate = 0.858193 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5293426435735436450447, p_u = 0.530628339190238371907
+Literal LRS Estimate: u = 17, v = 39, p-hat = 0.51385372057448957, p_u = 0.51514114140753941
+	T-Tuple Test Estimate = 0.914226 / 1 bit(s)
+	LRS Test Estimate = 0.956960 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50136746085955475 (C = 500048) Plocal can't affect result (r = 20)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.996060 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50145041603417306 (C = 500162) Plocal can't affect result (r = 19)
+	Lag Prediction Test Estimate = 0.995821 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50126791654262037 (C = 499979) Plocal can't affect result (r = 19)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.996346 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50236044151297821 (C = 501064) Plocal can't affect result (r = 23)
+	LZ78Y Prediction Test Estimate = 0.993205 / 1 bit(s)
+
+H_original: 0.858193
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+tiempo_s=0.73 maxrss_kB=22744

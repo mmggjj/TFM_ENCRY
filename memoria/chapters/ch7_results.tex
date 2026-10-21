@@ -358,12 +358,12 @@ that product is worth, only the open one answers.
 \label{sec:esp32_ref}
 
 Chapter~\ref{ch:esp32} characterizes the generator of the ESP32 under
-four operating conditions and on two chips; the comparison of O8 takes
+four operating conditions and on three chips; the comparison of O8 takes
 its figures from there.
 
 Three consequences follow for O8. First, the figure this thesis carries
 forward as the ESP32 reference is the non-IID one, 0.81 to 0.92 bit per
-bit with a mean of 0.85 over the twenty-four captures of conditions A--D,
+bit with a mean of 0.85 over the thirty-six captures of conditions A--D,
 because it is what an evaluator would credit without granting the
 IID assumption, with the restart test as the reminder that for
 condition~D it is a statistical figure and not physical entropy; the engine's raw bits, when the campaign of
@@ -413,9 +413,9 @@ fill or clock tree. Published growth factors from cell area to core area
 on this library are $\approx 2.35$ for an \ac{AES}, and the optimization
 savings of Chapter~\ref{ch:ch6_asic} are \est{} and explicitly not claimed
 as measured.
-\item[Min-entropy of the ESP32 reference.] Measured \meas{} on twenty-six
-captures of $10^6$ to $8.4\times10^6$ bits, six per condition, three on
-each of two chips of the same model identified by MAC address. The
+\item[Min-entropy of the ESP32 reference.] Measured \meas{} on thirty-eight
+captures of $10^6$ to $8.4\times10^6$ bits, nine per condition, three on
+each of three chips of the same model identified by MAC address. The
 IID-track figure is at the resolution ceiling of the MCV estimator for
 that $N$ (0.9963 at $10^6$ bits), so it is a floor on the ceiling rather
 than a measurement of the source, and the IID verdicts are read against
@@ -423,12 +423,13 @@ the measured false-failure rate of each test at that length, not against
 the nominal one. The non-IID figure is set by estimators whose
 conservative bias on nearly uniform data exceeds the spread between
 conditions; an analysis of variance finds no condition effect
-($p \ge 0.083$ on every estimator) and no chip effect ($p \ge 0.047$,
-against 0.0045 after correction). Two devices show that the reference
+($p \ge 0.045$ on every estimator) and no chip effect ($p \ge 0.032$,
+against 0.0045 after correction). Three devices show that the reference
 does not hinge on one of them; they do not bound the spread across a
-production population. The restart test was run on one chip, in
-condition~D and with the Wi-Fi started but not associated; the ADC
-condition, Bluetooth and an associated radio were not tested. It bounds the entropy that the stock bootloader injects
+production population. The restart test was run on two chips, in
+condition~D, with the Wi-Fi started but not associated, and on the second
+chip with each source switched on and off in turn; Bluetooth and an
+associated radio were not tested. It bounds the entropy that the stock bootloader injects
 only from below: no repeat in 1000 restarts means more than about
 $1.7\times10^5$ equally likely starting states, some 17 bits, at 95\,\%
 confidence. The size of the generator's internal state is not documented.

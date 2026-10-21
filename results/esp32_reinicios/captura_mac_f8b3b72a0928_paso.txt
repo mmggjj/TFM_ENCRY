@@ -1,0 +1,44 @@
+﻿chip f8:b3:b7:2a:09:28, variante paso: 0 hechos, faltan 800
+  1/800  primeros bytes ae5d317b1f323032  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  51/800  primeros bytes 8f83616a2ebb57a1  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  101/800  primeros bytes 139e5f6724665a9c  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  reinicio 148 intento 1 rechazado: longitud 1874 (antes)
+  151/800  primeros bytes d679a23ed4bf9621  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  reinicio 182 intento 1 rechazado: linea hex corrupta (antes)
+  201/800  primeros bytes d2311b0ea3151a14  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  251/800  primeros bytes 67c84e59a0fe9d8c  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  reinicio 264 intento 1 rechazado: linea hex corrupta (antes)
+  301/800  primeros bytes 4ffc9cb0da393f9e  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  351/800  primeros bytes 7f96f50126686e35  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  401/800  primeros bytes bba24c5d8ff2afa1  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  reinicio 433 intento 1 rechazado: linea hex corrupta (antes)
+  451/800  primeros bytes 6e6cb6884e6df491  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  reinicio 486 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 494 intento 1 rechazado: linea hex corrupta (antes)
+  501/800  primeros bytes 8a2ae6f0bee202ca  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  551/800  primeros bytes 152892158e012e0b  reset=1  t_us=0  ruido_arranque=no  0.62 s
+python : Traceback (most recent call last):
+En C:\Users\mario\AppData\Local\Temp\claude\C--Users-mario-Documents-TFM\2a4eee3a-0585-41ce-b396-fea3ca8a86fd\scratchpa
+d\final_0928.ps1: 23 Carácter: 3
++   python -u analysis/reinicios_esp32.py --puerto COM7 --variante $var ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\analysis\reinicios_esp32.py", line 208, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\analysis\reinicios_esp32.py", line 168, in main
+    cabs, datos, info, motivo = un_reinicio(s, f, a.timeout, bloques)
+                                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\analysis\reinicios_esp32.py", line 91, in un_reinicio
+    if len(d) != int(cab.get("bytes", "0")):
+                 ~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: '1085ca818a6b831aec8b1b393123cd'
+chip f8:b3:b7:2a:09:28, variante paso: 569 hechos, faltan 231
+  601/800  primeros bytes 58aac90c72179844  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  651/800  primeros bytes d58909a669e4ee7b  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  701/800  primeros bytes 9da03a50607cd1b6  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  751/800  primeros bytes e9b613ca2b9e6e8d  reset=1  t_us=0  ruido_arranque=no  0.62 s
+  800/800  primeros bytes d2723039a95bea31  reset=1  t_us=0  ruido_arranque=no  0.62 s
+hecho: 800 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\paso; rechazos 0

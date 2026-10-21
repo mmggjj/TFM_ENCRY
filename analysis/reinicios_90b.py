@@ -52,13 +52,31 @@ def a_wsl(p: Path) -> str:
 # variante -> (condicion de la campana con la que se fija H_I, guarda "antes")
 VARIANTES = {"normal": ("D", False), "sin_ruido": ("D", False),
              "radio_sin_ruido": ("B", True), "espera_sin_ruido": ("D", True),
-             "radio": ("B", True)}
+             "radio": ("B", True),
+             # firmware/reinicios_fuentes: bootloader sin ruido, una fuente y
+             # lectura "despues" a los 800 ms con la fuente ya apagada (por
+             # eso H_I de D)
+             **{v: ("D", True) for v in (
+                 "fuente_control", "fuente_wifi_init", "fuente_radio_0", "fuente_radio_1",
+                 "fuente_radio_10", "fuente_radio_100", "fuente_adc_200", "fuente_bootrand_200",
+                 "fuente_adc_0", "fuente_adc_1")}}
+LECTURA_FUENTE = {
+    "fuente_control": "sin ninguna fuente (control)",
+    "fuente_wifi_init": "tras iniciar el Wi-Fi sin encender la radio (sin esp_wifi_start)",
+    "fuente_adc_200": "tras 200 ms de lecturas normales del ADC (adc_oneshot, ADC1 canal 0)",
+    "fuente_adc_1": "tras 1 ms de lecturas normales del ADC (adc_oneshot, ADC1 canal 0)",
+    "fuente_adc_0": "tras crear y borrar la unidad del ADC sin ninguna lectura",
+    "fuente_bootrand_200": "tras 200 ms con la fuente del arranque (bootloader_random_enable) "
+                           "encendida desde el programa",
+    **{f"fuente_radio_{m}": f"tras {m} ms con la radio encendida (desde que vuelve esp_wifi_start "
+                            f"hasta esp_wifi_stop)" for m in (0, 1, 10, 100)},
+}
 
 
 def h_inicial(mac: str, cond: str = "D") -> tuple[float, float, str]:
     """H no-IID (bit/bit y bit/byte) mas baja de las capturas del chip en cond."""
     filas = list(csv.DictReader((RES / "entropia_90b.csv").open(encoding="utf-8")))
-    pref = "fb4c_" if mac == "a0dd6c0efb4c" else None
+    pref = {"a0dd6c0efb4c": "fb4c_", "f8b3b72a0928": "0928_"}.get(mac)
     if pref is None:
         raise SystemExit(f"sin capturas de la campana para el chip {mac}")
     b1 = {f["nombre"]: float(f["testCases.10.hAssessed"]) for f in filas
@@ -204,6 +222,15 @@ def por_tick(bloques: np.ndarray, t_us: np.ndarray, antes: np.ndarray) -> list[s
             continue
         fc = flujo_comun(bloques[sel])
         lin.append(f"| {k * 10} | {len(sel)} | {fc['distintos']} | {fc['relaciones']} |")
+    pares, mismos = pares_antes(bloques, antes)
+    lin += ["", f"Pares de arranques con la lectura \"antes\" idéntica: {pares}; "
+            f"de ellos con la lectura \"despues\" también idéntica: {mismos}.", ""]
+    return lin
+
+
+def pares_antes(bloques: np.ndarray, antes: np.ndarray) -> tuple[int, int]:
+    """Parejas de arranques con la lectura "antes" identica (mismo estado del
+    generador) y cuantas de ellas repiten tambien la "despues"."""
     grupos = collections.defaultdict(list)
     for i, b in enumerate(antes):
         grupos[b.tobytes()].append(i)
@@ -213,9 +240,44 @@ def por_tick(bloques: np.ndarray, t_us: np.ndarray, antes: np.ndarray) -> list[s
             for y in range(x + 1, len(g)):
                 pares += 1
                 mismos += bool(np.array_equal(bloques[g[x]], bloques[g[y]]))
-    lin += ["", f"Pares de arranques con la lectura \"antes\" idéntica: {pares}; "
-            f"de ellos con la lectura \"despues\" también idéntica: {mismos}.", ""]
-    return lin
+    return pares, mismos
+
+
+def fuente(filas: list[dict], bloques: np.ndarray, antes: np.ndarray) -> tuple[list[str], dict]:
+    """Variantes fuente_*: tiempos de la fuente y de la lectura, y la pareja
+    de cifras que decide si la fuente mete ruido (mismo "antes" -> mismo
+    "despues")."""
+    cc = np.array([int(f["ccount"]) for f in filas], dtype=np.int64)
+    t_on = np.array([int(f["t_on_us"]) for f in filas])
+    t_off = np.array([int(f["t_off_us"]) for f in filas])
+    tarde = sum(int(f["tarde"]) for f in filas)
+    pares, mismos = pares_antes(bloques, antes)
+    fc_a, fc_d = flujo_comun(antes), flujo_comun(bloques)
+    lin = [f"Fuente encendida de {t_on.min()} a {t_on.max()} µs y apagada de {t_off.min()} a "
+           f"{t_off.max()} µs (−1: no hay fuente); lecturas que llegaron tarde a los 800 ms: {tarde}; "
+           f"contador de ciclos en la lectura \"despues\": {cc.min()}-{cc.max()} "
+           f"(variación {cc.max() - cc.min()} ciclos).", ""]
+    if "rf_ts_ini" in filas[0] and int(filas[0]["rf_ts_ini"]) >= 0:
+        # esp_phy_rf_get_on_ts: ultimo encendido de la radio, leido al volver
+        # esp_wifi_start y al volver esp_wifi_stop
+        ini = np.array([int(f["rf_ts_ini"]) for f in filas])
+        fin = np.array([int(f["rf_ts_fin"]) for f in filas])
+        lin += [f"Radio encendida según la PHY a los {ini.min()}-{ini.max()} µs; tiempo con la radio "
+                f"encendida hasta que vuelve esp_wifi_stop: {(t_off - ini).min() / 1000:.1f}-"
+                f"{(t_off - ini).max() / 1000:.1f} ms; arranques en que esp_wifi_stop la volvió a "
+                f"encender: {int((fin != ini).sum())} de {len(filas)}.", ""]
+    if "n_adc" in filas[0] and int(filas[0]["n_adc"]) >= 0:
+        n_adc = np.array([int(f["n_adc"]) for f in filas])
+        ult = np.array([int(f["adc_ultimo"]) for f in filas])
+        lin += [f"Lecturas correctas del ADC por arranque: {n_adc.min()}-{n_adc.max()}; última lectura "
+                f"cruda {ult.min()}-{ult.max()} (12 bits).", ""]
+    lin += [
+           f"Pares de arranques con la lectura \"antes\" idéntica: {pares}; "
+           f"de ellos con la lectura \"despues\" también idéntica: {mismos}.", ""]
+    return lin, {"n": len(filas), "dist_antes": fc_a["distintos"], "dist_despues": fc_d["distintos"],
+                 "rel_despues": fc_d["relaciones"], "enteros_despues": fc_d["enteros"],
+                 "pares": pares, "mismos": mismos, "hmin": fc_d["hmin_arranque"],
+                 "variacion_cc": int(cc.max() - cc.min())}
 
 
 def main() -> int:
@@ -228,11 +290,13 @@ def main() -> int:
     out = [f"# Prueba de reinicios del RNG del ESP32, chip {a.mac}", "",
            "Generado por analysis/reinicios_90b.py. H_I: estimación no-IID más baja de las capturas "
            "de la campaña de este chip en la misma condición (D sin radio, B con Wi-Fi).", ""]
+    resumen_fuentes: dict[str, dict] = {}
     for var, (cond, con_antes) in VARIANTES.items():
         dest = base / var
         ruta = dest / "reinicios.bin"
         if not ruta.exists():
-            out += [f"## Variante {var}", "", "Sin capturar.", ""]
+            if not var.startswith("fuente_"):
+                out += [f"## Variante {var}", "", "Sin capturar.", ""]
             continue
         h1, h8, de = h_inicial(a.mac, cond)
         crudo = np.frombuffer(ruta.read_bytes(), dtype=np.uint8)
@@ -242,7 +306,8 @@ def main() -> int:
         resets = sorted({f["reset"] for f in filas})
         ruido = collections.Counter(f["ruido_arranque_encendido"] for f in filas)
         t_us = np.array([int(f["t_us"]) for f in filas])
-        lectura = ("tras encender el Wi-Fi y esperar 200 ms" if var.startswith("radio") else
+        lectura = (f"a los 800 ms, {LECTURA_FUENTE[var]}" if var in LECTURA_FUENTE else
+                   "tras encender el Wi-Fi y esperar 200 ms" if var.startswith("radio") else
                    "tras la misma espera, sin encender la radio" if var.startswith("espera") else
                    "nada más arrancar, radio apagada")
         out += [f"## Variante {var}", "",
@@ -256,8 +321,12 @@ def main() -> int:
                                   dtype=np.uint8).reshape(len(filas), rst_bytes)
             out += ["Lectura de nada más arrancar en esta misma variante (\"antes\"):", ""]
             out += tablas(antes)
-            out += ["Lectura \"despues\" agrupada por el tick de FreeRTOS en que cae:", ""]
-            out += por_tick(bloques, t_us, antes)
+            if var.startswith("fuente_"):
+                lin, resumen_fuentes[var] = fuente(filas, bloques, antes)
+                out += lin
+            else:
+                out += ["Lectura \"despues\" agrupada por el tick de FreeRTOS en que cae:", ""]
+                out += por_tick(bloques, t_us, antes)
         if len(filas) >= N_REIN and not a.sin_nist:
             m1 = np.unpackbits(bloques[:N_REIN, :N_MUES // 8], axis=1)      # 1000 x 1000 bits
             m8 = bloques[:N_REIN, :N_MUES]                                  # 1000 x 1000 bytes
@@ -267,6 +336,17 @@ def main() -> int:
                     f"`{var}/ea_restart_b1.log` y `ea_restart_b8.log`:", "",
                     f"- bit: {veredicto(r1['texto'])}",
                     f"- byte: {veredicto(r8['texto'])}", ""]
+    if resumen_fuentes:
+        out += ["## Comparación de fuentes (firmware/reinicios_fuentes, lectura \"despues\" a los 800 ms)", "",
+                "| Variante | Arranques | Distintas \"antes\" | Distintas \"despues\" | Trozos compartidos "
+                "(solapes idénticos) | Pares con \"antes\" idéntica | de ellos, \"despues\" idéntica | "
+                "Min-entropía por arranque (bits) | Variación del instante (ciclos) |",
+                "|---|---|---|---|---|---|---|---|---|"]
+        for var, r in resumen_fuentes.items():
+            out.append(f"| {var} | {r['n']} | {r['dist_antes']} | {r['dist_despues']} | "
+                       f"{r['rel_despues']} ({r['enteros_despues']}) | {r['pares']} | {r['mismos']} | "
+                       f"{r['hmin']:.1f} | {r['variacion_cc']} |")
+        out.append("")
     salida = DIR / f"resumen_mac_{a.mac}.md"
     salida.write_text("\n".join(out) + "\n", encoding="utf-8")
     print("\n".join(out))

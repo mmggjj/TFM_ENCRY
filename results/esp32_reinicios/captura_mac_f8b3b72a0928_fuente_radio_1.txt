@@ -1,0 +1,45 @@
+﻿chip f8:b3:b7:2a:09:28, variante fuente_radio_1: 0 hechos, faltan 300
+  1/300  primeros bytes 91c7e1165f27c514  reset=1  t_us=800000  ruido_arranque=no  1.60 s
+  reinicio 2 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 4 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 4 intento 2 rechazado: longitud 896 (unico)
+  reinicio 4 intento 3 rechazado: linea hex corrupta (antes)
+  reinicio 6 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 11 intento 1 rechazado: longitud 1219 (antes)
+  reinicio 18 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 20 intento 1 rechazado: longitud 1208 (antes)
+  reinicio 38 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 39 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 39 intento 2 rechazado: longitud 1921 (antes)
+  reinicio 39 intento 3 rechazado: longitud 1953 (despues)
+  reinicio 42 intento 1 rechazado: longitud 1928 (antes)
+  reinicio 46 intento 1 rechazado: longitud 1988 (antes)
+  51/300  primeros bytes d56e0a34e4835fc0  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 53 intento 1 rechazado: longitud 2210 (despues)
+  reinicio 53 intento 2 rechazado: longitud 1281 (despues)
+  reinicio 54 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 56 intento 1 rechazado: longitud 1397 (antes)
+  reinicio 63 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 69 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 71 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 73 intento 1 rechazado: longitud 1638 (antes)
+  reinicio 79 intento 1 rechazado: longitud 961 (antes)
+  reinicio 79 intento 2 rechazado: linea hex corrupta (antes)
+  101/300  primeros bytes d7dfb7a605b59fc6  reset=1  t_us=800000  ruido_arranque=no  1.60 s
+  reinicio 105 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 107 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 117 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 119 intento 1 rechazado: linea hex corrupta (despues)
+  151/300  primeros bytes a01052b49b002c75  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 175 intento 1 rechazado: longitud 960 (antes)
+  reinicio 186 intento 1 rechazado: linea hex corrupta (antes)
+  201/300  primeros bytes a4c513ee4dc322d1  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 241 intento 1 rechazado: longitud 1409 (antes)
+  reinicio 243 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 244 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 244 intento 2 rechazado: linea hex corrupta (despues)
+  reinicio 245 intento 1 rechazado: linea hex corrupta (antes)
+  251/300  primeros bytes e680773458767ae1  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 276 intento 1 rechazado: linea hex corrupta (antes)
+  300/300  primeros bytes aec256385edb191a  reset=1  t_us=800000  ruido_arranque=no  1.60 s
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_radio_1; rechazos 36

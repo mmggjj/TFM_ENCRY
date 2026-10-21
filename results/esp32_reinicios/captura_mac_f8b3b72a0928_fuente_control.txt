@@ -1,0 +1,32 @@
+﻿chip f8:b3:b7:2a:09:28, variante fuente_control: 0 hechos, faltan 300
+  1/300  primeros bytes 028df10bf5077d14  reset=1  t_us=800004  ruido_arranque=no  1.41 s
+  reinicio 48 intento 1 rechazado: longitud 1172 (unico)
+  51/300  primeros bytes f1448c92f7a5bd83  reset=1  t_us=800004  ruido_arranque=no  1.41 s
+  reinicio 54 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 76 intento 1 rechazado: linea hex corrupta (antes)
+  101/300  primeros bytes 3f806587d59a93fb  reset=1  t_us=800005  ruido_arranque=no  1.41 s
+  reinicio 101 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 145 intento 1 rechazado: longitud 1585 (antes)
+  151/300  primeros bytes 081aebd926e82a00  reset=1  t_us=800005  ruido_arranque=no  1.41 s
+  reinicio 164 intento 1 rechazado: longitud 960 (antes)
+  reinicio 166 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 168 intento 1 rechazado: longitud 1893 (antes)
+  reinicio 173 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 175 intento 1 rechazado: linea hex corrupta (antes)
+  201/300  primeros bytes a1d466f6f0eb1037  reset=1  t_us=800004  ruido_arranque=no  1.41 s
+  reinicio 213 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 235 intento 1 rechazado: longitud 2272 (antes)
+  reinicio 249 intento 1 rechazado: linea hex corrupta (antes)
+  251/300  primeros bytes 49d59d7b1e77ede5  reset=1  t_us=800004  ruido_arranque=no  1.41 s
+  reinicio 265 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 276 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 277 intento 1 rechazado: longitud 1907 (antes)
+  reinicio 288 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 295 intento 1 rechazado: longitud 2099 (antes)
+  reinicio 295 intento 2 rechazado: longitud 2698 (despues)
+  reinicio 295 intento 3 rechazado: longitud 1266 (antes)
+tres rechazos seguidos: paro
+chip f8:b3:b7:2a:09:28, variante fuente_control: 295 hechos, faltan 5
+  reinicio 299 intento 1 rechazado: longitud 1608 (despues)
+  300/300  primeros bytes 8a74a635b48f2f67  reset=1  t_us=800004  ruido_arranque=no  1.41 s
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_control; rechazos 1

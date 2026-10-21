@@ -1,0 +1,9 @@
+﻿chip f8:b3:b7:2a:09:28, variante fuente_adc_0: 0 hechos, faltan 300
+  1/300  primeros bytes be19ac7d7d2f843e  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  51/300  primeros bytes 2b840fca7fcae333  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  101/300  primeros bytes a8df4177bdebd633  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  151/300  primeros bytes 8daa269e85242816  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  201/300  primeros bytes 991e8a3d5bb1b383  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  251/300  primeros bytes 7ed86868e6d342c7  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  300/300  primeros bytes 8daa269e85242816  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_adc_0; rechazos 0

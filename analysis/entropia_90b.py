@@ -56,6 +56,12 @@ FUENTES = {
     # ec:e3:34:9a:d1:18
     **{f"fb4c_cond{c}_rep{r}": RES / "esp32_campana_rng" / "mac_a0dd6c0efb4c" / f"cond{c}_rep{r}.bin"
        for c in "ABCD" for r in (1, 2, 3)},
+    # y en el chip de MAC f8:b3:b7:2a:09:28 (2026-10-20)
+    **{f"0928_cond{c}_rep{r}": RES / "esp32_campana_rng" / "mac_f8b3b72a0928" / f"cond{c}_rep{r}.bin"
+       for c in "ABCD" for r in (1, 2, 3)},
+    # segunda tanda del mismo chip (2026-10-21), fuera de los ANOVA (12 + 12 + 12)
+    **{f"0928t2_cond{c}_rep{r}": RES / "esp32_campana_rng" / "mac_f8b3b72a0928" / "tanda2" / f"cond{c}_rep{r}.bin"
+       for c in "ABCD" for r in (1, 2, 3)},
 }
 
 

@@ -1,0 +1,59 @@
+Agent pid 416
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_f8b3b72a0928/tanda2/condC_rep3.bin' (SHA-256 hash 0b6f281be05af159192f7fb020928703cb720cc4e14a33d61f140c3f98231a58)
+Loaded 125000 samples of 256 distinct 8-bit-wide symbols
+Number of Binary Symbols: 1000000
+
+*** Warning: data contains less than 1000000 samples ***
+
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Bitstring MCV Estimate: mode = 500695, p-hat = 0.500695, p_u = 0.50198291405154105
+	Most Common Value Estimate (bit string) = 0.994290 / 1 bit(s)
+Literal MCV Estimate: mode = 576, p-hat = 0.0046080000000000001, p_u = 0.0051014204198134945
+	Most Common Value Estimate = 7.614885 / 8 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Bitstring Collision Estimate: X-bar = 2.5010754624488531, sigma-hat = 0.49999946864777506, p = 0.52192424700615159
+	Collision Test Estimate (bit string) = 0.938088 / 1 bit(s)
+Bitstring Markov Estimate: P_0 = 0.499305, P_1 = 0.500695, P_0,0 = 0.49861106938644717, P_0,1 = 0.50138893061355283, P_1,0 = 0.49999800277215223, P_1,1 = 0.50000199722784777, p_max = 3.5038961694187262e-39
+	Markov Test Estimate (bit string) = 0.998017 / 1 bit(s)
+Bitstring Compression Estimate: X-bar = 5.2149656601626697, sigma-hat = 1.0171666582141172, p = 0.032061373573277874
+	Compression Test Estimate (bit string) = 0.827170 / 1 bit(s)
+
+Running Tuple Estimates...
+Bitstring t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Bitstring LRS Estimate: u = 17, v = 36, p-hat = 0.50078254320489493, p_u = 0.50207045692325488
+	T-Tuple Test Estimate (bit string) = 0.919089 / 1 bit(s)
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004607999999999999999849, p_u = 0.005101420419813494243511
+Literal LRS Estimate: u = 2, v = 4, p-hat = 0.0040000560011920286, p_u = 0.004459916920341585
+	T-Tuple Test Estimate = 7.614885 / 8 bit(s)
+	LRS Test Estimate (bit string) = 0.994038 / 1 bit(s)
+	LRS Test Estimate = 7.808767 / 8 bit(s)
+
+Running Predictor Estimates...
+Bitstring MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50093943359724857 (C = 499620) Plocal can't affect result (r = 22)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (bit string) = 0.997292 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 124937, Pglobal' = 0.0043520568751168835 (C = 487) Plocal can't affect result (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 7.844087 / 8 bit(s)
+Bitstring Lag Prediction Estimate: N = 999999, Pglobal' = 0.50040241303444832 (C = 499114) Plocal = 0.50602570090190291 (r = 26)
+	Lag Prediction Test Estimate (bit string) = 0.982717 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 124999, Pglobal' = 0.0042652320740166174 (C = 477) Plocal can't affect result (r = 2)
+	Lag Prediction Test Estimate = 7.873160 / 8 bit(s)
+Bitstring MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50180191693112508 (C = 500513) Plocal can't affect result (r = 22)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (bit string) = 0.994810 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 124998, Pglobal' = 0.0045529409224755422 (C = 511) Plocal can't affect result (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 7.778986 / 8 bit(s)
+Bitstring LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50166943235386496 (C = 500373) Plocal can't affect result (r = 22)
+	LZ78Y Prediction Test Estimate (bit string) = 0.995191 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 124983, Pglobal' = 0.0045450328673618968 (C = 510) Plocal can't affect result (r = 3)
+	LZ78Y Prediction Test Estimate = 7.781494 / 8 bit(s)
+
+H_original: 7.614885
+H_bitstring: 0.827170
+min(H_original, 8 X H_bitstring): 6.617360
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+tiempo_s=7.02 maxrss_kB=288752

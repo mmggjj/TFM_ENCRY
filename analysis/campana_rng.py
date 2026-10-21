@@ -89,7 +89,10 @@ def main() -> int:
                 fin = dict(RE_KV.findall(linea))
                 cond = meta.get("cond", "?")
                 esperado = int(meta.get("bytes", "125000"))
-                datos = bytes.fromhex("".join(hexbuf)) if all(len(h) % 2 == 0 for h in hexbuf) else b""
+                # una linea cortada o con texto intercalado deja el bloque sin
+                # datos y se rechaza (antes "zz" hacia saltar fromhex)
+                limpias = all(len(h) % 2 == 0 and set(h) <= HEXCHARS for h in hexbuf)
+                datos = bytes.fromhex("".join(hexbuf)) if limpias else b""
                 crc_ok = zlib.crc32(datos) == int(fin.get("crc32", "0"), 16)
                 if cond not in tengo or len(datos) != esperado or not crc_ok:
                     rechazos += 1

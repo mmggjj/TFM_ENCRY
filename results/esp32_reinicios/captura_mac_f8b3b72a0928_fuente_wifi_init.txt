@@ -1,0 +1,28 @@
+﻿chip f8:b3:b7:2a:09:28, variante fuente_wifi_init: 0 hechos, faltan 300
+  1/300  primeros bytes 209fa4a683dc9753  reset=1  t_us=800004  ruido_arranque=no  1.60 s
+  reinicio 10 intento 1 rechazado: longitud 1937 (antes)
+  reinicio 10 intento 2 rechazado: linea hex corrupta (antes)
+  reinicio 23 intento 1 rechazado: longitud 1789 (antes)
+  reinicio 36 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 40 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 43 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 43 intento 2 rechazado: linea hex corrupta (antes)
+  reinicio 47 intento 1 rechazado: linea hex corrupta (despues)
+  51/300  primeros bytes fecb30289b7b0d20  reset=1  t_us=800004  ruido_arranque=no  1.60 s
+  reinicio 65 intento 1 rechazado: longitud 1530 (antes)
+  reinicio 68 intento 1 rechazado: longitud 1153 (antes)
+  reinicio 69 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 96 intento 1 rechazado: linea hex corrupta (antes)
+  101/300  primeros bytes cb2ec9b5ed34b74c  reset=1  t_us=800005  ruido_arranque=no  1.60 s
+  reinicio 149 intento 1 rechazado: linea hex corrupta (antes)
+  151/300  primeros bytes 4f02915742bedc25  reset=1  t_us=800005  ruido_arranque=no  1.60 s
+  reinicio 189 intento 1 rechazado: linea hex corrupta (antes)
+  201/300  primeros bytes dc156ef5bd4e6788  reset=1  t_us=800005  ruido_arranque=no  1.60 s
+  reinicio 214 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 229 intento 1 rechazado: linea hex corrupta (antes)
+  251/300  primeros bytes 48663f758dceaa53  reset=1  t_us=800005  ruido_arranque=no  1.60 s
+  reinicio 260 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 277 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 299 intento 1 rechazado: longitud 960 (unico)
+  300/300  primeros bytes cce10ba033a76066  reset=1  t_us=800004  ruido_arranque=no  1.60 s
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_wifi_init; rechazos 19

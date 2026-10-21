@@ -1,0 +1,26 @@
+﻿chip f8:b3:b7:2a:09:28, variante fuente_radio_100: 0 hechos, faltan 300
+  1/300  primeros bytes 3630de9b4cb3eae8  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 2 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 5 intento 1 rechazado: mac/variante
+  reinicio 21 intento 1 rechazado: crc (antes)
+  51/300  primeros bytes 1bdcca44725200a6  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 79 intento 1 rechazado: longitud 1323 (unico)
+  reinicio 83 intento 1 rechazado: crc (antes)
+  101/300  primeros bytes a1f70f6d943f04ab  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  reinicio 110 intento 1 rechazado: longitud 1300 (antes)
+  reinicio 111 intento 1 rechazado: longitud 1644 (despues)
+  reinicio 135 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 145 intento 1 rechazado: longitud 1009 (antes)
+  151/300  primeros bytes c0979ab0f6a80d60  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+  201/300  primeros bytes a521494f543d9b90  reset=1  t_us=800000  ruido_arranque=no  1.60 s
+  reinicio 211 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 214 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 218 intento 1 rechazado: longitud 1920 (antes)
+  251/300  primeros bytes e4a5c4236404fcee  reset=1  t_us=800001  ruido_arranque=no  1.61 s
+  reinicio 252 intento 1 rechazado: longitud 1601 (despues)
+  reinicio 258 intento 1 rechazado: longitud 1470 (antes)
+  reinicio 264 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 264 intento 2 rechazado: linea hex corrupta (antes)
+  reinicio 264 intento 3 rechazado: linea hex corrupta (antes)
+  300/300  primeros bytes 58c5c4ef90259752  reset=1  t_us=800001  ruido_arranque=no  1.60 s
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_radio_100; rechazos 17

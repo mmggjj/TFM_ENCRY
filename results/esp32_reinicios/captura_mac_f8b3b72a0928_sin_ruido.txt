@@ -1,0 +1,28 @@
+﻿chip f8:b3:b7:2a:09:28, variante sin_ruido: 0 hechos, faltan 1000
+  1/1000  primeros bytes 011fe88cab6702d9  reset=1  t_us=3203  ruido_arranque=no  0.40 s
+  51/1000  primeros bytes d92f87439b16c111  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  101/1000  primeros bytes 6e10cf11a9a2d6ca  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  151/1000  primeros bytes 850c8b127584cbc1  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  201/1000  primeros bytes ef3e6d7f75f942e3  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  251/1000  primeros bytes 7e34d71802835a8e  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  reinicio 288 intento 1 rechazado: linea hex corrupta (unico)
+  reinicio 291 intento 1 rechazado: linea hex corrupta (unico)
+  reinicio 291 intento 2 rechazado: linea hex corrupta (unico)
+  301/1000  primeros bytes 37eda97f1fcb966a  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  reinicio 302 intento 1 rechazado: linea hex corrupta (unico)
+  reinicio 325 intento 1 rechazado: linea hex corrupta (unico)
+  351/1000  primeros bytes aba57a6c18a45527  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  401/1000  primeros bytes 66fb6ce4f523919f  reset=1  t_us=3208  ruido_arranque=no  0.40 s
+  451/1000  primeros bytes 6e32458f3310a2bc  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  501/1000  primeros bytes fdf6f65167cde1cd  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  551/1000  primeros bytes 08a0e1d8454771da  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  601/1000  primeros bytes 6e10cf11a9a2d6ca  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  651/1000  primeros bytes c6c357d60b274076  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  701/1000  primeros bytes 9d98119ed03d7e3e  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  751/1000  primeros bytes fdf6f65167cde1cd  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  801/1000  primeros bytes e2b39f225af1deca  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  851/1000  primeros bytes 8c83e9e12e27986d  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  901/1000  primeros bytes ce3a4fae59468f3e  reset=1  t_us=3205  ruido_arranque=no  0.40 s
+  951/1000  primeros bytes 6163f31de450584c  reset=1  t_us=3207  ruido_arranque=no  0.40 s
+  1000/1000  primeros bytes c65ce76554057344  reset=1  t_us=3208  ruido_arranque=no  0.40 s
+hecho: 1000 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\sin_ruido; rechazos 5

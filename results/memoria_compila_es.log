@@ -1,0 +1,251 @@
+﻿note: Running TeX ...
+tectonic.exe : Fontconfig error: Cannot load default config file: No such file: (null)
+En línea: 5 Carácter: 1
++ & $t tfm_main_es.tex *>&1 | Out-File -Encoding utf8 '..\results\memor ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Fontconfig erro...ch file: (null):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:142: Overfull \hbox (0.7917pt too wide) in paragraph at lines 132--142
+warning: chapters_es/ch7_results_a:273: Underfull \hbox (badness 3601) in paragraph at lines 272--273
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+note: Running BibTeX on tfm_main_es.aux ...
+note: Rerunning TeX because bibtex was run ...
+warning: tfm_main_es.lot:18: Underfull \hbox (badness 3861) in paragraph at lines 18--18
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 2351) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+warning: tfm_main_es.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 7504) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 10000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 8000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:498: Underfull \hbox (badness 1394) in paragraph at lines 494--498
+warning: tfm_main_es.bbl:520: Underfull \hbox (badness 10000) in paragraph at lines 517--520
+warning: tfm_main_es.bbl:524: Underfull \hbox (badness 2261) in paragraph at lines 522--524
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:585: Underfull \hbox (badness 1527) in paragraph at lines 581--585
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 2980) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 6641) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
+warning: tfm_main_es.bbl:653: Underfull \hbox (badness 10000) in paragraph at lines 648--653
+note: Rerunning TeX because "tfm_main_es.aux" changed ...
+warning: tfm_main_es.lot:18: Underfull \hbox (badness 3861) in paragraph at lines 18--18
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 2351) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+warning: tfm_main_es.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 7504) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 10000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 8000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:498: Underfull \hbox (badness 1394) in paragraph at lines 494--498
+warning: tfm_main_es.bbl:520: Underfull \hbox (badness 10000) in paragraph at lines 517--520
+warning: tfm_main_es.bbl:524: Underfull \hbox (badness 2261) in paragraph at lines 522--524
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:585: Underfull \hbox (badness 1527) in paragraph at lines 581--585
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 2980) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 6641) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
+warning: tfm_main_es.bbl:653: Underfull \hbox (badness 10000) in paragraph at lines 648--653
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+note: Rerunning TeX because "tfm_main_es.bbl" changed ...
+warning: tfm_main_es.lot:18: Underfull \hbox (badness 3861) in paragraph at lines 18--18
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 2351) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+warning: tfm_main_es.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 7504) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 10000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 8000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:498: Underfull \hbox (badness 1394) in paragraph at lines 494--498
+warning: tfm_main_es.bbl:520: Underfull \hbox (badness 10000) in paragraph at lines 517--520
+warning: tfm_main_es.bbl:524: Underfull \hbox (badness 2261) in paragraph at lines 522--524
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:585: Underfull \hbox (badness 1527) in paragraph at lines 581--585
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 2980) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 6641) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
+warning: tfm_main_es.bbl:653: Underfull \hbox (badness 10000) in paragraph at lines 648--653
+note: Rerunning TeX because "tfm_main_es.bbl" changed ...
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+warning: tfm_main_es.lot:18: Underfull \hbox (badness 3861) in paragraph at lines 18--18
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 2351) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+warning: tfm_main_es.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 7504) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 10000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 8000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:498: Underfull \hbox (badness 1394) in paragraph at lines 494--498
+warning: tfm_main_es.bbl:520: Underfull \hbox (badness 10000) in paragraph at lines 517--520
+warning: tfm_main_es.bbl:524: Underfull \hbox (badness 2261) in paragraph at lines 522--524
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:585: Underfull \hbox (badness 1527) in paragraph at lines 581--585
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 2980) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 6641) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
+warning: tfm_main_es.bbl:653: Underfull \hbox (badness 10000) in paragraph at lines 648--653
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+note: Rerunning TeX because "tfm_main_es.bbl" changed ...
+warning: tfm_main_es.lot:18: Underfull \hbox (badness 3861) in paragraph at lines 18--18
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 2351) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+warning: tfm_main_es.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 7504) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 10000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 8000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:498: Underfull \hbox (badness 1394) in paragraph at lines 494--498
+warning: tfm_main_es.bbl:520: Underfull \hbox (badness 10000) in paragraph at lines 517--520
+warning: tfm_main_es.bbl:524: Underfull \hbox (badness 2261) in paragraph at lines 522--524
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:585: Underfull \hbox (badness 1527) in paragraph at lines 581--585
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 2980) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 6641) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
+warning: tfm_main_es.bbl:653: Underfull \hbox (badness 10000) in paragraph at lines 648--653
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+note: Rerunning TeX because "tfm_main_es.bbl" changed ...
+warning: tfm_main_es.lot:18: Underfull \hbox (badness 3861) in paragraph at lines 18--18
+warning: chapters_es/esp32_blackbox:641: Overfull \hbox (5.53423pt too wide) in paragraph at lines 630--641
+warning: chapters_es/ch7_results_a:46: Underfull \hbox (badness 10000) in paragraph at lines 43--46
+warning: chapters_es/ch7_results_a:285: Overfull \hbox (1.54797pt too wide) in paragraph at lines 268--285
+warning: chapters_es/ch7_results_a:321: Underfull \hbox (badness 10000) in paragraph at lines 321--321
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 10000) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:324: Underfull \hbox (badness 4792) in paragraph at lines 324--324
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 10000) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:325: Underfull \hbox (badness 6001) in paragraph at lines 325--325
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 2351) in paragraph at lines 325--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
+warning: chapters_es/ch7_results_a:327: Underfull \hbox (badness 10000) in paragraph at lines 326--327
+warning: tfm_main_es.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 7504) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 10000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:213: Underfull \hbox (badness 8000) in paragraph at lines 209--213
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:456: Underfull \hbox (badness 10000) in paragraph at lines 452--456
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:462: Underfull \hbox (badness 10000) in paragraph at lines 458--462
+warning: tfm_main_es.bbl:498: Underfull \hbox (badness 1394) in paragraph at lines 494--498
+warning: tfm_main_es.bbl:520: Underfull \hbox (badness 10000) in paragraph at lines 517--520
+warning: tfm_main_es.bbl:524: Underfull \hbox (badness 2261) in paragraph at lines 522--524
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:534: Underfull \hbox (badness 10000) in paragraph at lines 530--534
+warning: tfm_main_es.bbl:585: Underfull \hbox (badness 1527) in paragraph at lines 581--585
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 2980) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:595: Underfull \hbox (badness 6641) in paragraph at lines 592--595
+warning: tfm_main_es.bbl:604: Underfull \hbox (badness 10000) in paragraph at lines 598--604
+warning: tfm_main_es.bbl:653: Underfull \hbox (badness 10000) in paragraph at lines 648--653
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+warning: TeX rerun seems needed, but stopping at 6 passes
+warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
+note: Running xdvipdfmx ...
+warning: Object @page.1 already defined.
+note: Writing `tfm_main_es.pdf` (548.21 KiB)
+note: Skipped writing 6 intermediate files (use --keep-intermediates to keep them)

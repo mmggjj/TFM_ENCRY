@@ -12,7 +12,7 @@ Este capítulo es la primera parte del trabajo. Trata el generador hardware
 de números aleatorios del ESP32 tal como se lo encuentra un integrador: un
 registro que devuelve palabras de 32 bits, detrás del cual el fabricante
 nombra dos fuentes de ruido y no cuantifica ninguna. El generador se hace
-funcionar en cuatro condiciones de operación en tres campañas de captura;
+funcionar en cuatro condiciones de operación en cuatro campañas de captura sobre tres chips;
 su salida pasa por una batería SP~800-22 validada con una
 autocomprobación, por métricas de Shannon y espectrales y por los
 estimadores de SP~800-90B; se construye a su alrededor un recolector de
@@ -27,7 +27,7 @@ este TFM.
 
 % docs/esp32_linea_base_90b.md 1: ESP32-D0WD-V3, revisión 3.1
 El dispositivo es el ESP32 original, un sistema en chip Xtensa LX6 de dos
-núcleos; los dos chips medidos aquí son ESP32-D0WD-V3, revisión de silicio
+núcleos; los tres chips medidos aquí son ESP32-D0WD-V3, revisión de silicio
 3.1. Según el manual técnico de
 referencia~\cite{espressif_trm_esp32}, cada palabra de 32 bits leída de
 \texttt{RNG\_DATA\_REG} (dirección 0x3FF75144) es un número verdaderamente
@@ -83,9 +83,10 @@ segundo plano que mantiene el SAR ADC convirtiendo en el canal~0 del ADC1
 (GPIO36, flotante) tan rápido como permite el controlador de conversión
 única. Esa no es la fuente SAR documentada, el modo de muestreo de ruido
 de \texttt{bootloader\_random\_enable()}, y Espressif no dice si las
-conversiones ordinarias llegan al generador; ninguna de las medidas que
-siguen puede decidirlo, así que ``ADC encendido'' describe lo que hace el
-firmware, no lo que recibe el generador. Las condiciones se ejecutan en el
+conversiones ordinarias llegan al generador; la estadística que sigue no
+puede decidirlo, y solo la prueba de reinicios de la
+Sección~\ref{sec:esp32_90b} muestra que sí llegan, sin decir cuánto
+aportan. Las condiciones se ejecutan en el
 orden D, C, B, A desde un arranque en frío: D primero, porque una vez que
 la radio ha funcionado, un estado con la radio apagada ya no es el de un
 dispositivo cuya radio nunca se ha encendido, y cada paso posterior añade
@@ -117,7 +118,7 @@ y \path{analysis/campana_rng.py}.
 % capture_log.csv de cada campaña: crc_ok = 1 en las 24 filas
 \begin{table}[htbp]
 \centering
-\caption{Las tres campañas de captura \meas{}. Cada ciclo es un arranque en
+\caption{Las cuatro campañas de captura \meas{}. Cada ciclo es un arranque en
 frío seguido de las cuatro condiciones en el orden D, C, B, A, de $10^6$
 bits cada una.}
 \label{tab:esp32_campaigns}
@@ -129,24 +130,32 @@ Campaña & Fecha & Chip (MAC) & Firmware compilado con & Ciclos \\
 Primera & 2026-08-04 & ec:e3:34:9a:d1:18 & ESP-IDF 5.3   & 1 \\
 Segunda & 2026-09-19 & ec:e3:34:9a:d1:18 & ESP-IDF 5.3.2 & 2 \\
 Tercera & 2026-10-12 & a0:dd:6c:0e:fb:4c & ESP-IDF 5.3.2 & 3 \\
+Cuarta  & 2026-10-20/21 & f8:b3:b7:2a:09:28 & ESP-IDF 5.3.2 & 3 + 3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Se hicieron tres campañas (Tabla~\ref{tab:esp32_campaigns}). La primera
+Se hicieron cuatro campañas (Tabla~\ref{tab:esp32_campaigns}). La primera
 capturó un ciclo y los patrones de SRAM en el chip de dirección MAC
 ec:e3:34:9a:d1:18, que el firmware notifica en el arranque y que se anotó
 con los resultados; su registro de captura no tiene columna de MAC.
 % resultados de la primera campaña, 2026-08-04: dispositivo ec:e3:34:9a:d1:18
 Después, el mismo firmware, recompilado sin cambios, ejecutó dos ciclos
-más en ese chip y tres en un segundo chip, a0:dd:6c:0e:fb:4c. Las
-veinticuatro secuencias llegaron con la longitud y el CRC correctos. Los
-datos están en \path{results/esp32_rng_agosto}, en
-\path{results/esp32_campana_rng} y en su subdirectorio
-\path{mac_a0dd6c0efb4c}, cada uno con un registro de las temperaturas, las
-tasas y los veredictos del CRC. SP~800-22, las métricas de Shannon y el
-recolector de las tres secciones siguientes usan la primera campaña; los
-estimadores de SP~800-90B de la Sección~\ref{sec:esp32_90b} usan las tres.
+más en ese chip, tres en un segundo chip, a0:dd:6c:0e:fb:4c, y dos tandas
+de tres en un tercero, f8:b3:b7:2a:09:28, la primera con el mismo binario
+exacto usado en el segundo chip. En el tercer chip el enlace serie con el
+anfitrión estropeó de vez en cuando un bloque, del lado del anfitrión; el
+CRC rechazó los tres bloques así, dos se tomaron de nuevo del ciclo
+siguiente del mismo arranque, y un ciclo incompleto se apartó y se
+repitió. Todas las secuencias conservadas tienen la longitud y el CRC
+correctos. Los datos están en \path{results/esp32_rng_agosto} y en
+\path{results/esp32_campana_rng}, con un subdirectorio por chip, cada uno
+con un registro de las temperaturas, las tasas y los veredictos del CRC.
+La batería SP~800-22 de primer nivel, las métricas de Shannon y el
+recolector de las tres secciones siguientes usan la primera campaña; el
+análisis de segundo nivel de SP~800-22 usa las cuatro, y los estimadores
+de SP~800-90B de la Sección~\ref{sec:esp32_90b}, todas menos la segunda
+tanda de la cuarta, que se reserva para una comprobación.
 
 \section{La batería SP 800-22}
 \label{sec:esp32_sp80022}
@@ -200,6 +209,23 @@ tiene una mediana de $1-2^{-1/k}$, que es 0,083 para ocho plantillas y
 (calculado), y la fila de plantillas (0,017 a 0,055) y la de la variante
 (0,020 a 0,176) se sitúan en torno a esas medianas. Nada separa las
 condiciones.
+
+% analysis/nist_segundo_nivel.py, results/nist_segundo_nivel/resumen.md
+Con las campañas posteriores la batería puede leerse como pretende la
+norma, en el segundo nivel (Sección~4.2 de SP~800-22): cincuenta y nueve
+secuencias de $10^6$ bits ---las cuarenta y ocho de las condiciones A--D
+en los tres chips y once trozos de las dos capturas largas E y F de la
+Sección~\ref{sec:esp32_90b}---, con cada valor $p$ de las pruebas de
+varias partes tomado por separado, cuarenta y ocho estadísticos en total.
+Todos cumplen el criterio de proporción (al menos 0,951 de las secuencias
+pasan con $\alpha = 0{,}01$; 0,939 en las pruebas de excursiones, que se
+aplican a las 34 secuencias con ciclos suficientes), y los valores $p$
+son uniformes: el menor $P$-value$_T$ es 0,0075, frente a un umbral de
+$10^{-4}$ (orientativo en las pruebas de excursiones, por debajo de las
+55 secuencias que pide la norma). Dieciocho de los 2182 valores $p$ caen
+por debajo de 0,01, donde se esperan 21,8. El segundo nivel confirma lo
+que dijo el primero, con más potencia, y no añade nada sobre la
+predictibilidad.
 
 Pasar la batería dice que quince estadísticos fijos no distinguen estos
 $10^6$ bits de bits independientes y sin sesgo al nivel del 1\,\%. No dice que sean
@@ -273,10 +299,10 @@ mayor y es el objeto de la Sección~\ref{sec:esp32_90b}.
 % y 12559 us (B).
 El firmware cronometra la tasa con el temporizador del sistema de
 1~$\mu$s sobre 64~KiB, unos 12,6~ms, así que su resolución es mejor que el
-0,01\,\% (calculado). En las tres campañas, las doce secuencias sin la
-tarea del ADC se generaron a entre 5,21 y 5,22~MB/s ($10^6$~bytes por
-segundo), y las doce con ella a 2,77~MB/s en las dos primeras campañas y a
-2,70~MB/s en la tercera; la radio cambia la tasa en menos del 0,1\,\%. La
+0,01\,\% (calculado). En las cuatro campañas, las veinticuatro secuencias
+sin la tarea del ADC se generaron a entre 5,21 y 5,22~MB/s ($10^6$~bytes
+por segundo), y las veinticuatro con ella a 2,77~MB/s en las dos primeras
+campañas y a 2,70~MB/s en las dos últimas; la radio cambia la tasa en menos del 0,1\,\%. La
 tarea del ADC reduce la tasa a la mitad, por una causa que no se aisló.
 Frente al manual, 1,30~millones de palabras por segundo sin la tarea está
 por debajo de los 5~MHz del camino de la radio, y de 0,68 a 0,69~millones
@@ -301,9 +327,9 @@ de temperatura de la campaña es un paso del sensor. La correlación entre
 la entropía de bytes y la temperatura sobre las cuatro secuencias,
 $r = 0{,}795$ con $p = 0{,}21$, se calculó por tanto frente al bit menos
 significativo del sensor, y no aporta información; no se afirma ningún
-efecto de la temperatura, en ningún sentido. Los dos chips identificados
-leyeron después de 49,4 a 51,7 y de 61,7 a 64,4~$^\circ$C en la misma
-escala sin calibrar, así que chip y temperatura están confundidos. Un
+efecto de la temperatura, en ningún sentido. Los tres chips identificados
+leyeron después de 49,4 a 51,7, de 61,7 a 64,4 y de 42,8 a 45,0~$^\circ$C
+en la misma escala sin calibrar, así que chip y temperatura están confundidos. Un
 estudio de temperatura necesita un sensor calibrado y un barrido
 controlado, y no se hizo ninguno.
 
@@ -348,16 +374,18 @@ $H_\infty(X_1 \| X_2 \| X_3) \geq \max_i H_\infty(X_i)$.
 
 % analysis/esp32_rng/harvester_from_sources.py: entradas puf_boot1.bin y
 % condD_rep1.bin, campo del ADC = 32 B del mismo flujo del RNG (sustituto).
-% docs/esp32_linea_base_90b.md 1 y 5: el firmware recompilado se detiene en
-% la generación de semillas tras el primer ciclo.
+% docs/esp32_linea_base_90b.md 1: el firmware no se detiene tras el primer
+% ciclo; serie_mac_f8b3b72a0928_rep1/rep3.log muestran SEEDS y un segundo ciclo.
 % results/esp32_rng_agosto/harvester_validation.csv: 1000 de 1000 únicas,
 % chi2 de bytes p = 0.300811, Hamming 128.050 +- 8.027 bits, 7 valores p
 % de NIST de 0.147738 a 0.955784.
 El recolector se validó fuera de línea. Las semillas producidas en el
-dispositivo no se capturaron de forma fiable en la primera campaña, y el
-firmware recompilado después se detiene durante la generación de
-semillas, un fallo que no se investigó porque las semillas no intervienen
-en las demás medidas. La validación reproduce por tanto la construcción
+dispositivo no se capturaron de forma fiable en la primera campaña, y los
+scripts de captura posteriores dejaban de escuchar en cuanto tenían las
+cuatro condiciones, antes de que se impriman las semillas; en el tercer
+chip, donde la escucha siguió para repetir un bloque estropeado, el
+firmware sí las imprimió y empezó un segundo ciclo, así que la generación
+de semillas funciona en el dispositivo, aunque su salida no se analizó. La validación reproduce por tanto la construcción
 en Python (\path{analysis/esp32_rng/harvester_from_sources.py}) sobre
 datos capturados: un patrón de SRAM; la secuencia de la condición~D como
 aportación del generador, la peor condición, a propósito; y 32 bytes de
@@ -432,12 +460,13 @@ O8 pide una comparación numérica con el ESP32, y la mitad puede cerrarse
 sin la placa: el lado de la referencia. Las
 Secciones~\ref{sec:esp32_sp80022} y~\ref{sec:esp32_shannon} aplicaron
 SP~800-22 y la entropía de Shannon a la primera campaña; los estimadores
-de SP 800-90B se aplican aquí a las tres, que en conjunto dan seis
-repeticiones de $10^6$ bits por condición, tres en cada uno de los dos
-chips del mismo modelo (ESP32-D0WD-V3). Otras dos capturas con la radio
+de SP 800-90B se aplican aquí a las tres primeras y a la primera tanda
+de la cuarta, que en conjunto dan nueve repeticiones de $10^6$ bits por
+condición, tres en cada uno de los tres chips del mismo modelo
+(ESP32-D0WD-V3). Otras dos capturas con la radio
 apagada, de $3{,}52\times10^6$ y $8{,}38\times10^6$ bits, se tomaron con
 el firmware verificador del Capítulo~\ref{ch:ch5_verification}. Las
-veintiséis se pasaron por la implementación de referencia del \ac{NIST} de
+treinta y ocho se pasaron por la implementación de referencia del \ac{NIST} de
 los estimadores de SP 800-90B~\cite{nist_ea_github, turan_2018_sp80090b}
 (versión 1.1.8), por la vía IID y por la vía no IID, en el formato
 binario que la norma prescribe para fuentes de bits. La
@@ -446,14 +475,14 @@ Tabla~\ref{tab:esp32_90b} recoge el resultado.
 \begin{table}[htbp]
 \centering
 \caption{El generador del ESP32 frente a los estimadores de SP 800-90B \meas{}.
-Condiciones A--D: seis repeticiones de $10^6$ bits cada una, tres en cada
-uno de los dos chips, media y rango sobre las repeticiones; E y F:
+Condiciones A--D: nueve repeticiones de $10^6$ bits cada una, tres en cada
+uno de los tres chips, media y rango sobre las repeticiones; E y F:
 capturas únicas de $3{,}5\times10^6$ y $8{,}4\times10^6$ bits. El techo es
 el valor más alto que el estimador del valor más común (MCV) puede
 devolver para una fuente perfectamente uniforme de esa longitud con un
 99\,\% de confianza; la cifra no IID es el mínimo de los diez estimadores
 de la Sección~6.3 de la norma, y la última columna nombra el estimador que
-la fijó (veces de seis). Los veredictos de la vía IID se discuten en el
+la fijó (veces de nueve). Los veredictos de la vía IID se discuten en el
 texto.}
 \label{tab:esp32_90b}
 \footnotesize
@@ -461,10 +490,10 @@ texto.}
 \toprule
 Captura & Condición & $H$ (IID) & Techo & $H$ (no IID) & Limitante \\
 \midrule
-A & Wi-Fi + ADC & 0,9954 & 0,9963 & 0,844 (0,812--0,877) & Compresión 5, Lag 1 \\
-B & Wi-Fi       & 0,9951 & 0,9963 & 0,862 (0,824--0,898) & Compresión 5, LRS 1 \\
-C & ADC         & 0,9952 & 0,9963 & 0,836 (0,812--0,867) & Compresión 6 \\
-D & ninguna     & 0,9957 & 0,9963 & 0,857 (0,832--0,916) & Compresión 5, Colisión 1 \\
+A & Wi-Fi + ADC & 0,9950 & 0,9963 & 0,843 (0,812--0,893) & Compr.\ 7, Lag 1, Colis.\ 1 \\
+B & Wi-Fi       & 0,9952 & 0,9963 & 0,857 (0,809--0,912) & Compresión 8, LRS 1 \\
+C & ADC         & 0,9948 & 0,9963 & 0,847 (0,812--0,918) & Compresión 9 \\
+D & ninguna     & 0,9955 & 0,9963 & 0,853 (0,832--0,916) & Compresión 8, Colisión 1 \\
 E (verificador) & ninguna & 0,9977 & 0,9980 & 0,867 & Compresión \\
 F (verificador) & ninguna & 0,9982 & 0,9987 & 0,911 & Compresión \\
 \bottomrule
@@ -475,16 +504,16 @@ La resolución va primero, como en todo este trabajo. El estimador MCV
 devuelve $-\log_2 p_u$ con $p_u = \hat p + 2{,}576\sqrt{\hat p(1-\hat p)/N}$,
 de modo que ni siquiera una fuente perfecta puede puntuar por encima de
 0,9963 con $10^6$ bits, de 0,9980 con $3{,}5\times10^6$ ni de 0,9987 con
-$8{,}4\times10^6$. Cada una de las veintiséis capturas queda a menos de
-0,0035 de ese techo, y ninguna implica un sesgo de unos superior a
-$2{,}4\sigma$, que es lo que se observa en veintiséis extracciones de una
-fuente sin sesgo.
+$8{,}4\times10^6$. Cada una de las treinta y ocho capturas queda a menos
+de 0,0037 de ese techo, y ninguna implica un desequilibrio entre unos y
+ceros superior a $2{,}6\sigma$, que es lo que se observa en treinta y
+ocho extracciones de una fuente sin sesgo.
 
 La vía IID necesita una calibración antes de que puedan leerse sus
-veredictos. De las cincuenta y dos ejecuciones (veintiséis capturas en los
-formatos de bits y de bytes), cuatro fallan una sola prueba, nunca el
+veredictos. De las setenta y seis ejecuciones (treinta y ocho capturas en
+los formatos de bits y de bytes), cinco fallan una sola prueba, nunca el
 mismo fichero en ambos formatos: una prueba de permutación en cada formato
-y dos pruebas $\chi^2$ en el formato de bytes. La frecuencia con que datos
+y tres pruebas $\chi^2$ en el formato de bytes. La frecuencia con que datos
 buenos fallan estas pruebas a esa misma longitud no es el $10^{-3}$
 nominal, así que se midió, ejecutando la misma herramienta sobre 1000
 ficheros de 125\,000 bytes y 200 ficheros de $10^6$ bits del generador del
@@ -493,7 +522,7 @@ en el 1,9\,\% de los ficheros buenos y el par $\chi^2$ en el 2,4\,\%; en el
 formato de bits, la batería de permutación falla en el 2,5\,\% y el par
 $\chi^2$ en ninguno de los 200. La cifra de $\chi^2$ se rastreó hasta su
 causa reimplementando ambas pruebas, lo que reproduce los cincuenta y dos
-valores $p$ de la herramienta hasta la sexta cifra decimal, y ejecutándolas
+valores $p$ de la herramienta en las veintiséis primeras capturas hasta la sexta cifra decimal, y ejecutándolas
 sobre 5000 ficheros buenos. La prueba de independencia del formato de
 bytes reparte 62\,500 pares sin solape entre 65\,536 celdas y agrupa celdas
 hasta que cada grupo espera cinco cuentas, pero a esta longitud su $p$ no
@@ -501,21 +530,28 @@ es uniforme: la mediana es 0,175 en lugar de 0,5, y cae por debajo de
 $10^{-3}$ en el 1,7\,\% de los ficheros, diecisiete veces la tasa nominal.
 Las otras tres pruebas $\chi^2$ están bien calibradas, y el defecto
 desaparece a partir de $10^6$ bytes. Frente a estas tasas, los fallos del
-ESP32 no tienen nada de particular: un fallo de permutación en veintiséis
-ejecuciones en formato de bytes donde se esperan 0,49 ($P = 0{,}39$), dos
-fallos $\chi^2$ donde se esperan 0,62 ($P = 0{,}13$), y un fallo de
-permutación en el formato de bits donde se esperan 0,65 ($P = 0{,}48$). En
-un chip, la prueba de independencia de bytes dio $p < 0{,}05$ en seis
-capturas de doce, frente a 2,9 esperadas; agrupar las capturas de cada
-chip, donde la prueba está calibrada y es más potente, da valores $p$
-empíricos de 0,82 y 0,96 en ese chip para pares de bytes alineados con la
-palabra de 32 bits y desplazados un byte, y de 0,38 y 0,86 en el otro, así
-que no hay dependencia entre bytes vecinos. El suceso más raro es el fallo
-de bondad de ajuste de la primera captura de la condición~D
-($p = 2{,}4\times10^{-4}$): esa prueba falla en el 0,04\,\% de los ficheros
-buenos, así que un fallo así en veintiséis tiene una probabilidad cercana
-al 1\,\%. No se reprodujo en las cinco capturas posteriores de la misma
-condición ($p = 0{,}32$ a $0{,}96$) ni en E y F, y se registra como azar;
+ESP32 no tienen nada de particular: un fallo de permutación en treinta y
+ocho ejecuciones en formato de bytes donde se esperan 0,72
+($P = 0{,}52$), tres fallos $\chi^2$ donde se esperan 0,91
+($P = 0{,}063$), y un fallo de permutación en el formato de bits donde se
+esperan 0,95 ($P = 0{,}62$). En un chip, la prueba de independencia de
+bytes dio $p < 0{,}05$ en seis capturas de doce, frente a 2,9 esperadas;
+agrupar las capturas de cada chip, donde la prueba está calibrada y es
+más potente, da valores $p$ empíricos de 0,84 y 0,94 en ese chip para
+pares de bytes alineados con la palabra de 32 bits y desplazados un byte,
+y de 0,53 y 0,66, y de 0,42 y 0,22, en los otros dos, así que no hay
+dependencia entre bytes vecinos. En el tercer chip los valores $p$ de
+bondad de ajuste en bytes salieron bajos sin que ninguno fallara (mediana
+0,21 frente a 0,51 en ficheros buenos; Mann-Whitney unilateral
+$p = 0{,}0031$, en el límite de una corrección de Bonferroni para
+dieciséis comparaciones); la segunda tanda de doce capturas de ese chip
+dio una mediana de 0,34 y $p = 0{,}13$, así que se lee como azar. El
+suceso más raro es el fallo de bondad de ajuste de la primera captura de
+la condición~D ($p = 2{,}4\times10^{-4}$): esa prueba falla en el
+0,04\,\% de los ficheros buenos, así que un fallo así en treinta y ocho
+tiene una probabilidad cercana al 1,5\,\%. No se reprodujo en las ocho
+capturas posteriores de la misma condición ($p = 0{,}14$ a $0{,}96$) ni
+en E y F, y se registra como azar;
 la advertencia de Espressif de que la aleatoriedad del generador no está
 garantizada sin la radio o el ADC sigue en pie como una advertencia que
 estas pruebas no ven. Formalmente, un único fallo retira la hipótesis IID
@@ -526,7 +562,7 @@ completa con este tamaño de muestra. Es el mismo veredicto que dio
 SP 800-22, alcanzado por otro camino, y dice lo mismo: no se ve nada mal.
 
 La vía no IID dice otra cosa, y leerla bien importa más que el número. En
-veinticinco de las veintiséis capturas, su mínimo lo fija uno de tres
+treinta y siete de las treinta y ocho capturas, su mínimo lo fija uno de tres
 estimadores --- compresión, colisión o subcadena repetida más larga --- con
 0,81 a 0,92 bit por bit; en la restante, el predictor Lag, con 0,88; los
 estimadores MCV y de Markov nunca bajan de 0,99. Se sabe que esos tres
@@ -535,25 +571,26 @@ los predictores de Kelsey, McKay y S\"onmez Turan~\cite{kelsey_2015_predictive}
 se introdujeron precisamente porque los estimadores anteriores de la norma
 juzgan mal fuentes de ese tipo. Las repeticiones muestran que esto es un
 comportamiento de los estimadores y no una propiedad de las condiciones.
-La estimación por compresión tiene una desviación típica de 0,02 a 0,04
-\emph{dentro} de una condición, tan grande como el 0,03 que separa las
-medias de las cuatro condiciones, y un análisis de la varianza de un factor
+La estimación por compresión tiene una desviación típica de 0,03 a 0,04
+\emph{dentro} de una condición, mayor que el 0,013 que separa las medias
+de las cuatro condiciones, y un análisis de la varianza de un factor
 sobre cada uno de los once estimadores no encuentra diferencia entre
-condiciones: el $p$ más pequeño es 0,083, para el predictor MultiMCW, por
-encima del 0,05 sin corregir y muy por encima del 0,0045 que exigen once
-pruebas. Lo mismo vale entre chips. Agrupando las condiciones, que no
-difieren, ningún estimador separa las doce capturas de cada chip al nivel
-corregido; el $p$ más pequeño, 0,047 para MCV, corresponde a una
-diferencia de 0,0007 bit por bit junto al techo de resolución, y un valor
-por debajo de 0,05 entre once pruebas es lo que da el azar. El mínimo no
-IID es 0,852 en un chip y 0,847 en el otro: con dos dispositivos, la
+condiciones: el $p$ más pequeño es 0,045, para el predictor MultiMCW,
+cuyas medias por condición no siguen ningún orden físico, y un valor por
+debajo de 0,05 entre once pruebas es lo que da el azar; queda muy por
+encima del 0,0045 que exigen once pruebas. Lo mismo vale entre chips.
+Agrupando las condiciones, que no difieren, ningún estimador separa las
+doce capturas de cada chip al nivel corregido; el $p$ más pequeño, 0,032
+para MCV, corresponde a una diferencia de unos 0,001 bit por bit junto
+al techo de resolución. El mínimo no IID es 0,852, 0,847 y 0,851 en los
+tres chips ($p = 0{,}92$): con tres dispositivos, la
 referencia no depende de cuál se mida, a la resolución de estos
 estimadores. La captura más grande añade una segunda muestra del efecto
 de la resolución: en el formato de bytes, su estimador limitante es la
 prueba de $t$-tupla con $t = 2$, que devuelve 7,39 bits por byte porque
 $10^6$ bytes contienen demasiado pocos de los 65\,536 pares posibles para
 que el más frecuente sea representativo, exactamente como le ocurre al
-techo del MCV con $t = 1$. Ningún estimador resuelve con seis
+techo del MCV con $t = 1$. Ningún estimador resuelve con nueve
 repeticiones diferencia alguna entre Wi-Fi encendido, ADC encendido y
 ninguno de los dos, y no se afirma ninguna.
 
@@ -648,8 +685,83 @@ ninguna. Sin la radio, el generador no recibe ruido en sus primeros
 350~ms de funcionamiento; con la radio, sí. Lo que la prueba no da es
 cuánta entropía por bit aporta la radio: los 0,83 bit por bit validados
 son la cifra de los estimadores, con su sesgo habitual, no una medida del
-ruido de la radio. No se ha encontrado en la bibliografía consultada una
-prueba de reinicios del generador del ESP32.
+ruido de la radio.
+
+% docs/esp32_reinicios.md 6-8; results/esp32_reinicios/resumen_mac_f8b3b72a0928.md,
+% entre_chips.md, mac_f8b3b72a0928/paso/resumen.md
+El tercer chip, f8:b3:b7:2a:09:28, repite el cuadro con los mismos dos
+binarios: el bootloader de serie pasa ($H_r$ / $H_c$ 0,892 / 0,848, 1000
+salidas distintas), y sin el ruido de arranque falla ($H_r = 0{,}016$,
+746 salidas distintas, 5444 solapes idénticos, otra vez 87 grupos). Más
+aún, los dos chips se repiten \emph{entre sí}. 256 salidas distintas de
+1024 bytes aparecen en los dos, y cubren 352 y 347 de sus 1000 reinicios;
+988 salidas del tercer chip empiezan, a un número entero de palabras de
+32 bits, dentro de una salida del otro, en 8369 solapes sin una sola
+palabra distinta; y las 3000 salidas sin ruido de ambos chips y de otra
+compilación del firmware caen en los mismos 87 grupos, cada uno con
+salidas de las tres. Con el bootloader de serie ninguna salida se alinea
+con otra, ni dentro de un chip ni entre chips. Sin el ruido de arranque,
+la salida de los dos chips probados es por tanto una función
+determinista de un punto de partida pequeño, y la misma función en
+ambos: quien tenga un chip y el firmware puede precalcular lo que
+devuelve otro. Dos chips de una misma revisión no bastan para afirmarlo
+de todos los ESP32.
+
+Un firmware dedicado mostró qué elige ese punto de partida. Sin el ruido
+de arranque y con las interrupciones apagadas, lee 1024~bytes, espera un
+número fijo de instrucciones y vuelve a leer, con la espera elegida en
+cada reinicio entre cuatro valores. En las 204 parejas de reinicios cuya
+primera lectura fue idéntica, las segundas lecturas fueron idénticas
+cuando la espera era la misma, desplazadas exactamente una palabra de 32
+bits cuando era 174~ciclos de CPU más larga (lo que tarda
+\texttt{esp\_fill\_random} por palabra), exactamente 100 palabras cuando
+era 17\,400 ciclos más larga, y sin relación cuando era 2 ciclos más
+larga, un ciclo de APB, en todas las parejas. Sin ruido, el generador
+avanza con el reloj APB desde un estado de reset fijo, se lea o no, y su
+salida solo depende del instante en que empieza la lectura: los 87 grupos
+son las 87 fases de un ciclo de APB en una palabra de 174 ciclos, una
+propiedad de este firmware y de este reloj, no del chip.
+
+\begin{table}[htbp]
+\centering
+\caption{Qué fuente inyecta ruido \meas{}, tercer chip, sin el ruido de
+arranque: una primera lectura al arrancar, una fuente y una segunda
+lectura en un instante fijo de 800~ms. Una fuente inyecta ruido si las
+segundas lecturas dejan de ser ventanas de la secuencia fija (solapes) y
+no se repiten nunca. 300 reinicios por variante, 1000 para el ADC y la
+fuente de arranque, que además pasan la prueba de reinicios de la norma
+($H_r$ / $H_c$ 0,864 / 0,877 y 0,840 / 0,842).}
+\label{tab:esp32_fuentes}
+\footnotesize
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+Fuente entre las dos lecturas & Distintas & Solapes & Ruido \\
+\midrule
+Ninguna (control)                                   & 284 de 300   & 475 & no \\
+Wi-Fi iniciado, radio sin arrancar                  & 284 de 300   & 461 & no \\
+Radio arrancada y parada (85 a 262~ms encendida)    & 300 de 300   & 0   & sí \\
+Unidad del ADC creada y borrada, sin conversiones   & 274 de 300   & 0   & no \\
+Conversiones del ADC durante 1~ms (17)              & 300 de 300   & 0   & sí \\
+Conversiones del ADC durante 200~ms (unas 4400)     & 1000 de 1000 & 0   & sí \\
+Fuente de arranque encendida por la aplicación, 200~ms & 1000 de 1000 & 0 & sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La Tabla~\ref{tab:esp32_fuentes} responde a la pregunta que quedó
+abierta en la Sección~\ref{sec:esp32_setup}. Iniciar el controlador del
+Wi-Fi, que alimenta el dominio del módem pero no la radio, no inyecta
+nada; arrancar la radio sí, incluso con la exposición más corta posible,
+porque la calibración de la PHY dentro de \texttt{esp\_wifi\_start} ya la
+mantiene encendida unos 85~ms. La fuente de arranque funciona cuando la
+enciende la aplicación. Y las conversiones ordinarias del SAR ADC, que ni
+la guía de software ni las fuentes del controlador conectan con el
+generador, también inyectan ruido: bastan diecisiete, mientras que crear
+y borrar el conversor sin convertir no. Las repeticiones exactas de esta
+última variante muestran que sigue sin ruido aunque, en esa compilación,
+sus salidas no compartan ventanas desplazadas. No se ha encontrado en la
+bibliografía consultada una prueba de reinicios del generador del ESP32,
+ni una comparación de sus salidas entre chips.
 
 \section{Lo que una caja negra puede decir y lo que no}
 \label{sec:esp32_lessons}
@@ -669,16 +781,17 @@ las dos fuentes documentadas.
 La prueba de reinicios es la única medida que lo hace, porque plantea una
 pregunta física y no estadística: ¿se repite la salida cuando el
 generador vuelve a arrancar desde el mismo estado? Sin el ruido de
-arranque y con la radio apagada se repite, palabra por palabra; con la
-radio encendida, no. El generador no tiene ruido propio con la radio y el
+arranque y con la radio apagada se repite, palabra por palabra, y repite
+la misma secuencia en dos chips distintos; con la radio, la fuente del
+arranque o el ADC convirtiendo, no. El generador no tiene ruido propio con la radio y el
 ADC apagados, y la radio sí le inyecta ruido. Las cifras de SP~800-90B de
 la condición~D son, por tanto, el veredicto de los estimadores sobre la
 continuación determinista de una semilla de arranque: una cifra
 estadística, que no puede acreditarse como entropía física. Lo mismo
 vale, de forma menos visible, para las demás condiciones. La prueba de
 reinicios muestra que la radio inyecta ruido, no cuánto; para las
-condiciones A y C ni siquiera está establecido que las conversiones del
-ADC lleguen al generador, y según las propias tasas del manual el camino
+condiciones A y C muestra que las conversiones del ADC sí llegan al
+generador, pero según las propias tasas del manual el camino
 SAR no podría aportar un bit de ruido nuevo por bit de salida a la tasa a
 la que se leyó el generador.
 

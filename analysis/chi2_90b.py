@@ -196,6 +196,8 @@ def chip(n: str) -> str | None:
     # misma asignacion que resumen_90b.py
     if n.startswith("fb4c_"):
         return "a0:dd:6c:0e:fb:4c"
+    if n.startswith("0928_"):
+        return "f8:b3:b7:2a:09:28"
     m = re.fullmatch(r"cond[A-D]_rep(\d+)", n)
     if not m:
         return None

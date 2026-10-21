@@ -42,16 +42,19 @@ todo. Léelo entero antes de tocar nada.
   4 min de simulación; ahora termina solo con `std.env.stop` (antes los
   anillos seguían oscilando y GHDL no acababa nunca).
 - Hecho sin placa: línea base del ESP32 bajo SP 800-90B (abajo), con
-  **veintiséis capturas**: seis repeticiones por condición A-D (la de
+  **treinta y ocho capturas**: nueve repeticiones por condición A-D (la de
   agosto, primera campaña, y dos del 19-09 en el chip ec:e3:34:9a:d1:18;
-  tres del 12-10 en el chip a0:dd:6c:0e:fb:4c; todas con
-  `firmware/esp32_rng`; los datos de cada chip van en su carpeta) y dos
-  largas sin radio. ANOVA por estimador: ningún efecto de condición
-  (p ≥ 0,083) ni de chip (12 + 12 capturas, p ≥ 0,047, Bonferroni 0,0045).
+  tres del 12-10 en el chip a0:dd:6c:0e:fb:4c; tres del 20-10 en el chip
+  f8:b3:b7:2a:09:28, prefijo `0928_`; todas con `firmware/esp32_rng`; los
+  datos de cada chip van en su carpeta) y dos largas sin radio; una segunda
+  tanda del tercer chip (`0928t2_`) queda fuera de los ANOVA. ANOVA por
+  estimador: ningún efecto de condición (p ≥ 0,045) ni de chip
+  (12 + 12 + 12, p ≥ 0,032, Bonferroni 0,0045). SP 800-22 de segundo nivel
+  con 59 secuencias (`analysis/nist_segundo_nivel.py`): pasa todo.
   La placa de agosto ES el chip ec:e3:34:9a:d1:18 (lo recoge el informe de
   agosto; su CSV no tenía columna de MAC). Resumen en
   `results/entropia_90b_resumen.md`; lectura en `docs/esp32_linea_base_90b.md`.
-  Los chips se nombran por su MAC ("dos chips del mismo modelo").
+  Los chips se nombran por su MAC ("tres chips del mismo modelo").
   Calibración de la vía IID con datos buenos del mismo tamaño
   (`analysis/calibra_iid.py`, `analysis/chi2_90b.py`): la χ² de
   independencia en modo byte de `ea_iid` falla el 1,7 % con datos
@@ -70,6 +73,17 @@ todo. Léelo entero antes de tocar nada.
   espera sin radio → falla igual que en D. La radio mete ruido; sin ella
   el RNG no recibe nada en 350 ms. El chip queda con `firmware/reinicios`
   (bootloader de serie).
+- Tercer chip (f8:b3:b7:2a:09:28, 20/21-10-2026; placa de otro uso de Mario,
+  su flash se copió y se restauró al acabar): normal pasa, sin_ruido falla
+  igual; **sin ruido de arranque los dos chips sacan la misma secuencia**
+  (`analysis/reinicios_entre_chips.py`, `results/esp32_reinicios/entre_chips.md`,
+  verificado por tres revisiones). `firmware/reinicios_paso`: el generador
+  avanza un paso por ciclo de APB desde un estado fijo (204/204 parejas).
+  `firmware/reinicios_fuentes`: meten ruido la radio, `bootloader_random_enable`
+  desde el programa y las conversiones normales del ADC (bastan 17); no lo
+  meten `esp_wifi_init` sin arrancar ni crear/borrar la unidad del ADC.
+  Detalle en `docs/esp32_reinicios.md` §6-8. El enlace serie de esa placa
+  falla si el PC está cargado: grabar a 115200 y no compilar mientras captura.
 
 ## Estado al 08-10-2026
 

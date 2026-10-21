@@ -1,0 +1,25 @@
+﻿fuente_adc_0 build exit=0 avisos=0
+fuente_adc_1 build exit=0 avisos=0
+paso app sha256 A9A527E860384D662AA06DACE5DBDA2745E19A61F37C53B69C2FD94552CB9AC7 bootloader 6A810D3488535779B8FA20166498BABEB7CC755E70BCCFF948B2A69E4C57FA58
+paso flash exit=0
+hecho: 800 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\paso; rechazos 0
+fuente_adc_200 app sha256 23707FF8272BEC730F6493521E92F6E31C04334614F9DA3A86E5D45675443B98 bootloader 35F40589F405850CA262EF34C3400EAC54EEBB93B41C2A8B7D228EC0C3581398
+fuente_adc_200 flash exit=0
+hecho: 1000 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_adc_200; rechazos 0
+fuente_bootrand_200 app sha256 85BFB7E3372608696DB62A80B3EBAC15E70226B65D4CCA992C162BC560CFEA2C bootloader F6D5E84AEB55400140F81779E3ADA146C0EA73412CF6297264B18750713B5540
+fuente_bootrand_200 flash exit=0
+hecho: 1000 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_bootrand_200; rechazos 0
+fuente_adc_0 app sha256 4AFD2AC9BAC964C3A1FC5AE8C389960320C6E628BBCC1F63D326CD86406B9F7C bootloader 8911AF947A0687965EB2F7AD3A9ED8CB2F51FA965D1E4C6D53763BF7B947FF20
+fuente_adc_0 flash exit=0
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_adc_0; rechazos 0
+fuente_adc_1 app sha256 BA30ABFC73977D265F9757E25C534B6DB9CFC2963CB35B9A3EDAEA727F7F15A8 bootloader 7558FD7180041880B37088497B8A0B574B7131D427DA348D8CABAC904B3F6695
+fuente_adc_1 flash exit=0
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_adc_1; rechazos 0
+campana flash exit=0 sha256 97B0CC2D971EB94199532497C2A9DC54B11264D4839635885A1F8D39915AAD07
+tanda2 rep 1 secuencias validas A:1, B:1, C:1, D:1; rechazadas 0; log integro C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_campana_rng\mac_f8b3b72a0928\tanda2\serie_mac_f8b3b72a0928_tanda2_rep1.log
+tanda2 rep 2 secuencias validas A:1, B:1, C:1, D:1; rechazadas 0; log integro C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_campana_rng\mac_f8b3b72a0928\tanda2\serie_mac_f8b3b72a0928_tanda2_rep2.log
+tanda2 rep 3 secuencias validas A:1, B:1, C:1, D:1; rechazadas 0; log integro C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_campana_rng\mac_f8b3b72a0928\tanda2\serie_mac_f8b3b72a0928_tanda2_rep3.log
+alarma write exit=0
+alarma verify exit=0
+alarma arranque: ARRANCA 820
+FIN_TODO_RESTO

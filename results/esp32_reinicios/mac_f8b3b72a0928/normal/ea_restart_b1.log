@@ -1,0 +1,71 @@
+Agent pid 416
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_reinicios/mac_f8b3b72a0928/normal/restart_b1.bin' (SHA-256 hash 8261745655407e0dbb99577b5c6fed206d8e01f608a781c9dc8e95d865aea692)
+Loaded 1000000 samples made up of 2 distinct 1-bit-wide symbols.
+H_I: 0.833175
+ALPHA: 5.0251553006530614e-06, X_cutoff: 631
+X_max: 552
+
+Restart Sanity Check Passed...
+Calculating baseline statistics...
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500032, p-hat = 0.50003200000000003, p_u = 0.50131991529309461
+	Most Common Value Estimate (Rows) = 0.996197 / 1 bit(s)
+Literal MCV Estimate: mode = 500032, p-hat = 0.50003200000000003, p_u = 0.50131991529309461
+	Most Common Value Estimate (Cols) = 0.996197 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4999687503906203, sigma-hat = 0.50000062401681977, p = 0.53215284815824637
+	Collision Test Estimate (Rows) = 0.910087 / 1 bit(s)
+Literal Collision Estimate: X-bar = 2.4997312788875194, sigma-hat = 0.50000055272285993, p = 0.533948385698362
+	Collision Test Estimate (Cols) = 0.905228 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49996800000000002, P_1 = 0.50003200000000003, P_0,0 = 0.49950996863799285, P_0,1 = 0.50049003136200709, P_1,0 = 0.50042697352764132, P_1,1 = 0.49957302647235868, p_max = 3.3015317172825726e-39
+	Markov Test Estimate (Rows) = 0.998688 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49996800000000002, P_1 = 0.50003200000000003, P_0,0 = 0.49987799219150025, P_0,1 = 0.5001220078084998, P_1,0 = 0.50005899634222684, P_1,1 = 0.49994100365777316, p_max = 3.0070685721686249e-39
+	Markov Test Estimate (Cols) = 0.999741 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2211313346196064, sigma-hat = 1.0138813493187184, p = 0.024509143211931761
+	Compression Test Estimate (Rows) = 0.891756 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2174951261037235, sigma-hat = 1.0150591542243481, p = 0.02934445039977962
+	Compression Test Estimate (Cols) = 0.848461 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 15, p-hat_max = 0.5200254334221196312227, p_u = 0.5213123153488957853881
+Literal LRS Estimate: u = 16, v = 38, p-hat = 0.50719992103967678, p_u = 0.50848770280035729
+Literal t-Tuple Estimate: t = 15, p-hat_max = 0.5212651963271891817709, p_u = 0.5225519462830254483615
+Literal LRS Estimate: u = 16, v = 38, p-hat = 0.50456469129544099, p_u = 0.5058525529190013
+	T-Tuple Test Estimate (Rows) = 0.939780 / 1 bit(s)
+	T-Tuple Test Estimate (Cols) = 0.936354 / 1 bit(s)
+	LRS Test Estimate (Rows) = 0.975715 / 1 bit(s)
+	LRS Test Estimate (Cols) = 0.983211 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50100543786280061 (C = 499686) Plocal can't affect result (r = 23)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Rows) = 0.997102 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50059041066839738 (C = 499271) Plocal can't affect result (r = 20)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (Cols) = 0.998297 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50145041603417306 (C = 500162) Plocal can't affect result (r = 24)
+	Lag Prediction Test Estimate (Rows) = 0.995821 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50153141603046414 (C = 500243) Plocal can't affect result (r = 21)
+	Lag Prediction Test Estimate (Cols) = 0.995588 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50067791440517662 (C = 499389) Plocal can't affect result (r = 23)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Rows) = 0.998045 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50161191696125029 (C = 500323) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (Cols) = 0.995356 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50152143007228422 (C = 500225) Plocal can't affect result (r = 23)
+	LZ78Y Prediction Test Estimate (Rows) = 0.995617 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50062441382945866 (C = 499328) Plocal can't affect result (r = 20)
+	LZ78Y Prediction Test Estimate (Cols) = 0.998199 / 1 bit(s)
+
+H_r: 0.891756
+H_c: 0.848461
+H_I: 0.833175
+
+Validation Test Passed...
+
+min(H_r, H_c, H_I): 0.833175
+
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)

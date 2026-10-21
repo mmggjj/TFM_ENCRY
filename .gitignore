@@ -45,3 +45,5 @@ results/esp32_campana_rng/*/serie_*.log
 results/esp32_reinicios/*/*/serie_*.log
 results/esp32_reinicios/*/*/restart_*.bin
 firmware/*/build_*/
+# Logs serie de las tandas y capturas apartadas (un nivel mas hondo)
+results/esp32_campana_rng/*/*/serie_*.log

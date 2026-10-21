@@ -1,0 +1,9 @@
+﻿  [dev] DEVICE mac=f8:b3:b7:2a:09:28 idf=v5.3.2 puf_bytes=4096
+  [fw] PUF_BEGIN bytes=4096 entropy=1.0000 weight=16467
+  [fw] PUF_END crc32=0x315e7610
+  [fw] CYCLE_BEGIN rep=1 uptime_ms=730
+  [rng] cond=D rep=2 125000 B ok  temp=42.8->42.8 C  tput=5214927 B/s  [1/4]
+  [rng] cond=C rep=2 125000 B ok  temp=43.3->43.3 C  tput=2699621 B/s  [2/4]
+  [rng] cond=B rep=2 125000 B ok  temp=43.3->43.3 C  tput=5218249 B/s  [3/4]
+  [rng] cond=A rep=2 125000 B ok  temp=43.9->43.9 C  tput=2700177 B/s  [4/4]
+secuencias validas A:1, B:1, C:1, D:1; rechazadas 0; log integro C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_campana_rng\mac_f8b3b72a0928\serie_mac_f8b3b72a0928_rep2.log

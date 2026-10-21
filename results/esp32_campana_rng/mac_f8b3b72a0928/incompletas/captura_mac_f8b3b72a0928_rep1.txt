@@ -1,0 +1,21 @@
+﻿  [dev] DEVICE mac=f8:b3:b7:2a:09:28 idf=v5.3.2 puf_bytes=4096
+  [fw] PUF_BEGIN bytes=4096 entropy=0.9999 weight=16527
+  [fw] PUF_END crc32=0x9fdeb573
+  [fw] CYCLE_BEGIN rep=1 uptime_ms=730
+  [rng] cond=D rep=1 125000 B ok  temp=41.1->41.1 C  tput=5214927 B/s  [1/4]
+  [rng] cond=C rep=1 125000 B ok  temp=42.8->42.8 C  tput=2698398 B/s  [2/4]
+python : Traceback (most recent call last):
+En C:\Users\mario\AppData\Local\Temp\claude\C--Users-mario-Documents-TFM\2a4eee3a-0585-41ce-b396-fea3ca8a86fd\scratchpa
+d\campana_0928.ps1: 14 Carácter: 3
++   python analysis/campana_rng.py --puerto COM7 --reps 1 --primera-rep ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\analysis\campana_rng.py", line 127, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\mario\Documents\TFM_FPGA_CRYPTO\analysis\campana_rng.py", line 92, in main
+    datos = bytes.fromhex("".join(hexbuf)) if all(len(h) % 2 == 0 for h in hexbuf) else b""
+            ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+ValueError: non-hexadecimal number found in fromhex() arg at position 1280

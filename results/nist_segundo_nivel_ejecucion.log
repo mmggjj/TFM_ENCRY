@@ -1,0 +1,117 @@
+﻿59 secuencias de 125000 B
+  1/59 condA_rep1: 41 s
+  2/59 condB_rep1: 41 s
+  3/59 condC_rep1: 42 s
+  4/59 condD_rep1: 41 s
+  5/59 esp_rf_off_1_t1: 42 s
+  6/59 esp_rf_off_1_t2: 42 s
+  7/59 esp_rf_off_1_t3: 40 s
+  8/59 esp_rf_off_2_t1: 42 s
+  9/59 esp_rf_off_2_t2: 41 s
+  10/59 esp_rf_off_2_t3: 41 s
+  11/59 esp_rf_off_2_t4: 42 s
+  12/59 esp_rf_off_2_t5: 41 s
+  13/59 esp_rf_off_2_t6: 42 s
+  14/59 esp_rf_off_2_t7: 42 s
+  15/59 esp_rf_off_2_t8: 41 s
+  16/59 condA_rep2: 41 s
+  17/59 condA_rep3: 41 s
+  18/59 condB_rep2: 40 s
+  19/59 condB_rep3: 40 s
+  20/59 condC_rep2: 41 s
+  21/59 condC_rep3: 39 s
+  22/59 condD_rep2: 40 s
+  23/59 condD_rep3: 41 s
+  24/59 fb4c_condA_rep1: 41 s
+  25/59 fb4c_condA_rep2: 41 s
+  26/59 fb4c_condA_rep3: 41 s
+  27/59 fb4c_condB_rep1: 40 s
+  28/59 fb4c_condB_rep2: 40 s
+  29/59 fb4c_condB_rep3: 41 s
+  30/59 fb4c_condC_rep1: 41 s
+  31/59 fb4c_condC_rep2: 40 s
+  32/59 fb4c_condC_rep3: 41 s
+  33/59 fb4c_condD_rep1: 40 s
+  34/59 fb4c_condD_rep2: 40 s
+  35/59 fb4c_condD_rep3: 40 s
+  36/59 0928_condA_rep1: 40 s
+  37/59 0928_condA_rep2: 40 s
+  38/59 0928_condA_rep3: 39 s
+  39/59 0928_condB_rep1: 40 s
+  40/59 0928_condB_rep2: 41 s
+  41/59 0928_condB_rep3: 41 s
+  42/59 0928_condC_rep1: 40 s
+  43/59 0928_condC_rep2: 41 s
+  44/59 0928_condC_rep3: 41 s
+  45/59 0928_condD_rep1: 41 s
+  46/59 0928_condD_rep2: 40 s
+  47/59 0928_condD_rep3: 41 s
+  48/59 0928t2_condA_rep1: 41 s
+  49/59 0928t2_condA_rep2: 36 s
+  50/59 0928t2_condA_rep3: 37 s
+  51/59 0928t2_condB_rep1: 37 s
+  52/59 0928t2_condB_rep2: 36 s
+  53/59 0928t2_condB_rep3: 36 s
+  54/59 0928t2_condC_rep1: 36 s
+  55/59 0928t2_condC_rep2: 36 s
+  56/59 0928t2_condC_rep3: 36 s
+  57/59 0928t2_condD_rep1: 36 s
+  58/59 0928t2_condD_rep2: 36 s
+  59/59 0928t2_condD_rep3: 35 s
+# SP 800-22, análisis de segundo nivel (§4.2)
+
+Generado por analysis/nist_segundo_nivel.py. 59 secuencias de 10^6 bits; α = 0,01; proporción aceptable p̂ ± 3·√(p̂(1−p̂)/m) con p̂ = 0,99; uniformidad: χ² sobre 10 intervalos, P-value_T ≥ 10⁻⁴ (la norma pide m ≥ 55).
+
+| Estadístico | m | Pasan | Proporción | Mínimo aceptable | P-value_T | Veredicto |
+|---|---|---|---|---|---|---|
+| Frequency | 59 | 59 | 1.0000 | 0.9511 | 0.9190 | pasa |
+| Block Frequency | 59 | 59 | 1.0000 | 0.9511 | 0.8431 | pasa |
+| Runs | 59 | 58 | 0.9831 | 0.9511 | 0.0651 | pasa |
+| Longest Run | 59 | 59 | 1.0000 | 0.9511 | 0.7484 | pasa |
+| Matrix Rank | 59 | 58 | 0.9831 | 0.9511 | 0.7815 | pasa |
+| Spectral DFT | 59 | 57 | 0.9661 | 0.9511 | 0.2532 | pasa |
+| Non-overlapping Template 1 | 59 | 57 | 0.9661 | 0.9511 | 0.0987 | pasa |
+| Non-overlapping Template 2 | 59 | 59 | 1.0000 | 0.9511 | 0.7142 | pasa |
+| Non-overlapping Template 3 | 59 | 59 | 1.0000 | 0.9511 | 0.3250 | pasa |
+| Non-overlapping Template 4 | 59 | 59 | 1.0000 | 0.9511 | 0.3519 | pasa |
+| Non-overlapping Template 5 | 59 | 59 | 1.0000 | 0.9511 | 0.7815 | pasa |
+| Non-overlapping Template 6 | 59 | 58 | 0.9831 | 0.9511 | 0.4096 | pasa |
+| Non-overlapping Template 7 | 59 | 59 | 1.0000 | 0.9511 | 0.1464 | pasa |
+| Non-overlapping Template 8 | 59 | 58 | 0.9831 | 0.9511 | 0.9971 | pasa |
+| Overlapping Template | 59 | 59 | 1.0000 | 0.9511 | 0.7142 | pasa |
+| Universal | 59 | 59 | 1.0000 | 0.9511 | 0.5054 | pasa |
+| Linear Complexity | 59 | 58 | 0.9831 | 0.9511 | 0.5739 | pasa |
+| Serial 1 | 59 | 58 | 0.9831 | 0.9511 | 0.8431 | pasa |
+| Serial 2 | 59 | 59 | 1.0000 | 0.9511 | 0.4404 | pasa |
+| Approximate Entropy | 59 | 58 | 0.9831 | 0.9511 | 0.8431 | pasa |
+| Cumulative Sums fwd | 59 | 58 | 0.9831 | 0.9511 | 0.8963 | pasa |
+| Cumulative Sums bwd | 59 | 58 | 0.9831 | 0.9511 | 0.5393 | pasa |
+| Random Excursions 1 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.7399 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 2 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.8953 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 3 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.6799 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 4 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.5580 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 5 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.7399 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 6 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.2964 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 7 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.6188 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions 8 (25 no aplicables) | 34 | 33 | 0.9706 | 0.9388 | 0.7399 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 1 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.6799 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 2 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.7399 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 3 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.6188 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 4 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.0556 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 5 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.8494 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 6 (25 no aplicables) | 34 | 33 | 0.9706 | 0.9388 | 0.8953 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 7 (25 no aplicables) | 34 | 33 | 0.9706 | 0.9388 | 0.0959 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 8 (25 no aplicables) | 34 | 33 | 0.9706 | 0.9388 | 0.0075 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 9 (25 no aplicables) | 34 | 33 | 0.9706 | 0.9388 | 0.5580 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 10 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.7399 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 11 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.8494 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 12 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.7970 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 13 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.6188 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 14 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.3899 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 15 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.1142 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 16 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.3899 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 17 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.1142 | pasa (m < 55: uniformidad orientativa) |
+| Random Excursions Variant 18 (25 no aplicables) | 34 | 34 | 1.0000 | 0.9388 | 0.1881 | pasa (m < 55: uniformidad orientativa) |
+
+48 estadísticos, 2182 p en total; 18 por debajo de 0,01 (esperadas 21.8). Estadísticos que no pasan el segundo nivel: ninguno.
+

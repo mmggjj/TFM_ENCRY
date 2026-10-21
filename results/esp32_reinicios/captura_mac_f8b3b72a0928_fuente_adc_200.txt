@@ -1,0 +1,88 @@
+﻿chip f8:b3:b7:2a:09:28, variante fuente_adc_200: 0 hechos, faltan 300
+  1/300  primeros bytes 90b57a01cb572021  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 1 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 3 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 7 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 10 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 14 intento 1 rechazado: linea hex corrupta (despues)
+  51/300  primeros bytes c4b92eed9952173f  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 63 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 64 intento 1 rechazado: longitud 2075 (antes)
+  reinicio 84 intento 1 rechazado: faltan bloques: ['antes']
+  101/300  primeros bytes ec1a5f1404634538  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 123 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 129 intento 1 rechazado: longitud 1889 (antes)
+  reinicio 139 intento 1 rechazado: faltan bloques: ['antes']
+  151/300  primeros bytes da63bbd257086243  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  reinicio 162 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 163 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 175 intento 1 rechazado: longitud 1551 (unico)
+  reinicio 176 intento 1 rechazado: longitud 1809 (antes)
+  reinicio 176 intento 2 rechazado: longitud 2259 (antes)
+  reinicio 176 intento 3 rechazado: longitud 2114 (despues)
+  reinicio 176 intento 4 rechazado: linea hex corrupta (antes)
+  reinicio 177 intento 1 rechazado: longitud 1881 (antes)
+  201/300  primeros bytes 5c09c51912ceded7  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 204 intento 1 rechazado: longitud 2311 (antes)
+  reinicio 234 intento 1 rechazado: linea hex corrupta (antes)
+  251/300  primeros bytes 9d4ab33341495298  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  reinicio 280 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 281 intento 1 rechazado: linea hex corrupta (antes)
+  300/300  primeros bytes a26309ce48e27c0e  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+hecho: 300 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_adc_200; rechazos 23
+chip f8:b3:b7:2a:09:28, variante fuente_adc_200: 300 hechos, faltan 700
+  301/1000  primeros bytes bc11e8e0bfbf9b33  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 302 intento 1 rechazado: longitud 2086 (antes)
+  reinicio 308 intento 1 rechazado: longitud 2131 (despues)
+  reinicio 309 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 314 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 321 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 321 intento 2 rechazado: linea hex corrupta (antes)
+  reinicio 322 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 323 intento 1 rechazado: crc (despues)
+  reinicio 325 intento 1 rechazado: longitud 1430 (antes)
+  reinicio 326 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 327 intento 1 rechazado: linea hex corrupta (antes)
+  351/1000  primeros bytes 9c9205c24cd30aa1  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  reinicio 359 intento 1 rechazado: faltan bloques: ['antes']
+  reinicio 379 intento 1 rechazado: longitud 1641 (antes)
+  reinicio 390 intento 1 rechazado: longitud 1668 (antes)
+  401/1000  primeros bytes 7569bc133c612b05  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  reinicio 409 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 424 intento 1 rechazado: crc (antes)
+  reinicio 425 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 425 intento 2 rechazado: linea hex corrupta (antes)
+  reinicio 426 intento 1 rechazado: longitud 2409 (antes)
+  reinicio 426 intento 2 rechazado: mac/variante
+  451/1000  primeros bytes 872990aeff45ff4e  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 451 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 451 intento 2 rechazado: linea hex corrupta (despues)
+  reinicio 451 intento 3 rechazado: linea hex corrupta (antes)
+  reinicio 451 intento 4 rechazado: linea hex corrupta (antes)
+  reinicio 452 intento 1 rechazado: longitud 2912 (unico)
+  reinicio 452 intento 2 rechazado: longitud 1642 (antes)
+  reinicio 454 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 483 intento 1 rechazado: linea hex corrupta (antes)
+  501/1000  primeros bytes 11cb6c274c923f4d  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 533 intento 1 rechazado: faltan bloques: ['antes']
+  reinicio 541 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 546 intento 1 rechazado: linea hex corrupta (antes)
+  551/1000  primeros bytes ad0e1963d6784435  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 557 intento 1 rechazado: longitud 1074 (antes)
+  reinicio 558 intento 1 rechazado: faltan bloques: ['antes']
+  reinicio 559 intento 1 rechazado: linea hex corrupta (despues)
+  reinicio 562 intento 1 rechazado: linea hex corrupta (antes)
+  601/1000  primeros bytes 7fb383e65c00cf19  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  reinicio 601 intento 1 rechazado: linea hex corrupta (antes)
+  reinicio 617 intento 1 rechazado: faltan bloques: ['antes']
+  reinicio 618 intento 1 rechazado: longitud 1813 (antes)
+chip f8:b3:b7:2a:09:28, variante fuente_adc_200: 619 hechos, faltan 381
+  651/1000  primeros bytes 9fe9e6c180e39879  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  701/1000  primeros bytes 44a2d9be191eccaf  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  751/1000  primeros bytes a7a40c6a90f38222  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  801/1000  primeros bytes 968efae344a9b568  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  851/1000  primeros bytes 7dd01d34259362c9  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+  901/1000  primeros bytes 78949e20dec7345f  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  951/1000  primeros bytes f92e9296a5d728a9  reset=1  t_us=800000  ruido_arranque=no  1.42 s
+  1000/1000  primeros bytes 651676261692f49a  reset=1  t_us=800001  ruido_arranque=no  1.42 s
+hecho: 1000 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\fuente_adc_200; rechazos 0

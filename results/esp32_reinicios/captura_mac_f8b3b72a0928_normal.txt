@@ -1,0 +1,23 @@
+﻿chip f8:b3:b7:2a:09:28, variante normal: 0 hechos, faltan 1000
+  1/1000  primeros bytes b304898fd9b3d24c  reset=1  t_us=3199  ruido_arranque=si  0.40 s
+  51/1000  primeros bytes 6e6fb58d37afa85e  reset=1  t_us=3199  ruido_arranque=si  0.40 s
+  101/1000  primeros bytes c4bdb6c8d91d0b7e  reset=1  t_us=3197  ruido_arranque=si  0.40 s
+  151/1000  primeros bytes 6f7d433cd48a21d9  reset=1  t_us=3197  ruido_arranque=si  0.40 s
+  201/1000  primeros bytes c96436dc1604112f  reset=1  t_us=3197  ruido_arranque=si  0.40 s
+  251/1000  primeros bytes c1fc3e6eb133c548  reset=1  t_us=3209  ruido_arranque=si  0.40 s
+  301/1000  primeros bytes bccd4904543ed4eb  reset=1  t_us=3209  ruido_arranque=si  0.40 s
+  351/1000  primeros bytes f269042d096402e6  reset=1  t_us=3208  ruido_arranque=si  0.40 s
+  401/1000  primeros bytes dbcb19390d983e62  reset=1  t_us=3197  ruido_arranque=si  0.40 s
+  451/1000  primeros bytes ea76c66ecbaa92b5  reset=1  t_us=3209  ruido_arranque=si  0.40 s
+  501/1000  primeros bytes 84e9a93d21248134  reset=1  t_us=3209  ruido_arranque=si  0.40 s
+  551/1000  primeros bytes dd53af8c5468fbb3  reset=1  t_us=3209  ruido_arranque=si  0.40 s
+  601/1000  primeros bytes 8e18e861151b36f5  reset=1  t_us=3207  ruido_arranque=si  0.40 s
+  651/1000  primeros bytes 567deffdfee3e944  reset=1  t_us=3207  ruido_arranque=si  0.40 s
+  701/1000  primeros bytes 222c98cfec454006  reset=1  t_us=3208  ruido_arranque=si  0.40 s
+  751/1000  primeros bytes 9fe82324070b6db0  reset=1  t_us=3207  ruido_arranque=si  0.40 s
+  801/1000  primeros bytes c7aaca16d529feb2  reset=1  t_us=3197  ruido_arranque=si  0.40 s
+  851/1000  primeros bytes ac26c31d5c0f0979  reset=1  t_us=3207  ruido_arranque=si  0.40 s
+  901/1000  primeros bytes adaf3e1e4b0f5f4f  reset=1  t_us=3207  ruido_arranque=si  0.40 s
+  951/1000  primeros bytes e698b3ce43c099af  reset=1  t_us=3207  ruido_arranque=si  0.40 s
+  1000/1000  primeros bytes 7f56167ae9172df0  reset=1  t_us=3205  ruido_arranque=si  0.40 s
+hecho: 1000 reinicios en C:\Users\mario\Documents\TFM_FPGA_CRYPTO\results\esp32_reinicios\mac_f8b3b72a0928\normal; rechazos 0

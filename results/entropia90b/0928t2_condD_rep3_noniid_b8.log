@@ -1,0 +1,59 @@
+Agent pid 416
+Opening file: '/mnt/c/Users/mario/Documents/TFM_FPGA_CRYPTO/results/esp32_campana_rng/mac_f8b3b72a0928/tanda2/condD_rep3.bin' (SHA-256 hash eda72b394ba752971026388a4db795c24489884d3eec2e191aabe20392259810)
+Loaded 125000 samples of 256 distinct 8-bit-wide symbols
+Number of Binary Symbols: 1000000
+
+*** Warning: data contains less than 1000000 samples ***
+
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Bitstring MCV Estimate: mode = 500446, p-hat = 0.50044599999999995, p_u = 0.50173391478335816
+	Most Common Value Estimate (bit string) = 0.995006 / 1 bit(s)
+Literal MCV Estimate: mode = 543, p-hat = 0.0043439999999999998, p_u = 0.0048231410454786031
+	Most Common Value Estimate = 7.695811 / 8 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Bitstring Collision Estimate: X-bar = 2.5004100676611642, sigma-hat = 0.50000045694858863, p = 0.52851731129726898
+	Collision Test Estimate (bit string) = 0.919977 / 1 bit(s)
+Bitstring Markov Estimate: P_0 = 0.499554, P_1 = 0.50044599999999995, P_0,0 = 0.49940146610776814, P_0,1 = 0.50059853389223186, P_1,0 = 0.49970526231653828, P_1,1 = 0.50029473768346167, p_max = 3.1699392786607111e-39
+	Markov Test Estimate (bit string) = 0.999146 / 1 bit(s)
+Bitstring Compression Estimate: X-bar = 5.222145414869245, sigma-hat = 1.0116511359298666, p = 0.022716539022769711
+	Compression Test Estimate (bit string) = 0.910019 / 1 bit(s)
+
+Running Tuple Estimates...
+Bitstring t-Tuple Estimate: t = 15, p-hat_max = 0.5212651963271891817709, p_u = 0.5225519462830254483615
+Bitstring LRS Estimate: u = 16, v = 36, p-hat = 0.50017876020728407, p_u = 0.50146667542070511
+	T-Tuple Test Estimate (bit string) = 0.936354 / 1 bit(s)
+Literal t-Tuple Estimate: t = 1, p-hat_max = 0.004343999999999999999937, p_u = 0.004823141045478602963881
+Literal LRS Estimate: u = 2, v = 3, p-hat = 0.0040396603985395786, p_u = 0.0045017830548272229
+	T-Tuple Test Estimate = 7.695811 / 8 bit(s)
+	LRS Test Estimate (bit string) = 0.995774 / 1 bit(s)
+	LRS Test Estimate = 7.795288 / 8 bit(s)
+
+Running Predictor Estimates...
+Bitstring MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50203650158214963 (C = 500717) Plocal can't affect result (r = 19)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate (bit string) = 0.994136 / 1 bit(s)
+Literal MultiMCW Prediction Estimate: N = 124937, Pglobal' = 0.0041910680188612815 (C = 468) Plocal = 0.004323073550451053 (r = 3)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 7.853727 / 8 bit(s)
+Bitstring Lag Prediction Estimate: N = 999999, Pglobal' = 0.50148041603674032 (C = 500192) Plocal can't affect result (r = 20)
+	Lag Prediction Test Estimate (bit string) = 0.995735 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 124999, Pglobal' = 0.0046205147507679479 (C = 519) Plocal can't affect result (r = 3)
+	Lag Prediction Test Estimate = 7.757731 / 8 bit(s)
+Bitstring MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50079291496250256 (C = 499504) Plocal can't affect result (r = 17)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate (bit string) = 0.997714 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 124998, Pglobal' = 0.0039939886053252365 (C = 445) Plocal = 0.0043223691745210161 (r = 3)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 7.853962 / 8 bit(s)
+Bitstring LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50102342156637292 (C = 499727) Plocal can't affect result (r = 18)
+	LZ78Y Prediction Test Estimate (bit string) = 0.997050 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 124983, Pglobal' = 0.003977492814549081 (C = 443) Plocal = 0.0043225423391850901 (r = 3)
+	LZ78Y Prediction Test Estimate = 7.853904 / 8 bit(s)
+
+H_original: 7.695811
+H_bitstring: 0.910019
+min(H_original, 8 X H_bitstring): 7.280151
+your 131072x1 screen size is bogus. expect trouble
+your 131072x1 screen size is bogus. expect trouble
+Identity added: /home/mmggjj/.ssh/id_ed25519 (mariogj.03@gmail.com)
+tiempo_s=7.47 maxrss_kB=288752

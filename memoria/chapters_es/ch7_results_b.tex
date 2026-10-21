@@ -2,12 +2,12 @@
 \label{sec:esp32_ref}
 
 El Capítulo~\ref{ch:esp32} caracteriza el generador del ESP32 en cuatro
-condiciones de funcionamiento y en dos chips; la comparación de O8 toma
+condiciones de funcionamiento y en tres chips; la comparación de O8 toma
 de allí sus cifras.
 
 De ello se siguen tres consecuencias para O8. Primera, la cifra que este
 TFM retiene como referencia del ESP32 es la no IID, de 0,81 a 0,92 bit por
-bit con una media de 0,85 sobre las veinticuatro capturas de las
+bit con una media de 0,85 sobre las treinta y seis capturas de las
 condiciones A--D, porque es lo que un evaluador acreditaría sin conceder
 la hipótesis IID, con la prueba de reinicios como recordatorio de que para
 la condición~D es una cifra estadística y no entropía física; los bits en
@@ -62,8 +62,8 @@ $\approx 2{,}35$ para un \ac{AES}, y los ahorros de optimización del
 Capítulo~\ref{ch:ch6_asic} son \est{} y explícitamente no se presentan
 como medidos.
 \item[Min-entropía de la referencia del ESP32.] Medida \meas{} en
-veintiséis capturas de $10^6$ a $8{,}4\times10^6$ bits, seis por condición,
-tres en cada uno de dos chips del mismo modelo identificados por dirección
+treinta y ocho capturas de $10^6$ a $8{,}4\times10^6$ bits, nueve por
+condición, tres en cada uno de tres chips del mismo modelo identificados por dirección
 MAC. La
 cifra de la vía IID está en el techo de resolución del estimador MCV para
 ese $N$ (0,9963 con $10^6$ bits), así que es un suelo situado en el techo
@@ -71,13 +71,14 @@ más que una medida de la fuente, y los veredictos IID se leen frente a la
 tasa de falsos fallos medida de cada prueba a esa longitud, no frente a la
 nominal. La cifra no IID la fijan estimadores cuyo sesgo conservador con
 datos casi uniformes supera la dispersión entre condiciones; un análisis
-de la varianza no encuentra efecto de la condición ($p \ge 0{,}083$ en
-todos los estimadores) ni efecto del chip ($p \ge 0{,}047$, frente a
-0,0045 tras la corrección). Dos dispositivos muestran que la referencia no
-depende de uno de ellos; no acotan la dispersión en una población de
-producción. La prueba de reinicios se ejecutó en un chip, en la
-condición~D y con el Wi-Fi arrancado pero no asociado; no se probaron la
-condición con ADC, el Bluetooth ni una radio asociada. Acota la entropía que inyecta el
+de la varianza no encuentra efecto de la condición ($p \ge 0{,}045$ en
+todos los estimadores) ni efecto del chip ($p \ge 0{,}032$, frente a
+0,0045 tras la corrección). Tres dispositivos muestran que la referencia
+no depende de uno de ellos; no acotan la dispersión en una población de
+producción. La prueba de reinicios se ejecutó en dos chips, en la
+condición~D, con el Wi-Fi arrancado pero no asociado y, en el segundo
+chip, con cada fuente encendida y apagada por separado; no se probaron
+el Bluetooth ni una radio asociada. Acota la entropía que inyecta el
 bootloader de serie solo por abajo: que no haya ninguna repetición en 1000
 reinicios significa más de unos $1{,}7\times10^5$ estados de partida igual
 de probables, unos 17 bits, con un 95\,\% de confianza. El tamaño del

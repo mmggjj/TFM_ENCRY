@@ -1,0 +1,8 @@
+# Prueba del paso del RNG sin ruido (ver main/reinicios_paso.c). ESP32 clasico.
+CONFIG_IDF_TARGET="esp32"
+# Solo errores en el programa (los INFO del Wi-Fi se colarian en la trama);
+# el log del bootloader en INFO porque dice si encendio la fuente de entropia.
+CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
+CONFIG_LOG_DEFAULT_LEVEL=1
+CONFIG_BOOTLOADER_LOG_LEVEL_INFO=y
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
