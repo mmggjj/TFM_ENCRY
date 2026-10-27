@@ -9,6 +9,8 @@
 --  4. Fuente pegada al valor opuesto al primero de la ventana: el APT solo
 --     la detecta gracias a mirar el complemento.
 --  5. Las alarmas se quedan hasta borrar, y borrar las baja.
+--  6. ventana_fin pulsa una vez por ventana, junto con el veredicto del APT,
+--     y borrar reinicia la ventana.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -28,8 +30,12 @@ architecture sim of tb_health_tests is
   signal clk, rst_n : std_logic := '0';
   signal bit_i, bit_stb, borrar : std_logic := '0';
   signal alarma_rct, alarma_apt, alarma : std_logic;
+  signal ventana_fin : std_logic;
   signal rct_max, apt_max : unsigned(15 downto 0);
   signal fin : boolean := false;
+  -- Cierres de ventana vistos; el ultimo, con o sin alarma de APT a la vez.
+  signal n_fin : natural := 0;
+  signal apt_al_cerrar : std_logic := '0';
 
 begin
 
@@ -40,7 +46,20 @@ begin
     port map (clk => clk, rst_n => rst_n, bit_i => bit_i, bit_stb => bit_stb,
               borrar => borrar, alarma_rct => alarma_rct,
               alarma_apt => alarma_apt, alarma => alarma,
+              ventana_fin => ventana_fin,
               rct_max => rct_max, apt_max => apt_max);
+
+  cuenta_fin : process (clk)
+  begin
+    if rising_edge(clk) then
+      if rst_n = '0' then
+        n_fin <= 0;
+      elsif ventana_fin = '1' then
+        n_fin <= n_fin + 1;
+        apt_al_cerrar <= alarma_apt;
+      end if;
+    end if;
+  end process cuenta_fin;
 
   principal : process
     variable fallos : natural := 0;
@@ -68,6 +87,13 @@ begin
       wait until rising_edge(clk);
       bit_stb <= '0';
       wait until rising_edge(clk);
+    end procedure;
+
+    -- El contador de cierres se actualiza un ciclo despues de la muestra.
+    procedure asentar is
+    begin
+      wait until rising_edge(clk);
+      wait for 1 ns;
     end procedure;
 
     procedure reiniciar is
@@ -146,6 +172,47 @@ begin
     borrar <= '0';
     wait until rising_edge(clk);
     comprobar(alarma = '0', "borrar baja las alarmas");
+
+    report "6) ventana_fin: una por ventana, con el veredicto, y borrar la reinicia";
+    reiniciar;
+    for i in 1 to C_W - 1 loop
+      muestra(bit_lfsr);
+    end loop;
+    asentar;
+    comprobar(n_fin = 0, "sin cierre con W-1 muestras");
+    muestra(bit_lfsr);
+    asentar;
+    comprobar(n_fin = 1 and apt_al_cerrar = '0',
+              "un cierre en la muestra W, sin alarma");
+    for i in 1 to 2 * C_W loop
+      muestra(bit_lfsr);
+    end loop;
+    asentar;
+    comprobar(n_fin = 3, "tres cierres en 3W muestras: " & integer'image(n_fin));
+    -- Ventana sesgada: el pulso de cierre llega con la alarma ya puesta.
+    for i in 1 to C_W loop
+      muestra('1');
+    end loop;
+    asentar;
+    comprobar(n_fin = 4 and apt_al_cerrar = '1',
+              "el cierre de una ventana mala llega con alarma_apt = 1");
+    -- Borrar a mitad de ventana: la siguiente necesita W muestras nuevas.
+    for i in 1 to C_W / 2 loop
+      muestra(bit_lfsr);
+    end loop;
+    borrar <= '1';
+    wait until rising_edge(clk);
+    borrar <= '0';
+    wait until rising_edge(clk);
+    for i in 1 to C_W - 1 loop
+      muestra(bit_lfsr);
+    end loop;
+    asentar;
+    comprobar(n_fin = 4, "tras borrar, W-1 muestras no cierran ventana");
+    muestra(bit_lfsr);
+    asentar;
+    comprobar(n_fin = 5 and apt_al_cerrar = '0',
+              "tras borrar, la ventana se cierra en la muestra W y limpia");
 
     if fallos = 0 then
       report "tb_health_tests: 0 fallos" severity note;

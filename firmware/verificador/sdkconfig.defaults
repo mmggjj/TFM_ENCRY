@@ -20,3 +20,7 @@ CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 # stdin bloqueante por UART para la consola minima de main.c
 CONFIG_ESP_CONSOLE_UART_DEFAULT=y
 CONFIG_VFS_SUPPORT_IO=y
+
+# Tick de 1 ms: los plazos de espera del verificador se miden en ticks y
+# a 100 Hz pdMS_TO_TICKS(2) vale 0.
+CONFIG_FREERTOS_HZ=1000

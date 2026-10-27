@@ -34,6 +34,42 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 27-10-2026: la alarma de salud bloquea la salida
+
+Revisión externa del RTL y del firmware. Fallo grave corregido (rama
+`fix/salud-bloquea-salida`):
+
+- **Antes**, con alarma levantada seguían saliendo clave y ALEATORIO
+  (`generar`/`aleatorio` solo miraban `sembrado`), el APT nunca evaluaba la
+  primera semilla (384 bits < ventana de 1024) y no había test de arranque.
+- **Ahora** (`rtl/top/motor_top.vhd`, `rtl/trng/health_tests.vhd`): con
+  alarma se rechazan sembrar, resembrar, generar y aleatorio; test de
+  arranque de SP 800-90B §4.3 (una ventana completa del APT sin alarma tras
+  el reset o tras borrar, y borrar reinicia la ventana); la semilla solo
+  entra en el DRBG cuando se cierra limpia la ventana que contiene su último
+  bit (estado `VALIDANDO`); registro nuevo **DIAG (0x0E)** con `arrancado` y
+  `rechazada`; VERSION pasa a 0x02. Especificación en `docs/mapa_registros.md`.
+- `tb_health_tests` (caso 6) y `tb_motor_top` (2.0, 5b, 5c; la alarma se
+  fuerza con `force` sobre un nombre externo) cubren todo. Los siete bancos
+  pasan con GHDL 6.0.0 (`results/tb_motor_top.log`). Si el Python es el de
+  Microsoft Store no ve `%LOCALAPPDATA%\ghdl`: poner GHDL en otra carpeta y
+  su `bin` en el PATH al lanzar `run_tb.py`.
+- Verificador (`firmware/verificador`): `orden()` comprueba
+  `DIAG.rechazada`; plazos en tiempo real con `CONFIG_FREERTOS_HZ=1000` (a
+  100 Hz `pdMS_TO_TICKS(2)` era 0); `sembrar` espera al test de arranque;
+  comando `borrar`; ni rechazos ni fallos de bus llegan al PC como tramas
+  con CRC válido; `generar` sin modo test invalida la clave provisionada.
+  `host_check/motor_sim.c` modela ahora `ocupado`, arranque, rechazos y
+  alarma, y `test_verificador.c` comprueba cuentas reales (antes había
+  `chk(true, …)`). Sin compilar con ESP-IDF en este PC.
+- Memoria: cap. 4 actualizado en inglés y en español; **los PDF no están
+  regenerados**.
+- Pendiente de la misma revisión, sin tocar: `capturar` sin modo test
+  durante una siembra deja la semilla en el buffer de captura; `CFG_KD` de
+  reset (7) muy por debajo del de diseño; sin XDC/SDC; `reseed_interval` no
+  impuesto; sin zeroization; condiciones A/B del ESP32 posiblemente con la
+  radio dormida (`rng_sampler.c` sin `sta_disconnected_pm = false`).
+
 ## Estado al cierre del 19-09-2026
 
 - `tb_motor_top` re-ejecutado con la corrección de la fuga y el
@@ -150,9 +186,10 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   400 kHz, 3,3 V. Sin estiramiento de reloj: las órdenes largas
   (sembrar, generar) se lanzan escribiendo `CONTROL` (0x03) y se sondea
   `STATUS` (0x02) hasta que baje el bit `ocupado`.
-- Secuencia: leer `ID` (0x00) = 0xA5 → `CONTROL ← sembrar` → sondear →
-  comprobar `sembrado` y sin alarmas → `CONTROL ← generar` → sondear →
-  hay clave. Reto-respuesta: escribir 16 bytes en `RETO` (0x20),
+- Secuencia: leer `ID` (0x00) = 0xA5 y `VERSION` (0x01) = 0x02 → sondear
+  `DIAG` (0x0E) hasta `arrancado` → `CONTROL ← sembrar` → sondear →
+  comprobar `DIAG.rechazada = 0`, `sembrado` y sin alarmas →
+  `CONTROL ← generar` → sondear → `DIAG.rechazada = 0` → hay clave. Reto-respuesta: escribir 16 bytes en `RETO` (0x20),
   `CONTROL ← autenticar`, sondear, leer `ETIQUETA` (0x30) y comparar con
   `mbedtls_cipher_cmac(AES-128-ECB, clave, reto)`.
 - **La clave solo es legible (0x10) con el pin `modo_test` activo.** Es
@@ -162,7 +199,10 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   del mínimo (genérico `G_KD_MIN`, 6 por defecto): la orden se ignora y
   `ocupado` no llega a subir. Escribir `CFG_KD` con una orden en curso se
   ignora. Ambas cosas desde el 19-09; antes eran obligaciones del maestro
-  sin comprobar. Detalle en `docs/mapa_registros.md`.
+  sin comprobar. Desde el 27-10 **con alarma no sale nada** (se rechazan
+  sembrar, resembrar, generar y aleatorio) y no se siembra sin pasar el test
+  de arranque. Toda orden ignorada o siembra abortada levanta
+  `DIAG.rechazada`. Detalle en `docs/mapa_registros.md`.
 - Aleatorio para el host: `CONTROL ← aleatorio` (bit 6), sondear, leer
   `ALEATORIO` (0x40, 32 bytes). Es una generación del DRBG **independiente
   de la clave**. Hasta el 15-09 `generar` dejaba la clave en ese registro

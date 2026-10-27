@@ -110,10 +110,18 @@ static void aes_cmac16(const uint8_t clave[16], const uint8_t msg[16], uint8_t t
 
 #define ST_SEMBRADO      (1u << 0)
 #define ST_OCUPADO       (1u << 1)
+#define ST_ALM_RCT       (1u << 2)
 #define ST_CLAVE_VALIDA  (1u << 4)
 #define ST_CAPTURA_LLENA (1u << 5)
 #define ST_ETIQ_LISTA    (1u << 6)
 #define ST_MODO_TEST     (1u << 7)
+
+/* Como el RTL: test de arranque, minimo de CFG_KD y "ocupado" que dura. El
+ * tiempo es el de vTaskDelay, en ticks de 1 ms (FREERTOS_HZ = 1000). */
+#define KD_MIN           6
+#define T_ARRANQUE       30u      /* ticks hasta pasar el test de arranque */
+#define T_SIEMBRA        20u
+#define T_ORDEN          1u
 
 static struct {
     uint8_t status, cfg_kd, cfg_pag;
@@ -121,11 +129,23 @@ static struct {
     uint8_t captura[512];
     uint8_t drbg_key[16], drbg_v[16];
     uint32_t peticiones;
-    bool sembrado;
+    bool sembrado, alarma, rechazada;
+    uint32_t arranque_en, libre_en;
 } m;
+
+static uint32_t ticks;
 
 bool motor_modo_test = true;      /* el banco lo maneja */
 int  motor_fallo_bus = 0;         /* >0: las proximas N transacciones fallan */
+bool motor_colgado = false;       /* "ocupado" no baja nunca */
+int  motor_n_tramas = 0;          /* tramas al PC: una llamada al CRC cada una */
+
+static bool arrancado(void) { return !m.alarma && ticks >= m.arranque_en; }
+static bool ocupado(void) { return motor_colgado || ticks < m.libre_en; }
+
+void motor_alarma(bool a) { m.alarma = a; }
+const uint8_t *motor_clave(void) { return m.clave; }
+uint32_t motor_ticks(void) { return ticks; }
 
 static void inc_v(void) { for (int i = 15; i >= 0; i--) if (++m.drbg_v[i]) break; }
 
@@ -143,43 +163,62 @@ static void drbg_generar(uint8_t salida[32])
     m.peticiones++;
 }
 
+/* Una orden por escritura, con la misma prioridad y las mismas condiciones
+ * que motor_top.vhd. El resultado se aplica al aceptarla; "ocupado" dura
+ * despues unos ticks para que el verificador tenga que sondear. */
 static void ejecutar_control(uint8_t v)
 {
-    if (v & (1u << 0)) {                       /* sembrar */
-        for (int i = 0; i < 16; i++) { m.drbg_key[i] = (uint8_t)(0x5a ^ i); m.drbg_v[i] = (uint8_t)i; }
-        m.sembrado = true;
-        m.peticiones = 1;
-        m.status |= ST_SEMBRADO;
-        m.status &= (uint8_t)~ST_CLAVE_VALIDA;
-    }
-    if ((v & (1u << 1)) && m.sembrado) {        /* generar: solo la clave */
-        uint8_t s[32];
-        drbg_generar(s);
-        memcpy(m.clave, s, 16);
-        m.status |= ST_CLAVE_VALIDA;
-        m.status &= (uint8_t)~ST_ETIQ_LISTA;
-    }
-    if ((v & (1u << 2)) && (m.status & ST_CLAVE_VALIDA)) {  /* autenticar */
-        aes_cmac16(m.clave, m.reto, m.etiqueta);
-        m.status |= ST_ETIQ_LISTA;
+    if (v & (1u << 3)) {                       /* borrar alarmas */
+        m.alarma = false;
+        m.arranque_en = ticks + T_ARRANQUE;    /* se repite el test de arranque */
     }
     if (v & (1u << 4)) {                       /* capturar */
         for (size_t i = 0; i < sizeof m.captura; i++) m.captura[i] = (uint8_t)(rand() & 0xff);
         m.status |= ST_CAPTURA_LLENA;
     }
-    if ((v & (1u << 6)) && m.sembrado) {        /* aleatorio: generacion aparte */
+    if (!(v & 0x67)) return;                   /* ninguna orden */
+    if (ocupado()) { m.rechazada = true; return; }
+
+    if (v & ((1u << 0) | (1u << 5))) {         /* sembrar / resembrar */
+        if (!arrancado() || m.cfg_kd < KD_MIN) { m.rechazada = true; return; }
+        if (v & (1u << 0))
+            for (int i = 0; i < 16; i++) { m.drbg_key[i] = (uint8_t)(0x5a ^ i); m.drbg_v[i] = (uint8_t)i; }
+        m.sembrado = true;
+        m.peticiones = 1;
+        m.status |= ST_SEMBRADO;
+        m.libre_en = ticks + T_SIEMBRA;
+    } else if (v & (1u << 1)) {                /* generar: solo la clave */
+        if (!m.sembrado || m.alarma) { m.rechazada = true; return; }
+        uint8_t s[32];
+        drbg_generar(s);
+        memcpy(m.clave, s, 16);
+        m.status |= ST_CLAVE_VALIDA;
+        m.status &= (uint8_t)~ST_ETIQ_LISTA;
+        m.libre_en = ticks + T_ORDEN;
+    } else if (v & (1u << 6)) {                /* aleatorio: generacion aparte */
+        if (!m.sembrado || m.alarma) { m.rechazada = true; return; }
         drbg_generar(m.aleatorio);
+        m.libre_en = ticks + T_ORDEN;
+    } else {                                   /* autenticar */
+        if (!(m.status & ST_CLAVE_VALIDA)) { m.rechazada = true; return; }
+        aes_cmac16(m.clave, m.reto, m.etiqueta);
+        m.status |= ST_ETIQ_LISTA;
+        m.libre_en = ticks + T_ORDEN;
     }
+    m.rechazada = false;
 }
 
 static uint8_t leer_reg(uint8_t d)
 {
     if (d == 0x00) return 0xA5;
-    if (d == 0x01) return 0x01;
-    if (d == 0x02) return (uint8_t)(m.status | (motor_modo_test ? ST_MODO_TEST : 0));
+    if (d == 0x01) return 0x02;
+    if (d == 0x02) return (uint8_t)(m.status | (ocupado() ? ST_OCUPADO : 0) |
+                                    (m.alarma ? ST_ALM_RCT : 0) |
+                                    (motor_modo_test ? ST_MODO_TEST : 0));
     if (d == 0x04) return m.cfg_kd;
     if (d == 0x05) return m.cfg_pag;
     if (d >= 0x0A && d <= 0x0D) return (uint8_t)(m.peticiones >> (8 * (d - 0x0A)));
+    if (d == 0x0E) return (uint8_t)((m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
     if (d >= 0x10 && d <= 0x1F) return motor_modo_test ? m.clave[d - 0x10] : 0x00;
     if (d >= 0x30 && d <= 0x3F) return m.etiqueta[d - 0x30];
     if (d >= 0x40 && d <= 0x5F) return m.aleatorio[d - 0x40];
@@ -190,12 +229,18 @@ static uint8_t leer_reg(uint8_t d)
 static void escribir_reg(uint8_t d, uint8_t v)
 {
     if (d == 0x03) ejecutar_control(v);
-    else if (d == 0x04) m.cfg_kd = v;
+    else if (d == 0x04) { if (!ocupado()) m.cfg_kd = v; }
     else if (d == 0x05) m.cfg_pag = (uint8_t)(v & 3);
     else if (d >= 0x20 && d <= 0x2F) { m.reto[d - 0x20] = v; m.status &= (uint8_t)~ST_ETIQ_LISTA; }
 }
 
-void motor_reset(void) { memset(&m, 0, sizeof m); m.cfg_kd = 7; }
+void motor_reset(void)
+{
+    memset(&m, 0, sizeof m);
+    m.cfg_kd = 7;
+    m.arranque_en = ticks + T_ARRANQUE;
+    motor_colgado = false;
+}
 
 /* ----------------------------------------- el "bus": punteros y trama -- */
 
@@ -230,12 +275,13 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t b,
 
 /* ------------------------------------------------- resto de la plataforma */
 
-void vTaskDelay(uint32_t t) { (void)t; }
+void vTaskDelay(uint32_t t) { ticks += t; }
+uint32_t xTaskGetTickCount(void) { return ticks; }
 void esp_fill_random(void *buf, size_t len)
 { for (size_t i = 0; i < len; i++) ((uint8_t *)buf)[i] = (uint8_t)(rand() & 0xff); }
 uint32_t esp_random(void) { return (uint32_t)rand(); }
 uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t *buf, uint32_t len)
-{ for (uint32_t i = 0; i < len; i++) crc = (crc << 8) ^ buf[i]; return crc; }
+{ motor_n_tramas++; for (uint32_t i = 0; i < len; i++) crc = (crc << 8) ^ buf[i]; return crc; }
 
 static const int CIPHER_AES128 = 1;
 const void *mbedtls_cipher_info_from_type(int t) { (void)t; return &CIPHER_AES128; }

@@ -187,7 +187,34 @@ begin
       status := s;
     end procedure;
 
+    -- Sondea DIAG hasta que el test de arranque haya pasado.
+    procedure esperar_arranque is
+      variable d : std_logic_vector(7 downto 0);
+      variable n : natural := 0;
+    begin
+      loop
+        leer_reg(x"0E", d);
+        exit when d(0) = '1';
+        n := n + 1;
+        assert n < 2000 report "el test de arranque no pasa" severity failure;
+      end loop;
+    end procedure;
+
+    -- Lanza una orden que debe rechazarse y comprueba que no arranca.
+    procedure orden_rechazada(ctl : in std_logic_vector(7 downto 0); msg : in string) is
+      variable s, d : std_logic_vector(7 downto 0);
+    begin
+      escribir_reg(x"03", ctl);
+      wait for 5 us;
+      leer_reg(x"02", s);
+      leer_reg(x"0E", d);
+      comprobar(s(1) = '0' and d(1) = '1', msg);
+    end procedure;
+
+    alias rct_alm is << signal .tb_motor_top.dut.u_salud.rct_alm : std_logic >>;
+
     variable b, status : std_logic_vector(7 downto 0);
+    variable pet1, pet2 : std_logic_vector(31 downto 0);
     variable clave1, clave2, reto, etiqueta1, etiqueta2 : std_logic_vector(127 downto 0);
     variable aleatorio : std_logic_vector(255 downto 0);
     variable captura : std_logic_vector(127 downto 0);
@@ -211,17 +238,24 @@ begin
     leer_reg(x"02", status);
     comprobar(status(7) = '1', "STATUS refleja modo test");
     comprobar(status(0) = '0', "sin sembrar al arrancar");
+    leer_reg(x"01", b);
+    comprobar(b = x"02", "VERSION = 0x02");
+    leer_reg(x"0E", b);
+    comprobar(b(0) = '0', "test de arranque aun sin pasar");
 
     report "2) Sembrar";
+    -- 2.0) Antes de pasar el test de arranque (1024 muestras sin alarma,
+    --      SP 800-90B 4.3) no se siembra.
+    escribir_reg(x"04", x"04");
+    orden_rechazada(x"01", "sembrar antes del test de arranque se rechaza");
     -- 2a) Con el divisor por debajo del minimo el hardware debe rechazar la
     --     orden: la semilla seria de calidad no garantizada y los tests de
     --     salud no lo detectarian. Antes era solo una obligacion documentada.
+    esperar_arranque;
     escribir_reg(x"04", x"02");                 -- K_D = 4 < minimo (16)
-    escribir_reg(x"03", x"01");                 -- sembrar
-    wait for 20 us;
+    orden_rechazada(x"01", "sembrar con CFG_KD por debajo del minimo se rechaza");
     leer_reg(x"02", status);
-    comprobar(status(1) = '0' and status(0) = '0',
-              "sembrar con CFG_KD por debajo del minimo se rechaza");
+    comprobar(status(0) = '0', "sigue sin sembrar");
     -- 2b) K_D = 16: con el anillo lento del banco, un bit cada 16 x 15 ns = 240 ns,
     --     24 ciclos de sistema, por encima de los 8 que exige el cruce de dominio.
     escribir_reg(x"04", x"04");
@@ -233,6 +267,8 @@ begin
     esperar_libre(status);
     comprobar(status(0) = '1', "sembrado");
     comprobar(status(2) = '0' and status(3) = '0', "sin alarmas de salud");
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0', "DIAG.rechazada a 0 tras una siembra completa");
 
     report "3) Generar clave";
     escribir_reg(x"03", x"02");
@@ -275,6 +311,45 @@ begin
     esperar_libre(status);
     leer_bloque(x"10", 16, clave2);
     comprobar(clave1 /= clave2, "dos generaciones dan claves distintas");
+
+    report "5b) Con alarma no sale nada del motor";
+    -- La alarma se fuerza: con los anillos del modelo una fuente sana no la
+    -- levanta, y esperar a una al azar no seria un banco.
+    rct_alm <= force '1';
+    wait for 1 us;
+    leer_reg(x"02", status);
+    comprobar(status(2) = '1', "alarma RCT visible en STATUS");
+    orden_rechazada(x"02", "generar con alarma se rechaza");
+    leer_bloque(x"10", 16, captura);
+    comprobar(captura = clave2, "la clave no cambia");
+    orden_rechazada(x"40", "aleatorio con alarma se rechaza");
+    orden_rechazada(x"20", "resembrar con alarma se rechaza");
+    rct_alm <= release;
+    escribir_reg(x"03", x"08");                 -- borrar alarmas
+    leer_reg(x"02", status);
+    comprobar(status(2) = '0' and status(3) = '0', "borrar baja las alarmas");
+    leer_reg(x"0E", b);
+    comprobar(b(0) = '0', "borrar obliga a repetir el test de arranque");
+    orden_rechazada(x"20", "resembrar antes de repetir el test se rechaza");
+    esperar_arranque;
+    escribir_reg(x"03", x"40");                 -- aleatorio
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0', "pasado el test, aleatorio se acepta otra vez");
+
+    report "5c) Alarma a mitad de un resembrado: se aborta";
+    leer_bloque(x"0A", 4, pet1);
+    escribir_reg(x"03", x"20");                 -- resembrar
+    wait for 2 us;
+    rct_alm <= force '1';
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '1', "DIAG.rechazada marca la siembra abortada");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet1 = pet2, "PETICIONES no se reinicia: no hubo resembrado");
+    rct_alm <= release;
+    escribir_reg(x"03", x"08");
+    esperar_arranque;
 
     report "6) Captura de bits crudos";
     escribir_reg(x"03", x"10");                 -- capturar

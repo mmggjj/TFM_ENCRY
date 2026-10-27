@@ -29,7 +29,10 @@ esc("esp_err.h", """
 #include <stdint.h>
 typedef int esp_err_t;
 #define ESP_OK 0
+#define ESP_FAIL -1
+#define ESP_ERR_INVALID_STATE 0x103
 #define ESP_ERR_INVALID_SIZE 0x104
+#define ESP_ERR_TIMEOUT 0x107
 #define ESP_ERROR_CHECK(x) do { (void)(x); } while (0)
 """)
 
@@ -44,6 +47,7 @@ esc("freertos/task.h", """
 #pragma once
 #include "freertos/FreeRTOS.h"
 void vTaskDelay(TickType_t t);
+TickType_t xTaskGetTickCount(void);
 """)
 
 esc("driver/i2c_master.h", """

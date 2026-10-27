@@ -54,7 +54,15 @@ architecture rtl of motor_top is
   -- Salud
   signal borrar_alm  : std_logic := '0';
   signal alm_rct, alm_apt, alm : std_logic;
+  signal ventana_fin : std_logic;
   signal rct_max, apt_max : unsigned(15 downto 0);
+  -- Test de arranque (SP 800-90B 4.3): una ventana completa del APT, 1024
+  -- muestras, sin alarma desde el reset o el ultimo borrado. Sin el no se
+  -- siembra.
+  signal arrancado   : std_logic := '0';
+  -- La ultima orden escrita en CONTROL se ignoro. Sin esto el maestro no
+  -- distingue un rechazo de una orden que acabo enseguida.
+  signal rechazada   : std_logic := '0';
 
   -- Captura
   signal cap_arranca : std_logic := '0';
@@ -91,8 +99,10 @@ architecture rtl of motor_top is
   -- es otra generacion independiente cuyo resultado si va al registro
   -- ALEATORIO. Antes ambas cosas salian de la misma generacion y el
   -- registro ALEATORIO, legible sin modo test, contenia la clave.
-  type t_orden is (LIBRE, SEMBRANDO, ESPERA_DRBG, GENERANDO, CARGANDO_CLAVE,
-                   GENERANDO_ALEATORIO, AUTENTICANDO);
+  -- VALIDANDO espera a que se cierre la ventana del APT que contiene el
+  -- ultimo bit de la semilla: hasta entonces esos bits no estan evaluados.
+  type t_orden is (LIBRE, SEMBRANDO, VALIDANDO, ESPERA_DRBG, GENERANDO,
+                   CARGANDO_CLAVE, GENERANDO_ALEATORIO, AUTENTICANDO);
   signal orden : t_orden := LIBRE;
   signal ocupado : std_logic;
 
@@ -137,6 +147,7 @@ begin
     port map (clk => clk, rst_n => rst_n, bit_i => bit_s, bit_stb => stb_s,
               borrar => borrar_alm, alarma_rct => alm_rct,
               alarma_apt => alm_apt, alarma => alm,
+              ventana_fin => ventana_fin,
               rct_max => rct_max, apt_max => apt_max);
 
   u_captura : entity work.trng_capture
@@ -189,7 +200,7 @@ begin
     reg_rdato <= x"00";
     case d is
       when 16#00# => reg_rdato <= x"A5";
-      when 16#01# => reg_rdato <= x"01";
+      when 16#01# => reg_rdato <= x"02";
       when 16#02# => reg_rdato <= status;
       when 16#04# => reg_rdato <= "000" & std_logic_vector(kd_sel);
       when 16#05# => reg_rdato <= "000000" & std_logic_vector(pagina);
@@ -201,6 +212,7 @@ begin
       when 16#0B# => reg_rdato <= std_logic_vector(drbg_pet(15 downto 8));
       when 16#0C# => reg_rdato <= std_logic_vector(drbg_pet(23 downto 16));
       when 16#0D# => reg_rdato <= std_logic_vector(drbg_pet(31 downto 24));
+      when 16#0E# => reg_rdato <= "000000" & rechazada & arrancado;
       when 16#10# to 16#1F# =>
         if modo_test = '1' then
           reg_rdato <= byte_de(clave, d - 16#10#);
@@ -234,6 +246,7 @@ begin
       cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
       etiqueta_lista <= '0'; reto <= (others => '0');
       cmac_en_curso <= '0';
+      arrancado <= '0'; rechazada <= '0';
       orden <= LIBRE;
 
     elsif rising_edge(clk) then
@@ -243,6 +256,14 @@ begin
       cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
 
       en_anillos <= '1';    -- los anillos corren siempre tras el reset
+
+      -- Test de arranque. Borrar las alarmas reinicia la ventana del APT y
+      -- obliga a pasarlo de nuevo.
+      if borrar_alm = '1' then
+        arrancado <= '0';
+      elsif ventana_fin = '1' and alm = '0' then
+        arrancado <= '1';
+      end if;
 
       -- Escrituras del maestro
       if reg_we = '1' then
@@ -256,27 +277,52 @@ begin
               cap_arranca <= '1';
             end if;
             if orden = LIBRE then
-              -- Sembrar exige ademas un divisor por encima del minimo: con
-              -- CFG_KD bajo la semilla seria de calidad no garantizada y
-              -- ningun test de salud lo delataria.
-              if (reg_wdato(0) = '1' or reg_wdato(5) = '1') and alm = '0'
-                 and to_integer(kd_sel) >= G_KD_MIN then
-                siembra_es_reseed <= reg_wdato(5);
-                recogiendo  <= '1';
-                n_recogidos <= (others => '0');
-                orden <= SEMBRANDO;
-              elsif reg_wdato(1) = '1' and drbg_sembrado = '1' then
-                drbg_gen <= '1';
-                orden <= GENERANDO;
-              elsif reg_wdato(6) = '1' and drbg_sembrado = '1' then
-                drbg_gen <= '1';
-                orden <= GENERANDO_ALEATORIO;
-              elsif reg_wdato(2) = '1' and clave_valida = '1' then
-                cmac_inicia <= '1';
-                etiqueta_lista <= '0';
-                orden <= AUTENTICANDO;
-                cmac_en_curso <= '0';
+              -- Sembrar exige el test de arranque pasado, ninguna alarma y
+              -- un divisor por encima del minimo: con CFG_KD bajo la semilla
+              -- seria de calidad no garantizada y ningun test lo delataria.
+              -- Generar y aleatorio exigen ninguna alarma: con la fuente
+              -- degradada no sale nada del motor (SP 800-90B 4.3).
+              if reg_wdato(0) = '1' or reg_wdato(5) = '1' then
+                if alm = '0' and arrancado = '1'
+                   and to_integer(kd_sel) >= G_KD_MIN then
+                  siembra_es_reseed <= reg_wdato(5);
+                  recogiendo  <= '1';
+                  n_recogidos <= (others => '0');
+                  rechazada <= '0';
+                  orden <= SEMBRANDO;
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(1) = '1' then
+                if drbg_sembrado = '1' and alm = '0' then
+                  drbg_gen <= '1';
+                  rechazada <= '0';
+                  orden <= GENERANDO;
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(6) = '1' then
+                if drbg_sembrado = '1' and alm = '0' then
+                  drbg_gen <= '1';
+                  rechazada <= '0';
+                  orden <= GENERANDO_ALEATORIO;
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(2) = '1' then
+                if clave_valida = '1' then
+                  cmac_inicia <= '1';
+                  etiqueta_lista <= '0';
+                  rechazada <= '0';
+                  orden <= AUTENTICANDO;
+                  cmac_en_curso <= '0';
+                else
+                  rechazada <= '1';
+                end if;
               end if;
+            elsif (reg_wdato(0) or reg_wdato(1) or reg_wdato(2) or
+                   reg_wdato(5) or reg_wdato(6)) = '1' then
+              rechazada <= '1';          -- orden con el motor ocupado
             end if;
           when 16#04# =>
             -- Solo con el motor libre: cambiar la tasa de muestreo a mitad
@@ -298,23 +344,36 @@ begin
         when LIBRE => null;
 
         when SEMBRANDO =>
-          if alm = '1' then
-            -- La fuente se degrado a mitad: se aborta sin sembrar.
+          if alm = '1' or borrar_alm = '1' then
+            -- La fuente se degrado a mitad, o se reinicio la ventana del APT
+            -- y estos bits ya no quedarian evaluados: se aborta sin sembrar.
             recogiendo <= '0';
+            rechazada <= '1';
             orden <= LIBRE;
           elsif stb_s = '1' and recogiendo = '1' then
             semilla <= semilla(382 downto 0) & bit_s;
             if n_recogidos = 383 then
               recogiendo <= '0';
-              if siembra_es_reseed = '1' then
-                drbg_reseed <= '1';
-              else
-                drbg_inst <= '1';
-              end if;
-              orden <= ESPERA_DRBG;
+              orden <= VALIDANDO;
             else
               n_recogidos <= n_recogidos + 1;
             end if;
+          end if;
+
+        when VALIDANDO =>
+          -- La ventana que se cierre aqui contiene el ultimo bit de la
+          -- semilla, y las anteriores ya se cerraron sin alarma. Su veredicto
+          -- llega en el mismo ciclo que ventana_fin.
+          if alm = '1' or borrar_alm = '1' then
+            rechazada <= '1';
+            orden <= LIBRE;
+          elsif ventana_fin = '1' then
+            if siembra_es_reseed = '1' then
+              drbg_reseed <= '1';
+            else
+              drbg_inst <= '1';
+            end if;
+            orden <= ESPERA_DRBG;
           end if;
 
         when ESPERA_DRBG =>

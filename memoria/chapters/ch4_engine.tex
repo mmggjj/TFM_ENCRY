@@ -148,8 +148,15 @@ from the \emph{measured} min-entropy, not assumed. The proportion test
 also checks the complement of the count, which the standard permits for
 binary sources: a source stuck at the value opposite to the window's
 first sample would otherwise score zero and pass. Alarms are sticky until
-explicitly cleared, and while any alarm is raised the sequencer refuses
-to seed.
+explicitly cleared, and while any alarm is raised nothing leaves the
+engine: the sequencer refuses to seed, to generate a key and to produce
+random output. Two further rules close the gap between a continuous test
+and a 384-bit seed. A start-up test (SP~800-90B \S4.3) must pass first:
+one complete proportion window, 1024 samples, closed without alarm after
+reset or after the alarms are cleared, and clearing them restarts the
+window. And a seed is accepted only once the window that holds its last
+bit has closed clean; the seed is shorter than the window, so otherwise
+it would enter the generator before the proportion test had judged it.
 
 The testbench injects the failure modes the tests exist for: a healthy
 source passes twenty windows (worst run 13, worst proportion 540); a
@@ -208,8 +215,9 @@ caught it is described in Chapter~\ref{ch:ch5_verification}. In the FPGA the tes
 pin is a switch; in an integrated circuit it would be a fuse blown at
 production, because exposing either the key or the raw entropy is a
 vulnerability. A small sequencer serializes the commands: seeding
-collects 384 raw bits, aborts if a health alarm rises meanwhile, and
-instantiates or reseeds the generator; generation takes 256 bits, keeps the first 128 as the key, discards the rest and reloads the CMAC
+collects 384 raw bits, waits until the health tests have evaluated all
+of them, aborts if a health alarm rises meanwhile, and instantiates or
+reseeds the generator; generation takes 256 bits, keeps the first 128 as the key, discards the rest and reloads the CMAC
 sub-keys; a separate command fills the random-output register from an
 independent generation; authentication runs the CMAC over the challenge
 block.

@@ -10,7 +10,7 @@ ESP32; si cambia uno, cambian los tres.
 | Dir | Nombre | Acceso | Contenido |
 |---|---|---|---|
 | 0x00 | ID | R | 0xA5, para saber que hay alguien al otro lado |
-| 0x01 | VERSION | R | 0x01 |
+| 0x01 | VERSION | R | 0x02 (0x01 hasta el 27-10-2026, sin DIAG ni test de arranque) |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
 | 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). Cambiarlo solo con el motor libre |
@@ -20,6 +20,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x08 | APT_MAX_L | R | proporción máxima vista, byte bajo |
 | 0x09 | APT_MAX_H | R | proporción máxima vista, byte alto |
 | 0x0A–0x0D | PETICIONES | R | contador de peticiones del DRBG, 32 bits, byte bajo primero |
+| 0x0E | DIAG | R | ver bits abajo |
 | 0x10–0x1F | CLAVE | R | clave actual, 16 bytes. **Solo legible en modo test** |
 | 0x20–0x2F | RETO | W | nonce de 16 bytes para el reto-respuesta |
 | 0x30–0x3F | ETIQUETA | R | CMAC(RETO) con la clave actual, 16 bytes |
@@ -42,14 +43,45 @@ direcciones de solo lectura se ignoran.
 | 6 | etiqueta_lista | ETIQUETA corresponde al RETO actual |
 | 7 | modo_test | el pin de test está activo |
 
-Con alarma levantada, `sembrar` y `resembrar` se rechazan hasta que se
-borre: nunca se siembra con una fuente que se sabe degradada.
+Con alarma levantada **no sale nada del motor**: `sembrar`, `resembrar`,
+`generar` y `aleatorio` se rechazan hasta que se borre. `autenticar` sí se
+atiende, porque usa la clave ya generada y no consume entropía. Hasta el
+27-10-2026 solo se rechazaban `sembrar` y `resembrar`, y con la alarma
+puesta seguían saliendo clave y ALEATORIO.
+
+## DIAG (0x0E)
+
+| Bit | Nombre | Significado |
+|---|---|---|
+| 0 | arrancado | el test de arranque ha pasado: una ventana completa del APT (1024 muestras) sin alarma desde el reset o desde el último `borrar_alarmas` |
+| 1 | rechazada | la última orden escrita en CONTROL se ignoró (motor ocupado, alarma, sin arrancar, CFG_KD bajo, sin sembrar o sin clave) o, si era una siembra, se abortó. Se baja con la siguiente orden aceptada. `borrar_alarmas` y `capturar` no la tocan |
+
+## Tests de salud y siembra
+
+Los tests de salud (SP 800-90B §4.4) vigilan los bits crudos de forma
+continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
+
+1. **Test de arranque (SP 800-90B §4.3).** Tras el reset, y tras cada
+   `borrar_alarmas`, el motor no siembra hasta que se cierra sin alarma una
+   ventana completa del APT. Borrar las alarmas reinicia la ventana, así que
+   esa ventana solo contiene muestras posteriores al borrado. El maestro
+   sondea `DIAG.arrancado` antes de sembrar; con K_D = 2^24 y el anillo a
+   ~700 MHz son unos 25 s.
+2. **La semilla se valida entera.** El APT solo da veredicto al cerrar su
+   ventana de 1024 muestras y la semilla son 384 bits, así que antes la
+   primera semilla entraba en el DRBG sin que el APT la hubiera evaluado.
+   Ahora, tras recoger los 384 bits, el motor espera a que se cierre la
+   ventana que contiene el último y solo instancia el DRBG si se cierra sin
+   alarma. Una alarma, o un `borrar_alarmas`, durante la recogida o la
+   espera aborta la siembra: el DRBG queda como estaba y `DIAG.rechazada`
+   sube. Una siembra tarda como mucho 384 + 1024 bits.
+3. **Alarma bloquea la salida**, ver STATUS arriba.
 
 ## CONTROL (0x03)
 
 | Bit | Orden | Qué hace |
 |---|---|---|
-| 0 | sembrar | recoge 384 bits crudos del anillo (256 de entropía + 128 de nonce), pasa los tests de salud y **instancia** el DRBG desde cero |
+| 0 | sembrar | recoge 384 bits crudos del anillo (256 de entropía + 128 de nonce), espera a que los tests de salud los hayan evaluado enteros y **instancia** el DRBG desde cero |
 | 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE, los otros 128 se descartan; recarga el autenticador. **No deja nada legible** |
 | 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
 | 3 | borrar_alarmas | baja las alarmas de salud |
@@ -69,10 +101,11 @@ como trabajan los elementos seguros comerciales.
 
 ## Secuencia típica del ESP32
 
-1. Leer ID, comprobar 0xA5.
+1. Leer ID, comprobar 0xA5. Leer VERSION, comprobar 0x02.
 2. Escribir CFG_KD con el divisor decidido en la caracterización.
-3. CONTROL ← sembrar. Sondear STATUS hasta `ocupado = 0`. Comprobar
-   `sembrado = 1` y sin alarmas.
+3. Sondear DIAG hasta `arrancado = 1`. CONTROL ← sembrar. Sondear STATUS
+   hasta `ocupado = 0`. Comprobar `DIAG.rechazada = 0`, `sembrado = 1` y
+   sin alarmas.
 4. CONTROL ← generar. Sondear. Ahora hay clave.
 5. Provisión (solo en banco, modo test): leer CLAVE y guardarla en el
    ESP32.
@@ -104,9 +137,10 @@ siendo del maestro.
    correlación. Por eso `sembrar` y `resembrar` **se rechazan** (la orden se
    ignora y `ocupado` no llega a subir) si `CFG_KD` está por debajo del
    mínimo, fijado por el genérico `G_KD_MIN` de `motor_top` (6 por defecto).
-   El maestro debe comprobar tras la orden que `ocupado` ha subido o que
-   `sembrado` acaba en 1; si no, el rechazo es la causa más probable. El
-   banco `tb_motor_top` (paso 2a) comprueba el rechazo.
+   El maestro comprueba tras cada orden `DIAG.rechazada`, que distingue el
+   rechazo de una orden que acabó enseguida (antes había que deducirlo de
+   `sembrado`, que se queda a 1 de la siembra anterior). El banco
+   `tb_motor_top` (paso 2a) comprueba el rechazo.
 2. **Política de resembrado, del maestro.** `PETICIONES` (0x0A–0x0D) es el
    `reseed_counter` de SP 800-90A: vale 1 tras sembrar y sube en cada
    `generar`. El motor **no** lo compara con ningún umbral ni rechaza generar

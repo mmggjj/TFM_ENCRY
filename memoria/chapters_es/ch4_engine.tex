@@ -160,7 +160,16 @@ complemento de la cuenta, algo que la norma permite para fuentes
 binarias: de lo contrario, una fuente atascada en el valor opuesto a la
 primera muestra de la ventana puntuaría cero y pasaría. Las alarmas
 quedan enclavadas hasta que se borran explícitamente, y mientras haya
-alguna alarma activa el secuenciador se niega a cargar la semilla.
+alguna alarma activa no sale nada del motor: el secuenciador se niega a
+cargar la semilla, a generar clave y a producir salida aleatoria. Dos
+reglas más cierran el hueco entre un test continuo y una semilla de 384
+bits. Primero tiene que pasar un test de arranque (SP~800-90B \S4.3):
+una ventana completa del test de proporción, 1024 muestras, cerrada sin
+alarma tras el reset o tras borrar las alarmas, y borrarlas reinicia la
+ventana. Y una semilla solo se acepta cuando se ha cerrado sin alarma la
+ventana que contiene su último bit; la semilla es más corta que la
+ventana, así que de otro modo entraría en el generador antes de que el
+test de proporción la hubiera juzgado.
 
 El banco de pruebas inyecta los modos de fallo para los que existen los
 tests: una fuente sana supera veinte ventanas (peor racha 13, peor
@@ -227,9 +236,9 @@ lo detectó se describe en el Capítulo~\ref{ch:ch5_verification}. En la FPGA el
 de prueba es un interruptor; en un circuito integrado sería un fusible
 que se funde en producción, porque exponer la clave o la entropía en
 bruto es una vulnerabilidad. Un pequeño secuenciador serializa las
-órdenes: la carga de semilla recoge 384 bits en bruto, aborta si
-mientras tanto salta una alarma de salud, e instancia o resiembra el
-generador; la generación toma 256 bits, guarda los 128 primeros como clave, descarta el resto y recarga las subclaves
+órdenes: la carga de semilla recoge 384 bits en bruto, espera a que los
+tests de salud los hayan evaluado todos, aborta si mientras tanto salta
+una alarma de salud, e instancia o resiembra el generador; la generación toma 256 bits, guarda los 128 primeros como clave, descarta el resto y recarga las subclaves
 de CMAC; una orden aparte llena el registro de salida aleatoria a partir
 de una generación independiente; la autenticación ejecuta el CMAC sobre
 el bloque de reto.

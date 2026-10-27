@@ -5,45 +5,174 @@ rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object befo
 
 === ejecucion ===
 
+--- tb_ring_osc ---
+rtl/tb/tb_ring_osc.vhd:86:5:@0ms:(report note): 1) Arranque, parada y frecuencia nominal
+rtl/tb/tb_ring_osc.vhd:78:9:@50ns:(report note):   [ok ] con habilitacion a cero el anillo esta quieto
+rtl/tb/tb_ring_osc.vhd:99:5:@401ns:(report note):   periodo medido 1.5e3 ps, esperado 1.5e3 ps
+rtl/tb/tb_ring_osc.vhd:78:9:@401ns:(report note):   [ok ] la frecuencia coincide con 1/(2*N*tpd) dentro del 2 %
+rtl/tb/tb_ring_osc.vhd:78:9:@401ns:(report note):   [ok ] frecuencia = 6.666666666666666e2 MHz
+rtl/tb/tb_ring_osc.vhd:106:5:@401ns:(report note): 2) Resolucion del banco: jitter con el ruido apagado
+rtl/tb/tb_ring_osc.vhd:108:5:@30402500ps:(report note):   suelo de ruido numerico 0.0 ps
+rtl/tb/tb_ring_osc.vhd:78:9:@30402500ps:(report note):   [ok ] el suelo esta muy por debajo del jitter que hay que medir
+rtl/tb/tb_ring_osc.vhd:112:5:@30402500ps:(report note): 3) Jitter inyectado frente al teorico
+rtl/tb/tb_ring_osc.vhd:117:5:@60502056024fs:(report note):   sigma medido 6.366564018748695 ps, teorico 6.324555320336758 ps
+rtl/tb/tb_ring_osc.vhd:78:9:@60502056024fs:(report note):   [ok ] sigma_periodo = sqrt(2N)*sigma_etapa dentro del 10 %
+rtl/tb/tb_ring_osc.vhd:121:5:@60502056024fs:(report note):   jitter relativo sigma/T = 4.2445063518098064e-3
+rtl/tb/tb_ring_osc.vhd:78:9:@60552056024fs:(report note):   [ok ] el anillo vuelve a pararse
+rtl/tb/tb_ring_osc.vhd:128:7:@60552056024fs:(report note): tb_ring_osc: 0 fallos
+simulation stopped @60552056024fs
+
+--- tb_i2c_slave ---
+../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+rtl/tb/tb_i2c_slave.vhd:167:5:@2us:(report note): 1) Direccionamiento
+rtl/tb/tb_i2c_slave.vhd:99:9:@23us:(report note):   [ok ] reconoce su propia direccion en escritura
+rtl/tb/tb_i2c_slave.vhd:172:5:@23us:(report note): 2) Escritura de varios bytes con autoincremento
+rtl/tb/tb_i2c_slave.vhd:99:9:@41us:(report note):   [ok ] reconoce el byte de puntero
+rtl/tb/tb_i2c_slave.vhd:99:9:@59us:(report note):   [ok ] reconoce el primer dato
+rtl/tb/tb_i2c_slave.vhd:99:9:@77us:(report note):   [ok ] reconoce el segundo dato
+rtl/tb/tb_i2c_slave.vhd:99:9:@95us:(report note):   [ok ] reconoce el tercer dato
+rtl/tb/tb_i2c_slave.vhd:99:9:@101us:(report note):   [ok ] el primer dato fue a la direccion 0x10
+rtl/tb/tb_i2c_slave.vhd:99:9:@101us:(report note):   [ok ] el segundo avanzo a 0x11
+rtl/tb/tb_i2c_slave.vhd:99:9:@101us:(report note):   [ok ] el tercero avanzo a 0x12
+rtl/tb/tb_i2c_slave.vhd:187:5:@101us:(report note): 3) Lectura con arranque repetido y autoincremento
+rtl/tb/tb_i2c_slave.vhd:99:9:@122us:(report note):   [ok ] segunda transaccion, direccion reconocida
+rtl/tb/tb_i2c_slave.vhd:99:9:@140us:(report note):   [ok ] puntero colocado en 0x10
+rtl/tb/tb_i2c_slave.vhd:99:9:@161us:(report note):   [ok ] acepta la direccion en modo lectura
+rtl/tb/tb_i2c_slave.vhd:99:9:@179us:(report note):   [ok ] primer byte leido = 0xA1
+rtl/tb/tb_i2c_slave.vhd:99:9:@197us:(report note):   [ok ] segundo byte leido = 0xB2
+rtl/tb/tb_i2c_slave.vhd:99:9:@215us:(report note):   [ok ] tercer byte leido = 0xC3
+rtl/tb/tb_i2c_slave.vhd:204:5:@219us:(report note): 4) No responde a una direccion ajena
+rtl/tb/tb_i2c_slave.vhd:99:9:@240us:(report note):   [ok ] no reconoce una direccion que no es la suya
+rtl/tb/tb_i2c_slave.vhd:211:7:@244us:(report note): tb_i2c_slave: 0 fallos
+
+--- tb_aes_enc ---
+rtl/tb/tb_aes_enc.vhd:110:5:@55ns:(report note): 1) Vectores de FIPS 197
+rtl/tb/tb_aes_enc.vhd:93:9:@175ns:(report note):   [ok ] Apendice C.1 -> 69c4e0d86a7b0430d8cdb78070b4c55a (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:93:9:@295ns:(report note):   [ok ] Apendice B -> 3925841d02dc09fbdc118597196a0b32 (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:120:5:@295ns:(report note): 2) Vector de SP 800-38A (ECB, primer bloque)
+rtl/tb/tb_aes_enc.vhd:93:9:@415ns:(report note):   [ok ] F.1.1 ECB-AES128 -> 3ad77bb40d7a3660a89ecaf32466ef97 (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:126:5:@415ns:(report note): 3) Bloques encadenados de SP 800-38A
+rtl/tb/tb_aes_enc.vhd:93:9:@535ns:(report note):   [ok ] F.1.1 segundo bloque -> f5d3d58503b9699de785895a96fdbaaf (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:93:9:@655ns:(report note):   [ok ] F.1.1 tercer bloque -> 43b1cd7f598ece23881b00e3ed030688 (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:136:5:@655ns:(report note): 4) Reutilizacion del nucleo: mil cifrados encadenados
+rtl/tb/tb_aes_enc.vhd:149:7:@240655ns:(report note):   [ok ] mil cifrados reproducibles, resultado 032ec90a52baa3f856551d721b7c6932
+rtl/tb/tb_aes_enc.vhd:158:5:@240775ns:(report note):   cifrado del bloque de ceros = 7df76b0c1ab899b33e42f047b91b546f (es la subclave L del CMAC)
+rtl/tb/tb_aes_enc.vhd:162:7:@240775ns:(report note): tb_aes_enc: 0 fallos
+
+--- tb_aes_cmac ---
+rtl/tb/tb_aes_cmac.vhd:121:5:@55ns:(report note): 1) Carga de clave y subclaves
+rtl/tb/tb_aes_cmac.vhd:125:5:@205ns:(report note):   subclaves calculadas
+rtl/tb/tb_aes_cmac.vhd:127:5:@205ns:(report note): 2) Vectores de RFC 4493
+rtl/tb/tb_aes_cmac.vhd:107:9:@365ns:(report note):   [ok ] Mlen = 0 -> bb1d6929e95937287fa37d129b756746
+rtl/tb/tb_aes_cmac.vhd:107:9:@525ns:(report note):   [ok ] Mlen = 16 -> 070a16b46b4d4144f79bdd9dd04a287c
+rtl/tb/tb_aes_cmac.vhd:107:9:@965ns:(report note):   [ok ] Mlen = 40 -> dfa66747de9ae63030ca32611497c827
+rtl/tb/tb_aes_cmac.vhd:107:9:@1545ns:(report note):   [ok ] Mlen = 64 -> 51f0bebf7e3b9d92fc49741779363cfe
+rtl/tb/tb_aes_cmac.vhd:158:5:@1545ns:(report note): 3) Repeticion: el mismo mensaje debe dar la misma etiqueta
+rtl/tb/tb_aes_cmac.vhd:107:9:@1705ns:(report note):   [ok ] Mlen = 16 repetido -> 070a16b46b4d4144f79bdd9dd04a287c
+rtl/tb/tb_aes_cmac.vhd:165:7:@1705ns:(report note): tb_aes_cmac: 0 fallos
+
+--- tb_ctr_drbg ---
+rtl/tb/tb_ctr_drbg.vhd:94:5:@55ns:(report note): 1) Instanciar con entropia y nonce
+rtl/tb/tb_ctr_drbg.vhd:81:9:@55ns:(report note):   [ok ] sin sembrar al arrancar
+rtl/tb/tb_ctr_drbg.vhd:81:9:@1895ns:(report note):   [ok ] sembrado tras instanciar (183 ciclos)
+rtl/tb/tb_ctr_drbg.vhd:81:9:@1895ns:(report note):   [ok ] contador de peticiones = 1
+rtl/tb/tb_ctr_drbg.vhd:103:5:@1895ns:(report note): 2) Generar dos veces
+rtl/tb/tb_ctr_drbg.vhd:81:9:@2435ns:(report note):   [ok ] primera salida = referencia (53 ciclos)
+rtl/tb/tb_ctr_drbg.vhd:81:9:@2975ns:(report note):   [ok ] segunda salida = referencia
+rtl/tb/tb_ctr_drbg.vhd:81:9:@2975ns:(report note):   [ok ] las dos salidas son distintas
+rtl/tb/tb_ctr_drbg.vhd:81:9:@2975ns:(report note):   [ok ] contador = 3
+rtl/tb/tb_ctr_drbg.vhd:113:5:@2975ns:(report note): 3) Resembrar y generar
+rtl/tb/tb_ctr_drbg.vhd:81:9:@4815ns:(report note):   [ok ] el contador vuelve a 1 tras resembrar
+rtl/tb/tb_ctr_drbg.vhd:81:9:@5355ns:(report note):   [ok ] salida tras resembrar = referencia
+rtl/tb/tb_ctr_drbg.vhd:81:9:@5355ns:(report note):   [ok ] contador tras generar
+rtl/tb/tb_ctr_drbg.vhd:122:5:@5355ns:(report note): 4) Instanciar de nuevo borra el estado
+rtl/tb/tb_ctr_drbg.vhd:81:9:@7735ns:(report note):   [ok ] vuelve a dar la primera salida
+rtl/tb/tb_ctr_drbg.vhd:129:5:@7735ns:(report note): 5) Generar sin sembrar no hace nada
+rtl/tb/tb_ctr_drbg.vhd:81:9:@7835ns:(report note):   [ok ] la orden se ignora sin estado valido
+rtl/tb/tb_ctr_drbg.vhd:142:7:@7835ns:(report note): tb_ctr_drbg: 0 fallos
+
+--- tb_health_tests ---
+rtl/tb/tb_health_tests.vhd:123:5:@35ns:(report note): 1) Fuente sana: 20 ventanas sin alarma
+rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] sin alarmas tras 20480 muestras
+rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] racha maxima vista 13 < 22
+rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] proporcion maxima vista 540 < 596
+rtl/tb/tb_health_tests.vhd:134:5:@409635ns:(report note): 2) Fuente pegada: el RCT salta en la muestra C
+rtl/tb/tb_health_tests.vhd:76:9:@410215ns:(report note):   [ok ] RCT dispara en la muestra 22 (esperado 22)
+rtl/tb/tb_health_tests.vhd:146:5:@410215ns:(report note): 3) Fuente sesgada al 70 %: salta el APT, no el RCT
+rtl/tb/tb_health_tests.vhd:76:9:@430735ns:(report note):   [ok ] APT dispara con proporcion 713 >= 596
+rtl/tb/tb_health_tests.vhd:76:9:@430735ns:(report note):   [ok ] RCT no dispara con racha maxima 15
+rtl/tb/tb_health_tests.vhd:157:5:@430735ns:(report note): 4) Pegada al valor opuesto al de referencia: detecta el complemento
+rtl/tb/tb_health_tests.vhd:76:9:@451255ns:(report note):   [ok ] APT dispara aunque la cuenta directa sea 1
+rtl/tb/tb_health_tests.vhd:165:5:@451255ns:(report note): 5) Las alarmas son pegajosas y se borran a proposito
+rtl/tb/tb_health_tests.vhd:76:9:@452255ns:(report note):   [ok ] sigue en alarma con fuente ya sana
+rtl/tb/tb_health_tests.vhd:76:9:@452275ns:(report note):   [ok ] borrar baja las alarmas
+rtl/tb/tb_health_tests.vhd:176:5:@452275ns:(report note): 6) ventana_fin: una por ventana, con el veredicto, y borrar la reinicia
+rtl/tb/tb_health_tests.vhd:76:9:@472786ns:(report note):   [ok ] sin cierre con W-1 muestras
+rtl/tb/tb_health_tests.vhd:76:9:@472816ns:(report note):   [ok ] un cierre en la muestra W, sin alarma
+rtl/tb/tb_health_tests.vhd:76:9:@513786ns:(report note):   [ok ] tres cierres en 3W muestras: 3
+rtl/tb/tb_health_tests.vhd:76:9:@534276ns:(report note):   [ok ] el cierre de una ventana mala llega con alarma_apt = 1
+rtl/tb/tb_health_tests.vhd:76:9:@565006ns:(report note):   [ok ] tras borrar, W-1 muestras no cierran ventana
+rtl/tb/tb_health_tests.vhd:76:9:@565036ns:(report note):   [ok ] tras borrar, la ventana se cierra en la muestra W y limpia
+rtl/tb/tb_health_tests.vhd:218:7:@565036ns:(report note): tb_health_tests: 0 fallos
+
 --- tb_motor_top ---
 ../../src/ieee2008/numeric_std-body.vhdl:1793:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
 ../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-rtl/tb/tb_motor_top.vhd:208:5:@2200ns:(report note): 1) Identificacion
+rtl/tb/tb_motor_top.vhd:235:5:@2200ns:(report note): 1) Identificacion
 rtl/tb/tb_motor_top.vhd:82:9:@43200ns:(report note):   [ok ] ID = 0xA5
 rtl/tb/tb_motor_top.vhd:82:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
 rtl/tb/tb_motor_top.vhd:82:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
-rtl/tb/tb_motor_top.vhd:215:5:@84200ns:(report note): 2) Sembrar
-rtl/tb/tb_motor_top.vhd:82:9:@206200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@338700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
-rtl/tb/tb_motor_top.vhd:82:9:@379700ns:(report note):   [ok ] sembrado
-rtl/tb/tb_motor_top.vhd:82:9:@379700ns:(report note):   [ok ] sin alarmas de salud
-rtl/tb/tb_motor_top.vhd:237:5:@379700ns:(report note): 3) Generar clave
-rtl/tb/tb_motor_top.vhd:82:9:@451200ns:(report note):   [ok ] clave valida
-rtl/tb/tb_motor_top.vhd:82:9:@627200ns:(report note):   [ok ] clave no nula: a6605cff920a967c66e2619982874276
-rtl/tb/tb_motor_top.vhd:244:5:@627200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
-rtl/tb/tb_motor_top.vhd:82:9:@1018700ns:(report note):   [ok ] ALEATORIO no nulo
-rtl/tb/tb_motor_top.vhd:82:9:@1018700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
-rtl/tb/tb_motor_top.vhd:254:5:@1018700ns:(report note): 4) Reto-respuesta
-rtl/tb/tb_motor_top.vhd:82:9:@1578200ns:(report note):   [ok ] etiqueta lista
-rtl/tb/tb_motor_top.vhd:82:9:@1754200ns:(report note):   [ok ] etiqueta: 4ed4e1144a784e92267db036543e1259
-rtl/tb/tb_motor_top.vhd:82:9:@2032200ns:(report note):   [ok ] la etiqueta cambia con el reto
-rtl/tb/tb_motor_top.vhd:273:5:@2032200ns:(report note): 5) Segunda clave distinta
-rtl/tb/tb_motor_top.vhd:82:9:@2279700ns:(report note):   [ok ] dos generaciones dan claves distintas
-rtl/tb/tb_motor_top.vhd:279:5:@2279700ns:(report note): 6) Captura de bits crudos
-rtl/tb/tb_motor_top.vhd:82:9:@3335200ns:(report note):   [ok ] buffer de captura lleno
-rtl/tb/tb_motor_top.vhd:82:9:@3541700ns:(report note):   [ok ] bits crudos con contenido variado: 95a952a952ad52b56a54ad5aad4ab5ab
-rtl/tb/tb_motor_top.vhd:297:5:@3541700ns:(report note): 7) Sin modo test la clave no se lee
-rtl/tb/tb_motor_top.vhd:82:9:@3718700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
-rtl/tb/tb_motor_top.vhd:314:5:@3718700ns:(report note):   volcado en results/tb_motor_top.txt
-rtl/tb/tb_motor_top.vhd:317:7:@3718700ns:(report note): tb_motor_top: 0 fallos
-simulation stopped @3718700ns
+rtl/tb/tb_motor_top.vhd:82:9:@125200ns:(report note):   [ok ] VERSION = 0x02
+rtl/tb/tb_motor_top.vhd:82:9:@166200ns:(report note):   [ok ] test de arranque aun sin pasar
+rtl/tb/tb_motor_top.vhd:246:5:@166200ns:(report note): 2) Sembrar
+rtl/tb/tb_motor_top.vhd:82:9:@314200ns:(report note):   [ok ] sembrar antes del test de arranque se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@585200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@626200ns:(report note):   [ok ] sigue sin sembrar
+rtl/tb/tb_motor_top.vhd:82:9:@758700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
+rtl/tb/tb_motor_top.vhd:82:9:@881700ns:(report note):   [ok ] sembrado
+rtl/tb/tb_motor_top.vhd:82:9:@881700ns:(report note):   [ok ] sin alarmas de salud
+rtl/tb/tb_motor_top.vhd:82:9:@922700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
+rtl/tb/tb_motor_top.vhd:273:5:@922700ns:(report note): 3) Generar clave
+rtl/tb/tb_motor_top.vhd:82:9:@994200ns:(report note):   [ok ] clave valida
+rtl/tb/tb_motor_top.vhd:82:9:@1170200ns:(report note):   [ok ] clave no nula: a64f3032336dcea88553e2b097a805fd
+rtl/tb/tb_motor_top.vhd:280:5:@1170200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
+rtl/tb/tb_motor_top.vhd:82:9:@1561700ns:(report note):   [ok ] ALEATORIO no nulo
+rtl/tb/tb_motor_top.vhd:82:9:@1561700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
+rtl/tb/tb_motor_top.vhd:290:5:@1561700ns:(report note): 4) Reto-respuesta
+rtl/tb/tb_motor_top.vhd:82:9:@2121200ns:(report note):   [ok ] etiqueta lista
+rtl/tb/tb_motor_top.vhd:82:9:@2297200ns:(report note):   [ok ] etiqueta: 0e45e0d8d7309d9bab82cb2129960325
+rtl/tb/tb_motor_top.vhd:82:9:@2575200ns:(report note):   [ok ] la etiqueta cambia con el reto
+rtl/tb/tb_motor_top.vhd:309:5:@2575200ns:(report note): 5) Segunda clave distinta
+rtl/tb/tb_motor_top.vhd:82:9:@2822700ns:(report note):   [ok ] dos generaciones dan claves distintas
+rtl/tb/tb_motor_top.vhd:315:5:@2822700ns:(report note): 5b) Con alarma no sale nada del motor
+rtl/tb/tb_motor_top.vhd:82:9:@2864700ns:(report note):   [ok ] alarma RCT visible en STATUS
+rtl/tb/tb_motor_top.vhd:82:9:@2982200ns:(report note):   [ok ] generar con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@3158200ns:(report note):   [ok ] la clave no cambia
+rtl/tb/tb_motor_top.vhd:82:9:@3275700ns:(report note):   [ok ] aleatorio con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@3393200ns:(report note):   [ok ] resembrar con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@3464700ns:(report note):   [ok ] borrar baja las alarmas
+rtl/tb/tb_motor_top.vhd:82:9:@3505700ns:(report note):   [ok ] borrar obliga a repetir el test de arranque
+rtl/tb/tb_motor_top.vhd:82:9:@3623200ns:(report note):   [ok ] resembrar antes de repetir el test se rechaza
+rtl/tb/tb_motor_top.vhd:82:9:@3817700ns:(report note):   [ok ] pasado el test, aleatorio se acepta otra vez
+rtl/tb/tb_motor_top.vhd:340:5:@3817700ns:(report note): 5c) Alarma a mitad de un resembrado: se aborta
+rtl/tb/tb_motor_top.vhd:82:9:@4000200ns:(report note):   [ok ] DIAG.rechazada marca la siembra abortada
+rtl/tb/tb_motor_top.vhd:82:9:@4068200ns:(report note):   [ok ] PETICIONES no se reinicia: no hubo resembrado
+rtl/tb/tb_motor_top.vhd:354:5:@4385700ns:(report note): 6) Captura de bits crudos
+rtl/tb/tb_motor_top.vhd:82:9:@5441200ns:(report note):   [ok ] buffer de captura lleno
+rtl/tb/tb_motor_top.vhd:82:9:@5647700ns:(report note):   [ok ] bits crudos con contenido variado: 56b52a952a94aad4a956a56ad5aad4a9
+rtl/tb/tb_motor_top.vhd:372:5:@5647700ns:(report note): 7) Sin modo test la clave no se lee
+rtl/tb/tb_motor_top.vhd:82:9:@5824700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
+rtl/tb/tb_motor_top.vhd:389:5:@5824700ns:(report note):   volcado en results/tb_motor_top.txt
+rtl/tb/tb_motor_top.vhd:392:7:@5824700ns:(report note): tb_motor_top: 0 fallos
+simulation stopped @5824700ns
 
 === resumen ===
 todos los bancos pasan
-run_tb exit=0
+exit=0
+
 Verificacion cruzada del motor con el modelo de referencia
-  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 4ed4e1144a784e92267db036543e1259
-  [ok ] etiqueta2 = CMAC_clave1(reto2) -> ba7e9a7f67c303d5b243a5a8d983543f
+  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 0e45e0d8d7309d9bab82cb2129960325
+  [ok ] etiqueta2 = CMAC_clave1(reto2) -> c8543323e395d2680c643ec5b94080b2
   [ok ] aleatorio1 (registro legible) no contiene clave1 en ninguna mitad
   [ok ] las dos claves difieren
   [ok ] clave1 no es un patron trivial

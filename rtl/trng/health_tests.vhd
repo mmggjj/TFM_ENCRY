@@ -24,6 +24,12 @@
 -- Las alarmas son pegajosas: quedan levantadas hasta que se borran a
 -- proposito, para que ninguna capa superior pueda perderselas. La logica
 -- que consume bits debe bloquear la salida mientras haya alarma.
+--
+-- ventana_fin pulsa un ciclo al cerrarse cada ventana del APT, a la vez que
+-- se registra su veredicto en alarma_apt: un bit solo esta evaluado por los
+-- dos tests cuando se ha cerrado la ventana que lo contiene. Borrar las
+-- alarmas reinicia la ventana, para que la siguiente que se cierre solo
+-- contenga muestras posteriores al borrado.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -44,6 +50,7 @@ entity health_tests is
     alarma_rct : out std_logic;
     alarma_apt : out std_logic;
     alarma     : out std_logic;     -- cualquiera de las dos
+    ventana_fin : out std_logic;    -- pulso: se ha cerrado una ventana del APT
     -- Para diagnostico por el bus: lo peor visto desde el ultimo borrado.
     rct_max  : out unsigned(15 downto 0);
     apt_max  : out unsigned(15 downto 0)
@@ -65,12 +72,14 @@ architecture rtl of health_tests is
   signal apt_cnt   : unsigned(15 downto 0) := (others => '0');  -- coincidencias
   signal apt_alm   : std_logic := '0';
   signal apt_pico  : unsigned(15 downto 0) := (others => '0');
+  signal apt_fin   : std_logic := '0';
 
 begin
 
   alarma_rct <= rct_alm;
   alarma_apt <= apt_alm;
   alarma     <= rct_alm or apt_alm;
+  ventana_fin <= apt_fin;
   rct_max    <= rct_pico;
   apt_max    <= apt_pico;
 
@@ -118,12 +127,14 @@ begin
       apt_cnt  <= (others => '0');
       apt_alm  <= '0';
       apt_pico <= (others => '0');
+      apt_fin  <= '0';
     elsif rising_edge(clk) then
+      apt_fin <= '0';
       if borrar = '1' then
         apt_alm  <= '0';
         apt_pico <= (others => '0');
-      end if;
-      if bit_stb = '1' then
+        apt_pos  <= (others => '0');    -- ventana nueva tras el borrado
+      elsif bit_stb = '1' then
         if apt_pos = 0 then
           -- Primera muestra de la ventana: referencia, cuenta 1.
           apt_ref <= bit_i;
@@ -151,6 +162,7 @@ begin
             if peor > apt_pico then
               apt_pico <= peor;
             end if;
+            apt_fin <= '1';
             apt_pos <= (others => '0');
           else
             apt_pos <= apt_pos + 1;
