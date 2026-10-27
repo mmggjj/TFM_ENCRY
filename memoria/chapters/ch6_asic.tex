@@ -38,12 +38,12 @@ synthesized; they are the one block designed at transistor level
 
 Table~\ref{tab:synth} gives the result for each block. The digital
 engine --- everything except the capture buffer --- is about
-\textbf{68~kGE}: 62.9~kGE in the blocks of the table and 5.2~kGE in the
+\textbf{69~kGE}: 63.8~kGE in the blocks of the table and 5.1~kGE in the
 top-level sequencer and register file, which only appear when the whole
 engine is synthesized. AES is close to half of it: the authenticator and
-the generator each instantiate their own encryption core, 15.8~kGE apiece.
+the generator each instantiate their own encryption core, 15.7~kGE apiece.
 The capture buffer is reported for completeness but must not be read as
-part of the product: its 46.7~kGE are a 4096-bit memory mapped onto
+part of the product: its 46.8~kGE are a 4096-bit memory mapped onto
 flip-flops because the flow has no SRAM macros. In the FPGA it occupies a
 block RAM at no logic cost; in silicon it would be a compiled SRAM or,
 more sensibly, a much smaller buffer, because it is a test path that is
@@ -58,16 +58,17 @@ disabled at production.
 \toprule
 Block & Cells & Flip-flops & Area ($\mu\mathrm{m}^2$) & kGE \\
 \midrule
-AES-128 encryption core       & 10\,439 & 262   & 114\,771 & 15.81 \\
-AES-CMAC (with its AES)        & 13\,210 & 909   & 169\,766 & 23.39 \\
-CTR\_DRBG with df (with its AES) & 17\,953 & 2\,355 & 267\,262 & 36.83 \\
-Health tests (RCT, APT)        & 568     & 85    & 8\,986   & 1.24 \\
-ERO sampler and 24-bit divider & 132     & 28    & 2\,397   & 0.33 \\
+AES-128 encryption core       & 10\,369 & 262   & 113\,763 & 15.68 \\
+AES-CMAC (with its AES)        & 13\,131 & 912   & 168\,775 & 23.26 \\
+CTR\_DRBG with df (with its AES) & 19\,345 & 2\,357 & 274\,420 & 37.81 \\
+Health tests (RCT, APT)        & 588     & 86    & 9\,137   & 1.26 \\
+ERO sampler and 24-bit divider & 127     & 28    & 2\,371   & 0.33 \\
 Bit clock-domain crossing      & 11      & 7     & 408      & 0.06 \\
-I2C slave (with bus-hang guard) & 431    & 85    & 7\,408   & 1.02 \\
+Reset synchronizer (one per clock domain) & 3 & 3 & 147      & 0.02 \\
+I2C slave (with bus-hang guard) & 435    & 89    & 7\,729   & 1.07 \\
 \midrule
-Capture buffer (4096-bit RAM as flip-flops) & 12\,592 & 4\,140 & 339\,698 & 46.81 \\
-Whole engine, rings as wires   & 47\,252 & 8\,409 & 834\,033 & 114.92 \\
+Capture buffer (4096-bit RAM as flip-flops) & 12\,526 & 4\,140 & 339\,386 & 46.76 \\
+Whole engine, rings as wires   & 49\,548 & 8\,435 & 839\,558 & 115.68 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,9 +78,17 @@ error in the flow was caught: before flattening, the report returned for
 the authenticator and for the generator the area of their AES
 sub-module alone. An authenticator weighing exactly as much as a bare AES
 is impossible, so the report, not the design, was wrong. After
-flattening, the authenticator adds to the AES 647 flip-flops (sub-keys,
-chaining state, key) and 7.6~kGE, and the generator adds 2093 flip-flops
-and 21~kGE, about half of which are its registers.
+flattening, the authenticator adds to the AES 650 flip-flops (sub-keys,
+chaining state, key) and 7.6~kGE, and the generator adds 2095 flip-flops
+and 22~kGE, about half of which are its registers. The table is the
+synthesis of the engine at register-map version~3, which added the
+zeroization command, a request counter that saturates instead of
+wrapping, the capture exclusion rules and the reset synchronizers; the
+generator grew by 1.0~kGE for the saturating counter and the clear path,
+and the whole engine by 0.8~kGE. The flow for this run read the
+\ac{VHDL} through GHDL's own Verilog netlist output and the
+\texttt{pip}-installable build of Yosys rather than the GHDL plugin;
+on the unchanged AES core the two paths agree within 0.9\,\%.
 
 \section{Optimizations and their expected savings}
 \label{sec:opt}

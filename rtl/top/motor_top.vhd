@@ -52,6 +52,10 @@ end entity motor_top;
 
 architecture rtl of motor_top is
 
+  -- Resets: el de la placa, soltado sincrono en cada dominio
+  signal rst_n_s       : std_logic;           -- dominio clk
+  signal rst_n_ro      : std_logic;           -- dominio ro2
+
   -- Anillos y muestreo
   signal ro1, ro2      : std_logic;
   signal en_anillos    : std_logic := '0';
@@ -139,6 +143,16 @@ begin
   ocupado <= '0' when orden = LIBRE else '1';
 
   -- ------------------------------------------------------------------
+  -- Resets. El del anillo solo se suelta cuando el anillo oscila, y el
+  -- anillo arranca cuando el dominio de sistema sale de su reset.
+  -- ------------------------------------------------------------------
+  u_rst_s : entity work.reset_sync
+    port map (clk => clk, rst_n_in => rst_n, rst_n_out => rst_n_s);
+
+  u_rst_ro : entity work.reset_sync
+    port map (clk => ro2, rst_n_in => rst_n, rst_n_out => rst_n_ro);
+
+  -- ------------------------------------------------------------------
   -- Fuente de entropia
   -- ------------------------------------------------------------------
   u_ro1 : entity work.ring_osc
@@ -150,15 +164,15 @@ begin
     port map (en => en_anillos, osc => ro2);
 
   u_ero : entity work.ero_core
-    port map (ro1 => ro1, ro2 => ro2, rst_n => rst_n, kd_sel => kd_sel,
+    port map (ro1 => ro1, ro2 => ro2, rst_n => rst_n_ro, kd_sel => kd_sel,
               bit_o => bit_ro, bit_stb => stb_ro);
 
   u_cdc : entity work.bit_cdc
-    port map (clk_o => ro2, bit_o => bit_ro, stb_o => stb_ro,
-              clk_d => clk, rst_n_d => rst_n, bit_d => bit_s, stb_d => stb_s);
+    port map (clk_o => ro2, rst_n_o => rst_n_ro, bit_o => bit_ro, stb_o => stb_ro,
+              clk_d => clk, rst_n_d => rst_n_s, bit_d => bit_s, stb_d => stb_s);
 
   u_salud : entity work.health_tests
-    port map (clk => clk, rst_n => rst_n, bit_i => bit_s, bit_stb => stb_s,
+    port map (clk => clk, rst_n => rst_n_s, bit_i => bit_s, bit_stb => stb_s,
               borrar => borrar_alm, alarma_rct => alm_rct,
               alarma_apt => alm_apt, alarma => alm,
               ventana_fin => ventana_fin,
@@ -166,8 +180,8 @@ begin
 
   u_captura : entity work.trng_capture
     generic map (G_PALABRAS => 512)
-    port map (ro_clk => ro2, bit_dato => bit_ro, bit_stb => stb_ro,
-              clk => clk, rst_n => rst_n, arranca => cap_arranca,
+    port map (ro_clk => ro2, rst_n_ro => rst_n_ro, bit_dato => bit_ro, bit_stb => stb_ro,
+              clk => clk, rst_n => rst_n_s, arranca => cap_arranca,
               lleno => cap_lleno, rd_dir => cap_dir, rd_dato => cap_dato);
 
   -- ------------------------------------------------------------------
@@ -175,7 +189,7 @@ begin
   -- ------------------------------------------------------------------
   u_drbg : entity work.ctr_drbg
     generic map (G_PET_BITS => G_PET_BITS)
-    port map (clk => clk, rst_n => rst_n,
+    port map (clk => clk, rst_n => rst_n_s,
               instanciar => drbg_inst, resembrar => drbg_reseed,
               borrar => drbg_borrar, agotado => drbg_agotado,
               entropia => semilla(383 downto 128),
@@ -185,7 +199,7 @@ begin
               sembrado => drbg_sembrado, peticiones => drbg_pet);
 
   u_cmac : entity work.aes_cmac
-    port map (clk => clk, rst_n => rst_n,
+    port map (clk => clk, rst_n => rst_n_s,
               carga_clave => cmac_carga, clave => clave,
               clave_lista => cmac_clave_lista,
               inicia => cmac_inicia, bloque => reto,
@@ -198,7 +212,7 @@ begin
   -- ------------------------------------------------------------------
   u_i2c : entity work.i2c_slave
     generic map (G_DIR => G_DIR_I2C)
-    port map (clk => clk, rst_n => rst_n,
+    port map (clk => clk, rst_n => rst_n_s,
               scl_in => scl_in, sda_in => sda_in, sda_oe => sda_oe,
               reg_dir => reg_dir, reg_wdato => reg_wdato, reg_we => reg_we,
               reg_rdato => reg_rdato, reg_re => reg_re, ocupado => open);
@@ -246,10 +260,10 @@ begin
   -- ------------------------------------------------------------------
   -- Escrituras, ordenes y secuenciador
   -- ------------------------------------------------------------------
-  p_control : process (clk, rst_n)
+  p_control : process (clk, rst_n_s)
     variable d : integer range 0 to 255;
   begin
-    if rst_n = '0' then
+    if rst_n_s = '0' then
       en_anillos <= '0';
       kd_sel <= to_unsigned(G_KD_RESET, 5);
       pagina <= (others => '0');

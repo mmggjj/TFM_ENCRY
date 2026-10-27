@@ -135,13 +135,13 @@ rtl/tb/tb_motor_top.vhd:86:9:@922700ns:(report note):   [ok ] sin alarmas de sal
 rtl/tb/tb_motor_top.vhd:86:9:@963700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
 rtl/tb/tb_motor_top.vhd:279:5:@963700ns:(report note): 3) Generar clave
 rtl/tb/tb_motor_top.vhd:86:9:@1035200ns:(report note):   [ok ] clave valida
-rtl/tb/tb_motor_top.vhd:86:9:@1211200ns:(report note):   [ok ] clave no nula: 6be2c13bc77fa34e03ba18b8a83abd61
+rtl/tb/tb_motor_top.vhd:86:9:@1211200ns:(report note):   [ok ] clave no nula: 93e7150db324d945597d6925e1f1bfa6
 rtl/tb/tb_motor_top.vhd:286:5:@1211200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
 rtl/tb/tb_motor_top.vhd:86:9:@1602700ns:(report note):   [ok ] ALEATORIO no nulo
 rtl/tb/tb_motor_top.vhd:86:9:@1602700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
 rtl/tb/tb_motor_top.vhd:296:5:@1602700ns:(report note): 4) Reto-respuesta
 rtl/tb/tb_motor_top.vhd:86:9:@2162200ns:(report note):   [ok ] etiqueta lista
-rtl/tb/tb_motor_top.vhd:86:9:@2338200ns:(report note):   [ok ] etiqueta: 2698828fa82dc782d1cfd0b83407ae80
+rtl/tb/tb_motor_top.vhd:86:9:@2338200ns:(report note):   [ok ] etiqueta: 49b331880db5d0194ccd7922edbbbf64
 rtl/tb/tb_motor_top.vhd:86:9:@2616200ns:(report note):   [ok ] la etiqueta cambia con el reto
 rtl/tb/tb_motor_top.vhd:315:5:@2616200ns:(report note): 5) Segunda clave distinta
 rtl/tb/tb_motor_top.vhd:86:9:@2863700ns:(report note):   [ok ] dos generaciones dan claves distintas
@@ -172,7 +172,7 @@ rtl/tb/tb_motor_top.vhd:86:9:@6529700ns:(report note):   [ok ] capturar durante 
 rtl/tb/tb_motor_top.vhd:86:9:@6652700ns:(report note):   [ok ] y no deja captura hecha
 rtl/tb/tb_motor_top.vhd:86:9:@6800700ns:(report note):   [ok ] resembrar durante una captura se rechaza
 rtl/tb/tb_motor_top.vhd:86:9:@7702700ns:(report note):   [ok ] buffer de captura lleno
-rtl/tb/tb_motor_top.vhd:86:9:@7909200ns:(report note):   [ok ] bits crudos con contenido variado: d4ad52a56ad5ab52a54a95ad56ad5aa5
+rtl/tb/tb_motor_top.vhd:86:9:@7909200ns:(report note):   [ok ] bits crudos con contenido variado: 52952a54a952b56b54a952b56ad5aa54
 rtl/tb/tb_motor_top.vhd:423:5:@7909200ns:(report note): 7) Sin modo test la clave no se lee
 rtl/tb/tb_motor_top.vhd:86:9:@8086200ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
 rtl/tb/tb_motor_top.vhd:431:5:@8087200ns:(report note): 8) Borrar todo (zeroizacion)
@@ -193,8 +193,8 @@ simulation stopped @9575700ns
 todos los bancos pasan
 rc_run_tb=0
 Verificacion cruzada del motor con el modelo de referencia
-  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 2698828fa82dc782d1cfd0b83407ae80
-  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 360e59cdabbebad2fcb8efdd30c155b1
+  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 49b331880db5d0194ccd7922edbbbf64
+  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 334635df2b175eeed986c57a152992b1
   [ok ] aleatorio1 (registro legible) no contiene clave1 en ninguna mitad
   [ok ] las dos claves difieren
   [ok ] clave1 no es un patron trivial

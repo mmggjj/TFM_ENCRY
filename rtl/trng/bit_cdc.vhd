@@ -18,6 +18,7 @@ entity bit_cdc is
   port (
     -- Origen
     clk_o   : in  std_logic;
+    rst_n_o : in  std_logic;        -- soltado sincrono con clk_o
     bit_o   : in  std_logic;
     stb_o   : in  std_logic;
     -- Destino
@@ -36,9 +37,12 @@ architecture rtl of bit_cdc is
   attribute ASYNC_REG of tog_d : signal is "TRUE";
 begin
 
-  p_origen : process (clk_o)
+  p_origen : process (clk_o, rst_n_o)
   begin
-    if rising_edge(clk_o) then
+    if rst_n_o = '0' then
+      dato_o <= '0';
+      tog_o  <= '0';
+    elsif rising_edge(clk_o) then
       if stb_o = '1' then
         dato_o <= bit_o;
         tog_o  <= not tog_o;

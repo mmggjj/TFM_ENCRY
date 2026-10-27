@@ -64,10 +64,23 @@ Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión
   `motor_capturando` para el banco; `test_verificador` pasos 11 (agotado) y
   12 (`cero`); firmware: `CTL_BORRAR_TODO`, `DG_AGOTADO`, `MOTOR_VERSION 3`,
   comando `cero` en el verificador. Banco host 0 fallos, firmware compila
-  (0 avisos). **Síntesis Yosys no repetida**: el área de
-  `docs/sintesis_resultados.md` es la de la versión 0x02.
+  (0 avisos). **Síntesis repetida** (camino Verilog + yowasp, abajo):
+  motor_top **115,68 kGE** (+0,76 respecto a la 0x02; el DRBG +0,99 por el
+  contador saturado y el borrado), motor digital sin captura ≈ 69 kGE.
+  `docs/sintesis_resultados.md`, `results/sintesis_sg13g2.{csv,log}` y el
+  cap. 6 de la memoria (EN y ES) al día.
 - Memoria: cap. 4 (EN y ES) con el párrafo de las cuatro reglas; PDF sin
-  regenerar.
+  regenerar (en este PC no hay tectonic).
+- **Reset sincronizado** (`rtl/trng/reset_sync.vhd`): activación asíncrona
+  y liberación síncrona, uno por dominio (`rst_n_s` para clk, `rst_n_ro`
+  para ro2). `bit_cdc` tiene reset también en origen y `trng_capture` un
+  reset por dominio (`rst_n_ro`). El reset de la placa ya no llega crudo a
+  ningún biestable. Siete bancos en verde tras el cambio.
+- **Síntesis sin OSS CAD Suite**: `synth/sintetiza.py` tiene un segundo
+  camino, GHDL de Windows `--synth --out=verilog` + `yowasp-yosys` (Yosys
+  por pip en WSL, `pip install --user yowasp-yosys`), mismo flujo y misma
+  biblioteca; con `aes_enc` da −0,9 % respecto al plugin. Se elige solo
+  según la herramienta que haya (`--verilog` lo fuerza).
 
 ## Estado al 27-10-2026 (tarde): el motor usado por un producto
 

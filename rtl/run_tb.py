@@ -28,6 +28,7 @@ GHDL_CANDIDATOS = [
 FUENTES_UNISIM = ["sim/unisim_modelos.vhd"]
 FUENTES = [
     "trng/ring_osc.vhd",
+    "trng/reset_sync.vhd",
     "trng/ero_core.vhd",
     "trng/trng_capture.vhd",
     "trng/health_tests.vhd",

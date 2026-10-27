@@ -39,13 +39,13 @@ anillo no se sintetizan; son el único bloque diseñado a nivel de transistor
 \label{sec:area}
 
 La Tabla~\ref{tab:synth} da el resultado de cada bloque. El motor digital
---- todo salvo el búfer de captura --- ocupa unos \textbf{68~kGE}: 62,9~kGE
-en los bloques de la tabla y 5,2~kGE en el secuenciador del nivel superior y
+--- todo salvo el búfer de captura --- ocupa unos \textbf{69~kGE}: 63,8~kGE
+en los bloques de la tabla y 5,1~kGE en el secuenciador del nivel superior y
 el banco de registros, que solo aparecen cuando se sintetiza el motor
 completo. AES supone cerca de la mitad: el autenticador y el generador
-instancian cada uno su propio núcleo de cifrado, de 15,8~kGE cada uno. El
+instancian cada uno su propio núcleo de cifrado, de 15,7~kGE cada uno. El
 búfer de captura se incluye para que la tabla esté completa, pero no debe
-leerse como parte del producto: sus 46,7~kGE son una memoria de 4096 bits
+leerse como parte del producto: sus 46,8~kGE son una memoria de 4096 bits
 mapeada sobre flip-flops porque el flujo no tiene macros de SRAM. En la FPGA
 ocupa una block RAM sin coste de lógica; en silicio sería una SRAM compilada
 o, con más sentido, un búfer mucho más pequeño, porque es una ruta de prueba
@@ -60,16 +60,17 @@ que se desactiva en producción.
 \toprule
 Bloque & Celdas & Flip-flops & Área ($\mu\mathrm{m}^2$) & kGE \\
 \midrule
-Núcleo de cifrado AES-128      & 10\,439 & 262   & 114\,771 & 15,81 \\
-AES-CMAC (con su AES)          & 13\,210 & 909   & 169\,766 & 23,39 \\
-CTR\_DRBG con df (con su AES)  & 17\,953 & 2\,355 & 267\,262 & 36,83 \\
-Tests de salud (RCT, APT)      & 568     & 85    & 8\,986   & 1,24 \\
-Muestreador ERO y divisor de 24 bits & 132 & 28  & 2\,397   & 0,33 \\
+Núcleo de cifrado AES-128      & 10\,369 & 262   & 113\,763 & 15,68 \\
+AES-CMAC (con su AES)          & 13\,131 & 912   & 168\,775 & 23,26 \\
+CTR\_DRBG con df (con su AES)  & 19\,345 & 2\,357 & 274\,420 & 37,81 \\
+Tests de salud (RCT, APT)      & 588     & 86    & 9\,137   & 1,26 \\
+Muestreador ERO y divisor de 24 bits & 127 & 28  & 2\,371   & 0,33 \\
 Cruce de dominio de reloj del bit & 11   & 7     & 408      & 0,06 \\
-Esclavo I2C (con guarda de bus bloqueado) & 431 & 85 & 7\,408 & 1,02 \\
+Sincronizador de reset (uno por dominio) & 3 & 3 & 147      & 0,02 \\
+Esclavo I2C (con guarda de bus bloqueado) & 435 & 89 & 7\,729 & 1,07 \\
 \midrule
-Búfer de captura (4096 bits en flip-flops) & 12\,592 & 4\,140 & 339\,698 & 46,81 \\
-Motor completo, anillos como cables & 47\,252 & 8\,409 & 834\,033 & 114,92 \\
+Búfer de captura (4096 bits en flip-flops) & 12\,526 & 4\,140 & 339\,386 & 46,76 \\
+Motor completo, anillos como cables & 49\,548 & 8\,435 & 839\,558 & 115,68 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -79,9 +80,18 @@ detectar un error en el flujo: antes de aplanar, el informe devolvía para el
 autenticador y para el generador solo el área de su submódulo AES. Un
 autenticador que pese exactamente lo mismo que un AES desnudo es imposible,
 así que el que fallaba era el informe, no el diseño. Tras aplanar, el
-autenticador añade al AES 647 flip-flops (subclaves, estado de
-encadenamiento, clave) y 7,6~kGE, y el generador añade 2093 flip-flops y
-21~kGE, de los que cerca de la mitad son sus registros.
+autenticador añade al AES 650 flip-flops (subclaves, estado de
+encadenamiento, clave) y 7,6~kGE, y el generador añade 2095 flip-flops y
+22~kGE, de los que cerca de la mitad son sus registros. La tabla es la
+síntesis del motor con la versión~3 del mapa de registros, que añadió la
+orden de borrado total, un contador de peticiones que satura en vez de
+dar la vuelta, las reglas de exclusión de la captura y los
+sincronizadores de reset; el generador creció 1,0~kGE por el contador
+saturante y la ruta de borrado, y el motor completo 0,8~kGE. El flujo de
+esta tanda leyó el \ac{VHDL} a través de la propia salida Verilog de
+GHDL y de la versión de Yosys instalable con \texttt{pip}, en lugar del
+conector de GHDL; en el núcleo AES, que no cambió, los dos caminos
+coinciden dentro del 0,9\,\%.
 
 \section{Optimizaciones y sus ahorros esperados}
 \label{sec:opt}

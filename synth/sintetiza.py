@@ -15,6 +15,16 @@ biblioteca, leida del propio fichero liberty, no de memoria.
     python synth/sintetiza.py            todos los bloques
     python synth/sintetiza.py aes_enc    uno
 
+Dos caminos hacia Yosys, el mismo flujo de sintesis en los dos:
+  - OSS CAD Suite en WSL (~/eda/oss-cad-suite): Yosys lee el VHDL con el
+    plugin de GHDL.
+  - Sin OSS CAD Suite: el GHDL de Windows elabora el VHDL a una netlist
+    Verilog (ghdl --synth --out=verilog, que es lo mismo que hace el
+    plugin por dentro) y la lee el Yosys instalable con pip (yowasp-yosys,
+    ~/.local/bin en WSL). Con aes_enc da 113 763 um2 frente a 114 771 del
+    plugin (-0,9 %), misma biblioteca y mismo abc.
+Se elige solo con la herramienta que haya; --verilog fuerza el segundo.
+
 La salida de Yosys no se filtra: el log completo de cada bloque queda en
 synth/build/<bloque>.log.
 """
@@ -32,6 +42,22 @@ BUILD = RAIZ / "synth" / "build"
 LIB = RAIZ / "synth" / "lib" / "sg13g2_stdcell_typ_1p20V_25C.lib"
 RESULTADOS = RAIZ / "results" / "sintesis_sg13g2.csv"
 YOSYS = "$HOME/eda/oss-cad-suite/bin/yosys"
+YOWASP = "$HOME/.local/bin/yowasp-yosys"
+GHDL_CANDIDATOS = ["ghdl", str(Path.home() / "eda" / "ghdl" / "bin" / "ghdl.exe")]
+
+
+def hay_en_wsl(ruta: str) -> bool:
+    r = subprocess.run(["wsl.exe", "-e", "bash", "--noprofile", "--norc", "-c", f"test -x {ruta}"],
+                       capture_output=True, timeout=60)
+    return r.returncode == 0
+
+
+def buscar_ghdl() -> str | None:
+    import shutil
+    for c in GHDL_CANDIDATOS:
+        if shutil.which(c) or Path(c).is_file():
+            return c
+    return None
 
 # Bloque -> ficheros (en orden de dependencia). Los anillos no se
 # sintetizan: son el unico bloque atado a la tecnologia.
@@ -42,6 +68,7 @@ BLOQUES = {
     "health_tests": ["rtl/trng/health_tests.vhd"],
     "ero_core":     ["rtl/trng/ero_core.vhd"],
     "bit_cdc":      ["rtl/trng/bit_cdc.vhd"],
+    "reset_sync":   ["rtl/trng/reset_sync.vhd"],
     "trng_capture": ["rtl/trng/trng_capture.vhd"],
     "i2c_slave":    ["rtl/io/i2c_slave.vhd"],
     # Nivel superior: la cifra que va en la memoria. Los anillos entran
@@ -52,7 +79,8 @@ BLOQUES = {
     # bloques no recogia.
     "motor_top":    ["rtl/aes/aes_pkg.vhd", "rtl/aes/aes_enc.vhd",
                      "rtl/aes/aes_cmac.vhd", "rtl/drbg/ctr_drbg.vhd",
-                     "rtl/synth/ring_osc_stub.vhd", "rtl/trng/ero_core.vhd",
+                     "rtl/synth/ring_osc_stub.vhd", "rtl/trng/reset_sync.vhd",
+                     "rtl/trng/ero_core.vhd",
                      "rtl/trng/bit_cdc.vhd", "rtl/trng/health_tests.vhd",
                      "rtl/trng/trng_capture.vhd", "rtl/io/i2c_slave.vhd",
                      "rtl/top/motor_top.vhd"],
@@ -79,13 +107,30 @@ def area_nand2(lib: Path) -> float:
     return mejor[1], mejor[0]
 
 
-def sintetizar(bloque: str, ficheros: list[str]) -> dict:
+def sintetizar(bloque: str, ficheros: list[str], via_verilog: bool, ghdl: str | None) -> dict:
     BUILD.mkdir(parents=True, exist_ok=True)
     ys = BUILD / f"{bloque}.ys"
     log = BUILD / f"{bloque}.log"
-    fuentes = " ".join(wsl(RAIZ / f) for f in ficheros)
-    ys.write_text(f"""plugin -i ghdl
-ghdl --std=08 {fuentes} -e {bloque}
+    t0 = time.time()
+    if via_verilog:
+        # 1) GHDL (Windows) elabora a Verilog. Su salida de error se guarda
+        #    entera: son las notas de ROM encontradas y avisos de sintesis.
+        v = BUILD / f"{bloque}.v"
+        with v.open("w") as fv, (BUILD / f"{bloque}.ghdl.log").open("w") as fl:
+            rg = subprocess.run([ghdl, "--synth", "--std=08", "--out=verilog"]
+                                + [str(RAIZ / f) for f in ficheros] + ["-e", bloque],
+                                stdout=fv, stderr=fl, text=True, timeout=1800)
+        if rg.returncode != 0:
+            return {"bloque": bloque, "segundos": round(time.time() - t0, 1), "ok": False,
+                    "error": (BUILD / f"{bloque}.ghdl.log").read_text(errors="replace")[-800:]
+                    .replace(str(RAIZ), ".")}
+        entrada = f"read_verilog {wsl(v)}"
+        yosys = YOWASP
+    else:
+        fuentes = " ".join(wsl(RAIZ / f) for f in ficheros)
+        entrada = f"plugin -i ghdl\nghdl --std=08 {fuentes} -e {bloque}"
+        yosys = YOSYS
+    ys.write_text(f"""{entrada}
 hierarchy -check -top {bloque}
 synth -top {bloque} -flatten
 dfflibmap -liberty {wsl(LIB)}
@@ -93,9 +138,8 @@ abc -liberty {wsl(LIB)}
 opt_clean -purge
 stat -liberty {wsl(LIB)}
 """)
-    t0 = time.time()
-    r = subprocess.run(["wsl.exe", "-e", "bash", "-lc",
-                        f"{YOSYS} -q -l {wsl(log)} -s {wsl(ys)}"],
+    r = subprocess.run(["wsl.exe", "-e", "bash", "--noprofile", "--norc", "-c",
+                        f"{yosys} -q -l {wsl(log)} -s {wsl(ys)}"],
                        capture_output=True, text=True, timeout=3600)
     dur = time.time() - t0
     salida = log.read_text(errors="replace") if log.exists() else r.stdout + r.stderr
@@ -116,13 +160,26 @@ stat -liberty {wsl(LIB)}
     res["biestables"] = ff
     if r.returncode != 0:
         res["error"] = (r.stderr or salida)[-800:]
+    # Sin rutas de maquina en lo que va a results/: el repositorio es publico.
+    if "error" in res:
+        res["error"] = res["error"].replace(str(RAIZ), ".").replace(wsl(RAIZ), ".")
     return res
 
 
 def main() -> int:
-    filtro = sys.argv[1] if len(sys.argv) > 1 else ""
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    filtro = args[0] if args else ""
+    via_verilog = "--verilog" in sys.argv or not hay_en_wsl(YOSYS)
     if not LIB.exists():
         raise SystemExit(f"falta el liberty {LIB}")
+    ghdl = None
+    if via_verilog:
+        ghdl = buscar_ghdl()
+        if ghdl is None or not hay_en_wsl(YOWASP):
+            raise SystemExit("hace falta GHDL en Windows y yowasp-yosys en WSL (pip install --user yowasp-yosys)")
+        print("camino: GHDL --synth (Windows) -> Verilog -> yowasp-yosys (WSL)")
+    else:
+        print("camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL")
     ge, celda = area_nand2(LIB)
     print(f"biblioteca {LIB.name}: 1 GE = {celda} = {ge} um2\n")
     print(f"{'bloque':14s} {'celdas':>7s} {'FF':>6s} {'area um2':>10s} {'kGE':>7s} {'s':>5s}")
@@ -131,7 +188,7 @@ def main() -> int:
     for bloque, ficheros in BLOQUES.items():
         if filtro and filtro not in bloque:
             continue
-        res = sintetizar(bloque, ficheros)
+        res = sintetizar(bloque, ficheros, via_verilog, ghdl)
         res["kGE"] = round(res["area_um2"] / ge / 1000, 3) if res["ok"] else float("nan")
         filas.append(res)
         if res["ok"]:
@@ -159,7 +216,7 @@ def main() -> int:
             if bloque in previas:
                 w.writerow(previas[bloque])
     print(f"\nGE = area de {celda} ({ge} um2). Area de celdas, sin rutar: cota inferior.")
-    print(f"datos en {RESULTADOS}")
+    print(f"datos en {RESULTADOS.relative_to(RAIZ)}")
     return 0 if all(r["ok"] for r in filas) else 1
 
 

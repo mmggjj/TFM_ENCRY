@@ -43,7 +43,7 @@ reinicios) y es la justificación del diseño de caja blanca.
 - Firmware del ESP32: el verificador (esp32) y el medidor con lecturas
   firmadas (esp32c3) compilan con ESP-IDF 5.3.5 y pasan su banco en el PC
   contra el motor simulado (27-10-2026, `results/host_check.log`).
-- Síntesis: los ocho bloques digitales sobre IHP SG13G2; motor ≈ 62 kGE,
+- Síntesis: los bloques digitales sobre IHP SG13G2 (motor versión 0x03, 27-10-2026); motor ≈ 69 kGE sin la captura (116 con ella),
   con camino documentado hacia ≈ 20 kGE.
 - Pendiente: hardware (Basys 3 + ESP32 en la mesa), campaña de entropía,
   simulación del anillo con el kit de la tecnología real, memoria.

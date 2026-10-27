@@ -18,32 +18,43 @@ mayor, y para un AES en esta misma biblioteca el factor publicado es
 
 | Bloque | Celdas | Biestables | Área (µm²) | kGE |
 |---|---|---|---|---|
-| aes_enc | 10.439 | 262 | 114.771 | 15,81 |
-| aes_cmac (incluye su AES) | 13.210 | 909 | 169.766 | 23,39 |
-| ctr_drbg (incluye su AES) | 17.953 | 2.355 | 267.262 | 36,83 |
-| health_tests | 568 | 85 | 8.986 | 1,24 |
-| ero_core (contador de 24 bits) | 132 | 28 | 2.397 | 0,33 |
+| aes_enc | 10.369 | 262 | 113.763 | 15,68 |
+| aes_cmac (incluye su AES) | 13.131 | 912 | 168.775 | 23,26 |
+| ctr_drbg (incluye su AES) | 19.345 | 2.357 | 274.420 | 37,81 |
+| health_tests | 588 | 86 | 9.137 | 1,26 |
+| ero_core (contador de 24 bits) | 127 | 28 | 2.371 | 0,33 |
 | bit_cdc | 11 | 7 | 408 | 0,06 |
-| i2c_slave (con guarda de bus colgado) | 431 | 85 | 7.408 | 1,02 |
-| trng_capture | 12.592 | 4.140 | 339.698 | 46,81 |
-| **motor_top** (anillos como cable, `synth/ring_osc_stub.vhd`) | 47.252 | 8.409 | 834.033 | **114,92** |
+| reset_sync (uno por dominio de reloj) | 3 | 3 | 147 | 0,02 |
+| i2c_slave (con guarda de bus colgado) | 435 | 89 | 7.729 | 1,07 |
+| trng_capture | 12.526 | 4.140 | 339.386 | 46,76 |
+| **motor_top** (anillos como cable, `synth/ring_osc_stub.vhd`) | 49.548 | 8.435 | 839.558 | **115,68** |
 
-Filas al día con `results/sintesis_sg13g2.csv` el 08-10-2026. Cambios
-respecto a la primera versión de esta tabla: el ERO pasó de 20 a 24 bits
-de contador (0,29 → 0,33 kGE; el motor entero, 114,73 → 114,92) porque el
-anillo de IHP pide K_D ≈ 941 000 (`anillo_ihp.md`); el I2C y la captura
-no se habían actualizado tras la guarda de bus colgado y la lectura a cero
-hasta trozo completo.
+Filas al día con `results/sintesis_sg13g2.csv` el **27-10-2026, motor
+versión 0x03** (log íntegro en `results/sintesis_sg13g2.log`). Respecto a
+la síntesis del 08-10 (versión 0x02, 114,92 kGE): el generador sube
+0,99 kGE (+2,7 %) por el contador de peticiones que no da la vuelta, la
+comparación de agotado y el borrado; el I2C 0,04 y los tests de salud
+0,02; entran los dos sincronizadores de reset (0,02 cada uno); el motor
+entero sube **0,76 kGE (+0,7 %)**. Los bloques que no cambiaron (AES,
+CMAC, captura) bajan entre 0,1 y 0,9 %, que es la diferencia entre los
+dos caminos de herramientas, no del diseño: esta tanda se hizo con el
+segundo camino de `sintetiza.py` (GHDL de Windows `--synth --out=verilog`
+y `yowasp-yosys`, el Yosys instalable con pip, mismo `abc` y misma
+biblioteca), porque en este PC no hay OSS CAD Suite. Cambios anteriores:
+el ERO pasó de 20 a 24 bits de contador (0,29 → 0,33 kGE) porque el anillo
+de IHP pide K_D ≈ 941 000 (`anillo_ihp.md`); el I2C y la captura se
+actualizaron tras la guarda de bus colgado y la lectura a cero hasta trozo
+completo.
 
 Los anillos no se sintetizan: son el único bloque atado a la tecnología y
 en un integrado se diseñan a nivel de transistor.
 
 ## Lectura de los números
 
-**El motor digital, tal como está, son unos 68 kGE** (todo menos la
-captura): 62,9 en los bloques de la tabla y 5,2 en el secuenciador y los
+**El motor digital, tal como está, son unos 69 kGE** (todo menos la
+captura): 63,8 en los bloques de la tabla y 5,1 en el secuenciador y los
 registros del nivel superior, que solo aparecen al sintetizar el motor
-entero (114,92 − 46,81). Hasta el 08-10 este documento daba 62 kGE, que
+entero (115,68 − 46,76). Hasta el 08-10 este documento daba 62 kGE, que
 era solo la suma de bloques. **El AES es casi la mitad**: hay dos núcleos AES, uno dentro
 del autenticador y otro dentro del generador, con 15,8 kGE cada uno. Eso
 apunta a las tres optimizaciones del capítulo de integrado, en orden de
