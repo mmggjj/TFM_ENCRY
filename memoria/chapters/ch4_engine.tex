@@ -158,6 +158,23 @@ window. And a seed is accepted only once the window that holds its last
 bit has closed clean; the seed is shorter than the window, so otherwise
 it would enter the generator before the proportion test had judged it.
 
+Four more rules came out of reviewing the sequencer against the register
+map rather than against the standard. The raw-bit capture buffer records
+the same bits the seed is collected from, so a capture started during a
+seeding left the seed readable in test mode; capture is now a test-mode
+command that is refused while the engine is busy, and seeding is refused
+while a capture is in progress. The request counter of the \ac{DRBG} no
+longer wraps: at its 32-bit ceiling the engine refuses to generate until
+it is reseeded and says so in a diagnostic bit, which is the hardware
+end of the reseed policy the host is still expected to run well before
+that. A zeroization command clears the key, the generator state and
+counter, the challenge, the random register and the collected seed, and
+loads the null key into the authenticator; it is honoured even under
+alarm, and the engine must be seeded again afterwards. And the sampling
+divider resets to its maximum rather than to a small value, so a host
+that forgets to configure it seeds at the slowest rate and the most
+entropy per bit, never below the characterized setting.
+
 The testbench injects the failure modes the tests exist for: a healthy
 source passes twenty windows (worst run 13, worst proportion 540); a
 stuck source trips the repetition test at exactly sample~22; a source

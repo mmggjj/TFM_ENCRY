@@ -1,0 +1,48 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:7176
+load:0x40078000,len:15660
+ho 0 tail 12 room 4
+load:0x40080400,len:4
+load:0x40080404,len:3904
+entry 0x40080640
+[0;32mI (699) boot: ESP-IDF v5.3.5-1057-g5a4288e8ffc 2nd stage bootloader[0m
+[0;32mI (700) boot: compile time Oct 27 2026 20:05:52[0m
+[0;32mI (700) boot: Multicore bootloader[0m
+[0;32mI (732) boot: chip revision: v3.0[0m
+[0;32mI (734) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (734) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (734) boot.esp32: SPI Flash Size : 2MB[0m
+[0;32mI (750) boot: Enabling RNG early entropy source...[0m
+[0;32mI (766) boot: Partition Table:[0m
+[0;32mI (766) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (766) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (766) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (766) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (775) boot: End of partition table[0m
+[0;32mI (787) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0b5c4h ( 46532) map[0m
+[0;32mI (829) esp_image: segment 1: paddr=0001b5ec vaddr=3ffb0000 size=027ech ( 10220) load[0m
+[0;32mI (863) esp_image: segment 2: paddr=0001dde0 vaddr=40080000 size=02238h (  8760) load[0m
+[0;32mI (902) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=1cc40h (117824) map[0m
+[0;32mI (956) esp_image: segment 4: paddr=0003cc68 vaddr=40082238 size=0af14h ( 44820) load[0m
+[0;32mI (1007) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (1007) boot: Disabling RNG early entropy source...[0m
+id 0xa5 version 0x02 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=0 rechazada=0
+verificador listo. comandos: id sembrar borrar generar reto N aleatorio N crudo N esp N
+id 0xa5 version 0x02 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=0
+sembrar: ok
+clave da01d519fbab41b7be3fd845bc348d76
+provision: ok
+reto-respuesta: 20 aciertos, 0 fallos criptograficos, 0 errores de bus, de 20
+FD002026119b3c348adf7da717a5ffb8d596e7d8fda8fd0379dc37efe9d3594caea7951a8f8c12
+FD002053a932671073b265379e76b92e7fb48161cc83beb5c9abd75f2345fb6847a3d315eba571
+FR02002dcf462904b478d868a7ff3f2bf1fcd97a96092ca5577464c4af1528a4e957db5e20fb38a84ea6149325562444df598d437bbe9016899d7e77c62f269888f5b430d4349d3a0d0fbd2fa1f70fd968f4d93ca835e58f2acdc240c1cf52716a722923b05b1ba32a828844190e30f26ba3ae0f84cd49d6834217e7a3399373c6e6f18afe211b197ee4758ec6878558dd24e69d5d44408b5a235ea9efec3f919c7a41171872eb06f291eeb86cbed934f73423067a337097d75212f57ed2949566062359f26ffae7eca9e6abaa39bfba5fa5b1ae2481618a7845e43c47783947c79dd94aaf61173bbd6af5d0445b91cd5f755f41b8d53807fed85ab12f46bc8e352a38cc2aafaf620f867555741c70a309e35fbeb3147a2758276b10d8b1109aae05083884d60a87557aa37535bf3e716c842777c1d1c2e0966520646d74070b5d8760deb75d8b8436e0bbbf9785a20ac15a481cc9c58969d2aa32cf71c8d71451a2068d1dcdedc9fac918570567fd8994ea53bdff44dca520d5a34c8e9493a12474cd1a04a37f41ff124f4298cb73f6f954b3d4ecb51e827f56637b60a7aa7face1f0e4384d663a1eb750aa6738e0eeb6668c478307c364c30cea6048ee6683ab27735c9418d7491f308121cd0dd94671b19a722a25118c811ad42d34aa68ac767281878b2b5a2f26bedeecbf38adb0dfa30d29c86fdf7806b8840a72a22a4cae77c768d6d4f2
+FE002042f49b45c34c328f3676d3f5ec244485af983b9659e4291f6f37080d619fbdacf17d2a1f
+FE002008213d81dcb3e7501ea15a6fd45cc9bc48d61db7881c7501c4ad7f0c30494cfaabbbdf5b
+id 0xa5 version 0x02 status 0xf1 sembrado=1 ocupado=0 alm_rct=0 alm_apt=0 clave=1 captura=1 etiqueta=1 test=1 arrancado=1 rechazada=0
+qemu-system-xtensa: terminating on signal 15 from pid 85486 (timeout)

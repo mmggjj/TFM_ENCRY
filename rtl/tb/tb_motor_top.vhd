@@ -65,8 +65,12 @@ begin
   -- G_KD_MIN = 4 SOLO en este banco: con el anillo lento del modelo, K_D = 16
   -- ya da 24 ciclos de sistema por bit, por encima de los 8 que exige el
   -- cruce de dominio. En hardware el valor por defecto es 6 (K_D = 64).
+  -- G_PET_BITS = 4 SOLO en este banco: el contador de peticiones se agota en
+  -- 15 y se puede probar que el motor deja de generar hasta resembrar. En
+  -- hardware son 32 bits. G_KD_RESET se deja en su valor (24): el banco
+  -- escribe CFG_KD antes de que pase un solo bit a esa tasa.
   dut : entity work.motor_top
-    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4)
+    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
@@ -239,9 +243,11 @@ begin
     comprobar(status(7) = '1', "STATUS refleja modo test");
     comprobar(status(0) = '0', "sin sembrar al arrancar");
     leer_reg(x"01", b);
-    comprobar(b = x"02", "VERSION = 0x02");
+    comprobar(b = x"03", "VERSION = 0x03");
     leer_reg(x"0E", b);
     comprobar(b(0) = '0', "test de arranque aun sin pasar");
+    leer_reg(x"04", b);
+    comprobar(b = x"18", "CFG_KD arranca en el maximo (24), no en un valor bajo");
 
     report "2) Sembrar";
     -- 2.0) Antes de pasar el test de arranque (1024 muestras sin alarma,
@@ -351,8 +357,53 @@ begin
     escribir_reg(x"03", x"08");
     esperar_arranque;
 
+    report "5d) El contador de peticiones se agota y obliga a resembrar";
+    -- Con G_PET_BITS = 4 el tope es 15. Desde la siembra del paso 2 van
+    -- generar, aleatorio, generar y aleatorio: PETICIONES = 5.
+    leer_bloque(x"0A", 4, pet1);
+    comprobar(pet1 = x"05000000", "PETICIONES = 5 antes de agotar (byte bajo primero): " & hex(pet1));
+    distintos := 0;                             -- aqui: ordenes aceptadas
+    for i in 1 to 12 loop
+      escribir_reg(x"03", x"40");               -- aleatorio
+      esperar_libre(status);
+      leer_reg(x"0E", b);
+      exit when b(1) = '1';
+      distintos := distintos + 1;
+    end loop;
+    comprobar(distintos = 10, "se aceptan 10 generaciones mas (hasta 15) y la siguiente no");
+    leer_reg(x"0E", b);
+    comprobar(b(2) = '1', "DIAG.agotado a 1");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet2 = x"0F000000", "PETICIONES se queda en 15, no da la vuelta");
+    orden_rechazada(x"02", "generar con el contador agotado se rechaza");
+    escribir_reg(x"03", x"20");                 -- resembrar
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0' and b(2) = '0', "resembrar se acepta y baja DIAG.agotado");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet2 = x"01000000", "PETICIONES vuelve a 1 tras resembrar");
+
     report "6) Captura de bits crudos";
+    -- 6a) Sin modo test no se captura: el buffer no se puede leer y solo
+    --     serviria para guardar bits crudos para mas tarde.
+    modo_test <= '0';
+    wait for 1 us;
+    orden_rechazada(x"10", "capturar sin modo test se rechaza");
+    modo_test <= '1';
+    wait for 1 us;
+    -- 6b) Durante una siembra no se captura: el buffer recogeria la semilla.
+    escribir_reg(x"03", x"20");                 -- resembrar (384 bits + ventana)
+    escribir_reg(x"03", x"10");                 -- capturar, con la siembra en curso
+    wait for 5 us;
+    leer_reg(x"02", status);
+    leer_reg(x"0E", b);
+    comprobar(status(1) = '1' and b(1) = '1', "capturar durante una siembra se rechaza");
+    esperar_libre(status);
+    leer_reg(x"02", status);
+    comprobar(status(5) = '0', "y no deja captura hecha");
+    -- 6c) Y durante una captura no se siembra.
     escribir_reg(x"03", x"10");                 -- capturar
+    orden_rechazada(x"20", "resembrar durante una captura se rechaza");
     for i in 1 to 400 loop                      -- 4096 bits a ~5 Mbit/s
       leer_reg(x"02", status);
       exit when status(5) = '1';
@@ -375,6 +426,31 @@ begin
     leer_bloque(x"10", 16, captura);
     comprobar(captura = (127 downto 0 => '0'), "CLAVE devuelve ceros sin modo test");
     modo_test <= '1';
+    wait for 1 us;
+
+    report "8) Borrar todo (zeroizacion)";
+    leer_bloque(x"10", 16, captura);
+    comprobar(captura = clave2, "antes de borrar, la clave sigue ahi");
+    escribir_reg(x"03", x"80");                 -- borrar_todo
+    esperar_libre(status);
+    comprobar(status(4) = '0' and status(0) = '0', "sin clave valida y sin sembrar");
+    leer_bloque(x"10", 16, captura);
+    comprobar(captura = (127 downto 0 => '0'), "CLAVE a ceros (en modo test, que si se lee)");
+    leer_bloque(x"40", 32, aleatorio);
+    comprobar(aleatorio = (255 downto 0 => '0'), "ALEATORIO a ceros");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet2 = x"00000000", "PETICIONES a 0");
+    orden_rechazada(x"02", "generar tras borrar se rechaza: no hay estado");
+    orden_rechazada(x"04", "autenticar tras borrar se rechaza: no hay clave");
+    -- El motor sigue vivo: se vuelve a sembrar y a generar.
+    escribir_reg(x"03", x"01");                 -- sembrar
+    esperar_libre(status);
+    comprobar(status(0) = '1', "tras borrar se puede sembrar de nuevo");
+    escribir_reg(x"03", x"02");
+    esperar_libre(status);
+    leer_bloque(x"10", 16, captura);
+    comprobar(status(4) = '1' and captura /= (127 downto 0 => '0') and captura /= clave2,
+              "y la clave nueva no es nula ni la de antes");
 
     -- Volcado para la verificacion cruzada en Python.
     file_open(f, "results/tb_motor_top.txt", write_mode);

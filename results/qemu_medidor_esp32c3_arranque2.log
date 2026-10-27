@@ -1,0 +1,40 @@
+Adding SPI flash device
+ESP-ROM:esp32c3-api1-20210207
+Build:Feb  7 2021
+rst:0x1 (POWERON),boot:0x8 (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5820,len:0x1820
+load:0x403cc710,len:0xbd0
+load:0x403ce710,len:0x2f5c
+entry 0x403cc71a
+[0;32mI (1) boot: ESP-IDF v5.3.5-1057-g5a4288e8ffc 2nd stage bootloader[0m
+[0;32mI (1) boot: compile time Oct 27 2026 19:42:59[0m
+[0;32mI (5) boot: chip revision: v0.3[0m
+[0;32mI (5) boot: efuse block revision: v0.0[0m
+[0;32mI (6) boot.esp32c3: SPI Speed      : 80MHz[0m
+[0;32mI (6) boot.esp32c3: SPI Mode       : SLOW READ[0m
+[0;32mI (7) boot.esp32c3: SPI Flash Size : 2MB[0m
+[0;32mI (9) boot: Enabling RNG early entropy source...[0m
+[0;32mI (13) boot: Partition Table:[0m
+[0;32mI (13) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (13) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (14) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (14) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (14) boot: End of partition table[0m
+[0;32mI (15) esp_image: segment 0: paddr=00010020 vaddr=3c040020 size=0c9f4h ( 51700) map[0m
+[0;32mI (22) esp_image: segment 1: paddr=0001ca1c vaddr=3fc8ca00 size=018d8h (  6360) load[0m
+[0;32mI (24) esp_image: segment 2: paddr=0001e2fc vaddr=40380000 size=01d1ch (  7452) load[0m
+[0;32mI (26) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=30684h (198276) map[0m
+[0;32mI (52) esp_image: segment 4: paddr=000506ac vaddr=40381d1c size=0aae4h ( 43748) load[0m
+[0;32mI (59) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (59) boot: Disabling RNG early entropy source...[0m
+id 0xa5 version 0x02 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=0 rechazada=0 clave_equipo=0 bloques_rng=0
+medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar
+id 0xa5 version 0x02 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=1 rechazada=0 clave_equipo=0 bloques_rng=0
+sembrar: ok
+clave: ok, P-256 con 2 bloques de 32 bytes del motor
+FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
+FL005e0000000000000000020000010000000c000000030000041a304402200e870bdae2ed320bdb05f9f20c257de61e64429fe9ce8e5b53ec12baee640f5502206c5cdaea3db3aa2a357696c4083be6aeedd6363aecd5503163441d66cfdb240e675a9cfe
+FL005f0000000000000000020000020000000e000000030000044c3045022100d27bd3987e9e2f5a7d0a8b70d65c22fa0f0984f133ae10934ec15ac055f6bd8a02200084a761551b881a39c0403576ba1ae72012f83697dd3dd1486446193daab9d10c080757
+qemu-system-riscv32: terminating on signal 15 from pid 78597 (timeout)

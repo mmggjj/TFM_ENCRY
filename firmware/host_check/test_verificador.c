@@ -27,6 +27,7 @@ extern bool motor_modo_test;
 extern int  motor_fallo_bus;
 extern bool motor_colgado;
 extern int  motor_n_tramas;
+extern uint32_t motor_pet_max;
 
 static int fallos = 0;
 
@@ -141,6 +142,36 @@ int main(void)
         if (memcmp(mapa + d, motor_clave(), 16) == 0) aparece = true;
     chk(!aparece, "sin modo test la clave no aparece en ningun registro legible");
     motor_modo_test = true;
+
+    printf("\n11) El contador de peticiones se agota y hay que resembrar\n");
+    uint8_t pet[4];
+    motor_reg_leer(REG_PETICIONES, pet, 4);
+    uint32_t peticiones = pet[0] | (pet[1] << 8) | ((uint32_t)pet[2] << 16) | ((uint32_t)pet[3] << 24);
+    motor_pet_max = peticiones + 2;
+    cmd_aleatorio(5);                          /* solo 2 deben salir */
+    int tramas_antes = motor_n_tramas;
+    motor_reg_leer(REG_DIAG, &diag, 1);
+    chk((diag & DG_AGOTADO) != 0, "DIAG.agotado tras llegar al tope");
+    cmd_aleatorio(1);
+    chk(motor_n_tramas == tramas_antes, "agotado: aleatorio rechazado y sin trama al PC");
+    cmd_sembrar();
+    motor_reg_leer(REG_DIAG, &diag, 1);
+    chk((diag & DG_AGOTADO) == 0 && (motor_status() & ST_SEMBRADO), "resembrar baja DIAG.agotado");
+    motor_pet_max = 0xFFFFFFFFu;
+
+    printf("\n12) Zeroizacion del motor\n");
+    cmd_generar();
+    chk(hay_clave, "hay clave antes de borrar");
+    cmd_cero();
+    uint8_t cero16[16] = {0};
+    chk(!hay_clave && memcmp(motor_clave(), cero16, 16) == 0, "tras 'cero' la clave del motor es nula y la provisionada no vale");
+    chk(!(motor_status() & (ST_SEMBRADO | ST_CLAVE_VALIDA)), "ni sembrado ni clave valida");
+    cmd_reto(1);
+    chk(ult_reto.aciertos == 0 && ult_reto.fallos == 0, "reto sin clave no cuenta nada");
+    cmd_sembrar();
+    cmd_generar();
+    cmd_reto(3);
+    chk(ult_reto.aciertos == 3, "tras borrar, sembrar y generar, el reto-respuesta vuelve a cerrar");
 
     printf("\ntest_verificador: %d fallos\n", fallos);
     return fallos == 0 ? 0 : 1;

@@ -72,24 +72,24 @@ rtl/tb/tb_aes_cmac.vhd:107:9:@1705ns:(report note):   [ok ] Mlen = 16 repetido -
 rtl/tb/tb_aes_cmac.vhd:165:7:@1705ns:(report note): tb_aes_cmac: 0 fallos
 
 --- tb_ctr_drbg ---
-rtl/tb/tb_ctr_drbg.vhd:94:5:@55ns:(report note): 1) Instanciar con entropia y nonce
-rtl/tb/tb_ctr_drbg.vhd:81:9:@55ns:(report note):   [ok ] sin sembrar al arrancar
-rtl/tb/tb_ctr_drbg.vhd:81:9:@1895ns:(report note):   [ok ] sembrado tras instanciar (183 ciclos)
-rtl/tb/tb_ctr_drbg.vhd:81:9:@1895ns:(report note):   [ok ] contador de peticiones = 1
-rtl/tb/tb_ctr_drbg.vhd:103:5:@1895ns:(report note): 2) Generar dos veces
-rtl/tb/tb_ctr_drbg.vhd:81:9:@2435ns:(report note):   [ok ] primera salida = referencia (53 ciclos)
-rtl/tb/tb_ctr_drbg.vhd:81:9:@2975ns:(report note):   [ok ] segunda salida = referencia
-rtl/tb/tb_ctr_drbg.vhd:81:9:@2975ns:(report note):   [ok ] las dos salidas son distintas
-rtl/tb/tb_ctr_drbg.vhd:81:9:@2975ns:(report note):   [ok ] contador = 3
-rtl/tb/tb_ctr_drbg.vhd:113:5:@2975ns:(report note): 3) Resembrar y generar
-rtl/tb/tb_ctr_drbg.vhd:81:9:@4815ns:(report note):   [ok ] el contador vuelve a 1 tras resembrar
-rtl/tb/tb_ctr_drbg.vhd:81:9:@5355ns:(report note):   [ok ] salida tras resembrar = referencia
-rtl/tb/tb_ctr_drbg.vhd:81:9:@5355ns:(report note):   [ok ] contador tras generar
-rtl/tb/tb_ctr_drbg.vhd:122:5:@5355ns:(report note): 4) Instanciar de nuevo borra el estado
-rtl/tb/tb_ctr_drbg.vhd:81:9:@7735ns:(report note):   [ok ] vuelve a dar la primera salida
-rtl/tb/tb_ctr_drbg.vhd:129:5:@7735ns:(report note): 5) Generar sin sembrar no hace nada
-rtl/tb/tb_ctr_drbg.vhd:81:9:@7835ns:(report note):   [ok ] la orden se ignora sin estado valido
-rtl/tb/tb_ctr_drbg.vhd:142:7:@7835ns:(report note): tb_ctr_drbg: 0 fallos
+rtl/tb/tb_ctr_drbg.vhd:95:5:@55ns:(report note): 1) Instanciar con entropia y nonce
+rtl/tb/tb_ctr_drbg.vhd:82:9:@55ns:(report note):   [ok ] sin sembrar al arrancar
+rtl/tb/tb_ctr_drbg.vhd:82:9:@1895ns:(report note):   [ok ] sembrado tras instanciar (183 ciclos)
+rtl/tb/tb_ctr_drbg.vhd:82:9:@1895ns:(report note):   [ok ] contador de peticiones = 1
+rtl/tb/tb_ctr_drbg.vhd:104:5:@1895ns:(report note): 2) Generar dos veces
+rtl/tb/tb_ctr_drbg.vhd:82:9:@2435ns:(report note):   [ok ] primera salida = referencia (53 ciclos)
+rtl/tb/tb_ctr_drbg.vhd:82:9:@2975ns:(report note):   [ok ] segunda salida = referencia
+rtl/tb/tb_ctr_drbg.vhd:82:9:@2975ns:(report note):   [ok ] las dos salidas son distintas
+rtl/tb/tb_ctr_drbg.vhd:82:9:@2975ns:(report note):   [ok ] contador = 3
+rtl/tb/tb_ctr_drbg.vhd:114:5:@2975ns:(report note): 3) Resembrar y generar
+rtl/tb/tb_ctr_drbg.vhd:82:9:@4815ns:(report note):   [ok ] el contador vuelve a 1 tras resembrar
+rtl/tb/tb_ctr_drbg.vhd:82:9:@5355ns:(report note):   [ok ] salida tras resembrar = referencia
+rtl/tb/tb_ctr_drbg.vhd:82:9:@5355ns:(report note):   [ok ] contador tras generar
+rtl/tb/tb_ctr_drbg.vhd:123:5:@5355ns:(report note): 4) Instanciar de nuevo borra el estado
+rtl/tb/tb_ctr_drbg.vhd:82:9:@7735ns:(report note):   [ok ] vuelve a dar la primera salida
+rtl/tb/tb_ctr_drbg.vhd:130:5:@7735ns:(report note): 5) Generar sin sembrar no hace nada
+rtl/tb/tb_ctr_drbg.vhd:82:9:@7835ns:(report note):   [ok ] la orden se ignora sin estado valido
+rtl/tb/tb_ctr_drbg.vhd:143:7:@7835ns:(report note): tb_ctr_drbg: 0 fallos
 
 --- tb_health_tests ---
 rtl/tb/tb_health_tests.vhd:123:5:@35ns:(report note): 1) Fuente sana: 20 ventanas sin alarma
@@ -118,64 +118,86 @@ rtl/tb/tb_health_tests.vhd:218:7:@565036ns:(report note): tb_health_tests: 0 fal
 --- tb_motor_top ---
 ../../src/ieee2008/numeric_std-body.vhdl:1793:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
 ../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-rtl/tb/tb_motor_top.vhd:235:5:@2200ns:(report note): 1) Identificacion
-rtl/tb/tb_motor_top.vhd:82:9:@43200ns:(report note):   [ok ] ID = 0xA5
-rtl/tb/tb_motor_top.vhd:82:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
-rtl/tb/tb_motor_top.vhd:82:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
-rtl/tb/tb_motor_top.vhd:82:9:@125200ns:(report note):   [ok ] VERSION = 0x02
-rtl/tb/tb_motor_top.vhd:82:9:@166200ns:(report note):   [ok ] test de arranque aun sin pasar
-rtl/tb/tb_motor_top.vhd:246:5:@166200ns:(report note): 2) Sembrar
-rtl/tb/tb_motor_top.vhd:82:9:@314200ns:(report note):   [ok ] sembrar antes del test de arranque se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@585200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@626200ns:(report note):   [ok ] sigue sin sembrar
-rtl/tb/tb_motor_top.vhd:82:9:@758700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
-rtl/tb/tb_motor_top.vhd:82:9:@881700ns:(report note):   [ok ] sembrado
-rtl/tb/tb_motor_top.vhd:82:9:@881700ns:(report note):   [ok ] sin alarmas de salud
-rtl/tb/tb_motor_top.vhd:82:9:@922700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
-rtl/tb/tb_motor_top.vhd:273:5:@922700ns:(report note): 3) Generar clave
-rtl/tb/tb_motor_top.vhd:82:9:@994200ns:(report note):   [ok ] clave valida
-rtl/tb/tb_motor_top.vhd:82:9:@1170200ns:(report note):   [ok ] clave no nula: a64f3032336dcea88553e2b097a805fd
-rtl/tb/tb_motor_top.vhd:280:5:@1170200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
-rtl/tb/tb_motor_top.vhd:82:9:@1561700ns:(report note):   [ok ] ALEATORIO no nulo
-rtl/tb/tb_motor_top.vhd:82:9:@1561700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
-rtl/tb/tb_motor_top.vhd:290:5:@1561700ns:(report note): 4) Reto-respuesta
-rtl/tb/tb_motor_top.vhd:82:9:@2121200ns:(report note):   [ok ] etiqueta lista
-rtl/tb/tb_motor_top.vhd:82:9:@2297200ns:(report note):   [ok ] etiqueta: 0e45e0d8d7309d9bab82cb2129960325
-rtl/tb/tb_motor_top.vhd:82:9:@2575200ns:(report note):   [ok ] la etiqueta cambia con el reto
-rtl/tb/tb_motor_top.vhd:309:5:@2575200ns:(report note): 5) Segunda clave distinta
-rtl/tb/tb_motor_top.vhd:82:9:@2822700ns:(report note):   [ok ] dos generaciones dan claves distintas
-rtl/tb/tb_motor_top.vhd:315:5:@2822700ns:(report note): 5b) Con alarma no sale nada del motor
-rtl/tb/tb_motor_top.vhd:82:9:@2864700ns:(report note):   [ok ] alarma RCT visible en STATUS
-rtl/tb/tb_motor_top.vhd:82:9:@2982200ns:(report note):   [ok ] generar con alarma se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@3158200ns:(report note):   [ok ] la clave no cambia
-rtl/tb/tb_motor_top.vhd:82:9:@3275700ns:(report note):   [ok ] aleatorio con alarma se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@3393200ns:(report note):   [ok ] resembrar con alarma se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@3464700ns:(report note):   [ok ] borrar baja las alarmas
-rtl/tb/tb_motor_top.vhd:82:9:@3505700ns:(report note):   [ok ] borrar obliga a repetir el test de arranque
-rtl/tb/tb_motor_top.vhd:82:9:@3623200ns:(report note):   [ok ] resembrar antes de repetir el test se rechaza
-rtl/tb/tb_motor_top.vhd:82:9:@3817700ns:(report note):   [ok ] pasado el test, aleatorio se acepta otra vez
-rtl/tb/tb_motor_top.vhd:340:5:@3817700ns:(report note): 5c) Alarma a mitad de un resembrado: se aborta
-rtl/tb/tb_motor_top.vhd:82:9:@4000200ns:(report note):   [ok ] DIAG.rechazada marca la siembra abortada
-rtl/tb/tb_motor_top.vhd:82:9:@4068200ns:(report note):   [ok ] PETICIONES no se reinicia: no hubo resembrado
-rtl/tb/tb_motor_top.vhd:354:5:@4385700ns:(report note): 6) Captura de bits crudos
-rtl/tb/tb_motor_top.vhd:82:9:@5441200ns:(report note):   [ok ] buffer de captura lleno
-rtl/tb/tb_motor_top.vhd:82:9:@5647700ns:(report note):   [ok ] bits crudos con contenido variado: 56b52a952a94aad4a956a56ad5aad4a9
-rtl/tb/tb_motor_top.vhd:372:5:@5647700ns:(report note): 7) Sin modo test la clave no se lee
-rtl/tb/tb_motor_top.vhd:82:9:@5824700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
-rtl/tb/tb_motor_top.vhd:389:5:@5824700ns:(report note):   volcado en results/tb_motor_top.txt
-rtl/tb/tb_motor_top.vhd:392:7:@5824700ns:(report note): tb_motor_top: 0 fallos
-simulation stopped @5824700ns
+rtl/tb/tb_motor_top.vhd:239:5:@2200ns:(report note): 1) Identificacion
+rtl/tb/tb_motor_top.vhd:86:9:@43200ns:(report note):   [ok ] ID = 0xA5
+rtl/tb/tb_motor_top.vhd:86:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
+rtl/tb/tb_motor_top.vhd:86:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
+rtl/tb/tb_motor_top.vhd:86:9:@125200ns:(report note):   [ok ] VERSION = 0x03
+rtl/tb/tb_motor_top.vhd:86:9:@166200ns:(report note):   [ok ] test de arranque aun sin pasar
+rtl/tb/tb_motor_top.vhd:86:9:@207200ns:(report note):   [ok ] CFG_KD arranca en el maximo (24), no en un valor bajo
+rtl/tb/tb_motor_top.vhd:252:5:@207200ns:(report note): 2) Sembrar
+rtl/tb/tb_motor_top.vhd:86:9:@355200ns:(report note):   [ok ] sembrar antes del test de arranque se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@667200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@708200ns:(report note):   [ok ] sigue sin sembrar
+rtl/tb/tb_motor_top.vhd:86:9:@840700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
+rtl/tb/tb_motor_top.vhd:86:9:@922700ns:(report note):   [ok ] sembrado
+rtl/tb/tb_motor_top.vhd:86:9:@922700ns:(report note):   [ok ] sin alarmas de salud
+rtl/tb/tb_motor_top.vhd:86:9:@963700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
+rtl/tb/tb_motor_top.vhd:279:5:@963700ns:(report note): 3) Generar clave
+rtl/tb/tb_motor_top.vhd:86:9:@1035200ns:(report note):   [ok ] clave valida
+rtl/tb/tb_motor_top.vhd:86:9:@1211200ns:(report note):   [ok ] clave no nula: 6be2c13bc77fa34e03ba18b8a83abd61
+rtl/tb/tb_motor_top.vhd:286:5:@1211200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
+rtl/tb/tb_motor_top.vhd:86:9:@1602700ns:(report note):   [ok ] ALEATORIO no nulo
+rtl/tb/tb_motor_top.vhd:86:9:@1602700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
+rtl/tb/tb_motor_top.vhd:296:5:@1602700ns:(report note): 4) Reto-respuesta
+rtl/tb/tb_motor_top.vhd:86:9:@2162200ns:(report note):   [ok ] etiqueta lista
+rtl/tb/tb_motor_top.vhd:86:9:@2338200ns:(report note):   [ok ] etiqueta: 2698828fa82dc782d1cfd0b83407ae80
+rtl/tb/tb_motor_top.vhd:86:9:@2616200ns:(report note):   [ok ] la etiqueta cambia con el reto
+rtl/tb/tb_motor_top.vhd:315:5:@2616200ns:(report note): 5) Segunda clave distinta
+rtl/tb/tb_motor_top.vhd:86:9:@2863700ns:(report note):   [ok ] dos generaciones dan claves distintas
+rtl/tb/tb_motor_top.vhd:321:5:@2863700ns:(report note): 5b) Con alarma no sale nada del motor
+rtl/tb/tb_motor_top.vhd:86:9:@2905700ns:(report note):   [ok ] alarma RCT visible en STATUS
+rtl/tb/tb_motor_top.vhd:86:9:@3023200ns:(report note):   [ok ] generar con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@3199200ns:(report note):   [ok ] la clave no cambia
+rtl/tb/tb_motor_top.vhd:86:9:@3316700ns:(report note):   [ok ] aleatorio con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@3434200ns:(report note):   [ok ] resembrar con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@3505700ns:(report note):   [ok ] borrar baja las alarmas
+rtl/tb/tb_motor_top.vhd:86:9:@3546700ns:(report note):   [ok ] borrar obliga a repetir el test de arranque
+rtl/tb/tb_motor_top.vhd:86:9:@3664200ns:(report note):   [ok ] resembrar antes de repetir el test se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@3858700ns:(report note):   [ok ] pasado el test, aleatorio se acepta otra vez
+rtl/tb/tb_motor_top.vhd:346:5:@3858700ns:(report note): 5c) Alarma a mitad de un resembrado: se aborta
+rtl/tb/tb_motor_top.vhd:86:9:@4041200ns:(report note):   [ok ] DIAG.rechazada marca la siembra abortada
+rtl/tb/tb_motor_top.vhd:86:9:@4109200ns:(report note):   [ok ] PETICIONES no se reinicia: no hubo resembrado
+rtl/tb/tb_motor_top.vhd:360:5:@4426700ns:(report note): 5d) El contador de peticiones se agota y obliga a resembrar
+rtl/tb/tb_motor_top.vhd:86:9:@4494700ns:(report note):   [ok ] PETICIONES = 5 antes de agotar (byte bajo primero): 05000000
+rtl/tb/tb_motor_top.vhd:86:9:@5732200ns:(report note):   [ok ] se aceptan 10 generaciones mas (hasta 15) y la siguiente no
+rtl/tb/tb_motor_top.vhd:86:9:@5773200ns:(report note):   [ok ] DIAG.agotado a 1
+rtl/tb/tb_motor_top.vhd:86:9:@5841200ns:(report note):   [ok ] PETICIONES se queda en 15, no da la vuelta
+rtl/tb/tb_motor_top.vhd:86:9:@5958700ns:(report note):   [ok ] generar con el contador agotado se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@6194200ns:(report note):   [ok ] resembrar se acepta y baja DIAG.agotado
+rtl/tb/tb_motor_top.vhd:86:9:@6262200ns:(report note):   [ok ] PETICIONES vuelve a 1 tras resembrar
+rtl/tb/tb_motor_top.vhd:386:5:@6262200ns:(report note): 6) Captura de bits crudos
+rtl/tb/tb_motor_top.vhd:86:9:@6380700ns:(report note):   [ok ] capturar sin modo test se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@6529700ns:(report note):   [ok ] capturar durante una siembra se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@6652700ns:(report note):   [ok ] y no deja captura hecha
+rtl/tb/tb_motor_top.vhd:86:9:@6800700ns:(report note):   [ok ] resembrar durante una captura se rechaza
+rtl/tb/tb_motor_top.vhd:86:9:@7702700ns:(report note):   [ok ] buffer de captura lleno
+rtl/tb/tb_motor_top.vhd:86:9:@7909200ns:(report note):   [ok ] bits crudos con contenido variado: d4ad52a56ad5ab52a54a95ad56ad5aa5
+rtl/tb/tb_motor_top.vhd:423:5:@7909200ns:(report note): 7) Sin modo test la clave no se lee
+rtl/tb/tb_motor_top.vhd:86:9:@8086200ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
+rtl/tb/tb_motor_top.vhd:431:5:@8087200ns:(report note): 8) Borrar todo (zeroizacion)
+rtl/tb/tb_motor_top.vhd:86:9:@8263200ns:(report note):   [ok ] antes de borrar, la clave sigue ahi
+rtl/tb/tb_motor_top.vhd:86:9:@8334700ns:(report note):   [ok ] sin clave valida y sin sembrar
+rtl/tb/tb_motor_top.vhd:86:9:@8510700ns:(report note):   [ok ] CLAVE a ceros (en modo test, que si se lee)
+rtl/tb/tb_motor_top.vhd:86:9:@8830700ns:(report note):   [ok ] ALEATORIO a ceros
+rtl/tb/tb_motor_top.vhd:86:9:@8898700ns:(report note):   [ok ] PETICIONES a 0
+rtl/tb/tb_motor_top.vhd:86:9:@9016200ns:(report note):   [ok ] generar tras borrar se rechaza: no hay estado
+rtl/tb/tb_motor_top.vhd:86:9:@9133700ns:(report note):   [ok ] autenticar tras borrar se rechaza: no hay clave
+rtl/tb/tb_motor_top.vhd:86:9:@9328200ns:(report note):   [ok ] tras borrar se puede sembrar de nuevo
+rtl/tb/tb_motor_top.vhd:86:9:@9575700ns:(report note):   [ok ] y la clave nueva no es nula ni la de antes
+rtl/tb/tb_motor_top.vhd:465:5:@9575700ns:(report note):   volcado en results/tb_motor_top.txt
+rtl/tb/tb_motor_top.vhd:468:7:@9575700ns:(report note): tb_motor_top: 0 fallos
+simulation stopped @9575700ns
 
 === resumen ===
 todos los bancos pasan
-exit=0
-
+rc_run_tb=0
 Verificacion cruzada del motor con el modelo de referencia
-  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 0e45e0d8d7309d9bab82cb2129960325
-  [ok ] etiqueta2 = CMAC_clave1(reto2) -> c8543323e395d2680c643ec5b94080b2
+  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 2698828fa82dc782d1cfd0b83407ae80
+  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 360e59cdabbebad2fcb8efdd30c155b1
   [ok ] aleatorio1 (registro legible) no contiene clave1 en ninguna mitad
   [ok ] las dos claves difieren
   [ok ] clave1 no es un patron trivial
 
 verifica_top: 0 fallos
-verifica exit=0
+rc_verifica_top=0

@@ -57,8 +57,11 @@ typedef uint32_t TickType_t;
 esc("freertos/task.h", """
 #pragma once
 #include "freertos/FreeRTOS.h"
+typedef uint32_t UBaseType_t;
+typedef void *TaskHandle_t;
 void vTaskDelay(TickType_t t);
 TickType_t xTaskGetTickCount(void);
+UBaseType_t uxTaskGetStackHighWaterMark(TaskHandle_t t);
 """)
 
 esc("driver/i2c_master.h", """
@@ -118,6 +121,29 @@ esc("esp_rom_crc.h", """
 #include <stddef.h>
 #include <stdint.h>
 uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t *buf, uint32_t len);
+""")
+
+esc("nvs_flash.h", """
+#pragma once
+#include "esp_err.h"
+#define ESP_ERR_NVS_NOT_FOUND 0x1102
+#define ESP_ERR_NVS_NO_FREE_PAGES 0x110d
+#define ESP_ERR_NVS_NEW_VERSION_FOUND 0x1110
+esp_err_t nvs_flash_init(void);
+esp_err_t nvs_flash_erase(void);
+""")
+
+esc("nvs.h", """
+#pragma once
+#include <stdint.h>
+#include "esp_err.h"
+typedef uint32_t nvs_handle_t;
+typedef enum { NVS_READONLY, NVS_READWRITE } nvs_open_mode_t;
+esp_err_t nvs_open(const char *ns, nvs_open_mode_t m, nvs_handle_t *h);
+esp_err_t nvs_get_u32(nvs_handle_t h, const char *k, uint32_t *v);
+esp_err_t nvs_set_u32(nvs_handle_t h, const char *k, uint32_t v);
+esp_err_t nvs_commit(nvs_handle_t h);
+void nvs_close(nvs_handle_t h);
 """)
 
 esc("esp_mac.h", """

@@ -56,7 +56,8 @@ python analysis/jitter_estimator.py   # estimador, 20 comprobaciones
 python analysis/ctr_drbg_ref.py       # DRBG contra 960 vectores CAVP
 python rtl/run_tb.py                  # todos los bancos VHDL (GHDL)
 python synth/sintetiza.py             # síntesis (Yosys + liberty IHP)
-python3 firmware/host_check/run_host.py --mbedtls $IDF_PATH/components/mbedtls/mbedtls  # firmware en el PC (gcc, WSL)
+python3 firmware/host_check/run_host.py --mbedtls $IDF_PATH/components/mbedtls/mbedtls  # firmware en el PC (gcc, WSL); --sanear para ASan+UBSan
+python3 analysis/fuzz_verifica_lecturas.py      # robustez del verificador de lecturas del PC
 ```
 
 ## Convenciones

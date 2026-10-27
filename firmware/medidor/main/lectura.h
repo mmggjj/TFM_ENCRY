@@ -10,7 +10,9 @@
  * de ningun generador, asi que una fuente mala en el momento de firmar no
  * puede filtrar la clave, que es el fallo clasico de ECDSA. El f_rng que
  * reciben las funciones de firma solo sirve para el cegado contra canales
- * laterales, y no afecta al valor de la firma.
+ * laterales, y no afecta al valor de la firma; pero mbedtls lo exige (NULL
+ * o un f_rng que devuelva error hacen fallar la firma), asi que hay que
+ * pasarle uno que no falle, como esp_fill_random.
  *
  * Seguridad: la fuerza de la clave la acota el DRBG del motor, CTR_DRBG
  * con AES-128 (128 bits), que es lo que ofrece P-256. Una curva mayor no

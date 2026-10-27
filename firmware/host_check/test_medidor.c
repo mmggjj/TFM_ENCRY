@@ -23,13 +23,15 @@ extern bool motor_sim_autotest(void);
 extern void motor_alarma(bool a);
 extern uint32_t motor_ticks(void);
 extern int  motor_fallo_bus;
+extern int  motor_fallo_tras_aleatorio;
 extern int  motor_n_tramas;
 extern int  motor_n_aleatorio;
+extern bool plataforma_nvs_rota;
 
 static int fallos = 0;
 /* Lo que el banco ha mandado al PC, para que run_host.py lo contraste con
  * lo que encuentre verifica_lecturas.py. */
-static int esp_validas = 0, esp_manipuladas = 0, esp_repetidas = 0, esp_csr = 0;
+static int esp_validas = 0, esp_manipuladas = 0, esp_repetidas = 0, esp_csr = 0, esp_cambios = 0;
 
 static void chk(bool cond, const char *msg)
 {
@@ -106,8 +108,10 @@ int main(void)
     cmd_lectura(5);
     esp_validas += 5;
     chk(motor_n_tramas == tramas + 5, "5 lecturas, 5 tramas L");
-    chk(motor_ticks() - t0 >= 4 * INTERVALO_MS, "una lectura por intervalo");
-    chk(actual.secuencia == 5 && actual.energia_wh > 0, "secuencia y energia avanzan");
+    /* Humo, no temporizacion: con los stubs vTaskDelay solo suma ticks. */
+    chk(motor_ticks() - t0 >= 4 * INTERVALO_MS, "entre lecturas se cede la CPU el intervalo");
+    chk(actual.secuencia == ((1u << 24) | 5) && actual.energia_wh > 0,
+        "secuencia = arranque 1, lectura 5; la energia avanza");
     uint8_t reg[LECTURA_BYTES], f1[FIRMA_MAX], f2[FIRMA_MAX];
     size_t nf1 = 0, nf2 = 0;
     lectura_serializar(&actual, reg);
@@ -151,15 +155,20 @@ int main(void)
     cmd_sembrar();
     chk((motor_status() & ST_SEMBRADO) != 0, "tras borrar y repetir el arranque, sembrado");
 
-    printf("\n6) Un fallo de bus durante la clave no deja una clave a medias\n");
-    motor_fallo_bus = 3;
+    printf("\n6) Un fallo de bus a mitad de la clave no deja una clave a medias\n");
+    /* El primer bloque sale bien y el bus cae antes de leer el segundo. */
+    int antes_aleatorio = motor_n_aleatorio;
+    motor_fallo_tras_aleatorio = motor_n_aleatorio + 1;
     cmd_clave();
+    motor_fallo_tras_aleatorio = 0;
     motor_fallo_bus = 0;
+    chk(motor_n_aleatorio == antes_aleatorio + 1, "el motor llego a aceptar el primer bloque");
     chk(clave.valida && publica_actual(pub2) == npub1 && memcmp(pub1, pub2, npub1) == 0,
-        "con el bus caido no hay clave nueva y sigue la anterior");
+        "con el bus caido a mitad no hay clave nueva y sigue la anterior");
 
     printf("\n7) Clave nueva y CSR\n");
     cmd_clave();
+    esp_cambios++;
     size_t npub2 = publica_actual(pub2);
     chk(clave.valida && (npub2 != npub1 || memcmp(pub1, pub2, npub1) != 0),
         "la segunda clave es distinta de la primera");
@@ -198,8 +207,24 @@ int main(void)
     cmd_publica();
     chk(motor_n_tramas == tramas, "sin clave no sale ni lectura ni publica");
 
-    printf("\nesperado: validas=%d firma_invalida=%d repetidas=%d csr=%d\n",
-           esp_validas, esp_manipuladas, esp_repetidas, esp_csr);
+    printf("\n10) Tras un reinicio la secuencia sigue creciendo\n");
+    uint32_t seq_antes = actual.secuencia;
+    iniciar_medidor();                         /* el "reinicio": RAM a cero, NVS no */
+    chk(!clave.valida, "al reiniciar no hay clave en RAM");
+    cmd_clave();                               /* el motor sigue sembrado */
+    esp_cambios++;
+    chk(clave.valida, "clave nueva tras el reinicio");
+    cmd_lectura(1);
+    esp_validas += 1;
+    chk((actual.secuencia >> 24) == 2 && actual.secuencia > seq_antes,
+        "arranque 2: la primera lectura supera a la ultima de antes del reinicio");
+    plataforma_nvs_rota = true;
+    iniciar_medidor();
+    plataforma_nvs_rota = false;
+    chk(arranques == 0, "sin NVS el contador de arranques es 0 y se avisa");
+
+    printf("\nesperado: validas=%d firma_invalida=%d repetidas=%d csr=%d clave_cambiada=%d\n",
+           esp_validas, esp_manipuladas, esp_repetidas, esp_csr, esp_cambios);
     printf("test_medidor: %d fallos\n", fallos);
     return fallos == 0 ? 0 : 1;
 }

@@ -34,6 +34,41 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 27-10-2026 (noche): motor versión 0x03
+
+Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión
+(`rtl/top/motor_top.vhd`, `rtl/drbg/ctr_drbg.vhd`; especificación en
+`docs/mapa_registros.md`):
+
+- **`capturar` ya no puede exponer la semilla.** Es una orden más del
+  secuenciador: solo en modo test, con el motor libre y sin otra captura en
+  marcha (`cap_en_curso`); `sembrar`/`resembrar` se rechazan mientras hay
+  una captura en curso. Antes una captura lanzada durante una siembra dejaba
+  los bits de la semilla en el buffer, legible al activar modo test.
+- **`PETICIONES` no da la vuelta.** Generic `G_PET_BITS` (32 en hardware; el
+  banco usa 4): con el contador a todo unos el DRBG ignora `generar` y el
+  top rechaza `generar`/`aleatorio` con **`DIAG.agotado` (bit 2)** hasta
+  resembrar.
+- **`borrar_todo` (CONTROL bit 7)**, zeroización: clave, estado del DRBG y
+  contador (`ctr_drbg.borrar`), RETO, ALEATORIO y semilla a cero, clave nula
+  cargada en el CMAC (estado `ZEROIZANDO`). Se atiende también con alarma.
+- **CFG_KD de reset = 24** (generic `G_KD_RESET`; antes 7).
+- VERSION pasa a **0x03**. Prioridad de órdenes en una misma escritura:
+  borrar_todo, sembrar/resembrar, generar, aleatorio, autenticar, capturar.
+- Bancos: `tb_motor_top` pasos nuevos 5d (agotado, con `G_PET_BITS => 4`),
+  6a-6c (captura) y 8 (zeroización); `tb_ctr_drbg` con los puertos nuevos.
+  **Los siete bancos pasan** (`tb_motor_top` 55/55 comprobaciones) y
+  `verifica_top.py` 5/5 (`results/tb_motor_top.log`). Ojo al leer `PETICIONES` con `leer_bloque`:
+  el byte bajo queda a la izquierda del vector (`x"05000000"` = 5).
+- Modelo en host (`motor_sim.c`): mismas reglas, `motor_pet_max` y
+  `motor_capturando` para el banco; `test_verificador` pasos 11 (agotado) y
+  12 (`cero`); firmware: `CTL_BORRAR_TODO`, `DG_AGOTADO`, `MOTOR_VERSION 3`,
+  comando `cero` en el verificador. Banco host 0 fallos, firmware compila
+  (0 avisos). **Síntesis Yosys no repetida**: el área de
+  `docs/sintesis_resultados.md` es la de la versión 0x02.
+- Memoria: cap. 4 (EN y ES) con el párrafo de las cuatro reglas; PDF sin
+  regenerar.
+
 ## Estado al 27-10-2026 (tarde): el motor usado por un producto
 
 Rama `feat/lecturas-firmadas` (sobre `fix/salud-bloquea-salida`). Diseño y
@@ -54,21 +89,54 @@ porqués en **`docs/lecturas_firmadas.md`**.
   anterior. Seguridad acotada a 128 bits por el CTR_DRBG AES-128.
 - **`firmware/host_check/`** (antes dentro del verificador): `run_host.py`
   compila y corre `test_verificador.c` y `test_medidor.c` contra
-  `motor_sim.c` con **mbedtls real** (`--mbedtls`, vale el árbol de
-  ESP-IDF; lo compila con cmake) y pasa la salida del medidor por
-  `analysis/verifica_lecturas.py` (verifica con `cryptography`): 8 válidas,
-  1 manipulada y 1 repetida plantadas, CSR válida. Sin mbedtls real el
-  verificador usa `mbedtls_stub.c` (CMAC del modelo, no independiente) y el
-  medidor se salta. `motor_sim.c` siembra distinto en cada `sembrar`
-  (contador), CRC32 real y MAC fija. Log: `results/host_check.log`, 0 fallos.
-- **Compilado con ESP-IDF 5.3.5** (WSL): verificador esp32 231 kB y medidor
-  esp32c3 287 kB, 0 avisos (`results/verificador_build_esp32.log`,
-  `results/medidor_build_esp32c3.log`). Nada en placa.
+  `motor_sim.c` + `plataforma_sim.c` con **mbedtls real** (`--mbedtls`, vale
+  el árbol de ESP-IDF; lo compila con cmake) y pasa la salida del medidor
+  por `analysis/verifica_lecturas.py --permitir-cambio` (verifica con
+  `cryptography`): 9 válidas, 1 manipulada, 1 repetida y 2 cambios de clave
+  plantados, CSR válida. Sin mbedtls real el verificador usa
+  `mbedtls_stub.c` (CMAC del modelo, no independiente) y el medidor se
+  salta. `motor_sim.c` es solo el modelo (siembra diferida hasta que acaba,
+  abortada por alarma, resembrar sin estado rechazado, semilla distinta en
+  cada siembra, `motor_fallo_tras_aleatorio` para fallos a mitad);
+  `plataforma_sim.c` tiene ticks, rand, CRC32 real, MAC fija y una NVS de un
+  valor. Log: `results/host_check.log`, 0 fallos.
+- **Revisión independiente** del primer commit (otra sesión, sin mis
+  conclusiones): 13 hallazgos, todos corregidos o documentados. Los que
+  importan: el `memset` final de `motor_rng()` lo eliminaba el compilador
+  (ahora bucle `volatile`); `motor_orden()` espera a que el motor esté libre
+  **antes** de escribir CONTROL (tras un fallo de bus a mitad de orden la
+  siguiente se rechazaba); la secuencia de las lecturas lleva en el byte
+  alto un contador de arranques en NVS; `verifica_lecturas.py` va en una
+  sola pasada, cuenta y avisa de los cambios de pública (`clave_cambiada`,
+  fallo salvo `--permitir-cambio`) y un log vacío no pasa; con el bus caído
+  `clave` dice "ERROR I2C" y no "sin sembrar"; `lectura N` tope 1000. El
+  revisor señaló también un nombre en los agradecimientos de
+  `memoria/tfm_main*.tex`: es anterior a esta rama y decisión de Mario.
+- **Compilado con ESP-IDF 5.3.5** (WSL): verificador esp32 y medidor esp32c3,
+  0 avisos (`results/verificador_build_esp32.log`,
+  `results/medidor_build_esp32c3.log`; `$HOME`/`$IDF_PATH` enmascarados).
+- **QEMU** (`qemu-system-riscv32`/`-xtensa` de Espressif): sin motor el
+  medidor arranca y falla cerrado (`results/qemu_medidor_sin_motor.log`);
+  con `idf.py -B build_sim -DMOTOR_SIMULADO=1 build` (medidor y verificador)
+  el modelo del banco va dentro del firmware suplantando al driver I2C con
+  `--wrap` (+ `-u`, porque el objeto está en `libmain.a` y nadie lo llama) y
+  la secuencia completa corre en el chip emulado con el mbedtls del objetivo
+  y la NVS real; dos arranques sobre la misma flash y `verifica_lecturas.py`
+  sobre el log: `results/qemu_medidor_esp32c3*.log`. Pila mínima libre de la
+  tarea principal 10 568 B de 12 288. Verificador en QEMU esp32: 20 retos,
+  20 aciertos (`results/qemu_verificador_esp32.log`). En QEMU hay que dar
+  tiempo entre órdenes: la consola no es por interrupción y lo que llega
+  mientras firma se pierde. Nada en placa.
+- `run_host.py --sanear` (ASan+UBSan, `results/host_check_sanear.log`; ASan
+  encontró una fuga de la clave al "reiniciar") y
+  `analysis/fuzz_verifica_lecturas.py` (`results/fuzz_verifica_lecturas.log`;
+  encontró una excepción con una trama P que no era DER). Los dos en verde.
 - Memoria: cap. 5, sección nueva "The engine in a product" en inglés y
   español; PDF no regenerados. README actualizado.
 - Pendiente: guardar la clave (NVS cifrado o el motor como elemento seguro,
   que hoy solo guarda una AES-128 y no firma), hora real, resembrado por
-  `PETICIONES`, lecturas reales; y la lista de la revisión de abajo.
+  `PETICIONES`, lecturas reales, contador de arranques de un byte; y la
+  lista de la revisión de abajo.
 
 ## Estado al 27-10-2026: la alarma de salud bloquea la salida
 
@@ -100,11 +168,11 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   `chk(true, …)`). Sin compilar con ESP-IDF en este PC.
 - Memoria: cap. 4 actualizado en inglés y en español; **los PDF no están
   regenerados**.
-- Pendiente de la misma revisión, sin tocar: `capturar` sin modo test
-  durante una siembra deja la semilla en el buffer de captura; `CFG_KD` de
-  reset (7) muy por debajo del de diseño; sin XDC/SDC; `reseed_interval` no
-  impuesto; sin zeroization; condiciones A/B del ESP32 posiblemente con la
-  radio dormida (`rng_sampler.c` sin `sta_disconnected_pm = false`).
+- Pendiente de la misma revisión: sin XDC/SDC; sincronizador de reset y
+  `bit_cdc` sin reset; condiciones A/B del ESP32 posiblemente con la radio
+  dormida (`rng_sampler.c` sin `sta_disconnected_pm = false`). Lo demás
+  (captura y semilla, `CFG_KD` de reset, `reseed_interval`, zeroización) se
+  resolvió en la versión 0x03 (sección de arriba).
 
 ## Estado al cierre del 19-09-2026
 
@@ -224,7 +292,7 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   400 kHz, 3,3 V. Sin estiramiento de reloj: las órdenes largas
   (sembrar, generar) se lanzan escribiendo `CONTROL` (0x03) y se sondea
   `STATUS` (0x02) hasta que baje el bit `ocupado`.
-- Secuencia: leer `ID` (0x00) = 0xA5 y `VERSION` (0x01) = 0x02 → sondear
+- Secuencia: leer `ID` (0x00) = 0xA5 y `VERSION` (0x01) = 0x03 → sondear
   `DIAG` (0x0E) hasta `arrancado` → `CONTROL ← sembrar` → sondear →
   comprobar `DIAG.rechazada = 0`, `sembrado` y sin alarmas →
   `CONTROL ← generar` → sondear → `DIAG.rechazada = 0` → hay clave. Reto-respuesta: escribir 16 bytes en `RETO` (0x20),
@@ -240,7 +308,10 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   sin comprobar. Desde el 27-10 **con alarma no sale nada** (se rechazan
   sembrar, resembrar, generar y aleatorio) y no se siembra sin pasar el test
   de arranque. Toda orden ignorada o siembra abortada levanta
-  `DIAG.rechazada`. Detalle en `docs/mapa_registros.md`.
+  `DIAG.rechazada`. Desde la versión 0x03: `capturar` solo en modo test y
+  nunca durante una siembra (ni siembra durante una captura); `PETICIONES`
+  se para en 2^32−1 y `DIAG.agotado` pide resembrar; `borrar_todo` (bit 7)
+  zeroiza; CFG_KD arranca en 24. Detalle en `docs/mapa_registros.md`.
 - Aleatorio para el host: `CONTROL ← aleatorio` (bit 6), sondear, leer
   `ALEATORIO` (0x40, 32 bytes). Es una generación del DRBG **independiente
   de la clave**. Hasta el 15-09 `generar` dejaba la clave en ese registro

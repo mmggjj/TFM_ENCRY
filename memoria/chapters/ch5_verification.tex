@@ -234,9 +234,16 @@ one tampered reading (one bit of the energy field) and one replayed
 reading among eight valid ones, and the script must find exactly those
 two; the certificate request must parse, carry a valid self-signature and
 the device's public key. All checks pass. The firmware builds with
-ESP-IDF~5.3.5 for the ESP32-C3 into a 287~kB image. Nothing has run on a
-board: the engine exists only in simulation until the FPGA bring-up, and
-the model's entropy is an AES with a fixed seed, not a measurement.
+ESP-IDF~5.3.5 for the ESP32-C3, and it also runs on Espressif's QEMU
+emulation of that chip: without an engine every command fails closed, and
+with the engine model linked into the firmware in place of the \ac{I2C}
+driver (a build option, never for a board) the whole sequence runs on the
+emulated RISC-V core with the target build of mbedtls, and the PC script
+accepts its frames; the public key the emulated chip produces equals the
+one the host bench produces from the same engine blocks. Nothing has run
+on a board: the engine exists only in simulation until the FPGA bring-up,
+the model's entropy is an AES with a fixed seed, not a measurement, and
+the emulator says nothing about timing.
 
 \section{FPGA bring-up}
 \label{sec:bringup}

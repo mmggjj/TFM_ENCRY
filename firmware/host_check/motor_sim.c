@@ -28,6 +28,8 @@
 
 #include "esp_err.h"
 #include "driver/i2c_master.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /* ---------------------------------------------------------------- AES -- */
 
@@ -118,7 +120,8 @@ void motor_sim_cmac16(const uint8_t clave[16], const uint8_t msg[16], uint8_t ta
 #define ST_MODO_TEST     (1u << 7)
 
 /* Como el RTL: test de arranque, minimo de CFG_KD y "ocupado" que dura. El
- * tiempo es el de vTaskDelay, en ticks de 1 ms (FREERTOS_HZ = 1000). */
+ * tiempo es el tick del sistema (1 ms, FREERTOS_HZ = 1000): en el PC lo
+ * avanza el vTaskDelay de plataforma_sim.c; en el chip es el de verdad. */
 #define KD_MIN           6
 #define T_ARRANQUE       30u      /* ticks hasta pasar el test de arranque */
 #define T_SIEMBRA        20u
@@ -132,23 +135,29 @@ static struct {
     uint32_t peticiones;
     uint8_t siembras;
     bool sembrado, alarma, rechazada;
+    bool siembra_en_curso, siembra_nueva;
     uint32_t arranque_en, libre_en;
 } m;
 
-static uint32_t ticks;
+static uint32_t ahora(void) { return (uint32_t)xTaskGetTickCount(); }
 
 bool motor_modo_test = true;      /* el banco lo maneja */
 int  motor_fallo_bus = 0;         /* >0: las proximas N transacciones fallan */
 bool motor_colgado = false;       /* "ocupado" no baja nunca */
 int  motor_n_tramas = 0;          /* tramas al PC: una llamada al CRC cada una */
 int  motor_n_aleatorio = 0;       /* ordenes "aleatorio" aceptadas */
+int  motor_fallo_tras_aleatorio = 0; /* >0: falla la transaccion siguiente a la N-esima orden aleatorio aceptada */
+uint32_t motor_pet_max = 0xFFFFFFFFu; /* tope del contador de peticiones (2^32-1 en el RTL; el banco lo baja) */
+bool motor_capturando = false;     /* captura en curso: no se siembra */
+static bool iniciado;             /* motor_reset() hecho */
 
-static bool arrancado(void) { return !m.alarma && ticks >= m.arranque_en; }
-static bool ocupado(void) { return motor_colgado || ticks < m.libre_en; }
+static bool arrancado(void) { return !m.alarma && ahora() >= m.arranque_en; }
+static bool agotado(void) { return m.peticiones >= motor_pet_max; }
+static bool ocupado(void) { return motor_colgado || ahora() < m.libre_en; }
 
 void motor_alarma(bool a) { m.alarma = a; }
 const uint8_t *motor_clave(void) { return m.clave; }
-uint32_t motor_ticks(void) { return ticks; }
+uint32_t motor_ticks(void) { return ahora(); }
 
 static void inc_v(void) { for (int i = 15; i >= 0; i--) if (++m.drbg_v[i]) break; }
 
@@ -163,71 +172,113 @@ static void drbg_generar(uint8_t salida[32])
     inc_v(); aes128_encrypt(m.drbg_key, m.drbg_v, nv);
     memcpy(m.drbg_key, nk, 16);
     memcpy(m.drbg_v, nv, 16);
-    m.peticiones++;
+    if (m.peticiones < motor_pet_max) m.peticiones++;
 }
 
-/* Una orden por escritura, con la misma prioridad y las mismas condiciones
- * que motor_top.vhd. El resultado se aplica al aceptarla; "ocupado" dura
- * despues unos ticks para que el verificador tenga que sondear. */
-static void ejecutar_control(uint8_t v)
+/* La siembra es la unica orden que acaba despues: como en el RTL,
+ * "sembrado" sube al terminar, no al aceptarla, y una alarma a mitad la
+ * aborta dejando el DRBG como estaba y "rechazada" arriba. Se resuelve en
+ * cada acceso al bus, que es cuando el maestro puede verlo. */
+static void resolver_siembra(void)
 {
-    if (v & (1u << 3)) {                       /* borrar alarmas */
-        m.alarma = false;
-        m.arranque_en = ticks + T_ARRANQUE;    /* se repite el test de arranque */
-    }
-    if (v & (1u << 4)) {                       /* capturar */
-        for (size_t i = 0; i < sizeof m.captura; i++) m.captura[i] = (uint8_t)(rand() & 0xff);
-        m.status |= ST_CAPTURA_LLENA;
-    }
-    if (!(v & 0x67)) return;                   /* ninguna orden */
-    if (ocupado()) { m.rechazada = true; return; }
-
-    if (v & ((1u << 0) | (1u << 5))) {         /* sembrar / resembrar */
-        if (!arrancado() || m.cfg_kd < KD_MIN) { m.rechazada = true; return; }
+    if (!m.siembra_en_curso) return;
+    if (m.alarma) {
+        m.siembra_en_curso = false;
+        m.rechazada = true;
+        m.libre_en = ahora();
+    } else if (ahora() >= m.libre_en) {
+        m.siembra_en_curso = false;
         /* Semilla fija pero distinta en cada siembra, como lo seria una
          * entropia nueva: asi dos claves generadas tras resembrar no
          * coinciden, y el banco sigue siendo reproducible. */
-        if (v & (1u << 0)) {
+        if (m.siembra_nueva) {
             m.siembras++;
             for (int i = 0; i < 16; i++) { m.drbg_key[i] = (uint8_t)(0x5a ^ i ^ m.siembras); m.drbg_v[i] = (uint8_t)i; }
         }
         m.sembrado = true;
         m.peticiones = 1;
         m.status |= ST_SEMBRADO;
-        m.libre_en = ticks + T_SIEMBRA;
+    }
+}
+
+/* Zeroizacion (borrar_todo): clave, DRBG, RETO, ALEATORIO y contador. */
+static void borrar_todo(void)
+{
+    memset(m.clave, 0, sizeof m.clave);
+    memset(m.reto, 0, sizeof m.reto);
+    memset(m.aleatorio, 0, sizeof m.aleatorio);
+    memset(m.drbg_key, 0, sizeof m.drbg_key);
+    memset(m.drbg_v, 0, sizeof m.drbg_v);
+    m.peticiones = 0;
+    m.sembrado = false;
+    m.siembra_en_curso = false;
+    m.status &= (uint8_t)~(ST_SEMBRADO | ST_CLAVE_VALIDA | ST_ETIQ_LISTA);
+}
+
+/* Una orden por escritura, con la misma prioridad y las mismas condiciones
+ * que motor_top.vhd. El resultado se aplica al aceptarla (salvo la
+ * siembra, ver arriba); "ocupado" dura despues unos ticks para que el
+ * verificador tenga que sondear. */
+static void ejecutar_control(uint8_t v)
+{
+    if (v & (1u << 3)) {                       /* borrar alarmas */
+        m.alarma = false;
+        m.arranque_en = ahora() + T_ARRANQUE;    /* se repite el test de arranque */
+    }
+    if (!(v & 0xF7)) return;                   /* ninguna orden */
+    if (ocupado()) { m.rechazada = true; return; }
+
+    if (v & (1u << 7)) {                       /* borrar_todo: siempre */
+        borrar_todo();
+        m.libre_en = ahora() + T_ORDEN;
+    } else if (v & ((1u << 0) | (1u << 5))) {  /* sembrar / resembrar */
+        if (!arrancado() || m.cfg_kd < KD_MIN || motor_capturando) { m.rechazada = true; return; }
+        if ((v & (1u << 5)) && !m.sembrado) { m.rechazada = true; return; }  /* resembrar actua sobre un estado */
+        m.siembra_en_curso = true;
+        m.siembra_nueva = (v & (1u << 0)) != 0;
+        m.libre_en = ahora() + T_SIEMBRA;
     } else if (v & (1u << 1)) {                /* generar: solo la clave */
-        if (!m.sembrado || m.alarma) { m.rechazada = true; return; }
+        if (!m.sembrado || m.alarma || agotado()) { m.rechazada = true; return; }
         uint8_t s[32];
         drbg_generar(s);
         memcpy(m.clave, s, 16);
         m.status |= ST_CLAVE_VALIDA;
         m.status &= (uint8_t)~ST_ETIQ_LISTA;
-        m.libre_en = ticks + T_ORDEN;
+        m.libre_en = ahora() + T_ORDEN;
     } else if (v & (1u << 6)) {                /* aleatorio: generacion aparte */
-        if (!m.sembrado || m.alarma) { m.rechazada = true; return; }
+        if (!m.sembrado || m.alarma || agotado()) { m.rechazada = true; return; }
         drbg_generar(m.aleatorio);
         motor_n_aleatorio++;
-        m.libre_en = ticks + T_ORDEN;
-    } else {                                   /* autenticar */
+        if (motor_fallo_tras_aleatorio > 0 && motor_n_aleatorio == motor_fallo_tras_aleatorio)
+            motor_fallo_bus = 1;               /* el bus cae antes de poder leer el bloque */
+        m.libre_en = ahora() + T_ORDEN;
+    } else if (v & (1u << 2)) {                /* autenticar */
         if (!(m.status & ST_CLAVE_VALIDA)) { m.rechazada = true; return; }
         motor_sim_cmac16(m.clave, m.reto, m.etiqueta);
         m.status |= ST_ETIQ_LISTA;
-        m.libre_en = ticks + T_ORDEN;
+        m.libre_en = ahora() + T_ORDEN;
+    } else {                                   /* capturar: solo en modo test, una a la vez */
+        if (!motor_modo_test || motor_capturando) { m.rechazada = true; return; }
+        /* El modelo llena el buffer al instante; motor_capturando lo pone
+         * el banco cuando quiere una captura "larga". */
+        for (size_t i = 0; i < sizeof m.captura; i++) m.captura[i] = (uint8_t)(rand() & 0xff);
+        m.status |= ST_CAPTURA_LLENA;
     }
     m.rechazada = false;
 }
 
 static uint8_t leer_reg(uint8_t d)
 {
+    resolver_siembra();
     if (d == 0x00) return 0xA5;
-    if (d == 0x01) return 0x02;
+    if (d == 0x01) return 0x03;
     if (d == 0x02) return (uint8_t)(m.status | (ocupado() ? ST_OCUPADO : 0) |
                                     (m.alarma ? ST_ALM_RCT : 0) |
                                     (motor_modo_test ? ST_MODO_TEST : 0));
     if (d == 0x04) return m.cfg_kd;
     if (d == 0x05) return m.cfg_pag;
     if (d >= 0x0A && d <= 0x0D) return (uint8_t)(m.peticiones >> (8 * (d - 0x0A)));
-    if (d == 0x0E) return (uint8_t)((m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
+    if (d == 0x0E) return (uint8_t)((agotado() ? 4 : 0) | (m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
     if (d >= 0x10 && d <= 0x1F) return motor_modo_test ? m.clave[d - 0x10] : 0x00;
     if (d >= 0x30 && d <= 0x3F) return m.etiqueta[d - 0x30];
     if (d >= 0x40 && d <= 0x5F) return m.aleatorio[d - 0x40];
@@ -237,6 +288,7 @@ static uint8_t leer_reg(uint8_t d)
 
 static void escribir_reg(uint8_t d, uint8_t v)
 {
+    resolver_siembra();
     if (d == 0x03) ejecutar_control(v);
     else if (d == 0x04) { if (!ocupado()) m.cfg_kd = v; }
     else if (d == 0x05) m.cfg_pag = (uint8_t)(v & 3);
@@ -245,64 +297,55 @@ static void escribir_reg(uint8_t d, uint8_t v)
 
 void motor_reset(void)
 {
+    iniciado = true;
     memset(&m, 0, sizeof m);
-    m.cfg_kd = 7;
-    m.arranque_en = ticks + T_ARRANQUE;
+    m.cfg_kd = 24;                             /* G_KD_RESET */
+    m.arranque_en = ahora() + T_ARRANQUE;
     motor_colgado = false;
 }
 
 /* ----------------------------------------- el "bus": punteros y trama -- */
 
-esp_err_t i2c_master_transmit(i2c_master_dev_handle_t d, const uint8_t *buf,
-                              size_t n, int timeout_ms)
+/* En el PC estas funciones SON el driver (las cabeceras simuladas solo las
+ * declaran). En el chip, compilado con MOTOR_SIM_EN_CHIP, el enlazador las
+ * pone en lugar de las del driver de verdad con --wrap, y el I2C real se
+ * inicializa pero no se usa: asi el firmware completo corre en QEMU con el
+ * motor simulado detras del mismo bus. */
+#ifdef MOTOR_SIM_EN_CHIP
+#define SIM_TRANSMIT          __wrap_i2c_master_transmit
+#define SIM_TRANSMIT_RECEIVE  __wrap_i2c_master_transmit_receive
+#else
+#define SIM_TRANSMIT          i2c_master_transmit
+#define SIM_TRANSMIT_RECEIVE  i2c_master_transmit_receive
+#endif
+
+static void iniciar_si_hace_falta(void)
+{
+    if (!iniciado) { motor_reset(); iniciado = true; }
+}
+
+esp_err_t SIM_TRANSMIT(i2c_master_dev_handle_t d, const uint8_t *buf,
+                       size_t n, int timeout_ms)
 {
     (void)d; (void)timeout_ms;
+    iniciar_si_hace_falta();
     if (motor_fallo_bus > 0) { motor_fallo_bus--; return -1; }
     if (n < 1) return -1;
     for (size_t i = 1; i < n; i++) escribir_reg((uint8_t)(buf[0] + i - 1), buf[i]);
     return ESP_OK;
 }
 
-esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t d,
-                                      const uint8_t *w, size_t wn,
-                                      uint8_t *r, size_t rn, int timeout_ms)
+esp_err_t SIM_TRANSMIT_RECEIVE(i2c_master_dev_handle_t d,
+                               const uint8_t *w, size_t wn,
+                               uint8_t *r, size_t rn, int timeout_ms)
 {
     (void)d; (void)timeout_ms;
+    iniciar_si_hace_falta();
     if (motor_fallo_bus > 0) { motor_fallo_bus--; return -1; }
     if (wn < 1) return -1;
     for (size_t i = 0; i < rn; i++) r[i] = leer_reg((uint8_t)(w[0] + i));
     return ESP_OK;
 }
-
-esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *c, i2c_master_bus_handle_t *h)
-{ (void)c; *h = NULL; motor_reset(); return ESP_OK; }
-
-esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t b,
-                                    const i2c_device_config_t *c,
-                                    i2c_master_dev_handle_t *h)
-{ (void)b; (void)c; *h = NULL; return ESP_OK; }
-
-/* ------------------------------------------------- resto de la plataforma */
-
-void vTaskDelay(uint32_t t) { ticks += t; }
-uint32_t xTaskGetTickCount(void) { return ticks; }
-void esp_fill_random(void *buf, size_t len)
-{ for (size_t i = 0; i < len; i++) ((uint8_t *)buf)[i] = (uint8_t)(rand() & 0xff); }
-uint32_t esp_random(void) { return (uint32_t)rand(); }
-/* CRC-32 normal (el de zlib), que es lo que da la ROM con crc inicial 0:
- * asi verifica_lecturas.py acepta las tramas de este banco. */
-uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t *buf, uint32_t len)
-{
-    motor_n_tramas++;
-    crc = ~crc;
-    for (uint32_t i = 0; i < len; i++) {
-        crc ^= buf[i];
-        for (int b = 0; b < 8; b++) crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
-    }
-    return ~crc;
-}
-esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
-{ static const uint8_t m[6] = {0x7c, 0xdf, 0xa1, 0x00, 0x11, 0x22}; memcpy(mac, m, 6); return ESP_OK; }
 
 /* ---------------------------------------- autovalidacion del modelo ---- */
 

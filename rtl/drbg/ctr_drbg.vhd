@@ -23,12 +23,18 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity ctr_drbg is
+  generic (
+    -- Bits del contador de peticiones que cuentan para agotarlo (SP 800-90A,
+    -- reseed_interval). 32 en hardware; los bancos lo bajan para probarlo.
+    G_PET_BITS : positive := 32
+  );
   port (
     clk        : in  std_logic;
     rst_n      : in  std_logic;
 
     instanciar : in  std_logic;                       -- pulso: Key=V=0 y siembra
     resembrar  : in  std_logic;                       -- pulso: siembra sobre el estado
+    borrar     : in  std_logic;                       -- pulso: Key=V=0, sin estado, contador a 0
     entropia   : in  std_logic_vector(255 downto 0);
     nonce      : in  std_logic_vector(127 downto 0);
 
@@ -38,7 +44,10 @@ entity ctr_drbg is
     listo      : out std_logic;                       -- pulso al acabar cualquier orden
     ocupado    : out std_logic;
     sembrado   : out std_logic;                       -- hay estado valido
-    peticiones : out unsigned(31 downto 0)            -- reseed_counter
+    peticiones : out unsigned(31 downto 0);           -- reseed_counter
+    -- El contador llego a 2^G_PET_BITS - 1: no se genera mas hasta
+    -- resembrar. El contador no da la vuelta.
+    agotado    : out std_logic
   );
 end entity ctr_drbg;
 
@@ -109,6 +118,8 @@ begin
   ocupado    <= '0' when fase = REPOSO else '1';
   sembrado   <= valido;
   peticiones <= cnt_reseed;
+  agotado    <= '1' when cnt_reseed(G_PET_BITS - 1 downto 0) = (G_PET_BITS - 1 downto 0 => '1')
+                else '0';
 
   nucleo : entity work.aes_enc
     port map (clk => clk, rst_n => rst_n, arranca => aes_arranca,
@@ -139,7 +150,14 @@ begin
       case fase is
 
         when REPOSO =>
-          if instanciar = '1' or resembrar = '1' then
+          if borrar = '1' then
+            -- Zeroizacion: estado, semilla capturada y salida a cero.
+            key <= (others => '0'); v <= (others => '0');
+            valido <= '0'; cnt_reseed <= (others => '0');
+            ent_r <= (others => '0'); nonce_r <= (others => '0');
+            material <= (others => '0'); sal_r <= (others => '0');
+            listo <= '1';
+          elsif instanciar = '1' or resembrar = '1' then
             if instanciar = '1' then
               key <= (others => '0');
               v   <= (others => '0');
@@ -150,7 +168,10 @@ begin
             cadena <= (others => '0');
             fase <= DF_BCC;
             lanzado <= '0';
-          elsif generar = '1' and valido = '1' then
+          elsif generar = '1' and valido = '1'
+                and cnt_reseed(G_PET_BITS - 1 downto 0) /= (G_PET_BITS - 1 downto 0 => '1') then
+            -- Con el contador agotado la orden se ignora: el nivel superior
+            -- ya la rechaza, esto es por si alguien usa el DRBG suelto.
             paso <= 0;
             fase <= GEN;
             lanzado <= '0';
@@ -233,8 +254,10 @@ begin
                 cnt_reseed <= to_unsigned(1, 32);
                 listo      <= '1';
               else
-                -- Venimos de generar: contador +1.
-                cnt_reseed <= cnt_reseed + 1;
+                -- Venimos de generar: contador +1, sin dar la vuelta.
+                if cnt_reseed(G_PET_BITS - 1 downto 0) /= (G_PET_BITS - 1 downto 0 => '1') then
+                  cnt_reseed <= cnt_reseed + 1;
+                end if;
                 listo      <= '1';
               end if;
               fase <= REPOSO;

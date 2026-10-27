@@ -10,16 +10,16 @@ ESP32; si cambia uno, cambian los tres.
 | Dir | Nombre | Acceso | Contenido |
 |---|---|---|---|
 | 0x00 | ID | R | 0xA5, para saber que hay alguien al otro lado |
-| 0x01 | VERSION | R | 0x02 (0x01 hasta el 27-10-2026, sin DIAG ni test de arranque) |
+| 0x01 | VERSION | R | 0x03 (0x02: DIAG y test de arranque; 0x01 hasta el 27-10-2026). 0x03 anade `borrar_todo`, `DIAG.agotado`, las reglas de `capturar` y CFG_KD de reset 24 |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
-| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). Cambiarlo solo con el motor libre |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). **Tras el reset vale 24** (generico `G_KD_RESET`; hasta la version 0x02 era 7): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre |
 | 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
 | 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
 | 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |
 | 0x08 | APT_MAX_L | R | proporción máxima vista, byte bajo |
 | 0x09 | APT_MAX_H | R | proporción máxima vista, byte alto |
-| 0x0A–0x0D | PETICIONES | R | contador de peticiones del DRBG, 32 bits, byte bajo primero |
+| 0x0A–0x0D | PETICIONES | R | contador de peticiones del DRBG (`reseed_counter`), 32 bits, byte bajo primero. **No da la vuelta**: en 2^32−1 el motor rechaza `generar` y `aleatorio` hasta resembrar (`DIAG.agotado`) |
 | 0x0E | DIAG | R | ver bits abajo |
 | 0x10–0x1F | CLAVE | R | clave actual, 16 bytes. **Solo legible en modo test** |
 | 0x20–0x2F | RETO | W | nonce de 16 bytes para el reto-respuesta |
@@ -54,7 +54,8 @@ puesta seguían saliendo clave y ALEATORIO.
 | Bit | Nombre | Significado |
 |---|---|---|
 | 0 | arrancado | el test de arranque ha pasado: una ventana completa del APT (1024 muestras) sin alarma desde el reset o desde el último `borrar_alarmas` |
-| 1 | rechazada | la última orden escrita en CONTROL se ignoró (motor ocupado, alarma, sin arrancar, CFG_KD bajo, sin sembrar o sin clave) o, si era una siembra, se abortó. Se baja con la siguiente orden aceptada. `borrar_alarmas` y `capturar` no la tocan |
+| 1 | rechazada | la última orden escrita en CONTROL se ignoró (motor ocupado, alarma, sin arrancar, CFG_KD bajo, sin sembrar, sin clave, contador agotado, captura en curso o sin modo test) o, si era una siembra, se abortó. Se baja con la siguiente orden aceptada. `borrar_alarmas` no la toca |
+| 2 | agotado | el contador de peticiones está en su tope (2^32−1): `generar` y `aleatorio` se rechazan hasta `resembrar` o `sembrar` (SP 800-90A, `reseed_interval`) |
 
 ## Tests de salud y siembra
 
@@ -85,15 +86,18 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
 | 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE, los otros 128 se descartan; recarga el autenticador. **No deja nada legible** |
 | 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
 | 3 | borrar_alarmas | baja las alarmas de salud |
-| 4 | capturar | llena el buffer de captura con un trozo de bits crudos |
+| 4 | capturar | llena el buffer de captura con un trozo de bits crudos. **Solo en modo test** (sin él el buffer no se lee), con el motor libre y sin otra captura en marcha. Mientras hay una captura en curso se rechazan `sembrar` y `resembrar`, y al revés: el buffer recoge los mismos bits crudos que la semilla, y hasta la versión 0x02 una captura lanzada durante una siembra dejaba la semilla legible en modo test |
 | 5 | resembrar | como sembrar pero **sobre** el estado actual, sin borrarlo |
 | 6 | aleatorio | pide otros 256 bits al DRBG y los deja en ALEATORIO. Generación independiente: el DRBG ya actualizó su estado tras `generar`, así que no hay relación calculable con la clave |
+| 7 | borrar_todo | zeroización: CLAVE, el estado del DRBG (clave, V, contador), RETO, ALEATORIO y la semilla recogida a cero, y la clave nula cargada en el autenticador. Se atiende siempre que el motor esté libre, también con alarma. Después hay que `sembrar` (no `resembrar`: no hay estado) y `generar`. El buffer de captura no se borra: por la regla de `capturar`, nunca contiene bits de una semilla |
 
 **Historial:** hasta el 15-09-2026 `generar` dejaba sus 256 bits en
 ALEATORIO, legible sin modo test, y los 128 primeros eran la clave: **el
 registro filtraba la clave**. Se detectó en la revisión previa al
 traspaso y se separó en dos órdenes. El banco `tb_motor_top` comprueba
 ahora que ALEATORIO no contiene la clave en ninguna de sus mitades.
+
+Una orden por escritura: si llegan varios bits a la vez se atiende el de mayor prioridad, en este orden: `borrar_todo`, `sembrar`/`resembrar`, `generar`, `aleatorio`, `autenticar`, `capturar`. `borrar_alarmas` va aparte y se atiende siempre, junto con la orden que acompañe.
 
 Las órdenes largas (sembrar, generar) no estiran el reloj I2C: el maestro
 las lanza, sondea `ocupado` en STATUS y recoge el resultado después. Es
@@ -141,11 +145,13 @@ siendo del maestro.
    rechazo de una orden que acabó enseguida (antes había que deducirlo de
    `sembrado`, que se queda a 1 de la siembra anterior). El banco
    `tb_motor_top` (paso 2a) comprueba el rechazo.
-2. **Política de resembrado, del maestro.** `PETICIONES` (0x0A–0x0D) es el
-   `reseed_counter` de SP 800-90A: vale 1 tras sembrar y sube en cada
-   `generar`. El motor **no** lo compara con ningún umbral ni rechaza generar
-   por contador. Es el maestro quien debe vigilarlo y lanzar `resembrar` muy
-   por debajo del límite de 2^48 de la norma.
+2. **Política de resembrado, del maestro, con tope en el hardware.**
+   `PETICIONES` (0x0A–0x0D) es el `reseed_counter` de SP 800-90A: vale 1
+   tras sembrar y sube en cada `generar` o `aleatorio`. Desde la versión
+   0x03 el contador no da la vuelta y en 2^32−1 el motor rechaza `generar` y
+   `aleatorio` (`DIAG.agotado`) hasta resembrar; es el tope que cabe en 32
+   bits, por debajo del 2^48 de la norma. Sigue siendo el maestro quien
+   decide cuándo resembrar antes de llegar ahí.
 3. **`CFG_KD` solo con el motor libre, impuesto por hardware.** Una escritura
    de `CFG_KD` con una orden en curso **se ignora**: cambiar la tasa de
    muestreo a mitad de un sembrado invalidaría el modelo estocástico de esa

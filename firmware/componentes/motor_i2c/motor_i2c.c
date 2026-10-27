@@ -86,8 +86,13 @@ esp_err_t motor_orden(uint8_t ctl, uint32_t max_ms, uint8_t *st)
 {
     uint8_t diag = 0;
     *st = 0;
-    if (motor_reg_escribir1(REG_CONTROL, ctl) != ESP_OK) return ESP_FAIL;
+    /* "Ocupado: no mandar otra orden" es obligacion del maestro. Tras un
+     * fallo de bus a mitad de una orden el motor puede seguir ocupado un
+     * instante, y la siguiente orden se rechazaria sin motivo. */
     esp_err_t e = motor_esperar_libre(max_ms, st);
+    if (e != ESP_OK) return e;
+    if (motor_reg_escribir1(REG_CONTROL, ctl) != ESP_OK) return ESP_FAIL;
+    e = motor_esperar_libre(max_ms, st);
     if (e != ESP_OK) return e;
     if (motor_reg_leer(REG_DIAG, &diag, 1) != ESP_OK) return ESP_FAIL;
     return (diag & DG_RECHAZADA) ? ESP_ERR_INVALID_STATE : ESP_OK;
@@ -116,6 +121,15 @@ esp_err_t motor_aleatorio(uint8_t bloque[32])
     return motor_reg_leer(REG_ALEATORIO, bloque, 32);
 }
 
+/* Borrado que el compilador no puede quitar: un memset sobre una variable
+ * que muere justo despues desaparece con -O2/-Os (comprobado en el
+ * ensamblador), y el ultimo bloque del motor se quedaba en la pila. */
+static void borrar(uint8_t *p, size_t n)
+{
+    volatile uint8_t *v = p;
+    while (n--) *v++ = 0;
+}
+
 int motor_rng(void *ctx, unsigned char *salida, size_t n)
 {
     (void)ctx;
@@ -125,6 +139,7 @@ int motor_rng(void *ctx, unsigned char *salida, size_t n)
     while (resto > 0) {
         if (motor_aleatorio(b) != ESP_OK) {
             memset(salida, 0, n);
+            borrar(b, sizeof b);
             return MOTOR_ERR_RNG;
         }
         rng_bloques++;
@@ -133,7 +148,7 @@ int motor_rng(void *ctx, unsigned char *salida, size_t n)
         p += k;
         resto -= k;
     }
-    memset(b, 0, sizeof b);
+    borrar(b, sizeof b);
     return 0;
 }
 

@@ -24,6 +24,7 @@
  *   aleatorio N  vuelca N bloques de 32 bytes del DRBG al PC
  *   crudo N   vuelca N trozos del buffer de captura al PC
  *   esp N     vuelca N bloques de esp_random() al PC (comparacion)
+ *   cero      zeroiza el motor (clave, DRBG, RETO, ALEATORIO)
  */
 
 #include <stdio.h>
@@ -83,12 +84,23 @@ static void cmd_id(void)
     motor_reg_leer(REG_DIAG, &diag, 1);
     st = motor_status();
     printf("id 0x%02x version 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d "
-           "alm_apt=%d clave=%d captura=%d etiqueta=%d test=%d arrancado=%d rechazada=%d\n",
+           "alm_apt=%d clave=%d captura=%d etiqueta=%d test=%d arrancado=%d rechazada=%d agotado=%d\n",
            id, ver, st,
            !!(st & ST_SEMBRADO), !!(st & ST_OCUPADO), !!(st & ST_ALM_RCT),
            !!(st & ST_ALM_APT), !!(st & ST_CLAVE_VALIDA), !!(st & ST_CAPTURA_LLENA),
            !!(st & ST_ETIQ_LISTA), !!(st & ST_MODO_TEST),
-           !!(diag & DG_ARRANCADO), !!(diag & DG_RECHAZADA));
+           !!(diag & DG_ARRANCADO), !!(diag & DG_RECHAZADA), !!(diag & DG_AGOTADO));
+}
+
+/* Zeroizacion del motor: clave, estado del DRBG, RETO y ALEATORIO a cero.
+ * La clave provisionada deja de valer. */
+static void cmd_cero(void)
+{
+    uint8_t st;
+    esp_err_t e = motor_orden(CTL_BORRAR_TODO, T_ORDEN_MS, &st);
+    hay_clave = false;
+    printf("cero: %s%s\n", e == ESP_OK ? "ok, motor borrado; hay que sembrar de nuevo" : motor_texto_err(e),
+           (e == ESP_OK && ((st & ST_SEMBRADO) || (st & ST_CLAVE_VALIDA))) ? " PERO STATUS sigue con estado" : "");
 }
 
 static void cmd_sembrar(void)
@@ -268,7 +280,7 @@ static void cmd_esp(int n)
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N crudo N esp N\n");
+    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N crudo N esp N cero\n");
     for (;;) {
         if (!fgets(linea, sizeof linea, stdin)) { vTaskDelay(pdMS_TO_TICKS(50)); continue; }
         char cmd[16] = {0}; int arg = 1;
@@ -281,6 +293,7 @@ static void bucle_consola(void)
         else if (!strcmp(cmd, "aleatorio")) cmd_aleatorio(arg);
         else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg);
         else if (!strcmp(cmd, "esp"))     cmd_esp(arg);
+        else if (!strcmp(cmd, "cero"))    cmd_cero();
         else if (cmd[0])                  printf("comando desconocido: %s\n", cmd);
     }
 }

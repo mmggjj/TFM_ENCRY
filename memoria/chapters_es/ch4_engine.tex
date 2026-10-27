@@ -171,6 +171,24 @@ ventana que contiene su último bit; la semilla es más corta que la
 ventana, así que de otro modo entraría en el generador antes de que el
 test de proporción la hubiera juzgado.
 
+Cuatro reglas más salieron de revisar el secuenciador contra el mapa de
+registros y no contra la norma. El buffer de captura de bits en bruto
+registra los mismos bits de los que se recoge la semilla, de modo que una
+captura lanzada durante una siembra dejaba la semilla legible en modo de
+prueba; ahora capturar es una orden de modo de prueba que se rechaza con
+el motor ocupado, y la siembra se rechaza mientras hay una captura en
+curso. El contador de peticiones del \ac{DRBG} ya no da la vuelta: en su
+tope de 32 bits el motor se niega a generar hasta que se resiembra y lo
+indica en un bit de diagnóstico, que es el límite por hardware de la
+política de resembrado que el anfitrión sigue teniendo que aplicar mucho
+antes. Una orden de borrado total pone a cero la clave, el estado y el
+contador del generador, el reto, el registro aleatorio y la semilla
+recogida, y carga la clave nula en el autenticador; se atiende incluso
+con alarma, y después hay que volver a sembrar. Y el divisor de muestreo
+se reinicia a su máximo y no a un valor pequeño, de modo que un
+anfitrión que olvide configurarlo siembra a la tasa más lenta y con más
+entropía por bit, nunca por debajo del ajuste caracterizado.
+
 El banco de pruebas inyecta los modos de fallo para los que existen los
 tests: una fuente sana supera veinte ventanas (peor racha 13, peor
 proporción 540); una fuente atascada dispara el test de repeticiones

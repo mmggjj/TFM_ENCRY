@@ -35,6 +35,8 @@
 #include "esp_mac.h"
 #include "esp_random.h"
 #include "esp_rom_crc.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 #include "motor_i2c.h"
 #include "lectura.h"
 
@@ -59,6 +61,15 @@ static clave_equipo_t clave;
 static lectura_t actual;          /* la ultima lectura emitida */
 static uint64_t energia_mwh;      /* acumulado con mas resolucion que Wh */
 static uint32_t ult_instante_ms;
+
+/* La secuencia tiene que crecer tambien a traves de los reinicios, o el
+ * receptor rechazaria todo lo posterior a un reinicio como repetido (si
+ * guarda la ultima) o aceptaria reinyecciones de antes (si no la guarda).
+ * Byte alto: contador de arranques en NVS; 24 bits bajos: lecturas desde
+ * el arranque. */
+static uint32_t arranques;
+static uint32_t n_lecturas;
+#define MAX_LECTURAS_ARRANQUE 0xFFFFFFu
 
 static int rng_chip(void *ctx, unsigned char *salida, size_t n)
 {
@@ -91,12 +102,16 @@ static void cmd_id(void)
     if (ver < MOTOR_VERSION) ESP_LOGE(TAG, "VERSION 0x%02x: motor sin DIAG ni test de arranque", ver);
     motor_reg_leer(REG_DIAG, &diag, 1);
     st = motor_status();
+    /* pila_libre: minimo de pila que le ha quedado a esta tarea desde el
+     * arranque (bytes en ESP-IDF); dice si los 12 KiB del sdkconfig sobran. */
     printf("id 0x%02x version 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d "
-           "alm_apt=%d arrancado=%d rechazada=%d clave_equipo=%d bloques_rng=%" PRIu32 "\n",
+           "alm_apt=%d arrancado=%d rechazada=%d agotado=%d clave_equipo=%d bloques_rng=%" PRIu32
+           " arranques=%" PRIu32 " pila_libre=%u\n",
            id, ver, st,
            !!(st & ST_SEMBRADO), !!(st & ST_OCUPADO), !!(st & ST_ALM_RCT),
            !!(st & ST_ALM_APT), !!(diag & DG_ARRANCADO), !!(diag & DG_RECHAZADA),
-           clave.valida, motor_rng_bloques());
+           !!(diag & DG_AGOTADO), clave.valida, motor_rng_bloques(), arranques,
+           (unsigned)uxTaskGetStackHighWaterMark(NULL));
 }
 
 static void cmd_sembrar(void)
@@ -138,12 +153,20 @@ static void cmd_clave(void)
     /* Toda la entropia de la clave sale del motor. Si el motor rechaza
      * (sin sembrar, alarma) o el bus falla, no hay clave nueva: no se
      * rellena con otra fuente. */
+    motor_io_reiniciar();
     int r = clave_generar(&clave, motor_rng, NULL);
     if (r != 0) {
-        uint8_t st = motor_status();
-        printf("clave: FALLO, el motor no da aleatorio (%d)%s%s; %s\n", r,
+        const char *sigue = clave.valida ? "sigue la clave anterior" : "no hay clave";
+        if (!motor_io_ok()) {
+            /* Con el bus caido STATUS se lee como 0 y pareceria "sin sembrar". */
+            printf("clave: FALLO, ERROR I2C (%d); %s\n", r, sigue);
+            return;
+        }
+        uint8_t st = motor_status(), diag = 0;
+        motor_reg_leer(REG_DIAG, &diag, 1);
+        printf("clave: FALLO, el motor no da aleatorio (%d)%s%s%s; %s\n", r,
                (st & ST_SEMBRADO) ? "" : " (sin sembrar)", motor_texto_alarmas(st),
-               clave.valida ? "sigue la clave anterior" : "no hay clave");
+               (diag & DG_AGOTADO) ? " (contador agotado: resembrar)" : "", sigue);
         return;
     }
     printf("clave: ok, P-256 con %" PRIu32 " bloques de 32 bytes del motor\n",
@@ -169,10 +192,11 @@ static void siguiente_lectura(void)
     uint32_t t = ahora_ms();
     energia_mwh += (uint64_t)actual.potencia_w * (t - ult_instante_ms) / 3600u;
     ult_instante_ms = t;
-    actual.secuencia++;
+    n_lecturas++;
+    actual.secuencia = (arranques << 24) | n_lecturas;
     actual.instante = t / 1000u;
     actual.energia_wh = (uint32_t)(energia_mwh / 1000u);
-    actual.potencia_w = 1000u + 50u * (actual.secuencia % 7u);
+    actual.potencia_w = 1000u + 50u * (n_lecturas % 7u);
 }
 
 static void cmd_lectura(int n)
@@ -180,7 +204,9 @@ static void cmd_lectura(int n)
     uint8_t trama[LECTURA_BYTES + FIRMA_MAX];
     size_t nf = 0;
     if (!clave.valida) { printf("lectura: primero 'clave'\n"); return; }
+    if (n > 1000) { printf("lectura: como mucho 1000 de una vez\n"); return; }
     for (int i = 0; i < n; i++) {
+        if (n_lecturas >= MAX_LECTURAS_ARRANQUE) { printf("lectura: secuencia agotada, reiniciar\n"); return; }
         siguiente_lectura();
         lectura_serializar(&actual, trama);
         int r = clave_firmar(&clave, trama, trama + LECTURA_BYTES, FIRMA_MAX, &nf, rng_chip, NULL);
@@ -217,15 +243,49 @@ static void bucle_consola(void)
     }
 }
 
+/* Contador de arranques en NVS. Sin NVS se avisa y la secuencia solo vale
+ * dentro del arranque: nunca se firma con una secuencia que parezca
+ * persistente sin serlo. */
+static void contar_arranque(void)
+{
+    nvs_handle_t h;
+    uint32_t n = 0;
+    arranques = 0;
+    esp_err_t e = nvs_flash_init();
+    if (e == ESP_ERR_NVS_NO_FREE_PAGES || e == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        e = nvs_flash_init();
+    }
+    if (e == ESP_OK) e = nvs_open("medidor", NVS_READWRITE, &h);
+    if (e != ESP_OK) {
+        ESP_LOGE(TAG, "sin NVS (0x%x): la secuencia no sobrevive al reinicio", e);
+        return;
+    }
+    e = nvs_get_u32(h, "arranques", &n);
+    if (e != ESP_OK && e != ESP_ERR_NVS_NOT_FOUND) n = 0;
+    n++;
+    if (nvs_set_u32(h, "arranques", n) != ESP_OK || nvs_commit(h) != ESP_OK) {
+        ESP_LOGE(TAG, "NVS no guarda el contador de arranques");
+        n = 0;
+    }
+    nvs_close(h);
+    arranques = n & 0xFFu;
+}
+
 static void iniciar_medidor(void)
 {
-    clave_iniciar(&clave);
+    /* clave_borrar y no clave_iniciar: si hubiera una clave (el banco
+     * "reinicia" llamando aqui otra vez) se borra y se libera; sobre el
+     * estatico a cero es lo mismo que iniciar. Lo encontro ASan. */
+    clave_borrar(&clave);
     memset(&actual, 0, sizeof actual);
     /* id del equipo: la MAC base del chip, que es unica, rellena a 8 bytes */
     esp_efuse_mac_get_default(actual.id);
     actual.potencia_w = 1000;
     energia_mwh = 0;
+    n_lecturas = 0;
     ult_instante_ms = ahora_ms();
+    contar_arranque();
 }
 
 void app_main(void)

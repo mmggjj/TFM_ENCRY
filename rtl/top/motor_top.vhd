@@ -29,7 +29,15 @@ entity motor_top is
     -- poco jitter; los tests de salud no lo detectan. Antes esto era una
     -- obligacion del maestro que el hardware no imponia; ahora la impone.
     -- 6 (K_D = 64) para anillos a velocidad fisica con reloj de 100 MHz.
-    G_KD_MIN     : natural := 6
+    G_KD_MIN     : natural := 6;
+    -- CFG_KD tras el reset. El maximo: un maestro que no lo escriba
+    -- siembra con la tasa mas lenta y mas entropia por bit, nunca con una
+    -- por debajo de la caracterizada. Antes arrancaba en 7 (K_D = 128).
+    G_KD_RESET   : natural := 24;
+    -- Bits del contador de peticiones que cuentan para agotarlo: con todos
+    -- a uno el DRBG no genera mas hasta resembrar (SP 800-90A,
+    -- reseed_interval). 32 en hardware; el banco lo baja para probarlo.
+    G_PET_BITS   : positive := 32
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -47,7 +55,7 @@ architecture rtl of motor_top is
   -- Anillos y muestreo
   signal ro1, ro2      : std_logic;
   signal en_anillos    : std_logic := '0';
-  signal kd_sel        : unsigned(4 downto 0) := to_unsigned(7, 5);
+  signal kd_sel        : unsigned(4 downto 0) := to_unsigned(G_KD_RESET, 5);
   signal bit_ro, stb_ro : std_logic;          -- dominio ro2
   signal bit_s, stb_s   : std_logic;          -- dominio clk
 
@@ -64,8 +72,11 @@ architecture rtl of motor_top is
   -- distingue un rechazo de una orden que acabo enseguida.
   signal rechazada   : std_logic := '0';
 
-  -- Captura
+  -- Captura. Mientras hay una captura en curso no se siembra, y al reves:
+  -- el buffer recoge los mismos bits crudos que la semilla, y una captura
+  -- lanzada durante una siembra dejaba la semilla legible en modo test.
   signal cap_arranca : std_logic := '0';
+  signal cap_en_curso : std_logic := '0';
   signal cap_lleno   : std_logic;
   signal cap_dir     : std_logic_vector(15 downto 0);
   signal cap_dato    : std_logic_vector(7 downto 0);
@@ -78,9 +89,9 @@ architecture rtl of motor_top is
   signal siembra_es_reseed : std_logic := '0';
 
   -- DRBG
-  signal drbg_inst, drbg_reseed, drbg_gen : std_logic := '0';
+  signal drbg_inst, drbg_reseed, drbg_gen, drbg_borrar : std_logic := '0';
   signal drbg_salida : std_logic_vector(255 downto 0);
-  signal drbg_listo, drbg_ocupado, drbg_sembrado : std_logic;
+  signal drbg_listo, drbg_ocupado, drbg_sembrado, drbg_agotado : std_logic;
   signal drbg_pet    : unsigned(31 downto 0);
   signal aleatorio   : std_logic_vector(255 downto 0) := (others => '0');
 
@@ -101,8 +112,11 @@ architecture rtl of motor_top is
   -- registro ALEATORIO, legible sin modo test, contenia la clave.
   -- VALIDANDO espera a que se cierre la ventana del APT que contiene el
   -- ultimo bit de la semilla: hasta entonces esos bits no estan evaluados.
+  -- ZEROIZANDO (orden borrar_todo) deja clave, ALEATORIO, RETO, semilla y
+  -- el estado del DRBG a cero y carga la clave nula en el autenticador.
   type t_orden is (LIBRE, SEMBRANDO, VALIDANDO, ESPERA_DRBG, GENERANDO,
-                   CARGANDO_CLAVE, GENERANDO_ALEATORIO, AUTENTICANDO);
+                   CARGANDO_CLAVE, GENERANDO_ALEATORIO, AUTENTICANDO,
+                   ZEROIZANDO);
   signal orden : t_orden := LIBRE;
   signal ocupado : std_logic;
 
@@ -160,8 +174,10 @@ begin
   -- Criptografia
   -- ------------------------------------------------------------------
   u_drbg : entity work.ctr_drbg
+    generic map (G_PET_BITS => G_PET_BITS)
     port map (clk => clk, rst_n => rst_n,
               instanciar => drbg_inst, resembrar => drbg_reseed,
+              borrar => drbg_borrar, agotado => drbg_agotado,
               entropia => semilla(383 downto 128),
               nonce => semilla(127 downto 0),
               generar => drbg_gen, salida => drbg_salida,
@@ -200,7 +216,7 @@ begin
     reg_rdato <= x"00";
     case d is
       when 16#00# => reg_rdato <= x"A5";
-      when 16#01# => reg_rdato <= x"02";
+      when 16#01# => reg_rdato <= x"03";
       when 16#02# => reg_rdato <= status;
       when 16#04# => reg_rdato <= "000" & std_logic_vector(kd_sel);
       when 16#05# => reg_rdato <= "000000" & std_logic_vector(pagina);
@@ -212,7 +228,7 @@ begin
       when 16#0B# => reg_rdato <= std_logic_vector(drbg_pet(15 downto 8));
       when 16#0C# => reg_rdato <= std_logic_vector(drbg_pet(23 downto 16));
       when 16#0D# => reg_rdato <= std_logic_vector(drbg_pet(31 downto 24));
-      when 16#0E# => reg_rdato <= "000000" & rechazada & arrancado;
+      when 16#0E# => reg_rdato <= "00000" & drbg_agotado & rechazada & arrancado;
       when 16#10# to 16#1F# =>
         if modo_test = '1' then
           reg_rdato <= byte_de(clave, d - 16#10#);
@@ -235,12 +251,12 @@ begin
   begin
     if rst_n = '0' then
       en_anillos <= '0';
-      kd_sel <= to_unsigned(7, 5);
+      kd_sel <= to_unsigned(G_KD_RESET, 5);
       pagina <= (others => '0');
-      borrar_alm <= '0'; cap_arranca <= '0';
+      borrar_alm <= '0'; cap_arranca <= '0'; cap_en_curso <= '0';
       recogiendo <= '0'; n_recogidos <= (others => '0');
       semilla <= (others => '0'); siembra_es_reseed <= '0';
-      drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0';
+      drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0'; drbg_borrar <= '0';
       aleatorio <= (others => '0');
       clave <= (others => '0'); clave_valida <= '0';
       cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
@@ -252,10 +268,14 @@ begin
     elsif rising_edge(clk) then
       -- Pulsos de un ciclo
       borrar_alm <= '0'; cap_arranca <= '0';
-      drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0';
+      drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0'; drbg_borrar <= '0';
       cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
 
       en_anillos <= '1';    -- los anillos corren siempre tras el reset
+
+      if cap_lleno = '1' then
+        cap_en_curso <= '0';
+      end if;
 
       -- Test de arranque. Borrar las alarmas reinicia la ventana del APT y
       -- obliga a pasarlo de nuevo.
@@ -273,17 +293,25 @@ begin
             if reg_wdato(3) = '1' then
               borrar_alm <= '1';
             end if;
-            if reg_wdato(4) = '1' then
-              cap_arranca <= '1';
-            end if;
             if orden = LIBRE then
-              -- Sembrar exige el test de arranque pasado, ninguna alarma y
-              -- un divisor por encima del minimo: con CFG_KD bajo la semilla
-              -- seria de calidad no garantizada y ningun test lo delataria.
-              -- Generar y aleatorio exigen ninguna alarma: con la fuente
-              -- degradada no sale nada del motor (SP 800-90B 4.3).
-              if reg_wdato(0) = '1' or reg_wdato(5) = '1' then
-                if alm = '0' and arrancado = '1'
+              -- Una orden por escritura, la de mayor prioridad primero.
+              -- Sembrar exige el test de arranque pasado, ninguna alarma, un
+              -- divisor por encima del minimo (con CFG_KD bajo la semilla
+              -- seria de calidad no garantizada y ningun test lo delataria)
+              -- y ninguna captura en curso. Generar y aleatorio exigen
+              -- ninguna alarma (con la fuente degradada no sale nada del
+              -- motor, SP 800-90B 4.3) y el contador de peticiones sin
+              -- agotar. Borrar_todo se atiende siempre.
+              if reg_wdato(7) = '1' then
+                clave <= (others => '0'); clave_valida <= '0';
+                aleatorio <= (others => '0'); reto <= (others => '0');
+                semilla <= (others => '0'); etiqueta_lista <= '0';
+                drbg_borrar <= '1';
+                cmac_carga <= '1';               -- clave nula al autenticador
+                rechazada <= '0';
+                orden <= ZEROIZANDO;
+              elsif reg_wdato(0) = '1' or reg_wdato(5) = '1' then
+                if alm = '0' and arrancado = '1' and cap_en_curso = '0'
                    and to_integer(kd_sel) >= G_KD_MIN then
                   siembra_es_reseed <= reg_wdato(5);
                   recogiendo  <= '1';
@@ -294,7 +322,7 @@ begin
                   rechazada <= '1';
                 end if;
               elsif reg_wdato(1) = '1' then
-                if drbg_sembrado = '1' and alm = '0' then
+                if drbg_sembrado = '1' and alm = '0' and drbg_agotado = '0' then
                   drbg_gen <= '1';
                   rechazada <= '0';
                   orden <= GENERANDO;
@@ -302,7 +330,7 @@ begin
                   rechazada <= '1';
                 end if;
               elsif reg_wdato(6) = '1' then
-                if drbg_sembrado = '1' and alm = '0' then
+                if drbg_sembrado = '1' and alm = '0' and drbg_agotado = '0' then
                   drbg_gen <= '1';
                   rechazada <= '0';
                   orden <= GENERANDO_ALEATORIO;
@@ -319,9 +347,20 @@ begin
                 else
                   rechazada <= '1';
                 end if;
+              elsif reg_wdato(4) = '1' then
+                -- Capturar: solo en modo test (sin el, el buffer no se puede
+                -- leer y una captura solo serviria para guardar bits), con
+                -- el motor libre y sin otra captura en marcha.
+                if modo_test = '1' and cap_en_curso = '0' then
+                  cap_arranca <= '1';
+                  cap_en_curso <= '1';
+                  rechazada <= '0';
+                else
+                  rechazada <= '1';
+                end if;
               end if;
-            elsif (reg_wdato(0) or reg_wdato(1) or reg_wdato(2) or
-                   reg_wdato(5) or reg_wdato(6)) = '1' then
+            elsif (reg_wdato(0) or reg_wdato(1) or reg_wdato(2) or reg_wdato(4) or
+                   reg_wdato(5) or reg_wdato(6) or reg_wdato(7)) = '1' then
               rechazada <= '1';          -- orden con el motor ocupado
             end if;
           when 16#04# =>
@@ -411,6 +450,13 @@ begin
           elsif cmac_listo = '1' then
             etiqueta_lista <= '1';
             cmac_en_curso <= '0';
+            orden <= LIBRE;
+          end if;
+
+        when ZEROIZANDO =>
+          -- El DRBG se borra en un ciclo; el autenticador tarda en expandir
+          -- la clave nula. clave_valida se queda a 0.
+          if cmac_clave_lista = '1' and drbg_ocupado = '0' then
             orden <= LIBRE;
           end if;
       end case;

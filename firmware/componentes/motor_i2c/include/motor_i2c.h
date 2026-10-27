@@ -32,7 +32,7 @@
 #define REG_CAPTURA      0x80
 
 #define MOTOR_ID         0xA5
-#define MOTOR_VERSION    0x02
+#define MOTOR_VERSION    0x03
 
 #define ST_SEMBRADO      (1u << 0)
 #define ST_OCUPADO       (1u << 1)
@@ -50,9 +50,11 @@
 #define CTL_CAPTURAR     (1u << 4)
 #define CTL_RESEMBRAR    (1u << 5)
 #define CTL_ALEATORIO    (1u << 6)
+#define CTL_BORRAR_TODO  (1u << 7)   /* zeroizacion: clave, DRBG, RETO, ALEATORIO */
 
 #define DG_ARRANCADO     (1u << 0)
 #define DG_RECHAZADA     (1u << 1)
+#define DG_AGOTADO       (1u << 2)   /* contador de peticiones al tope: resembrar */
 
 /* Tiempos de espera, en tiempo real. Con CFG_KD = 24 y el anillo a ~700 MHz
  * un bit tarda 24 ms: el test de arranque (1024 bits) ~25 s y una siembra

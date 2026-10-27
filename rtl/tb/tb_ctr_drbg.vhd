@@ -51,6 +51,7 @@ begin
   dut : entity work.ctr_drbg
     port map (clk => clk, rst_n => rst_n,
               instanciar => instanciar, resembrar => resembrar,
+              borrar => '0', agotado => open,
               entropia => entropia, nonce => nonce,
               generar => generar, salida => salida,
               listo => listo, ocupado => ocupado, sembrado => sembrado,

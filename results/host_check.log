@@ -7,7 +7,7 @@ cabeceras simuladas en firmware/host_check/build/stubs (sin mbedtls falso)
 (rc=0)
 
 == test_verificador ==
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/test_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c -I /tmp/tfm_host/mbedtls/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_verificador
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/test_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_verificador
 (rc=0)
 $ firmware/host_check/build/test_verificador
 Banco del verificador contra el motor simulado
@@ -89,11 +89,36 @@ E motor_i2c: el motor no se libera en 500 ms
 10) Regresion de la fuga corregida el 15-09
   [ok ] sin modo test la clave no aparece en ningun registro legible
 
+11) El contador de peticiones se agota y hay que resembrar
+FD00200b8fc8e298a8751a5cedf69531a2ed12fc4f6a542cdd9116ea15440111418ffbf10f419a
+FD0020518a0f148f6fde4e1525e484f56445675a5471857fd58eb804202ef2429adf3f44a2c363
+aleatorio: FALLO en el bloque 2, RECHAZADA por el motor
+  [ok ] DIAG.agotado tras llegar al tope
+aleatorio: FALLO en el bloque 0, RECHAZADA por el motor
+  [ok ] agotado: aleatorio rechazado y sin trama al PC
+sembrar: ok
+  [ok ] resembrar baja DIAG.agotado
+
+12) Zeroizacion del motor
+clave c171c2a1e6cd2a5274c19a12d40cbe43
+provision: ok
+  [ok ] hay clave antes de borrar
+cero: ok, motor borrado; hay que sembrar de nuevo
+  [ok ] tras 'cero' la clave del motor es nula y la provisionada no vale
+  [ok ] ni sembrado ni clave valida
+reto: primero 'generar' en modo test
+  [ok ] reto sin clave no cuenta nada
+sembrar: ok
+clave 91649bb336031ceb077d1e94895d4bae
+provision: ok
+reto-respuesta: 3 aciertos, 0 fallos criptograficos, 0 errores de bus, de 3
+  [ok ] tras borrar, sembrar y generar, el reto-respuesta vuelve a cerrar
+
 test_verificador: 0 fallos
 (rc=0)
 
 == test_medidor ==
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I /tmp/tfm_host/mbedtls/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I $MBEDTLS/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
 (rc=0)
 $ firmware/host_check/build/test_medidor
 Banco del medidor contra el motor simulado
@@ -123,14 +148,14 @@ FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f
   [ok ] publica en SubjectPublicKeyInfo DER de P-256 (91 bytes)
 
 3) Lecturas firmadas
-FL005f7cdfa100112200000000000100000000000000000000041a3045022100d5ee829376d6ee03dce0224b9afd42a217e234a3534b20d3b0a71c5c18274f8902206590babd1f99e9de5fe4f5d5eaa497e9e54994dab0dc0b2d30afb3d29c239a4bd9255561
-FL00607cdfa100112200000000000200000001000000000000044c3046022100a9d68f8d2d7de6450d560e26c39aebf95dc771b7e0150ed378c427ef874d6033022100fe788e0cb2228fa7bfd27f9b1269ae9dd83da1464f3f535c4fcb311a8a139e6d3a152616
-FL005e7cdfa100112200000000000300000002000000000000047e304402200364cc73e6e554bf6d01acf346b1b6692480024e5fcd09d7bb7ff5ad5ee5467c0220127e7c87ad8936e841080639be931c78ca5dd9a34bf4f83013ac19bded78013157fc52e7
-FL005e7cdfa10011220000000000040000000300000000000004b03044022031a06b4f836e14c5b7e830abcad51f285ea9c2ef8fa402bc3925e544b80a6e9a02206319917236eb729c6f2a0ec5ef73dfb5f371070bf8e77c4ee183e4c393081148eb22549f
-FL005e7cdfa10011220000000000050000000400000001000004e2304402201e53a5d4b34589348d4c222362ce46adb85d2c8bea341206eb67430ca99826a302206c20aa49ec9ad05556d899cb0beb2c7b613497e443065bfe92d2a77e3dafadf3093c868a
+FL005f7cdfa100112200000100000100000000000000000000041a3045022074f76d8a83357b3505f2a43fc30609920204f6b6fc6563c05f064cd8c9779f1c022100b9712f085bb7e97098da479fcfed067956506be52963e042727880bfda6c3c5fcb2ece1e
+FL00607cdfa100112200000100000200000001000000000000044c3046022100802760ea7f65c56faf957819d87cf305e4ee25b1702b27a8812dd393fcb90cc7022100ec1fa2b6f759e6373ed3bfea44068bcd6a1e33507258b1daa6699760ba5a1af312d429f1
+FL005e7cdfa100112200000100000300000002000000000000047e3044022042a2b7668b81e4318cd5c8b8de1ea2b7fc6ca300ad2cb069c77eb525acb446b702201d78480c8228d66ffde27c3403041ef8933822560b46eb91624e730e647a20d688fd76c5
+FL005f7cdfa10011220000010000040000000300000000000004b0304502207777470c5bfd4fcd179773d2c2f855ecd3f87f139e992524493ad71f6f6e0d10022100835701ad6bcd8091728d74a69b001a4b5e57ee503417e07fa403555be5e73d360a94a09d
+FL005f7cdfa10011220000010000050000000400000001000004e2304502207dc8797f4fdaa0939af7db8ad7712775c135ab4ba64ef91bbf842e383b0149c0022100a8255cd71ee716d399645d0cd55a95334acfe15fb173551f6486b808c8b3afa360672775
   [ok ] 5 lecturas, 5 tramas L
-  [ok ] una lectura por intervalo
-  [ok ] secuencia y energia avanzan
+  [ok ] entre lecturas se cede la CPU el intervalo
+  [ok ] secuencia = arranque 1, lectura 5; la energia avanza
   [ok ] la ultima lectura verifica con la publica
   [ok ] firma determinista: dos firmas iguales
   [ok ] un bit cambiado en la energia y no verifica
@@ -138,39 +163,40 @@ FL005e7cdfa10011220000000000050000000400000001000004e2304402201e53a5d4b34589348d
 
 4) Lecturas que el PC debe rechazar
 # lectura manipulada
-FL005e7cdfa10011220000000000050000000410000001000004e2304402201e53a5d4b34589348d4c222362ce46adb85d2c8bea341206eb67430ca99826a302206c20aa49ec9ad05556d899cb0beb2c7b613497e443065bfe92d2a77e3dafadf3d3f4d093
+FL005f7cdfa10011220000010000050000000410000001000004e2304502207dc8797f4fdaa0939af7db8ad7712775c135ab4ba64ef91bbf842e383b0149c0022100a8255cd71ee716d399645d0cd55a95334acfe15fb173551f6486b808c8b3afa304d647e3
 # lectura repetida
-FL005e7cdfa10011220000000000050000000400000001000004e2304402201e53a5d4b34589348d4c222362ce46adb85d2c8bea341206eb67430ca99826a302206c20aa49ec9ad05556d899cb0beb2c7b613497e443065bfe92d2a77e3dafadf3093c868a
+FL005f7cdfa10011220000010000050000000400000001000004e2304502207dc8797f4fdaa0939af7db8ad7712775c135ab4ba64ef91bbf842e383b0149c0022100a8255cd71ee716d399645d0cd55a95334acfe15fb173551f6486b808c8b3afa360672775
 
 5) Con el motor en alarma se sigue firmando, pero no hay clave nueva
 clave: FALLO, el motor no da aleatorio (-60) ALARMA_RCT; sigue la clave anterior
   [ok ] clave rechazada con alarma: sigue la anterior
-FL005e7cdfa1001122000000000006000000040000000100000514304402206e983dbc2dc04a920565447f9780866c0b3dfc064e1260f8cf06d15e1c1c07c702203bcd7efe530e673cf9c539fd4dc627d02d96d14ec5c80569c1af16abda5f96ee017992db
-FL005f7cdfa10011220000000000070000000500000001000003e830450220536a4daa87894d66ee8dc16f0dbad95087790c78d288da2f986b262dbb9395f7022100e4257ba12985a6bb77bf08bf37318346efff83dfd49bdb14358a29fe916a928ed30a6ee5
+FL005f7cdfa10011220000010000060000000400000001000005143045022044ee8e70875239868d4168be6d211b236d88d929951198e31734efc62f20d21c022100caf926046950027715e04114cfbf896bbca42a6bf2ab6b0f7c1e7f8898eb42bae3f00e07
+FL00607cdfa10011220000010000070000000500000001000003e83046022100df1b37a26ed202bb323beb9f138d3071703a9ba50dae1fdecfaf8c513ca28322022100b03d07921f20cddc70e27f4053c50aaaebf5b5a026928e92a0a229d44b9a39d343a84039
   [ok ] las lecturas siguen saliendo con la clave que hay
 borrar: alarmas bajadas; hay que repetir el test de arranque
 sembrar: ok
   [ok ] tras borrar y repetir el arranque, sembrado
 
-6) Un fallo de bus durante la clave no deja una clave a medias
-clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); sigue la clave anterior
-  [ok ] con el bus caido no hay clave nueva y sigue la anterior
+6) Un fallo de bus a mitad de la clave no deja una clave a medias
+clave: FALLO, ERROR I2C (-60); sigue la clave anterior
+  [ok ] el motor llego a aceptar el primer bloque
+  [ok ] con el bus caido a mitad no hay clave nueva y sigue la anterior
 
 7) Clave nueva y CSR
 clave: ok, P-256 con 2 bloques de 32 bytes del motor
-FP005b3059301306072a8648ce3d020106082a8648ce3d03010703420004122dd9b255ebea0a03695767e56f5d66a496eb5db267ed899c92354af492180ea6d866663c5b081eec11b730f454650085960842f3910f0859e724543342d746d7c43a49
+FP005b3059301306072a8648ce3d020106082a8648ce3d030107034200043034adcf3729be86cc64d4cb85f042e219abe32b5b6095ce9222826ddcadec77a459690915c5c9704556daa3e7eb17966015b087d9379df02bf50f6469a99898723e0daf
   [ok ] la segunda clave es distinta de la primera
 -----BEGIN CERTIFICATE REQUEST-----
 MIHeMIGFAgEAMCMxITAfBgNVBAMMGG1lZGlkb3ItN2NkZmExMDAxMTIyMDAwMDBZ
-MBMGByqGSM49AgEGCCqGSM49AwEHA0IABBIt2bJV6+oKA2lXZ+VvXWaklutdsmft
-iZySNUr0khgOpthmZjxbCB7sEbcw9FRlAIWWCELzkQ8IWeckVDNC10agADAKBggq
-hkjOPQQDAgNIADBFAiEAvcmJWCbBjCMIh5K7hShgewTaVx6V+ggLCkTxk9/7lVwC
-ICkoh4wD2pxfbICoUQuyqv+MbFQOjDOH8luwK0IDE6sS
+MBMGByqGSM49AgEGCCqGSM49AwEHA0IABDA0rc83Kb6GzGTUy4XwQuIZq+MrW2CV
+zpIigm3crex3pFlpCRXFyXBFVtqj5+sXlmAVsIfZN53wK/UPZGmpmJigADAKBggq
+hkjOPQQDAgNIADBFAiEA3TPAONp163po3vxCcbxCVgYJPWfPEgd/JC/ZwqKMNO4C
+IF9i9TbssUv1CYWrFyUwWYo+/zEVDcWi/TSdg1FIDAU+
 -----END CERTIFICATE REQUEST-----
   [ok ] la CSR se genera
   [ok ] la CSR se parsea (PKCS#10)
   [ok ] la CSR lleva la publica del equipo
-FL00607cdfa100112200000000000800000005000000010000041a3046022100c00344344d98b351cd7b2cbd17831bb35aff9f915bcf2ef54284e50b0a8deadf02210085f0ca7c92e93f66bcfec720b1e1722940da04d80879e89a6f0b0dc67ea63041e6e7dde2
+FL005f7cdfa100112200000100000800000005000000010000041a30450220324cb5cc8282cf69f32bb6e60d3f5864b625e589cbbcf54597f8af7842291c25022100fe2eb8ed14667d9808e4c25df70d1c081349365027350c55d0585610670ad81c61d8de02
   [ok ] y se firma con la clave nueva
 
 8) La privada no aparece en lo que sale
@@ -184,32 +210,47 @@ lectura: primero 'clave'
 publica: FALLO, sin clave (-16000)
   [ok ] sin clave no sale ni lectura ni publica
 
-esperado: validas=8 firma_invalida=1 repetidas=1 csr=1
+10) Tras un reinicio la secuencia sigue creciendo
+  [ok ] al reiniciar no hay clave en RAM
+clave: ok, P-256 con 2 bloques de 32 bytes del motor
+FP005b3059301306072a8648ce3d020106082a8648ce3d03010703420004e9cd43ea5cb995596360348f0448def28c25f3ac0187d8da045b9b10a62e460741bd1dd16e6c66ce687c0e147864602c309e9dfebc804ade2b0593e0f64ec1a87b42835c
+  [ok ] clave nueva tras el reinicio
+FL005f7cdfa100112200000200000100000005000000000000041a3045022040b5f83578721f9672b10e9784af8d49647ce8ab6a5eb7c98a600f0402d482ba022100a6e7f036511fedaca4ac5d6eff1a47cb510be100fa8f6aebbf1d39898af480ac469b2548
+  [ok ] arranque 2: la primera lectura supera a la ultima de antes del reinicio
+E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
+  [ok ] sin NVS el contador de arranques es 0 y se avisa
+
+esperado: validas=9 firma_invalida=1 repetidas=1 csr=1 clave_cambiada=2
 test_medidor: 0 fallos
 (rc=0)
 
 == verifica_lecturas.py sobre la salida del medidor ==
 (el banco planta a proposito una lectura manipulada y una repetida: el script debe devolver rc=1 y contarlas)
-$ /usr/bin/python3 analysis/verifica_lecturas.py firmware/host_check/build/medidor_consola.log
+$ /usr/bin/python3 analysis/verifica_lecturas.py firmware/host_check/build/medidor_consola.log --permitir-cambio
 publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea69
-lectura 1: equipo 7cdfa10011220000 seq 1 t 0 s energia 0 Wh potencia 1050 W: ok
-lectura 2: equipo 7cdfa10011220000 seq 2 t 1 s energia 0 Wh potencia 1100 W: ok
-lectura 3: equipo 7cdfa10011220000 seq 3 t 2 s energia 0 Wh potencia 1150 W: ok
-lectura 4: equipo 7cdfa10011220000 seq 4 t 3 s energia 0 Wh potencia 1200 W: ok
-lectura 5: equipo 7cdfa10011220000 seq 5 t 4 s energia 1 Wh potencia 1250 W: ok
-lectura 6: equipo 7cdfa10011220000 seq 5 t 4 s energia 268435457 Wh potencia 1250 W: FIRMA INVALIDA
-lectura 7: equipo 7cdfa10011220000 seq 5 t 4 s energia 1 Wh potencia 1250 W: REPETIDA (ultima secuencia 5)
-lectura 8: equipo 7cdfa10011220000 seq 6 t 4 s energia 1 Wh potencia 1300 W: ok
-lectura 9: equipo 7cdfa10011220000 seq 7 t 5 s energia 1 Wh potencia 1000 W: ok
-publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d03010703420004122dd9b255ebea0a03695767e56f5d66a496eb5db267ed899c92354af492180ea6d866663c5b081eec11b730f454650085960842f3910f0859e724543342d746
-lectura 10: equipo 7cdfa10011220000 seq 8 t 5 s energia 1 Wh potencia 1050 W: ok
+lectura 1: equipo 7cdfa10011220000 seq 16777217 t 0 s energia 0 Wh potencia 1050 W: ok
+lectura 2: equipo 7cdfa10011220000 seq 16777218 t 1 s energia 0 Wh potencia 1100 W: ok
+lectura 3: equipo 7cdfa10011220000 seq 16777219 t 2 s energia 0 Wh potencia 1150 W: ok
+lectura 4: equipo 7cdfa10011220000 seq 16777220 t 3 s energia 0 Wh potencia 1200 W: ok
+lectura 5: equipo 7cdfa10011220000 seq 16777221 t 4 s energia 1 Wh potencia 1250 W: ok
+lectura 6: equipo 7cdfa10011220000 seq 16777221 t 4 s energia 268435457 Wh potencia 1250 W: FIRMA INVALIDA
+lectura 7: equipo 7cdfa10011220000 seq 16777221 t 4 s energia 1 Wh potencia 1250 W: REPETIDA (ultima secuencia 16777221)
+lectura 8: equipo 7cdfa10011220000 seq 16777222 t 4 s energia 1 Wh potencia 1300 W: ok
+lectura 9: equipo 7cdfa10011220000 seq 16777223 t 5 s energia 1 Wh potencia 1000 W: ok
+AVISO: la publica anunciada CAMBIA (cambio 1)
+publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d030107034200043034adcf3729be86cc64d4cb85f042e219abe32b5b6095ce9222826ddcadec77a459690915c5c9704556daa3e7eb17966015b087d9379df02bf50f6469a99898
 CSR CN=medidor-7cdfa10011220000: firma valida, publica del equipo
-resumen: lecturas=10 validas=8 firma_invalida=1 repetidas=1 sin_clave=0 crc_malo=0 csr=1 csr_mala=0
+lectura 10: equipo 7cdfa10011220000 seq 16777224 t 5 s energia 1 Wh potencia 1050 W: ok
+AVISO: la publica anunciada CAMBIA (cambio 2)
+publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d03010703420004e9cd43ea5cb995596360348f0448def28c25f3ac0187d8da045b9b10a62e460741bd1dd16e6c66ce687c0e147864602c309e9dfebc804ade2b0593e0f64ec1a8
+lectura 11: equipo 7cdfa10011220000 seq 33554433 t 5 s energia 0 Wh potencia 1050 W: ok
+resumen: lecturas=11 validas=9 firma_invalida=1 repetidas=1 sin_clave=0 crc_malo=0 csr=1 csr_mala=0 clave_cambiada=2 publica_mala=0
 (rc=1)
-  [ok ] validas: el banco mando 8, el PC encontro 8
+  [ok ] validas: el banco mando 9, el PC encontro 9
   [ok ] firma_invalida: el banco mando 1, el PC encontro 1
   [ok ] repetidas: el banco mando 1, el PC encontro 1
   [ok ] csr: el banco mando 1, el PC encontro 1
+  [ok ] clave_cambiada: el banco mando 2, el PC encontro 2
   [ok ] crc_malo: 0
 
 run_host: 0 fallos

@@ -13,7 +13,9 @@ medidor se salta y se dice.
 
 Hace falta gcc, cmake y el paquete Python "cryptography" (para
 verifica_lecturas.py). Todo lo que sale se escribe tal cual en
-results/host_check.log; las rutas de maquina se enmascaran.
+results/host_check.log; las rutas de maquina se enmascaran. Con --sanear
+se compila con ASan y UBSan (fugas, desbordamientos, comportamiento
+indefinido): encontro una fuga de la clave al "reiniciar" el medidor.
 
 Pasos:
   1. cabeceras simuladas (mk_stubs.py)
@@ -50,7 +52,9 @@ def decir(texto: str = "") -> None:
 
 
 def correr(cmd: list[str], mascara: dict[str, str], **kw) -> subprocess.CompletedProcess:
-    mostrado = " ".join(mascara.get(c, c) for c in cmd)
+    mostrado = " ".join(cmd)
+    for k, v in mascara.items():
+        mostrado = mostrado.replace(k, v)
     decir(f"$ {mostrado}")
     r = subprocess.run(cmd, capture_output=True, text=True, **kw)
     texto = r.stdout + r.stderr
@@ -88,7 +92,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--mbedtls", type=Path, default=None, help="fuentes de mbedtls 3.x")
     ap.add_argument("--cc", default="gcc")
+    ap.add_argument("--sanear", action="store_true",
+                    help="compila con ASan y UBSan: fugas, desbordamientos y UB en el firmware")
     args = ap.parse_args()
+    if args.sanear:
+        # Sin salida temprana ni recuperacion: cualquier aviso es fallo. ASAN_OPTIONS
+        # para que la salida del programa no se pierda en el buffer al abortar.
+        CFLAGS.extend(["-g", "-fsanitize=address,undefined", "-fno-sanitize-recover=all"])
+        os.environ.setdefault("ASAN_OPTIONS", "detect_leaks=1")
 
     os.chdir(RAIZ)
     BUILD.mkdir(parents=True, exist_ok=True)
@@ -102,7 +113,7 @@ def main() -> int:
         fuentes = fuentes.resolve()
         mascara[str(fuentes)] = "$MBEDTLS"
 
-    decir("Banco en el PC del firmware del motor (run_host.py)")
+    decir("Banco en el PC del firmware del motor (run_host.py)" + (" con ASan+UBSan" if args.sanear else ""))
     decir()
 
     mbed = preparar_mbedtls(fuentes, mascara) if fuentes is not None else None
@@ -117,7 +128,8 @@ def main() -> int:
     r = correr([sys.executable, str(HC / "mk_stubs.py"), str(stubs)] + ([] if mbed is None else ["--sin-mbedtls"]), mascara)
     fallos += r.returncode != 0
 
-    comunes = [str(FW / "componentes" / "motor_i2c" / "motor_i2c.c"), str(HC / "motor_sim.c")]
+    comunes = [str(FW / "componentes" / "motor_i2c" / "motor_i2c.c"), str(HC / "motor_sim.c"),
+               str(HC / "plataforma_sim.c")]
     incs = ["-I", str(stubs), "-I", str(FW / "componentes" / "motor_i2c" / "include")]
 
     decir("\n== test_verificador ==")
@@ -152,7 +164,7 @@ def main() -> int:
             decir("\n== verifica_lecturas.py sobre la salida del medidor ==")
             decir("(el banco planta a proposito una lectura manipulada y una repetida: "
                   "el script debe devolver rc=1 y contarlas)")
-            r = correr([sys.executable, "analysis/verifica_lecturas.py", str(consola)], mascara)
+            r = correr([sys.executable, "analysis/verifica_lecturas.py", str(consola), "--permitir-cambio"], mascara)
             resumen = re.search(r"^resumen: (.*)$", r.stdout, re.M)
             if esperado is None or resumen is None:
                 decir("  [FALLO] faltan las lineas 'esperado:' o 'resumen:'")

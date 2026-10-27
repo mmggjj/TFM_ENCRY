@@ -258,10 +258,17 @@ planta una lectura manipulada (un bit del campo de energía) y una
 repetida entre ocho válidas, y el script debe encontrar exactamente esas
 dos; la petición de certificado debe parsearse, llevar una autofirma
 válida y la clave pública del equipo. Todas las comprobaciones pasan. El
-firmware compila con ESP-IDF~5.3.5 para el ESP32-C3 en una imagen de
-287~kB. Nada se ha ejecutado en placa: el motor solo existe en
-simulación hasta la puesta en marcha de la FPGA, y la entropía del
-modelo es un AES con semilla fija, no una medida.
+firmware compila con ESP-IDF~5.3.5 para el ESP32-C3, y corre además en
+la emulación QEMU de Espressif de ese chip: sin motor, toda orden falla
+cerrada, y con el modelo del motor enlazado dentro del firmware en lugar
+del driver \ac{I2C} (una opción de compilación, nunca para una placa) la
+secuencia completa corre en el núcleo RISC-V emulado con el mbedtls
+compilado para el objetivo, y el script del PC acepta sus tramas; la
+clave pública que produce el chip emulado es la misma que produce el
+banco en el PC a partir de los mismos bloques del motor. Nada se ha
+ejecutado en placa: el motor solo existe en simulación hasta la puesta
+en marcha de la FPGA, la entropía del modelo es un AES con semilla fija,
+no una medida, y el emulador no dice nada de los tiempos.
 
 \section{Puesta en marcha en la FPGA}
 \label{sec:bringup}
