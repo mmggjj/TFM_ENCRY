@@ -34,6 +34,42 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 27-10-2026 (tarde): el motor usado por un producto
+
+Rama `feat/lecturas-firmadas` (sobre `fix/salud-bloquea-salida`). Diseño y
+porqués en **`docs/lecturas_firmadas.md`**.
+
+- **`firmware/componentes/motor_i2c/`**: la capa de acceso al motor
+  (mapa, `motor_orden()` con `DIAG.rechazada`, plazos en tiempo real,
+  `motor_rng()` como `f_rng` de mbedtls que **falla cerrado**) sale del
+  verificador a un componente compartido. El verificador usa el componente
+  (`set(EXTRA_COMPONENT_DIRS ../componentes)`).
+- **`firmware/medidor/`** (ESP32-C3): el motor usado, no juzgado. Clave
+  ECDSA P-256 generada con bloques `ALEATORIO` del motor (2 por clave), que
+  no sale del chip; `publica` (trama `P`, SPKI DER), `csr` (PKCS#10 PEM),
+  `lectura N` (trama `L`: 24 bytes + firma DER). ECDSA determinista
+  (RFC 6979, `lectura.c` no compila sin `MBEDTLS_ECDSA_DETERMINISTIC`): el
+  motor solo entra en la generación de la clave; con alarma se sigue
+  firmando y no hay clave nueva, y una generación fallida mantiene la
+  anterior. Seguridad acotada a 128 bits por el CTR_DRBG AES-128.
+- **`firmware/host_check/`** (antes dentro del verificador): `run_host.py`
+  compila y corre `test_verificador.c` y `test_medidor.c` contra
+  `motor_sim.c` con **mbedtls real** (`--mbedtls`, vale el árbol de
+  ESP-IDF; lo compila con cmake) y pasa la salida del medidor por
+  `analysis/verifica_lecturas.py` (verifica con `cryptography`): 8 válidas,
+  1 manipulada y 1 repetida plantadas, CSR válida. Sin mbedtls real el
+  verificador usa `mbedtls_stub.c` (CMAC del modelo, no independiente) y el
+  medidor se salta. `motor_sim.c` siembra distinto en cada `sembrar`
+  (contador), CRC32 real y MAC fija. Log: `results/host_check.log`, 0 fallos.
+- **Compilado con ESP-IDF 5.3.5** (WSL): verificador esp32 231 kB y medidor
+  esp32c3 287 kB, 0 avisos (`results/verificador_build_esp32.log`,
+  `results/medidor_build_esp32c3.log`). Nada en placa.
+- Memoria: cap. 5, sección nueva "The engine in a product" en inglés y
+  español; PDF no regenerados. README actualizado.
+- Pendiente: guardar la clave (NVS cifrado o el motor como elemento seguro,
+  que hoy solo guarda una AES-128 y no firma), hora real, resembrado por
+  `PETICIONES`, lecturas reales; y la lista de la revisión de abajo.
+
 ## Estado al 27-10-2026: la alarma de salud bloquea la salida
 
 Revisión externa del RTL y del firmware. Fallo grave corregido (rama
@@ -169,7 +205,9 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
 | `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `campana_rng.py` (captura con el firmware del TFM_RNG, log íntegro), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL), `resumen_90b.py` (tablas + ANOVA por condición), `anillo_ihp.py` (anillo con el PDK de IHP, separador térmico/1/f validado) | autovalidado |
 | `rtl/` | VHDL-2008: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG, `top/motor_top.vhd` | 7 bancos pasan (`python rtl/run_tb.py`) |
 | `synth/` | síntesis Yosys sobre IHP SG13G2, área en kGE | hecho |
-| `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls | compilado y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio |
+| `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls, sobre `componentes/motor_i2c` | compilado (27-10, 5.3.5) y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio; banco en PC 0 fallos |
+| `firmware/medidor/` | ESP-IDF 5, ESP32-C3: clave P-256 del motor, CSR, lecturas firmadas (`docs/lecturas_firmadas.md`) | compilado (27-10, 5.3.5); banco en PC + `verifica_lecturas.py` 0 fallos; nada en placa |
+| `firmware/host_check/` | `run_host.py`: los dos firmwares contra `motor_sim.c` y mbedtls real | `results/host_check.log` |
 | `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 bajo SP 800-90B); 8 y apéndices pendientes |
 
 **Pendiente de hardware:** puesta en marcha en la Basys 3, campaña de
@@ -210,9 +248,12 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   antiguas que lean la clave desde ALEATORIO, están obsoletas.
 - mbedtls en ESP-IDF **no trae CMAC activado por defecto**: hace falta
   `CONFIG_MBEDTLS_CMAC_C=y` (ver `firmware/verificador/sdkconfig.defaults`).
-- Referencia de código: `firmware/verificador/main/main.c` (driver
-  `i2c_master` nuevo de IDF 5, comandos de consola, tramas al PC con
-  CRC32). Reutilizable tal cual como capa de acceso.
+- Referencia de código: `firmware/componentes/motor_i2c/` (driver
+  `i2c_master` nuevo de IDF 5, órdenes, plazos, `motor_rng()` para
+  mbedtls) es la capa de acceso, reutilizable tal cual; los comandos de
+  consola y las tramas al PC con CRC32 están en `verificador/main/main.c` y
+  `medidor/main/main.c`. Para usar el motor como fuente de claves en un
+  producto, el ejemplo es el medidor.
 - El motor **no descifra** ni ofrece hash: solo genera claves, sirve
   aleatorio y autentica con CMAC. El ESP32 ya tiene aceleradores AES y
   SHA propios para lo demás.

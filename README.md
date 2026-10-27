@@ -25,6 +25,9 @@ reinicios) y es la justificación del diseño de caja blanca.
 | `rtl/` | VHDL-2008 portable: `trng/`, `io/`, `aes/`, `drbg/`, `top/`; bancos en `tb/`; `run_tb.py` los ejecuta todos con GHDL |
 | `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque |
 | `firmware/verificador/` | proyecto ESP-IDF: maestro I2C, provisión, reto-respuesta con mbedtls, volcado de bits al PC |
+| `firmware/medidor/` | proyecto ESP-IDF para ESP32-C3: el motor usado por un producto; clave ECDSA P-256 generada con aleatorio del motor, petición de certificado y lecturas de energía firmadas (`docs/lecturas_firmadas.md`) |
+| `firmware/componentes/motor_i2c/` | capa de acceso al motor compartida por los dos firmwares (`docs/mapa_registros.md` en C) |
+| `firmware/host_check/` | banco en el PC: los dos firmwares contra un motor simulado y mbedtls real, sin placa (`run_host.py`) |
 | `sim/spice/` | descripciones de circuito del anillo a nivel de transistor |
 | `tests/vectors/` | vectores oficiales de NIST usados en la verificación |
 | `results/` | datos de campañas y logs íntegros |
@@ -37,7 +40,9 @@ reinicios) y es la justificación del diseño de caja blanca.
 - RTL: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG y nivel
   superior escritos y verificados en GHDL contra vectores oficiales
   (FIPS 197, SP 800-38A, RFC 4493, CAVP DRBG). Siete bancos, todos pasan.
-- Firmware del ESP32: compila con ESP-IDF 5.3.2.
+- Firmware del ESP32: el verificador (esp32) y el medidor con lecturas
+  firmadas (esp32c3) compilan con ESP-IDF 5.3.5 y pasan su banco en el PC
+  contra el motor simulado (27-10-2026, `results/host_check.log`).
 - Síntesis: los ocho bloques digitales sobre IHP SG13G2; motor ≈ 62 kGE,
   con camino documentado hacia ≈ 20 kGE.
 - Pendiente: hardware (Basys 3 + ESP32 en la mesa), campaña de entropía,
@@ -51,6 +56,7 @@ python analysis/jitter_estimator.py   # estimador, 20 comprobaciones
 python analysis/ctr_drbg_ref.py       # DRBG contra 960 vectores CAVP
 python rtl/run_tb.py                  # todos los bancos VHDL (GHDL)
 python synth/sintetiza.py             # síntesis (Yosys + liberty IHP)
+python3 firmware/host_check/run_host.py --mbedtls $IDF_PATH/components/mbedtls/mbedtls  # firmware en el PC (gcc, WSL)
 ```
 
 ## Convenciones

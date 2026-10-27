@@ -8,12 +8,13 @@
  * porque alli el banco y el disenho salen de la misma cabeza y del mismo
  * documento leido una sola vez.
  *
- * LIMITE IMPORTANTE, que hay que declarar al usar esto: aqui el AES-CMAC
- * del "motor" y el que usa el verificador para comprobarlo son EL MISMO
- * codigo, asi que la verificacion cruzada deja de ser independiente. Esta
- * prueba valida el PROTOCOLO y la LOGICA del verificador, no la
- * criptografia. La independencia real solo la da mbedtls en el ESP32
- * contra el VHDL en la FPGA.
+ * LIMITE, que hay que declarar al usar esto: si el verificador se enlaza
+ * con mbedtls_stub.c, el AES-CMAC del "motor" y el que usa el verificador
+ * para comprobarlo son EL MISMO codigo, y la verificacion cruzada deja de
+ * ser independiente; esa prueba valida el PROTOCOLO y la LOGICA, no la
+ * criptografia. Con mbedtls de verdad en el PC (run_host.py --mbedtls) el
+ * CMAC del verificador ya es otra implementacion. La independencia frente
+ * al VHDL solo la da mbedtls en el ESP32 contra la FPGA.
  *
  * El AES y el CMAC se autovalidan al arrancar contra FIPS-197 apendice B
  * y RFC 4493, para que un fallo del modelo no se confunda con un fallo
@@ -96,7 +97,7 @@ static void subclave(const uint8_t in[16], uint8_t out[16])
 
 /* CMAC de un mensaje de un bloque completo o vacio, que es lo unico que
  * necesita el reto-respuesta (SP 800-38B). */
-static void aes_cmac16(const uint8_t clave[16], const uint8_t msg[16], uint8_t tag[16])
+void motor_sim_cmac16(const uint8_t clave[16], const uint8_t msg[16], uint8_t tag[16])
 {
     uint8_t L[16], k1[16], k2[16], b[16], cero[16] = {0};
     aes128_encrypt(clave, cero, L);
@@ -129,6 +130,7 @@ static struct {
     uint8_t captura[512];
     uint8_t drbg_key[16], drbg_v[16];
     uint32_t peticiones;
+    uint8_t siembras;
     bool sembrado, alarma, rechazada;
     uint32_t arranque_en, libre_en;
 } m;
@@ -139,6 +141,7 @@ bool motor_modo_test = true;      /* el banco lo maneja */
 int  motor_fallo_bus = 0;         /* >0: las proximas N transacciones fallan */
 bool motor_colgado = false;       /* "ocupado" no baja nunca */
 int  motor_n_tramas = 0;          /* tramas al PC: una llamada al CRC cada una */
+int  motor_n_aleatorio = 0;       /* ordenes "aleatorio" aceptadas */
 
 static bool arrancado(void) { return !m.alarma && ticks >= m.arranque_en; }
 static bool ocupado(void) { return motor_colgado || ticks < m.libre_en; }
@@ -181,8 +184,13 @@ static void ejecutar_control(uint8_t v)
 
     if (v & ((1u << 0) | (1u << 5))) {         /* sembrar / resembrar */
         if (!arrancado() || m.cfg_kd < KD_MIN) { m.rechazada = true; return; }
-        if (v & (1u << 0))
-            for (int i = 0; i < 16; i++) { m.drbg_key[i] = (uint8_t)(0x5a ^ i); m.drbg_v[i] = (uint8_t)i; }
+        /* Semilla fija pero distinta en cada siembra, como lo seria una
+         * entropia nueva: asi dos claves generadas tras resembrar no
+         * coinciden, y el banco sigue siendo reproducible. */
+        if (v & (1u << 0)) {
+            m.siembras++;
+            for (int i = 0; i < 16; i++) { m.drbg_key[i] = (uint8_t)(0x5a ^ i ^ m.siembras); m.drbg_v[i] = (uint8_t)i; }
+        }
         m.sembrado = true;
         m.peticiones = 1;
         m.status |= ST_SEMBRADO;
@@ -198,10 +206,11 @@ static void ejecutar_control(uint8_t v)
     } else if (v & (1u << 6)) {                /* aleatorio: generacion aparte */
         if (!m.sembrado || m.alarma) { m.rechazada = true; return; }
         drbg_generar(m.aleatorio);
+        motor_n_aleatorio++;
         m.libre_en = ticks + T_ORDEN;
     } else {                                   /* autenticar */
         if (!(m.status & ST_CLAVE_VALIDA)) { m.rechazada = true; return; }
-        aes_cmac16(m.clave, m.reto, m.etiqueta);
+        motor_sim_cmac16(m.clave, m.reto, m.etiqueta);
         m.status |= ST_ETIQ_LISTA;
         m.libre_en = ticks + T_ORDEN;
     }
@@ -280,19 +289,20 @@ uint32_t xTaskGetTickCount(void) { return ticks; }
 void esp_fill_random(void *buf, size_t len)
 { for (size_t i = 0; i < len; i++) ((uint8_t *)buf)[i] = (uint8_t)(rand() & 0xff); }
 uint32_t esp_random(void) { return (uint32_t)rand(); }
+/* CRC-32 normal (el de zlib), que es lo que da la ROM con crc inicial 0:
+ * asi verifica_lecturas.py acepta las tramas de este banco. */
 uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t *buf, uint32_t len)
-{ motor_n_tramas++; for (uint32_t i = 0; i < len; i++) crc = (crc << 8) ^ buf[i]; return crc; }
-
-static const int CIPHER_AES128 = 1;
-const void *mbedtls_cipher_info_from_type(int t) { (void)t; return &CIPHER_AES128; }
-int mbedtls_cipher_cmac(const void *ci, const unsigned char *key, size_t keybits,
-                        const unsigned char *input, size_t ilen, unsigned char *out)
 {
-    (void)ci;
-    if (keybits != 128 || ilen != 16) return -1;
-    aes_cmac16(key, input, out);
-    return 0;
+    motor_n_tramas++;
+    crc = ~crc;
+    for (uint32_t i = 0; i < len; i++) {
+        crc ^= buf[i];
+        for (int b = 0; b < 8; b++) crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+    }
+    return ~crc;
 }
+esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
+{ static const uint8_t m[6] = {0x7c, 0xdf, 0xa1, 0x00, 0x11, 0x22}; memcpy(mac, m, 6); return ESP_OK; }
 
 /* ---------------------------------------- autovalidacion del modelo ---- */
 
@@ -315,7 +325,7 @@ bool motor_sim_autotest(void)
                             0xe9,0x3d,0x7e,0x11,0x73,0x93,0x17,0x2a};
     const uint8_t t1[16] = {0x07,0x0a,0x16,0xb4,0x6b,0x4d,0x41,0x44,
                             0xf7,0x9b,0xdd,0x9d,0xd0,0x4a,0x28,0x7c};
-    aes_cmac16(k, m1, got);
+    motor_sim_cmac16(k, m1, got);
     if (memcmp(got, t1, 16) != 0) { printf("  [FALLO] CMAC contra RFC 4493\n"); return false; }
     printf("  [ok ] AES-CMAC reproduce el vector de RFC 4493\n");
     return true;

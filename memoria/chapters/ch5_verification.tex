@@ -175,8 +175,68 @@ not enabled by default in the ESP-IDF build of mbedtls and is switched on
 in the project defaults; the console runs at 115\,200~baud, the only rate
 that proved reliable with the board's USB bridge in those campaigns,
 and the log level is set to errors only so that log lines cannot corrupt
-the frames. The firmware builds with ESP-IDF~5.3.2 into a 255~kB image;
-running it awaits the hardware.
+the frames. The register access layer (map, command issue, real-time
+polling, rejection check) is a component shared with the application of
+Section~\ref{sec:lecturas_firmadas}. The firmware builds with
+ESP-IDF~5.3.5 into a 231~kB image; running it awaits the hardware.
+
+Both firmwares are also exercised on the host, without a board: the
+bench includes the firmware source unchanged, links it against a software
+model of the engine that implements the register map as a second,
+independent reading of the specification, and runs the sequence with the
+same mbedtls~3.6.7 tree that ESP-IDF ships. The model's AES and CMAC
+validate themselves against FIPS~197 and RFC~4493 before any check, so
+that a model fault cannot pass for a firmware fault. The bench checks
+counts, not just outcomes: that a rejected command is not mistaken for a
+quick one, that a bus failure is counted as a bus failure and not as a
+cryptographic mismatch, that nothing reaches the PC while an alarm is
+raised, and that the timeouts last what they claim.
+
+\section{The engine in a product: signed readings}
+\label{sec:lecturas_firmadas}
+
+The verifier judges the engine; a second firmware \emph{uses} it, as a
+product would. The product is a generic energy meter on an ESP32-C3, the
+RISC-V part of the small Wi-Fi devices, with the engine on the same
+\ac{I2C} bus as the meter's own peripherals. Two uses, both fed by the
+engine's entropy. First, the device generates its own ECDSA P-256 key
+pair: mbedtls draws the private scalar through a callback that issues
+one \texttt{aleatorio} command per 32-byte block, two blocks per key, and
+the private key never leaves the chip; what leaves is the public key, or
+a PKCS\#10 certificate request signed with it, which is what a device
+would send to the manufacturer's CA so that nobody, the manufacturer
+included, ever holds the private key. Second, every reading (device
+identifier, sequence number, time, accumulated energy, power; 24~bytes)
+is signed, so that whoever receives it checks integrity and origin
+without trusting the transport or the offline store in between.
+
+Three decisions carry the design. The key's strength is bounded by what
+generated it: the engine's \ac{DRBG} is CTR\_DRBG with AES-128, 128~bits
+of security, which is what P-256 offers, so a larger curve would gain
+nothing from this seed. Signatures use deterministic ECDSA
+(RFC~6979): the per-signature nonce is derived from the key and the
+message, two signatures of the same reading are identical (the bench
+checks it), and a poor generator at signing time cannot leak the key,
+which is the classic ECDSA failure; the engine is therefore needed only
+to \emph{create} the key, and a meter whose engine is in alarm keeps
+signing with the key it has, while it cannot make a new one. And the
+entropy callback fails closed: if the engine rejects the command
+(unseeded, alarm, start-up test not passed) or the bus fails, mbedtls
+aborts and no other source is substituted; a failed generation leaves the
+previous key in service and never a half-made one. A monotonic sequence
+number lets the receiver reject replayed readings, which a valid
+signature alone does not.
+
+The host bench runs the meter firmware against the engine model and
+hands its console output to a PC script that verifies the frames with a
+different library (\texttt{cryptography}, not mbedtls). The bench plants
+one tampered reading (one bit of the energy field) and one replayed
+reading among eight valid ones, and the script must find exactly those
+two; the certificate request must parse, carry a valid self-signature and
+the device's public key. All checks pass. The firmware builds with
+ESP-IDF~5.3.5 for the ESP32-C3 into a 287~kB image. Nothing has run on a
+board: the engine exists only in simulation until the FPGA bring-up, and
+the model's entropy is an AES with a fixed seed, not a measurement.
 
 \section{FPGA bring-up}
 \label{sec:bringup}

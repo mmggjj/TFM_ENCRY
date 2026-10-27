@@ -195,8 +195,73 @@ configuración por defecto del proyecto; la consola funciona a
 115\,200~baudios, la única velocidad que resultó fiable con el puente
 USB de la placa en esas campañas, y el nivel de log se fija en
 solo errores para que las líneas de log no puedan corromper las tramas.
-El firmware compila con ESP-IDF~5.3.2 en una imagen de 255~kB;
-ejecutarlo queda a la espera del hardware.
+La capa de acceso a registros (mapa, emisión de órdenes, sondeo en
+tiempo real, comprobación de rechazo) es un componente compartido con la
+aplicación de la Sección~\ref{sec:lecturas_firmadas}. El firmware
+compila con ESP-IDF~5.3.5 en una imagen de 231~kB; ejecutarlo queda a la
+espera del hardware.
+
+Los dos firmwares se ejercitan además en el PC, sin placa: el banco
+incluye el código fuente del firmware sin cambios, lo enlaza con un
+modelo en software del motor que implementa el mapa de registros como
+una segunda lectura independiente de la especificación, y recorre la
+secuencia con el mismo árbol de mbedtls~3.6.7 que distribuye ESP-IDF. El
+AES y el CMAC del modelo se validan a sí mismos contra FIPS~197 y
+RFC~4493 antes de cualquier comprobación, para que un fallo del modelo
+no pase por un fallo del firmware. El banco comprueba cuentas, no solo
+resultados: que una orden rechazada no se confunde con una que acabó
+enseguida, que un fallo del bus se cuenta como fallo del bus y no como
+discrepancia criptográfica, que nada llega al PC con una alarma
+levantada y que los plazos duran lo que dicen.
+
+\section{El motor en un producto: lecturas firmadas}
+\label{sec:lecturas_firmadas}
+
+El verificador juzga al motor; un segundo firmware lo \emph{usa}, como
+lo haría un producto. El producto es un medidor de energía genérico
+sobre un ESP32-C3, la parte RISC-V de los equipos pequeños con Wi-Fi,
+con el motor en el mismo bus \ac{I2C} que los periféricos del medidor.
+Dos usos, los dos alimentados por la entropía del motor. Primero, el
+equipo genera su propio par de claves ECDSA P-256: mbedtls obtiene el
+escalar privado a través de una función que emite una orden
+\texttt{aleatorio} por cada bloque de 32~bytes, dos bloques por clave, y
+la clave privada nunca sale del chip; lo que sale es la clave pública, o
+una petición de certificado PKCS\#10 firmada con ella, que es lo que un
+equipo enviaría a la CA del fabricante para que nadie, ni el fabricante,
+tenga nunca la clave privada. Segundo, cada lectura (identificador del
+equipo, número de secuencia, instante, energía acumulada, potencia;
+24~bytes) va firmada, de modo que quien la recibe comprueba integridad
+y origen sin fiarse del transporte ni del almacenamiento intermedio sin
+conexión.
+
+Tres decisiones sostienen el diseño. La fuerza de la clave la acota lo
+que la generó: el \ac{DRBG} del motor es CTR\_DRBG con AES-128, 128~bits
+de seguridad, que es lo que ofrece P-256, así que una curva mayor no
+ganaría nada con esta semilla. Las firmas usan ECDSA determinista
+(RFC~6979): el nonce de cada firma se deriva de la clave y del mensaje,
+dos firmas de la misma lectura son idénticas (el banco lo comprueba) y
+un generador pobre en el momento de firmar no puede filtrar la clave,
+que es el fallo clásico de ECDSA; el motor solo hace falta, por tanto,
+para \emph{crear} la clave, y un medidor cuyo motor está en alarma sigue
+firmando con la clave que tiene, mientras que no puede hacer una nueva.
+Y la función de entropía falla cerrada: si el motor rechaza la orden
+(sin sembrar, alarma, test de arranque no superado) o el bus falla,
+mbedtls aborta y no se sustituye ninguna otra fuente; una generación
+fallida deja en servicio la clave anterior y nunca una a medias. Un
+número de secuencia monótono permite al receptor rechazar lecturas
+reinyectadas, cosa que una firma válida por sí sola no hace.
+
+El banco en el PC ejecuta el firmware del medidor contra el modelo del
+motor y entrega su salida de consola a un script del PC que verifica las
+tramas con otra biblioteca (\texttt{cryptography}, no mbedtls). El banco
+planta una lectura manipulada (un bit del campo de energía) y una
+repetida entre ocho válidas, y el script debe encontrar exactamente esas
+dos; la petición de certificado debe parsearse, llevar una autofirma
+válida y la clave pública del equipo. Todas las comprobaciones pasan. El
+firmware compila con ESP-IDF~5.3.5 para el ESP32-C3 en una imagen de
+287~kB. Nada se ha ejecutado en placa: el motor solo existe en
+simulación hasta la puesta en marcha de la FPGA, y la entropía del
+modelo es un AES con semilla fija, no una medida.
 
 \section{Puesta en marcha en la FPGA}
 \label{sec:bringup}

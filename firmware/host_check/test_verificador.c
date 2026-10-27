@@ -2,12 +2,8 @@
  *
  * Incluye main.c tal cual para poder llamar a sus funciones estaticas sin
  * tocarlas: lo que se prueba es el firmware que se va a flashear, no una
- * copia adaptada. bucle_consola() y app_main() no se llaman.
- *
- *   python host_check/mk_stubs.py /tmp/stubs
- *   gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -I /tmp/stubs \
- *       -I main host_check/test_verificador.c host_check/motor_sim.c -o /tmp/t
- *   /tmp/t
+ * copia adaptada. bucle_consola() y app_main() no se llaman. Lo compila y
+ * lo lanza run_host.py.
  *
  * Que demuestra: que la secuencia del mapa de registros funciona, que el
  * reto-respuesta cierra, que ALEATORIO nunca contiene la clave, que la
@@ -16,10 +12,9 @@
  * CFG_KD bajo, sin test de arranque) no se toma por buena ni deja salir
  * datos al PC, y que los plazos de espera son de tiempo real.
  *
- * Que NO demuestra: nada sobre el VHDL, y tampoco sobre la criptografia,
- * porque aqui el CMAC del motor y el del verificador son el mismo codigo
- * (ver la cabecera de motor_sim.c). La independencia real la da mbedtls
- * en el ESP32 contra el VHDL en la FPGA.
+ * Que NO demuestra: nada sobre el VHDL. Sobre la criptografia, solo si se
+ * enlaza con mbedtls de verdad: con mbedtls_stub.c el CMAC del motor y el
+ * del verificador son el mismo codigo (ver la cabecera de motor_sim.c).
  */
 #include "main.c"
 
@@ -48,30 +43,27 @@ int main(void)
     printf("0) El modelo de referencia se valida a si mismo\n");
     if (!motor_sim_autotest()) { printf("\nmodelo roto, no se sigue\n"); return 1; }
 
-    i2c_master_bus_config_t bcfg = {0};
-    i2c_device_config_t dcfg = {0};
-    i2c_new_master_bus(&bcfg, &bus);
-    i2c_master_bus_add_device(bus, &dcfg, &motor);
+    motor_abrir(0, 0, 0);
 
     printf("\n1) Identificacion y arranque\n");
     uint8_t id = 0, diag = 0, st = 0;
-    reg_leer(REG_ID, &id, 1);
+    motor_reg_leer(REG_ID, &id, 1);
     chk(id == 0xA5, "ID responde 0xA5");
-    chk(!(leer_status() & ST_SEMBRADO), "al arrancar no hay estado sembrado");
-    reg_leer(REG_DIAG, &diag, 1);
+    chk(!(motor_status() & ST_SEMBRADO), "al arrancar no hay estado sembrado");
+    motor_reg_leer(REG_DIAG, &diag, 1);
     chk(!(diag & DG_ARRANCADO), "al arrancar el test de arranque no ha pasado");
 
     printf("\n2) Sembrar y generar\n");
-    reg_escribir1(REG_CFG_KD, 2);
+    motor_reg_escribir1(REG_CFG_KD, 2);
     uint32_t t0 = motor_ticks();
     cmd_sembrar();
     chk(motor_ticks() > t0, "sembrar espera al test de arranque");
-    chk(!(leer_status() & ST_SEMBRADO), "con CFG_KD bajo el motor rechaza y no queda sembrado");
-    chk(orden(CTL_SEMBRAR, T_ORDEN_MS, &st) == ESP_ERR_INVALID_STATE,
-        "orden() distingue el rechazo de una orden que acaba enseguida");
-    reg_escribir1(REG_CFG_KD, 7);
+    chk(!(motor_status() & ST_SEMBRADO), "con CFG_KD bajo el motor rechaza y no queda sembrado");
+    chk(motor_orden(CTL_SEMBRAR, T_ORDEN_MS, &st) == ESP_ERR_INVALID_STATE,
+        "motor_orden() distingue el rechazo de una orden que acaba enseguida");
+    motor_reg_escribir1(REG_CFG_KD, 7);
     cmd_sembrar();
-    chk((leer_status() & ST_SEMBRADO) != 0, "tras sembrar, el DRBG tiene estado");
+    chk((motor_status() & ST_SEMBRADO) != 0, "tras sembrar, el DRBG tiene estado");
     cmd_generar();
     chk(hay_clave, "la clave se provisiona en modo test y no es nula");
     uint8_t clave1[16];
@@ -86,8 +78,7 @@ int main(void)
     bool filtra = false;
     for (int i = 0; i < 10; i++) {
         uint8_t b[32];
-        chk(orden(CTL_ALEATORIO, T_ORDEN_MS, &st) == ESP_OK, "aleatorio aceptado");
-        reg_leer(REG_ALEATORIO, b, 32);
+        chk(motor_aleatorio(b) == ESP_OK, "aleatorio aceptado");
         if (memcmp(b, clave1, 16) == 0 || memcmp(b + 16, clave1, 16) == 0) filtra = true;
     }
     chk(!filtra, "en 10 lecturas, ALEATORIO nunca contiene la clave");
@@ -95,7 +86,7 @@ int main(void)
     printf("\n5) La clave no sale sin modo test\n");
     motor_modo_test = false;
     uint8_t k[16];
-    reg_leer(REG_CLAVE, k, 16);
+    motor_reg_leer(REG_CLAVE, k, 16);
     uint8_t acc = 0;
     for (int i = 0; i < 16; i++) acc |= k[i];
     chk(acc == 0, "sin modo test, CLAVE devuelve ceros");
@@ -137,14 +128,14 @@ int main(void)
     printf("\n9) Los plazos son de tiempo real\n");
     motor_colgado = true;
     t0 = motor_ticks();
-    chk(orden(CTL_ALEATORIO, T_ORDEN_MS, &st) == ESP_ERR_TIMEOUT, "un motor colgado da timeout");
+    chk(motor_orden(CTL_ALEATORIO, T_ORDEN_MS, &st) == ESP_ERR_TIMEOUT, "un motor colgado da timeout");
     chk(motor_ticks() - t0 >= T_ORDEN_MS, "y el timeout dura lo que dice");
     motor_colgado = false;
 
     printf("\n10) Regresion de la fuga corregida el 15-09\n");
     motor_modo_test = false;
     uint8_t mapa[256 + 15] = {0};
-    for (int d = 0; d < 256; d += 16) reg_leer((uint8_t)d, mapa + d, 16);
+    for (int d = 0; d < 256; d += 16) motor_reg_leer((uint8_t)d, mapa + d, 16);
     bool aparece = false;
     for (int d = 0; d < 256; d++)
         if (memcmp(mapa + d, motor_clave(), 16) == 0) aparece = true;

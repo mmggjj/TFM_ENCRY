@@ -1,11 +1,15 @@
-"""Cabeceras simuladas del ESP-IDF para comprobar main.c sin ESP-IDF.
+"""Cabeceras simuladas del ESP-IDF para compilar el firmware en el PC.
 
-No emula comportamiento: declara lo justo para que un gcc de escritorio
-valide sintaxis, tipos y cadenas de formato del verificador. Sirve para
-cazar roturas en cualquier maquina, sin toolchain de Espressif ni placa.
+No emulan comportamiento: declaran lo justo para que un gcc de escritorio
+compile el verificador, el medidor y el componente motor_i2c contra el
+motor simulado (motor_sim.c). Sirve para cazar roturas en cualquier
+maquina, sin toolchain de Espressif ni placa.
 
-    python host_check/mk_stubs.py /tmp/stubs
-    gcc -fsyntax-only -Wall -Wextra -Wno-unused-parameter -std=gnu11         -I /tmp/stubs main/main.c
+    python3 mk_stubs.py DESTINO [--sin-mbedtls]
+
+Con --sin-mbedtls no se generan las cabeceras falsas de mbedtls: se usan
+las de verdad (run_host.py las pasa con -I y enlaza la biblioteca). Las
+falsas solo cubren el CMAC del verificador.
 
 Encontro una cadena partida que la inspeccion visual no vio, asi que se
 queda. NO forma parte de la compilacion del proyecto: idf.py no mira en
@@ -15,6 +19,7 @@ import sys
 from pathlib import Path
 
 raiz = Path(sys.argv[1])
+con_mbedtls_falso = "--sin-mbedtls" not in sys.argv[2:]
 raiz.mkdir(parents=True, exist_ok=True)
 
 
@@ -23,6 +28,11 @@ def esc(rel, texto):
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(texto, encoding="utf-8")
 
+
+esc("sdkconfig.h", """
+#pragma once
+/* En el PC no hay objetivo: main.c del medidor toma los pines del C3. */
+""")
 
 esc("esp_err.h", """
 #pragma once
@@ -41,6 +51,7 @@ esc("freertos/FreeRTOS.h", """
 #include <stdint.h>
 typedef uint32_t TickType_t;
 #define pdMS_TO_TICKS(ms) ((TickType_t)(ms))
+#define portTICK_PERIOD_MS 1
 """)
 
 esc("freertos/task.h", """
@@ -109,14 +120,22 @@ esc("esp_rom_crc.h", """
 uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t *buf, uint32_t len);
 """)
 
-esc("mbedtls/cipher.h", """
+esc("esp_mac.h", """
+#pragma once
+#include <stdint.h>
+#include "esp_err.h"
+esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
+""")
+
+if con_mbedtls_falso:
+    esc("mbedtls/cipher.h", """
 #pragma once
 typedef enum { MBEDTLS_CIPHER_AES_128_ECB = 2 } mbedtls_cipher_type_t;
 typedef struct mbedtls_cipher_info_t mbedtls_cipher_info_t;
 const mbedtls_cipher_info_t *mbedtls_cipher_info_from_type(mbedtls_cipher_type_t t);
 """)
 
-esc("mbedtls/cmac.h", """
+    esc("mbedtls/cmac.h", """
 #pragma once
 #include <stddef.h>
 #include "mbedtls/cipher.h"
@@ -126,4 +145,4 @@ int mbedtls_cipher_cmac(const mbedtls_cipher_info_t *ci,
                         unsigned char *output);
 """)
 
-print(f"cabeceras simuladas en {raiz}")
+print(f"cabeceras simuladas en {raiz}" + ("" if con_mbedtls_falso else " (sin mbedtls falso)"))
