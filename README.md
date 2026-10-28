@@ -21,7 +21,8 @@ reinicios) y es la justificación del diseño de caja blanca.
 | Carpeta | Contenido |
 |---|---|
 | `docs/` | plan, arquitectura, mapa de registros, estados del arte (TRNG, cripto, plataforma, vía ASIC) con ~200 referencias etiquetadas, resultados del modelo y de la síntesis |
-| `analysis/` | modelo estocástico del anillo, estimadores de jitter, banco SPICE, modelo de referencia del DRBG (960 vectores CAVP), verificación cruzada |
+| `analysis/` | modelo estocástico del anillo, estimadores de jitter, banco SPICE, modelo de referencia del DRBG (960 vectores CAVP), verificación cruzada, verificador de lecturas firmadas del PC y sesión con el medidor en placa (`placa_medidor.py`) |
+| `.github/workflows/` | CI: modelo y estimadores, siete bancos GHDL con PSL, síntesis Yosys, banco en host con mbedtls real (y con ASan), compilación ESP-IDF de los dos firmwares y memoria en PDF con tectonic |
 | `rtl/` | VHDL-2008 portable: `trng/`, `io/`, `aes/`, `drbg/`, `top/`; bancos en `tb/`; `run_tb.py` los ejecuta todos con GHDL |
 | `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (sin probar) |
 | `rtl/fpga/` | envoltorio del motor para la Basys 3 (reset, SDA en colector abierto, LED de latido) |
@@ -34,20 +35,26 @@ reinicios) y es la justificación del diseño de caja blanca.
 | `results/` | datos de campañas y logs íntegros |
 | `memoria/` | LaTeX de la memoria (`tfm_main.tex`, en inglés) y versión de lectura en español (`tfm_main_es.tex`) |
 
-## Estado (15-09-2026)
+## Estado (28-10-2026)
 
 - Documentación y estados del arte: cerrados.
 - Modelo y métodos de medida: validados sin hardware (64 comprobaciones).
-- RTL: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG y nivel
-  superior escritos y verificados en GHDL contra vectores oficiales
-  (FIPS 197, SP 800-38A, RFC 4493, CAVP DRBG). Siete bancos, todos pasan.
+- RTL: anillo, ERO, captura, salud, I2C, AES (dos núcleos: una ronda por
+  ciclo y ruta de 32 bits), CMAC, CTR_DRBG y nivel superior escritos y
+  verificados en GHDL contra vectores oficiales (FIPS 197, SP 800-38A,
+  RFC 4493, CAVP DRBG). Siete bancos, todos pasan (`tb_motor_top` 64/64
+  con 11 propiedades PSL; el esclavo I2C 49/49 incluido el bus bajo abuso).
 - Firmware del ESP32: el verificador (esp32) y el medidor con lecturas
-  firmadas (esp32c3) compilan con ESP-IDF 5.3.5 y pasan su banco en el PC
-  contra el motor simulado (27-10-2026, `results/host_check.log`).
-- Síntesis: los bloques digitales sobre IHP SG13G2 (motor versión 0x03, 27-10-2026); motor ≈ 55 kGE sin la captura (102 con ella) con un solo AES compartido,
-  con camino documentado hacia ≈ 20 kGE.
-- Pendiente: hardware (Basys 3 + ESP32 en la mesa), campaña de entropía,
-  simulación del anillo con el kit de la tecnología real, memoria.
+  firmadas (esp32c3) compilan con ESP-IDF 5.3.5, pasan su banco en el PC
+  contra el motor simulado (`results/host_check.log`) y el medidor ha
+  corrido en un ESP32-C3 real con ese motor simulado
+  (`results/placa_medidor_esp32c3.log`: clave en NVS que sobrevive a
+  reinicios físicos, lecturas verificadas en el PC).
+- Síntesis: los bloques digitales sobre IHP SG13G2 (motor versión 0x03);
+  motor ≈ 46 kGE sin la captura (92,5 con ella) con un solo AES de 32 bits
+  compartido (dos optimizaciones medidas, una estimada: ≈ 42 kGE).
+- Pendiente: el motor en hardware (Basys 3 en la mesa), campaña de
+  entropía, memoria en PDF (la CI la compila).
 
 ## Reproducir
 
@@ -59,6 +66,7 @@ python rtl/run_tb.py                  # todos los bancos VHDL (GHDL)
 python synth/sintetiza.py             # síntesis (Yosys + liberty IHP)
 python3 firmware/host_check/run_host.py --mbedtls $IDF_PATH/components/mbedtls/mbedtls  # firmware en el PC (gcc, WSL); --sanear para ASan+UBSan
 python3 analysis/fuzz_verifica_lecturas.py      # robustez del verificador de lecturas del PC
+python analysis/placa_medidor.py COM25          # medidor en un ESP32-C3 por USB (firmware build_sim flasheado)
 ```
 
 ## Convenciones

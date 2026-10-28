@@ -180,9 +180,37 @@ Las tramas son las `F` de siempre (tipo, longitud, carga, CRC32), así que
   el CMAC de mbedtls compilado para Xtensa contra el del modelo, `aleatorio`,
   `crudo` y `esp` (`results/qemu_verificador_esp32.log`).
 
-**No verificado:** nada en placa. El motor no existe aún fuera de la
-simulación (pendiente la Basys 3), la entropía del modelo es un AES con
-semilla fija, no una medida, y QEMU no mide tiempos ni pila de verdad.
+**Ejecutado en placa (28-10-2026)**: un ESP32-C3 (QFN32 rev. 0.3, 4 MB de
+flash, módulo mini) por USB-serie, con el mismo firmware `MOTOR_SIMULADO`
+que corre en QEMU, flasheado con `esptool` desde Windows y manejado por
+`analysis/placa_medidor.py` (log íntegro en
+`results/placa_medidor_esp32c3.log`, 0 fallos; sus tramas pasan
+`verifica_lecturas.py`: 9 lecturas válidas, 1 CSR válida). Lo que QEMU no
+podía decir:
+
+- Tiempos reales en el silicio (160 MHz, mbedtls sin acelerador de curva):
+  `sembrar` 30-60 ms, generar la P-256 y guardarla en NVS **~0,16-0,19 s**,
+  CSR ~0,2 s, una lectura firmada **~180-210 ms** ida y vuelta serie incluida.
+- La NVS es la flash de verdad: la clave privada sobrevive a **reinicios
+  físicos** (EN por RTS), el contador de arranques sube en cada uno
+  (2 → 3 → 4...), la pública tras reiniciar es la misma y la primera
+  lectura del arranque siguiente supera en secuencia a la última del
+  anterior (`0x0c000006 → 0x0d000001`). Tras `olvidar` y reiniciar no hay
+  nada que recuperar y `lectura` se niega.
+- **Un fallo que QEMU no enseñaba:** la consola usaba `fgets` sobre el
+  stdin no bloqueante de ESP-IDF y, por un USB-serie real, los bytes de
+  una orden llegan con huecos; `lectura 1` llegó como `le`, `ctu`, `r`,
+  `a`, cada trozo "comando desconocido". Corregido en los dos firmwares
+  (`leer_linea`, acumula hasta el fin de línea).
+- Con el motor **simulado**, la clave nueva tras `olvidar` sale **igual**
+  que la olvidada: el modelo usa `rand()` sin semilla y repite el mismo
+  "aleatorio" en cada arranque. No es un fallo del medidor; es la
+  demostración en vivo de por qué hace falta el motor. Con el real, dos
+  claves distintas.
+
+**No verificado:** el motor en placa. Sigue existiendo solo en simulación
+hasta la puesta en marcha de la Basys 3, y la entropía del modelo es un
+AES con semilla fija, no una medida.
 
 ## 5. Cómo se usa
 
@@ -206,6 +234,15 @@ idf.py -B build_sim -DMOTOR_SIMULADO=1 qemu monitor
 
 y en la consola `sembrar`, `clave`, `lectura 3`, `csr`. El log se pasa a
 `verifica_lecturas.py` igual que uno de placa.
+
+En placa sin motor (el mismo `build_sim`, flasheado con
+`python -m esptool --chip esp32c3 --port COMx write-flash @flash_args`
+desde Windows o con `idf.py flash` desde WSL con el USB pasado):
+
+```
+python analysis/placa_medidor.py COM25 --lecturas 5
+python analysis/verifica_lecturas.py results/placa_medidor_esp32c3.log
+```
 
 Con placa y motor: `consola_esp32.py --ordenes sembrar clave csr "lectura 20"`
 y después `verifica_lecturas.py results/esp32_consola_X.log`.

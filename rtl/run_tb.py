@@ -21,6 +21,7 @@ WORK = CONSTRUIR / "work"
 
 GHDL_CANDIDATOS = [
     Path(os.environ.get("LOCALAPPDATA", "")) / "ghdl" / "bin" / "ghdl.exe",
+    Path.home() / "eda" / "ghdl" / "bin" / "ghdl.exe",   # mismo sitio que usa synth/sintetiza.py
     Path("ghdl"),
 ]
 
@@ -36,6 +37,7 @@ FUENTES = [
     "io/i2c_slave.vhd",
     "aes/aes_pkg.vhd",
     "aes/aes_enc.vhd",
+    "aes/aes_enc_32.vhd",
     "aes/aes_cmac.vhd",
     "drbg/ctr_drbg.vhd",
     "tb/drbg_vectores_pkg.vhd",      # generado por analysis/gen_drbg_vectores.py

@@ -42,7 +42,13 @@ entity motor_top is
     -- secuenciador ya los serializa (nunca cifran a la vez), asi que el
     -- segundo nucleo era area sin uso: la primera optimizacion del
     -- capitulo de integrado. false deja un nucleo por bloque.
-    G_AES_COMPARTIDO : boolean := true
+    G_AES_COMPARTIDO : boolean := true;
+    -- El nucleo compartido con ruta de 32 bits (aes_enc_32: cuatro
+    -- S-boxes, 51 ciclos por bloque) en vez del de una ronda por ciclo
+    -- (aes_enc, 11 ciclos). La segunda optimizacion del capitulo de
+    -- integrado; la velocidad sobra en los dos casos. Solo cuenta con
+    -- G_AES_COMPARTIDO: los nucleos propios de cada bloque son aes_enc.
+    G_AES_COMPACTO   : boolean := true
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -247,10 +253,18 @@ begin
     aes_arranca <= cmac_aes_arranca or drbg_aes_arranca;
     aes_clave   <= cmac_aes_clave when cmac_aes_arranca = '1' else drbg_aes_clave;
     aes_dato    <= cmac_aes_dato  when cmac_aes_arranca = '1' else drbg_aes_dato;
-    u_aes : entity work.aes_enc
-      port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
-                clave => aes_clave, dato => aes_dato,
-                salida => aes_salida, listo => aes_listo, ocupado => open);
+    g_rapido : if not G_AES_COMPACTO generate
+      u_aes : entity work.aes_enc
+        port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                  clave => aes_clave, dato => aes_dato,
+                  salida => aes_salida, listo => aes_listo, ocupado => open);
+    end generate g_rapido;
+    g_compacto : if G_AES_COMPACTO generate
+      u_aes : entity work.aes_enc_32
+        port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                  clave => aes_clave, dato => aes_dato,
+                  salida => aes_salida, listo => aes_listo, ocupado => open);
+    end generate g_compacto;
   end generate g_nucleo_unico;
 
   -- ------------------------------------------------------------------

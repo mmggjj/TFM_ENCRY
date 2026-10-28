@@ -74,7 +74,12 @@ encrypts and the ESP32 decrypts with mbedtls.
 The core is iterative, one round per clock cycle, eleven cycles per block
 (initial key addition plus ten rounds), with the round keys expanded on
 the fly from the previous one --- forward expansion is all that
-encryption needs, and it saves storing eleven round keys. At 100~MHz that
+encryption needs, and it saves storing eleven round keys. A second core
+with the same interface and a 32-bit datapath (four S-boxes shared with
+the key schedule, one column per cycle, 51 cycles per block) was written
+later for the integrated-circuit chapter and is the one the engine now
+instantiates by default; the one-round core remains the reference the
+bench compares it against (Chapter~\ref{ch:ch6_asic}). At 100~MHz that
 is 1.16~Gbit/s of core throughput, far above what any \ac{I2C} link can
 carry, so pipelining would be wasted area; the iterative form is chosen
 instead because one round is a pure combinational function that can be

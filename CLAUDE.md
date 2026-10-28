@@ -34,6 +34,49 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 28-10-2026: AES de 32 bits, I2C bajo abuso, placa y CI
+
+- **`rtl/aes/aes_enc_32.vhd`**: segundo núcleo AES, ruta de 32 bits (4
+  S-boxes compartidas entre SubBytes y el SubWord de la clave, un
+  MixColumns, ShiftRows como permutación del registro, una columna por
+  ciclo; 51 ciclos/bloque). Mismo interfaz que `aes_enc` con `borrar`.
+  `aes_pkg` gana `sub_word` y `mix_columna` (y `mix_columns` se apoya en
+  ella). `motor_top` lo elige con `G_AES_COMPACTO` (true por defecto;
+  solo cuenta con `G_AES_COMPARTIDO`). `tb_aes_enc` ejecuta los dos
+  núcleos con los mismos estímulos, exige que coincidan y prueba `borrar`
+  a mitad (18/18). **Síntesis: núcleo 6,67 kGE frente a 16,06; motor
+  92,53 frente a 101,83** (`motor_top_aes11` = variante con
+  `-gG_AES_COMPACTO=false`, `VARIANTES` en `sintetiza.py`). Motor
+  digital sin captura ≈ 46 kGE. Los 20-25 kGE del estado del arte ya no se
+  prometen: con la tercera optimización quedaría en ≈ 42.
+- **`tb_i2c_slave` bajo abuso** (pasos 5-13, 49/49): espurios bajo el
+  filtro dentro de un byte (SDA con SCL alto, SCL en fase baja), STOP y
+  START repetido a mitad de byte, bytes tras dirección ajena, puntero que
+  sobrevive al STOP y da la vuelta en 0xFF, maestro que desaparece con el
+  esclavo tirando de SDA (la guarda lo suelta a los `G_GUARDA` ciclos,
+  medido), STOP tras ACK de lectura (si el byte siguiente empieza por 0 el
+  esclavo retiene SDA, como cualquier esclavo I2C, y la guarda resuelve),
+  bus a 1 MHz y 100 kHz. Cuenta pulsos de escritura (`n_we`) y una
+  propiedad PSL (nunca tira de SDA en reposo). Sin fallos del RTL.
+- **Medidor en un ESP32-C3 real** (COM25, `MOTOR_SIMULADO`, flasheado con
+  esptool desde Windows; `analysis/placa_medidor.py`,
+  `results/placa_medidor_esp32c3.log`, 0 fallos; `verifica_lecturas.py` 9
+  válidas + CSR). Tiempos: clave 0,16-0,19 s, CSR 0,2 s, firma ~0,2 s. La
+  clave en NVS y el contador de arranques sobreviven a reinicios por RTS.
+  **Fallo real encontrado:** la consola con `fgets` sobre stdin no
+  bloqueante troceaba las órdenes por USB-serie (`lectura 1` → `le`,
+  `ctu`, `r`, `a`); corregido en los dos firmwares con `leer_linea`
+  (acumula hasta `\n`). Con el motor simulado, la clave tras `olvidar` sale
+  igual (rand() sin semilla): documentado como demostración, no fallo.
+- **`.github/workflows/verifica.yml`**: modelo/estimadores, bancos GHDL
+  (apt `ghdl`) + `verifica_top`, síntesis (`--verilog`, yowasp-yosys),
+  banco en host con mbedtls 3.6 clonado (+ `--sanear`), ESP-IDF 5.3.5 en
+  contenedor (los dos proyectos, normal y `MOTOR_SIMULADO`), memoria con
+  tectonic (PDF como artefacto). `sintetiza.py` ya corre en Linux sin
+  `wsl.exe` (`EN_WINDOWS`). Sin ejecutar aún en GitHub: se sabrá al hacer
+  push.
+- `rtl/run_tb.py` busca también `~/eda/ghdl/bin/ghdl.exe`.
+
 ## Estado al 27-10-2026 (noche): motor versión 0x03
 
 Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión

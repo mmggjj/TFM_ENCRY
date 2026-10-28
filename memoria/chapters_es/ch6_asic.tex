@@ -39,16 +39,17 @@ anillo no se sintetizan; son el único bloque diseñado a nivel de transistor
 \label{sec:area}
 
 La Tabla~\ref{tab:synth} da el resultado de cada bloque. El motor digital
---- todo salvo el búfer de captura --- ocupa unos \textbf{55~kGE}.
+--- todo salvo el búfer de captura --- ocupa unos \textbf{46~kGE}.
 Sintetizados por separado, el autenticador y el generador llevan cada uno
-su propio núcleo de cifrado, de 16~kGE, y así están medidas sus filas de
-la tabla; en el motor completo un solo núcleo sirve a los dos, porque el
-secuenciador nunca los deja funcionar a la vez
-(Sección~\ref{sec:opt}), de modo que las filas no suman la cifra del
-motor. Aproximadamente: el AES compartido 16~kGE, el autenticador sin él
-7, el generador sin él 22, los tests de salud 1,3, muestreador, cruce y
-resets 0,4, \ac{I2C} 1,1, y unos 6,6~kGE de secuenciador, registros y
-reparto del núcleo en el nivel superior. El
+su propio núcleo de cifrado de una ronda por ciclo, de 16~kGE, y así
+están medidas sus filas de la tabla; en el motor completo un solo núcleo
+de 32 bits sirve a los dos, porque el secuenciador nunca los deja
+funcionar a la vez (Sección~\ref{sec:opt}), de modo que las filas no
+suman la cifra del motor. Aproximadamente: el AES compartido de 32 bits
+6,7~kGE, el autenticador sin su núcleo 7, el generador sin él 22, los
+tests de salud 1,3, muestreador, cruce y resets 0,4, \ac{I2C} 1,1, y
+unos 7~kGE de secuenciador, registros y reparto del núcleo en el nivel
+superior. El
 búfer de captura se incluye para que la tabla esté completa, pero no debe
 leerse como parte del producto: sus 46,8~kGE son una memoria de 4096 bits
 mapeada sobre flip-flops porque el flujo no tiene macros de SRAM. En la FPGA
@@ -65,9 +66,10 @@ que se desactiva en producción.
 \toprule
 Bloque & Celdas & Flip-flops & Área ($\mu\mathrm{m}^2$) & kGE \\
 \midrule
-Núcleo de cifrado AES-128 (con entrada de borrado) & 10\,571 & 262 & 116\,550 & 16,06 \\
-AES-CMAC (con su AES)          & 13\,289 & 912   & 169\,382 & 23,34 \\
-CTR\_DRBG con df (con su AES)  & 19\,881 & 2\,357 & 276\,945 & 38,16 \\
+Núcleo AES-128, una ronda por ciclo (20 S-boxes, entrada de borrado) & 10\,571 & 262 & 116\,550 & 16,06 \\
+Núcleo AES-128, ruta de 32 bits (4 S-boxes, 51 ciclos/bloque) & 3\,813 & 266 & 48\,434 & 6,67 \\
+AES-CMAC (con su AES de una ronda) & 13\,289 & 912   & 169\,382 & 23,34 \\
+CTR\_DRBG con df (con su AES de una ronda) & 19\,895 & 2\,357 & 277\,293 & 38,21 \\
 Tests de salud (RCT, APT)      & 588     & 86    & 9\,137   & 1,26 \\
 Muestreador ERO y divisor de 24 bits & 127 & 28  & 2\,371   & 0,33 \\
 Cruce de dominio de reloj del bit & 11   & 7     & 408      & 0,06 \\
@@ -75,7 +77,8 @@ Sincronizador de reset (uno por dominio) & 3 & 3 & 147      & 0,02 \\
 Esclavo I2C (con guarda de bus bloqueado) & 435 & 89 & 7\,729 & 1,07 \\
 \midrule
 Búfer de captura (4096 bits en flip-flops) & 12\,526 & 4\,140 & 339\,386 & 46,76 \\
-Motor completo, anillos como cables, un solo AES & 39\,735 & 8\,175 & 737\,071 & 101,56 \\
+Motor completo, anillos como cables, un solo AES de una ronda & 39\,879 & 8\,175 & 739\,061 & 101,83 \\
+\textbf{Motor completo, un solo AES de 32 bits} & 32\,954 & 8\,179 & 671\,576 & \textbf{92,53} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,8 +96,8 @@ orden de borrado total, un contador de peticiones que satura en vez de
 dar la vuelta, las reglas de exclusión de la captura y los
 sincronizadores de reset; el generador creció 1,0~kGE por el contador
 saturante y la ruta de borrado, y el motor completo 0,8~kGE, hasta
-115,7~kGE con dos núcleos; compartir el núcleo lo dejó después en los
-101,6~kGE de la tabla. El flujo de
+115,7~kGE con dos núcleos; compartir el núcleo lo dejó en 101,8, y el
+núcleo de 32 bits en los 92,5~kGE de la tabla. El flujo de
 esta tanda leyó el \ac{VHDL} a través de la propia salida Verilog de
 GHDL y de la versión de Yosys instalable con \texttt{pip}, en lugar del
 conector de GHDL; en el núcleo AES, que no cambió, los dos caminos
@@ -118,13 +121,23 @@ por debajo de los 15,8 estimados, porque el reparto cuesta cerca de medio
 kGE y la entrada de borrado que la revisión exigió al núcleo y al
 generador cuesta otro. Un genérico conserva la disposición de dos
 núcleos.
-\item \textbf{Ruta de datos compacta para la S-box.} Veinte tablas S-box
-independientes se sintetizan en 15,8~kGE para el núcleo completo; los
-diseños optimizados en área de la literatura van desde 2,4~kGE para una
-ruta de datos de 8 bits a 226 ciclos por bloque~\cite{moradi2011pushing}
-hasta unos 5~kGE para rutas de datos de 32 bits. Aquí la velocidad es
-irrelevante, así que una ruta de datos de 32 bits con cuatro S-boxes
-compartidas es el punto razonable; ahorro estimado, 10~kGE por núcleo.
+\item \textbf{Ruta de datos compacta para la S-box --- hecho.} Veinte
+tablas S-box independientes se sintetizan en 16~kGE para el núcleo de
+una ronda por ciclo; los diseños optimizados en área de la literatura van
+desde 2,4~kGE para una ruta de datos de 8 bits a 226 ciclos por
+bloque~\cite{moradi2011pushing} hasta unos 5~kGE para rutas de datos de
+32 bits. Aquí la velocidad es irrelevante, así que se escribió un segundo
+núcleo con ruta de 32 bits: cuatro S-boxes compartidas entre SubBytes y
+el SubWord de la expansión de clave, un solo MixColumns, ShiftRows
+aplicado como permutación de cableado del registro de estado al empezar
+cada ronda, una columna por ciclo, 51 ciclos por bloque en vez de 11.
+Pasa los mismos vectores oficiales, la cadena de mil bloques y la prueba
+de zeroización, y el banco exige que su salida coincida con la del núcleo
+de una ronda en cada bloque. Medido: \textbf{6,67~kGE frente a 16,06} en
+el núcleo (ahorro de 9,4, frente a los 10 estimados; la diferencia son
+los multiplexores de columna y el registro de fase) y \textbf{92,5 frente
+a 101,8~kGE} en el motor completo, en la misma tanda de síntesis. El
+núcleo de una ronda sigue disponible mediante un genérico.
 \item \textbf{Menos registros en el generador.} De sus 2355 flip-flops, la
 entropía capturada y el nonce (384), el material de semilla (256), la salida
 (256) y los temporales de la función de derivación pueden reducirse
@@ -132,14 +145,20 @@ consumiendo la semilla como un flujo y compartiendo temporales; unos 800
 flip-flops, cerca de 4~kGE.
 \end{enumerate}
 
-Con las tres, el motor digital baja a \textbf{$\approx$20--25~kGE}
-(los 5~kGE del control del nivel superior apenas se reducen), que es el
-orden de magnitud que anticipaba el estado del arte (de 13 a 25~kGE para
-motores de este tipo) y que, con el factor de crecimiento publicado de
-$\approx$2,35 del área de celdas al área del núcleo para un AES en esta misma
-biblioteca, supone unos 0,34~mm$^2$ de núcleo. Cada uno de estos ahorros se
-presenta como una estimación; medirlos sintetizando las variantes
-optimizadas se recoge como trabajo futuro y no se da por hecho.
+Las dos optimizaciones medidas llevaron el motor digital de 69~kGE (dos
+núcleos de una ronda) a 46; la tercera lo dejaría en
+\textbf{$\approx$42~kGE}. Es más que los 13 a 25~kGE que anticipaba el
+estado del arte para motores de este tipo, y la tabla dice por qué: el
+generador sin su núcleo son 22~kGE, la mitad registros, y el
+secuenciador y los registros del nivel superior otros 7; llegar al rango
+publicado exigiría repensar el almacenamiento del generador y no su
+cifrador, lo que este trabajo deja planteado y no hecho. Con el factor
+de crecimiento publicado de $\approx$2,35 del área de celdas al área del
+núcleo para un AES en esta misma biblioteca, 42~kGE son unos
+0,72~mm$^2$ de núcleo, que siguen cabiendo varias veces en el bloque
+académico más pequeño (Sección~\ref{sec:shuttle}). Los dos primeros
+ahorros son medidas; el tercero es una estimación y se recoge como
+trabajo futuro, no se da por hecho.
 
 \section{Lo que necesita el oscilador en anillo en silicio}
 \label{sec:ro_silicon}

@@ -260,12 +260,31 @@ static void cmd_olvidar(void)
 }
 
 /* ---- consola minima --------------------------------------------------- */
+/* Lee una linea de la consola acumulando caracter a caracter. Con el
+ * stdin no bloqueante de ESP-IDF, fgets devuelve lo que haya llegado
+ * cuando se queda sin bytes, y por un USB-serie real los bytes de una
+ * orden llegan con huecos: en la placa 'lectura 1' llego como "le",
+ * "ctu", "r", "a" y cada trozo era un comando desconocido. En QEMU y en
+ * el banco en host la linea llega entera y el fallo no se ve. */
+static bool leer_linea(char *linea, size_t n)
+{
+    static size_t pos;
+    int c;
+    while ((c = fgetc(stdin)) != EOF) {
+        if (c == '\r') continue;
+        if (c == '\n') { linea[pos] = '\0'; pos = 0; return true; }
+        if (pos + 1 < n) linea[pos++] = (char)c;
+    }
+    clearerr(stdin);
+    return false;
+}
+
 static void bucle_consola(void)
 {
     char linea[64];
     printf("medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar\n");
     for (;;) {
-        if (!fgets(linea, sizeof linea, stdin)) { vTaskDelay(pdMS_TO_TICKS(50)); continue; }
+        if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
         sscanf(linea, "%15s %d", cmd, &arg);
         if      (!strcmp(cmd, "id"))      cmd_id();

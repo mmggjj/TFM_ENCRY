@@ -78,7 +78,12 @@ El núcleo es iterativo, una ronda por ciclo de reloj, once ciclos por
 bloque (suma inicial de clave más diez rondas), con las claves de ronda
 expandidas al vuelo a partir de la anterior --- el cifrado solo necesita
 la expansión hacia delante, y así se evita almacenar once claves de
-ronda. A 100~MHz eso supone 1,16~Gbit/s de tasa de bits del núcleo, muy
+ronda. Un segundo núcleo con el mismo interfaz y ruta de datos de 32 bits
+(cuatro S-boxes compartidas con la expansión de clave, una columna por
+ciclo, 51 ciclos por bloque) se escribió después para el capítulo del
+circuito integrado y es el que el motor instancia ahora por defecto; el
+de una ronda sigue siendo la referencia contra la que el banco lo compara
+(Capítulo~\ref{ch:ch6_asic}). A 100~MHz eso supone 1,16~Gbit/s de tasa de bits del núcleo, muy
 por encima de lo que puede transportar cualquier enlace \ac{I2C}, así que
 segmentar el núcleo (pipelining) sería área desperdiciada; en su lugar se
 elige la forma iterativa porque una ronda es una función combinacional

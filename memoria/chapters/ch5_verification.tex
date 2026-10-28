@@ -81,13 +81,13 @@ benches and their state at the time of writing.
 \toprule
 Bench & Checks & Result \\
 \midrule
-Ring oscillator & start/stop, $f = 1/(2N t_{pd})$, zero floor, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 4/4 \\
-I2C slave & addressing, foreign address, multi-byte write, repeated-start read & 14/14 \\
-AES-128 core & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 blocks); 1000-block chain & 6/6 \\
+Ring oscillator & start/stop, $f = 1/(2N t_{pd})$, zero floor, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 6/6 \\
+I2C slave & addressing, foreign address, multi-byte write, repeated-start read; bus under abuse: sub-filter glitches, stop and repeated start mid-byte, bytes after a foreign address, pointer across stop and wrap, master lost with SDA held, stop after read-ACK, 1~MHz and 100~kHz; 1 property & 49/49 \\
+AES-128 cores (both) & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 blocks); 1000-block chain; zeroization mid-block; one-round-per-cycle and 32-bit cores agree & 18/18 \\
 AES-CMAC & RFC~4493 examples 1--4; repeatability & 5/5 \\
-CTR\_DRBG & instantiate, 2$\times$generate, reseed, counter, re-instantiate, refuse unseeded & 13/13 \\
-Health tests & healthy source, stuck, 70\,\% biased, stuck-at-complement, sticky/clear & 10/10 \\
-Whole engine & ESP32 sequence over I2C: id, seed (divider below minimum refused, divider frozen while busy), key, random register free of the key, 2 challenges, 2nd key, capture, key hidden & 18/18 \\
+CTR\_DRBG & instantiate, 2$\times$generate, reseed, counter, re-instantiate, refuse unseeded, zeroize at rest and mid-operation, saturating request counter & 18/18 \\
+Health tests & healthy source, stuck, 70\,\% biased, stuck-at-complement, sticky/clear & 15/15 \\
+Whole engine & ESP32 sequence over I2C: id, seed (divider below minimum refused, divider frozen while busy), key, random register free of the key, 2 challenges, 2nd key, capture (seed never in the buffer), key hidden, exhaustion, zeroization and residues; 11 properties, 6 covers & 64/64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -113,7 +113,22 @@ valid during the strobe; the second by loading the shift register and
 driving its first bit on the same falling edge that releases the
 acknowledge. A third defect was in the bench itself: initializing the
 register memory from the stimulus process created a second driver on the
-same signal and every conflicting bit resolved to unknown.
+same signal and every conflicting bit resolved to unknown. The slave is
+the only door into the chip, so the bench was later extended with the bus
+under abuse: spurious pulses shorter than the input filter in the middle
+of a byte, on SDA with SCL high (a start followed by a stop, if not
+filtered) and on SCL in its low phase; a stop and a repeated start in the
+middle of a byte; bytes sent after a foreign address; the pointer
+surviving a stop and wrapping at the end of the map; a master that
+disappears with the clock stopped while the slave is holding SDA low in
+its acknowledge; a master that issues a stop after acknowledging a read
+byte, which \ac{I2C} itself makes impossible when the next byte starts
+with a zero because the slave is holding the line; and the bus at
+1~MHz and 100~kHz with a 20~MHz system clock. The bench counts the write
+strobes to the register bank, so no aborted transaction may write, and a
+property checked at every clock states that the slave never drives SDA
+while idle. The bus-hang guard releases the line in the configured number
+of cycles in both stuck cases, and nothing abnormal writes.
 
 \paragraph{Health tests.} The ``healthy'' source of the first bench, a
 shift register seeded with a single one, started with a run of 27 zeros
@@ -251,10 +266,31 @@ with the engine model linked into the firmware in place of the \ac{I2C}
 driver (a build option, never for a board) the whole sequence runs on the
 emulated RISC-V core with the target build of mbedtls, and the PC script
 accepts its frames; the public key the emulated chip produces equals the
-one the host bench produces from the same engine blocks. Nothing has run
-on a board: the engine exists only in simulation until the FPGA bring-up,
-the model's entropy is an AES with a fixed seed, not a measurement, and
-the emulator says nothing about timing.
+one the host bench produces from the same engine blocks.
+
+The same build was then flashed onto a real ESP32-C3 module over
+USB-serial and driven by a script that logs every line and times every
+command. On the silicon, seeding the model takes tens of milliseconds,
+generating the P-256 key and storing it takes about 0.17~s, a certificate
+request 0.2~s and one signed reading about 0.2~s including the serial
+round trip; the private key survives physical resets (the enable pin
+pulsed from the serial adapter), the boot counter kept in flash advances
+on each, the public key read back after a reset is unchanged and the
+first reading of the next boot exceeds the last one of the previous boot
+in sequence, so the anti-replay rule holds across real power cycles. Two
+things the emulator could not show appeared at once. The console read its
+commands with a buffered-line call over a non-blocking input, and over a
+real USB-serial link the bytes of a command arrive with gaps: a single
+command reached the firmware as four fragments, each rejected as unknown;
+the console now accumulates characters up to the line end. And the new key
+generated after forgetting the old one was identical to it, because the
+engine model draws its ``randomness'' from a seedless pseudo-random
+function that repeats the same sequence at every boot; this is not a
+defect of the meter but the live demonstration of what the engine is for.
+The PC verifier accepts every frame of the board log. What remains
+unverified is the engine itself on a board: it exists only in simulation
+until the FPGA bring-up, and the model's entropy is an AES with a fixed
+seed, not a measurement.
 
 \section{FPGA bring-up}
 \label{sec:bringup}

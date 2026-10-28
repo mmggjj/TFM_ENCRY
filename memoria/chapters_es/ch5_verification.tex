@@ -87,13 +87,13 @@ la redacción.
 \toprule
 Banco & Comprobaciones & Resultado \\
 \midrule
-Oscilador en anillo & arranque/parada, $f = 1/(2N t_{pd})$, suelo nulo, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 4/4 \\
-Esclavo I2C & direccionamiento, dirección ajena, escritura multibyte, lectura con inicio repetido & 14/14 \\
-Núcleo AES-128 & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 bloques); cadena de 1000 bloques & 6/6 \\
+Oscilador en anillo & arranque/parada, $f = 1/(2N t_{pd})$, suelo nulo, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 6/6 \\
+Esclavo I2C & direccionamiento, dirección ajena, escritura multibyte, lectura con inicio repetido; bus bajo abuso: espurios bajo el filtro, parada e inicio repetido a mitad de byte, bytes tras dirección ajena, puntero a través de la parada y vuelta, maestro perdido con SDA retenido, parada tras ACK de lectura, 1~MHz y 100~kHz; 1 propiedad & 49/49 \\
+Núcleos AES-128 (los dos) & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 bloques); cadena de 1000 bloques; zeroización a mitad de bloque; el de una ronda por ciclo y el de 32 bits coinciden & 18/18 \\
 AES-CMAC & RFC~4493 ejemplos 1--4; repetibilidad & 5/5 \\
-CTR\_DRBG & instanciación, 2$\times$generación, resembrado, contador, reinstanciación, rechazo sin semilla & 13/13 \\
-Tests de salud & fuente sana, atascada, sesgada al 70\,\%, atascada en el complemento, retención/borrado & 10/10 \\
-Motor completo & secuencia del ESP32 por I2C: id, semilla (divisor por debajo del mínimo rechazado, divisor congelado mientras está ocupado), clave, registro aleatorio libre de la clave, 2 retos, 2.ª clave, captura, clave oculta & 18/18 \\
+CTR\_DRBG & instanciación, 2$\times$generación, resembrado, contador, reinstanciación, rechazo sin semilla, zeroización en reposo y a mitad, contador de peticiones que satura & 18/18 \\
+Tests de salud & fuente sana, atascada, sesgada al 70\,\%, atascada en el complemento, retención/borrado & 15/15 \\
+Motor completo & secuencia del ESP32 por I2C: id, semilla (divisor por debajo del mínimo rechazado, divisor congelado mientras está ocupado), clave, registro aleatorio libre de la clave, 2 retos, 2.ª clave, captura (la semilla nunca en el buffer), clave oculta, agotamiento, zeroización y residuos; 11 propiedades, 6 coberturas & 64/64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,7 +124,23 @@ cargando el registro de desplazamiento y presentando su primer bit en el
 mismo flanco de bajada que libera el bit de reconocimiento. Un tercer
 defecto estaba en el propio banco: inicializar la memoria de registros
 desde el proceso de estímulos creaba un segundo driver sobre la misma
-señal, y todo bit en conflicto se resolvía a desconocido.
+señal, y todo bit en conflicto se resolvía a desconocido. El esclavo es
+la única puerta del chip, así que el banco se amplió después con el bus
+bajo abuso: pulsos espurios más cortos que el filtro de entrada en mitad
+de un byte, en SDA con SCL alto (un inicio seguido de una parada, de no
+filtrarse) y en SCL en su fase baja; una parada y un inicio repetido a
+mitad de byte; bytes enviados tras una dirección ajena; el puntero que
+sobrevive a la parada y da la vuelta al final del mapa; un maestro que
+desaparece con el reloj parado mientras el esclavo mantiene SDA a nivel
+bajo en su reconocimiento; un maestro que emite una parada tras reconocer
+un byte leído, cosa que el propio \ac{I2C} hace imposible cuando el byte
+siguiente empieza por cero porque el esclavo retiene la línea; y el bus a
+1~MHz y a 100~kHz con reloj de sistema de 20~MHz. El banco cuenta los
+pulsos de escritura al banco de registros, de modo que ninguna
+transacción abortada puede escribir, y una propiedad comprobada en cada
+ciclo establece que el esclavo nunca tira de SDA estando en reposo. La
+guarda de bus colgado suelta la línea en el número de ciclos configurado
+en los dos casos de bloqueo, y nada anormal escribe.
 
 \paragraph{Tests de salud.} La fuente ``sana'' del primer banco, un
 registro de desplazamiento inicializado con un solo uno, empezaba con
@@ -277,10 +293,32 @@ del driver \ac{I2C} (una opción de compilación, nunca para una placa) la
 secuencia completa corre en el núcleo RISC-V emulado con el mbedtls
 compilado para el objetivo, y el script del PC acepta sus tramas; la
 clave pública que produce el chip emulado es la misma que produce el
-banco en el PC a partir de los mismos bloques del motor. Nada se ha
-ejecutado en placa: el motor solo existe en simulación hasta la puesta
-en marcha de la FPGA, la entropía del modelo es un AES con semilla fija,
-no una medida, y el emulador no dice nada de los tiempos.
+banco en el PC a partir de los mismos bloques del motor.
+
+Esa misma compilación se grabó después en un módulo ESP32-C3 real por
+USB-serie y se manejó con un script que registra cada línea y cronometra
+cada orden. En el silicio, sembrar el modelo lleva decenas de
+milisegundos, generar la clave P-256 y guardarla unos 0,17~s, la
+petición de certificado 0,2~s y una lectura firmada unos 0,2~s con la ida
+y vuelta serie incluida; la clave privada sobrevive a reinicios físicos
+(el pin de habilitación pulsado desde el adaptador serie), el contador de
+arranques guardado en flash avanza en cada uno, la pública leída tras el
+reinicio es la misma y la primera lectura del arranque siguiente supera
+en secuencia a la última del anterior, así que la regla contra la
+repetición se cumple a través de cortes de alimentación reales. Dos cosas
+que el emulador no podía enseñar aparecieron a la primera. La consola
+leía las órdenes con una llamada de línea completa sobre una entrada no
+bloqueante, y por un enlace USB-serie real los bytes de una orden llegan
+con huecos: una sola orden llegó al firmware en cuatro trozos, cada uno
+rechazado como desconocido; la consola acumula ahora caracteres hasta el
+fin de línea. Y la clave nueva generada tras olvidar la anterior resultó
+idéntica a ella, porque el modelo del motor saca su ``aleatorio'' de una
+función pseudoaleatoria sin semilla que repite la misma secuencia en cada
+arranque; no es un defecto del medidor, sino la demostración en vivo de
+para qué sirve el motor. El verificador del PC acepta todas las tramas
+del log de la placa. Lo que sigue sin verificar es el propio motor en
+placa: solo existe en simulación hasta la puesta en marcha de la FPGA, y
+la entropía del modelo es un AES con semilla fija, no una medida.
 
 \section{Puesta en marcha en la FPGA}
 \label{sec:bringup}

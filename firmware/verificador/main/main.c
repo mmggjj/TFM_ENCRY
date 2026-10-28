@@ -277,12 +277,29 @@ static void cmd_esp(int n)
 }
 
 /* ---- consola minima --------------------------------------------------- */
+/* Lee una linea acumulando caracter a caracter: con el stdin no bloqueante
+ * de ESP-IDF, fgets devuelve trozos cuando los bytes de una orden llegan
+ * con huecos por el USB-serie (visto en el medidor en placa: 'lectura 1'
+ * llego como "le", "ctu", "r", "a"). En QEMU la linea llega entera. */
+static bool leer_linea(char *linea, size_t n)
+{
+    static size_t pos;
+    int c;
+    while ((c = fgetc(stdin)) != EOF) {
+        if (c == '\r') continue;
+        if (c == '\n') { linea[pos] = '\0'; pos = 0; return true; }
+        if (pos + 1 < n) linea[pos++] = (char)c;
+    }
+    clearerr(stdin);
+    return false;
+}
+
 static void bucle_consola(void)
 {
     char linea[64];
     printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N crudo N esp N cero\n");
     for (;;) {
-        if (!fgets(linea, sizeof linea, stdin)) { vTaskDelay(pdMS_TO_TICKS(50)); continue; }
+        if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
         sscanf(linea, "%15s %d", cmd, &arg);
         if      (!strcmp(cmd, "id"))      cmd_id();

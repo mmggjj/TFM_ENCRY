@@ -24,40 +24,107 @@ simulation stopped @60552056024fs
 
 --- tb_i2c_slave ---
 ../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-rtl/tb/tb_i2c_slave.vhd:167:5:@2us:(report note): 1) Direccionamiento
-rtl/tb/tb_i2c_slave.vhd:99:9:@23us:(report note):   [ok ] reconoce su propia direccion en escritura
-rtl/tb/tb_i2c_slave.vhd:172:5:@23us:(report note): 2) Escritura de varios bytes con autoincremento
-rtl/tb/tb_i2c_slave.vhd:99:9:@41us:(report note):   [ok ] reconoce el byte de puntero
-rtl/tb/tb_i2c_slave.vhd:99:9:@59us:(report note):   [ok ] reconoce el primer dato
-rtl/tb/tb_i2c_slave.vhd:99:9:@77us:(report note):   [ok ] reconoce el segundo dato
-rtl/tb/tb_i2c_slave.vhd:99:9:@95us:(report note):   [ok ] reconoce el tercer dato
-rtl/tb/tb_i2c_slave.vhd:99:9:@101us:(report note):   [ok ] el primer dato fue a la direccion 0x10
-rtl/tb/tb_i2c_slave.vhd:99:9:@101us:(report note):   [ok ] el segundo avanzo a 0x11
-rtl/tb/tb_i2c_slave.vhd:99:9:@101us:(report note):   [ok ] el tercero avanzo a 0x12
-rtl/tb/tb_i2c_slave.vhd:187:5:@101us:(report note): 3) Lectura con arranque repetido y autoincremento
-rtl/tb/tb_i2c_slave.vhd:99:9:@122us:(report note):   [ok ] segunda transaccion, direccion reconocida
-rtl/tb/tb_i2c_slave.vhd:99:9:@140us:(report note):   [ok ] puntero colocado en 0x10
-rtl/tb/tb_i2c_slave.vhd:99:9:@161us:(report note):   [ok ] acepta la direccion en modo lectura
-rtl/tb/tb_i2c_slave.vhd:99:9:@179us:(report note):   [ok ] primer byte leido = 0xA1
-rtl/tb/tb_i2c_slave.vhd:99:9:@197us:(report note):   [ok ] segundo byte leido = 0xB2
-rtl/tb/tb_i2c_slave.vhd:99:9:@215us:(report note):   [ok ] tercer byte leido = 0xC3
-rtl/tb/tb_i2c_slave.vhd:204:5:@219us:(report note): 4) No responde a una direccion ajena
-rtl/tb/tb_i2c_slave.vhd:99:9:@240us:(report note):   [ok ] no reconoce una direccion que no es la suya
-rtl/tb/tb_i2c_slave.vhd:211:7:@244us:(report note): tb_i2c_slave: 0 fallos
+rtl/tb/tb_i2c_slave.vhd:280:5:@2us:(report note): 1) Direccionamiento
+rtl/tb/tb_i2c_slave.vhd:134:9:@23us:(report note):   [ok ] reconoce su propia direccion en escritura
+rtl/tb/tb_i2c_slave.vhd:285:5:@23us:(report note): 2) Escritura de varios bytes con autoincremento
+rtl/tb/tb_i2c_slave.vhd:134:9:@41us:(report note):   [ok ] reconoce el byte de puntero
+rtl/tb/tb_i2c_slave.vhd:134:9:@59us:(report note):   [ok ] reconoce el primer dato
+rtl/tb/tb_i2c_slave.vhd:134:9:@77us:(report note):   [ok ] reconoce el segundo dato
+rtl/tb/tb_i2c_slave.vhd:134:9:@95us:(report note):   [ok ] reconoce el tercer dato
+rtl/tb/tb_i2c_slave.vhd:134:9:@101us:(report note):   [ok ] el primer dato fue a la direccion 0x10
+rtl/tb/tb_i2c_slave.vhd:134:9:@101us:(report note):   [ok ] el segundo avanzo a 0x11
+rtl/tb/tb_i2c_slave.vhd:134:9:@101us:(report note):   [ok ] el tercero avanzo a 0x12
+rtl/tb/tb_i2c_slave.vhd:300:5:@101us:(report note): 3) Lectura con arranque repetido y autoincremento
+rtl/tb/tb_i2c_slave.vhd:134:9:@122us:(report note):   [ok ] segunda transaccion, direccion reconocida
+rtl/tb/tb_i2c_slave.vhd:134:9:@140us:(report note):   [ok ] puntero colocado en 0x10
+rtl/tb/tb_i2c_slave.vhd:134:9:@161us:(report note):   [ok ] acepta la direccion en modo lectura
+rtl/tb/tb_i2c_slave.vhd:134:9:@179us:(report note):   [ok ] primer byte leido = 0xA1
+rtl/tb/tb_i2c_slave.vhd:134:9:@197us:(report note):   [ok ] segundo byte leido = 0xB2
+rtl/tb/tb_i2c_slave.vhd:134:9:@215us:(report note):   [ok ] tercer byte leido = 0xC3
+rtl/tb/tb_i2c_slave.vhd:317:5:@219us:(report note): 4) No responde a una direccion ajena
+rtl/tb/tb_i2c_slave.vhd:134:9:@240us:(report note):   [ok ] no reconoce una direccion que no es la suya
+rtl/tb/tb_i2c_slave.vhd:324:5:@244us:(report note): 5) Espurios por debajo del filtro
+rtl/tb/tb_i2c_slave.vhd:134:9:@245100ns:(report note):   [ok ] un pulso de 100 ns en SDA en reposo no se toma por START
+rtl/tb/tb_i2c_slave.vhd:134:9:@246200ns:(report note):   [ok ] un pulso de 100 ns en SCL en reposo no hace nada
+rtl/tb/tb_i2c_slave.vhd:134:9:@303200ns:(report note):   [ok ] el byte con dos espurios dentro recibe ACK
+rtl/tb/tb_i2c_slave.vhd:134:9:@308200ns:(report note):   [ok ] el byte con espurios se escribio entero y bien (0x96)
+rtl/tb/tb_i2c_slave.vhd:134:9:@308200ns:(report note):   [ok ] una sola escritura
+rtl/tb/tb_i2c_slave.vhd:346:5:@308200ns:(report note): 6) STOP a mitad de byte
+rtl/tb/tb_i2c_slave.vhd:134:9:@360200ns:(report note):   [ok ] tras el STOP el esclavo esta en reposo y suelta SDA
+rtl/tb/tb_i2c_slave.vhd:134:9:@360200ns:(report note):   [ok ] el medio byte no se escribio
+rtl/tb/tb_i2c_slave.vhd:134:9:@360200ns:(report note):   [ok ] ningun pulso de escritura
+rtl/tb/tb_i2c_slave.vhd:134:9:@422200ns:(report note):   [ok ] la escritura siguiente va bien
+rtl/tb/tb_i2c_slave.vhd:362:5:@422200ns:(report note): 7) START repetido a mitad de byte
+rtl/tb/tb_i2c_slave.vhd:134:9:@492200ns:(report note):   [ok ] acepta la direccion en lectura tras el START repetido
+rtl/tb/tb_i2c_slave.vhd:134:9:@510200ns:(report note):   [ok ] lee del puntero fijado antes del byte abortado (0x32)
+rtl/tb/tb_i2c_slave.vhd:134:9:@515200ns:(report note):   [ok ] el byte abortado no se escribio
+rtl/tb/tb_i2c_slave.vhd:378:5:@515200ns:(report note): 8) Bytes tras una direccion ajena
+rtl/tb/tb_i2c_slave.vhd:134:9:@536200ns:(report note):   [ok ] no reconoce la direccion ajena
+rtl/tb/tb_i2c_slave.vhd:134:9:@554200ns:(report note):   [ok ] no reconoce el puntero que sigue
+rtl/tb/tb_i2c_slave.vhd:134:9:@572200ns:(report note):   [ok ] no reconoce el dato que sigue
+rtl/tb/tb_i2c_slave.vhd:134:9:@577200ns:(report note):   [ok ] nada se escribio
+rtl/tb/tb_i2c_slave.vhd:392:5:@577200ns:(report note): 9) El puntero sobrevive al STOP
+rtl/tb/tb_i2c_slave.vhd:134:9:@659200ns:(report note):   [ok ] acepta una lectura directa
+rtl/tb/tb_i2c_slave.vhd:134:9:@677200ns:(report note):   [ok ] lee del puntero que quedo tras la escritura (0x41)
+rtl/tb/tb_i2c_slave.vhd:402:5:@681200ns:(report note): 10) La lectura da la vuelta en 0xFF
+rtl/tb/tb_i2c_slave.vhd:134:9:@759200ns:(report note):   [ok ] 0xFE
+rtl/tb/tb_i2c_slave.vhd:134:9:@777200ns:(report note):   [ok ] 0xFF
+rtl/tb/tb_i2c_slave.vhd:134:9:@795200ns:(report note):   [ok ] 0x00: el puntero de 8 bits da la vuelta
+rtl/tb/tb_i2c_slave.vhd:417:5:@799200ns:(report note): 11) El maestro desaparece con el esclavo tirando de SDA
+rtl/tb/tb_i2c_slave.vhd:134:9:@819200ns:(report note):   [ok ] el esclavo esta dando el ACK (tira de SDA)
+rtl/tb/tb_i2c_slave.vhd:134:9:@919125ns:(report note):   [ok ] la guarda devuelve el esclavo a reposo y suelta SDA
+rtl/tb/tb_i2c_slave.vhd:435:5:@919125ns:(report note):   la guarda tardo 99925000000 fs (G_GUARDA = 2000 ciclos)
+rtl/tb/tb_i2c_slave.vhd:134:9:@919125ns:(report note):   [ok ] en los ~100 us que fijan G_GUARDA y el reloj
+rtl/tb/tb_i2c_slave.vhd:134:9:@987125ns:(report note):   [ok ] la escritura siguiente va bien
+rtl/tb/tb_i2c_slave.vhd:445:5:@987125ns:(report note): 12) STOP tras un ACK de lectura, en vez de NACK
+rtl/tb/tb_i2c_slave.vhd:134:9:@1065125ns:(report note):   [ok ] primer byte 0xFF
+rtl/tb/tb_i2c_slave.vhd:134:9:@1070125ns:(report note):   [ok ] el siguiente empezaba por 1: STOP aceptado, esclavo en reposo
+rtl/tb/tb_i2c_slave.vhd:134:9:@1148125ns:(report note):   [ok ] primer byte 0x00
+rtl/tb/tb_i2c_slave.vhd:134:9:@1152125ns:(report note):   [ok ] el siguiente empezaba por 0: el esclavo retiene SDA, el STOP no vale
+rtl/tb/tb_i2c_slave.vhd:134:9:@1249575ns:(report note):   [ok ] la guarda suelta SDA
+rtl/tb/tb_i2c_slave.vhd:473:5:@1249575ns:(report note):   la guarda tardo 97450000000 fs
+rtl/tb/tb_i2c_slave.vhd:134:9:@1249576ns:(report note):   [ok ] el bus queda libre
+rtl/tb/tb_i2c_slave.vhd:134:9:@1312576ns:(report note):   [ok ] la escritura siguiente va bien
+rtl/tb/tb_i2c_slave.vhd:482:5:@1312576ns:(report note): 13) Velocidad del bus
+rtl/tb/tb_i2c_slave.vhd:134:9:@1385076ns:(report note):   [ok ] a 1 MHz escribe y lee bien
+rtl/tb/tb_i2c_slave.vhd:134:9:@2101076ns:(report note):   [ok ] a 100 kHz escribe y lee bien
+rtl/tb/tb_i2c_slave.vhd:497:7:@2102076ns:(report note): tb_i2c_slave: 0 fallos
+  PSL: 1 aserciones (0 violadas), 1 coberturas (1 alcanzadas)
 
 --- tb_aes_enc ---
-rtl/tb/tb_aes_enc.vhd:110:5:@55ns:(report note): 1) Vectores de FIPS 197
-rtl/tb/tb_aes_enc.vhd:93:9:@175ns:(report note):   [ok ] Apendice C.1 -> 69c4e0d86a7b0430d8cdb78070b4c55a (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:93:9:@295ns:(report note):   [ok ] Apendice B -> 3925841d02dc09fbdc118597196a0b32 (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:120:5:@295ns:(report note): 2) Vector de SP 800-38A (ECB, primer bloque)
-rtl/tb/tb_aes_enc.vhd:93:9:@415ns:(report note):   [ok ] F.1.1 ECB-AES128 -> 3ad77bb40d7a3660a89ecaf32466ef97 (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:126:5:@415ns:(report note): 3) Bloques encadenados de SP 800-38A
-rtl/tb/tb_aes_enc.vhd:93:9:@535ns:(report note):   [ok ] F.1.1 segundo bloque -> f5d3d58503b9699de785895a96fdbaaf (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:93:9:@655ns:(report note):   [ok ] F.1.1 tercer bloque -> 43b1cd7f598ece23881b00e3ed030688 (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:136:5:@655ns:(report note): 4) Reutilizacion del nucleo: mil cifrados encadenados
-rtl/tb/tb_aes_enc.vhd:149:7:@240655ns:(report note):   [ok ] mil cifrados reproducibles, resultado 032ec90a52baa3f856551d721b7c6932
-rtl/tb/tb_aes_enc.vhd:158:5:@240775ns:(report note):   cifrado del bloque de ceros = 7df76b0c1ab899b33e42f047b91b546f (es la subclave L del CMAC)
-rtl/tb/tb_aes_enc.vhd:162:7:@240775ns:(report note): tb_aes_enc: 0 fallos
+rtl/tb/tb_aes_enc.vhd:149:9:@65ns:(report note): ===== aes_enc: una ronda por ciclo =====
+rtl/tb/tb_aes_enc.vhd:154:7:@65ns:(report note): 1) Vectores de FIPS 197
+rtl/tb/tb_aes_enc.vhd:122:9:@185ns:(report note):   [ok ] Apendice C.1 -> 69c4e0d86a7b0430d8cdb78070b4c55a (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:122:9:@305ns:(report note):   [ok ] Apendice B -> 3925841d02dc09fbdc118597196a0b32 (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:164:7:@305ns:(report note): 2) Vector de SP 800-38A (ECB, primer bloque)
+rtl/tb/tb_aes_enc.vhd:122:9:@425ns:(report note):   [ok ] F.1.1 ECB-AES128 -> 3ad77bb40d7a3660a89ecaf32466ef97 (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:170:7:@425ns:(report note): 3) Bloques encadenados de SP 800-38A
+rtl/tb/tb_aes_enc.vhd:122:9:@545ns:(report note):   [ok ] F.1.1 segundo bloque -> f5d3d58503b9699de785895a96fdbaaf (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:122:9:@665ns:(report note):   [ok ] F.1.1 tercer bloque -> 43b1cd7f598ece23881b00e3ed030688 (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:180:7:@665ns:(report note): 4) Reutilizacion del nucleo: mil cifrados encadenados
+rtl/tb/tb_aes_enc.vhd:194:9:@240665ns:(report note):   [ok ] mil cifrados reproducibles, resultado 032ec90a52baa3f856551d721b7c6932
+rtl/tb/tb_aes_enc.vhd:203:7:@240785ns:(report note):   cifrado del bloque de ceros = 7df76b0c1ab899b33e42f047b91b546f (es la subclave L del CMAC)
+rtl/tb/tb_aes_enc.vhd:206:7:@240785ns:(report note): 5) Zeroizacion a mitad de un cifrado
+rtl/tb/tb_aes_enc.vhd:230:9:@240846ns:(report note):   [ok ] tras borrar la salida es cero y el nucleo esta libre
+rtl/tb/tb_aes_enc.vhd:245:9:@241446ns:(report note):   [ok ] el cifrado abortado no emite listo
+rtl/tb/tb_aes_enc.vhd:122:9:@241565ns:(report note):   [ok ] Apendice C.1 otra vez, tras borrar -> 69c4e0d86a7b0430d8cdb78070b4c55a (11 ciclos)
+rtl/tb/tb_aes_enc.vhd:151:9:@241965ns:(report note): ===== aes_enc_32: ruta de 32 bits, cuatro S-boxes =====
+rtl/tb/tb_aes_enc.vhd:154:7:@241965ns:(report note): 1) Vectores de FIPS 197
+rtl/tb/tb_aes_enc.vhd:122:9:@242485ns:(report note):   [ok ] Apendice C.1 -> 69c4e0d86a7b0430d8cdb78070b4c55a (51 ciclos)
+rtl/tb/tb_aes_enc.vhd:122:9:@243005ns:(report note):   [ok ] Apendice B -> 3925841d02dc09fbdc118597196a0b32 (51 ciclos)
+rtl/tb/tb_aes_enc.vhd:164:7:@243005ns:(report note): 2) Vector de SP 800-38A (ECB, primer bloque)
+rtl/tb/tb_aes_enc.vhd:122:9:@243525ns:(report note):   [ok ] F.1.1 ECB-AES128 -> 3ad77bb40d7a3660a89ecaf32466ef97 (51 ciclos)
+rtl/tb/tb_aes_enc.vhd:170:7:@243525ns:(report note): 3) Bloques encadenados de SP 800-38A
+rtl/tb/tb_aes_enc.vhd:122:9:@244045ns:(report note):   [ok ] F.1.1 segundo bloque -> f5d3d58503b9699de785895a96fdbaaf (51 ciclos)
+rtl/tb/tb_aes_enc.vhd:122:9:@244565ns:(report note):   [ok ] F.1.1 tercer bloque -> 43b1cd7f598ece23881b00e3ed030688 (51 ciclos)
+rtl/tb/tb_aes_enc.vhd:180:7:@244565ns:(report note): 4) Reutilizacion del nucleo: mil cifrados encadenados
+rtl/tb/tb_aes_enc.vhd:194:9:@1284565ns:(report note):   [ok ] mil cifrados reproducibles, resultado 032ec90a52baa3f856551d721b7c6932
+rtl/tb/tb_aes_enc.vhd:203:7:@1285085ns:(report note):   cifrado del bloque de ceros = 7df76b0c1ab899b33e42f047b91b546f (es la subclave L del CMAC)
+rtl/tb/tb_aes_enc.vhd:206:7:@1285085ns:(report note): 5) Zeroizacion a mitad de un cifrado
+rtl/tb/tb_aes_enc.vhd:230:9:@1285146ns:(report note):   [ok ] tras borrar la salida es cero y el nucleo esta libre
+rtl/tb/tb_aes_enc.vhd:245:9:@1285746ns:(report note):   [ok ] el cifrado abortado no emite listo
+rtl/tb/tb_aes_enc.vhd:122:9:@1286265ns:(report note):   [ok ] Apendice C.1 otra vez, tras borrar -> 69c4e0d86a7b0430d8cdb78070b4c55a (51 ciclos)
+rtl/tb/tb_aes_enc.vhd:254:7:@1286265ns:(report note): tb_aes_enc: 0 fallos
 
 --- tb_aes_cmac ---
 rtl/tb/tb_aes_cmac.vhd:121:5:@55ns:(report note): 1) Carga de clave y subclaves
@@ -177,14 +244,14 @@ rtl/tb/tb_motor_top.vhd:153:9:@6262200ns:(report note):   [ok ] PETICIONES vuelv
 rtl/tb/tb_motor_top.vhd:462:5:@6262200ns:(report note): 6) Captura de bits crudos
 rtl/tb/tb_motor_top.vhd:153:9:@6380700ns:(report note):   [ok ] capturar sin modo test se rechaza
 rtl/tb/tb_motor_top.vhd:153:9:@6529700ns:(report note):   [ok ] capturar durante una siembra se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@6652700ns:(report note):   [ok ] y no deja captura hecha
-rtl/tb/tb_motor_top.vhd:153:9:@6800700ns:(report note):   [ok ] resembrar durante una captura se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@7702700ns:(report note):   [ok ] buffer de captura lleno
-rtl/tb/tb_motor_top.vhd:153:9:@7909200ns:(report note):   [ok ] bits crudos con contenido variado: 52952a54a952b56b54a952b56ad5aa54
-rtl/tb/tb_motor_top.vhd:499:5:@7909200ns:(report note): 6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra
-rtl/tb/tb_motor_top.vhd:153:9:@7940700ns:(report note):   [ok ] cap_en_curso sigue a 1 con la segunda captura en marcha
-rtl/tb/tb_motor_top.vhd:153:9:@8058200ns:(report note):   [ok ] resembrar durante la segunda captura se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@8960200ns:(report note):   [ok ] segunda captura llena
+rtl/tb/tb_motor_top.vhd:153:9:@6693700ns:(report note):   [ok ] y no deja captura hecha
+rtl/tb/tb_motor_top.vhd:153:9:@6841700ns:(report note):   [ok ] resembrar durante una captura se rechaza
+rtl/tb/tb_motor_top.vhd:153:9:@7743700ns:(report note):   [ok ] buffer de captura lleno
+rtl/tb/tb_motor_top.vhd:153:9:@7950200ns:(report note):   [ok ] bits crudos con contenido variado: 2a52a56a952b56a952a552a552b56ad5
+rtl/tb/tb_motor_top.vhd:499:5:@7950200ns:(report note): 6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra
+rtl/tb/tb_motor_top.vhd:153:9:@7981700ns:(report note):   [ok ] cap_en_curso sigue a 1 con la segunda captura en marcha
+rtl/tb/tb_motor_top.vhd:153:9:@8099200ns:(report note):   [ok ] resembrar durante la segunda captura se rechaza
+rtl/tb/tb_motor_top.vhd:153:9:@9001200ns:(report note):   [ok ] segunda captura llena
 rtl/tb/tb_motor_top.vhd:153:9:@9318700ns:(report note):   [ok ] resembrado tras la segunda captura
 rtl/tb/tb_motor_top.vhd:153:9:@14176700ns:(report note):   [ok ] la semilla no aparece en el buffer de captura
 rtl/tb/tb_motor_top.vhd:530:5:@14176700ns:(report note): 7) Sin modo test la clave no se lee
@@ -210,13 +277,4 @@ simulation stopped @16218700ns
 
 === resumen ===
 todos los bancos pasan
-rc_run_tb=0
-Verificacion cruzada del motor con el modelo de referencia
-  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 49b331880db5d0194ccd7922edbbbf64
-  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 334635df2b175eeed986c57a152992b1
-  [ok ] aleatorio1 (registro legible) no contiene clave1 en ninguna mitad
-  [ok ] las dos claves difieren
-  [ok ] clave1 no es un patron trivial
-
-verifica_top: 0 fallos
-rc_verifica_top=0
+rc=0

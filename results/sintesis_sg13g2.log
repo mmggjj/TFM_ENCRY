@@ -1,25 +1,20 @@
-camino: GHDL --synth (Windows) -> Verilog -> yowasp-yosys (WSL)
+camino: GHDL --synth -> Verilog -> yowasp-yosys (WSL)
 biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
 
 bloque          celdas     FF   area um2     kGE     s
-aes_enc          10571    262   116549.9  16.059    10
-aes_cmac         13289    912   169382.4  23.339    10
-ctr_drbg         19881   2357   276944.6  38.159    14
-health_tests       588     86     9136.9   1.259     2
-ero_core           127     28     2371.3   0.327     2
-bit_cdc             11      7      408.2   0.056     2
-reset_sync           3      3      147.0   0.020     2
-trng_capture     12526   4140   339385.8  46.763    26
-i2c_slave          435     89     7729.1   1.065     3
-motor_top        39735   8175   737070.8 101.558    43
+aes_enc          10571    262   116549.9  16.059    13
+aes_enc_32        3813    266    48433.6   6.673     8
+aes_cmac         13289    912   169382.4  23.339    19
+ctr_drbg         19895   2357   277293.1  38.207    26
+health_tests       588     86     9136.9   1.259     5
+ero_core           127     28     2371.3   0.327     5
+bit_cdc             11      7      408.2   0.056     4
+reset_sync           3      3      147.0   0.020     3
+trng_capture     12526   4140   339385.8  46.763    49
+i2c_slave          435     89     7729.1   1.065     6
+motor_top        32954   8179   671575.7  92.534    62
+motor_top_aes11   39879   8175   739060.5 101.833    58
 
 GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
 datos en results\sintesis_sg13g2.csv
-camino: GHDL --synth (Windows) -> Verilog -> yowasp-yosys (WSL)
-biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
-
-bloque          celdas     FF   area um2     kGE     s
-motor_top        39735   8175   737070.8 101.558    43
-
-GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
-datos en results\sintesis_sg13g2.csv
+rc=0

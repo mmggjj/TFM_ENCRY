@@ -18,20 +18,36 @@ mayor, y para un AES en esta misma biblioteca el factor publicado es
 
 | Bloque | Celdas | Biestables | Área (µm²) | kGE |
 |---|---|---|---|---|
-| aes_enc (con entrada `borrar`) | 10.571 | 262 | 116.550 | 16,06 |
-| aes_cmac (incluye su AES) | 13.289 | 912 | 169.382 | 23,34 |
-| ctr_drbg (incluye su AES) | 19.881 | 2.357 | 276.945 | 38,16 |
+| aes_enc, una ronda por ciclo (20 S-boxes, con `borrar`) | 10.571 | 262 | 116.550 | 16,06 |
+| **aes_enc_32**, ruta de 32 bits (4 S-boxes, 51 ciclos/bloque) | 3.813 | 266 | 48.434 | **6,67** |
+| aes_cmac (incluye su aes_enc) | 13.289 | 912 | 169.382 | 23,34 |
+| ctr_drbg (incluye su aes_enc) | 19.895 | 2.357 | 277.293 | 38,21 |
 | health_tests | 588 | 86 | 9.137 | 1,26 |
 | ero_core (contador de 24 bits) | 127 | 28 | 2.371 | 0,33 |
 | bit_cdc | 11 | 7 | 408 | 0,06 |
 | reset_sync (uno por dominio de reloj) | 3 | 3 | 147 | 0,02 |
 | i2c_slave (con guarda de bus colgado) | 435 | 89 | 7.729 | 1,07 |
 | trng_capture | 12.526 | 4.140 | 339.386 | 46,76 |
-| **motor_top** (anillos como cable, **un solo AES**) | 39.735 | 8.175 | 737.071 | **101,56** |
+| motor_top_aes11 (anillos como cable, un solo aes_enc; `G_AES_COMPACTO=false`) | 39.879 | 8.175 | 739.061 | 101,83 |
+| **motor_top** (anillos como cable, **un solo aes_enc_32**) | 32.954 | 8.179 | 671.576 | **92,53** |
 
-Filas al día con `results/sintesis_sg13g2.csv` el **27-10-2026 (noche),
-motor versión 0x03 con AES compartido** (log íntegro en
-`results/sintesis_sg13g2.log`). Historia del día:
+Filas al día con `results/sintesis_sg13g2.csv` el **28-10-2026, motor
+versión 0x03 con AES compartido y compacto** (log íntegro en
+`results/sintesis_sg13g2.log`). Historia:
+
+- **AES de 32 bits** (`rtl/aes/aes_enc_32.vhd`, 28-10; `G_AES_COMPACTO`,
+  por defecto): cuatro S-boxes compartidas entre SubBytes y el SubWord de
+  la expansión de clave, un MixColumns, ShiftRows como permutación del
+  registro de estado, una columna por ciclo (5 ciclos por ronda, 51 por
+  bloque frente a 11). Mismo interfaz que `aes_enc` incluida `borrar`;
+  `tb_aes_enc` pasa los dos núcleos por los mismos vectores y exige que
+  coincidan. **Núcleo: 6,67 frente a 16,06 kGE (−9,4; la estimación eran
+  10: la diferencia son los multiplexores de columna y el registro de
+  fase). Motor: 92,53 frente a 101,83 (−9,3), en la misma tanda.** El
+  `motor_top_aes11` de esta tanda da 101,83 y no 101,56 porque
+  `mix_columns` se reescribió sobre `mix_columna` (misma función, otra
+  forma; ABC la mapea 0,27 kGE distinta) y el ctr_drbg suelto subió 0,05
+  por lo mismo.
 
 - Versión 0x03 antes de compartir el AES: **115,68 kGE** (49.548 celdas,
   8.435 biestables). Respecto a la 0x02 (114,92): el generador subió
@@ -67,38 +83,40 @@ en un integrado se diseñan a nivel de transistor.
 
 ## Lectura de los números
 
-**El motor digital, tal como está, son unos 55 kGE** (todo menos la
-captura: 101,56 − 46,76 = 54,8). Reparto aproximado: el AES compartido
-16,1; el autenticador sin su AES 7,3; el generador sin su AES 22,1; tests
-de salud 1,3; ERO, cruce y resets 0,4; I2C 1,1; y unos 6,6 en el
-secuenciador, los registros del nivel superior y el reparto del AES.
-Hasta el 08-10 este documento daba 62 kGE (suma de bloques, dos AES), y
-hasta esta tarde 69 (motor entero, dos AES). **El AES es casi la mitad**: hay dos núcleos AES, uno dentro
-del autenticador y otro dentro del generador, con 15,8 kGE cada uno. Eso
-apunta a las tres optimizaciones del capítulo de integrado, en orden de
-rendimiento por esfuerzo:
+**El motor digital, tal como está, son unos 46 kGE** (todo menos la
+captura: 92,53 − 46,76 = 45,8). Reparto aproximado: el AES compartido de
+32 bits 6,7; el autenticador sin su AES 7,3; el generador sin su AES
+22,1; tests de salud 1,3; ERO, cruce y resets 0,4; I2C 1,1; y unos 7 en
+el secuenciador, los registros del nivel superior y el reparto del AES.
+Hasta el 08-10 este documento daba 62 kGE (suma de bloques, dos AES),
+hasta el 27-10 por la tarde 69 (motor entero, dos AES) y hasta la noche
+55 (un AES de una ronda compartido). Las tres optimizaciones del
+capítulo de integrado, en orden de rendimiento por esfuerzo:
 
-1. **Un solo AES compartido.** El secuenciador del nivel superior ya
-   serializa las órdenes: generador y autenticador nunca trabajan a la
-   vez. Compartir el núcleo ahorra ≈ 15,8 kGE (un cuarto del motor) a
-   cambio de un árbitro trivial.
-2. **S-box compacta.** El AES sintetizado ingenuamente, con 20 S-boxes
-   como tablas independientes, ocupa 15,8 kGE; la literatura optimizada
-   para área da entre 2,4 kGE (datapath de 8 bits, Moradi et al. 2011,
-   226 ciclos por bloque) y unos 5 kGE (datapath de 32 bits). Aquí no
-   importa la velocidad, así que un datapath de 32 bits con 4 S-boxes
-   compartidas es el punto sensato. Ahorro estimado: 10 kGE por núcleo.
+1. **Un solo AES compartido. Hecho (27-10).** El secuenciador del nivel
+   superior ya serializa las órdenes: generador y autenticador nunca
+   trabajan a la vez. Medido: −14,1 kGE (115,7 → 101,6), frente a los
+   15,8 estimados.
+2. **S-box compacta. Hecho (28-10).** El AES sintetizado ingenuamente,
+   con 20 S-boxes como tablas independientes, ocupa 16 kGE; la literatura
+   optimizada para área da entre 2,4 kGE (datapath de 8 bits, Moradi et
+   al. 2011, 226 ciclos por bloque) y unos 5 kGE (datapath de 32 bits).
+   Medido con `aes_enc_32`: 6,67 kGE el núcleo (−9,4) y −9,3 en el motor.
 3. **Menos registros en el generador.** El generador guarda 2.355
    biestables: entropía y nonce capturados (384), material de semilla
    (256), salida (256), estado (256) y los temporales de la función de
    derivación. Consumiendo la semilla en flujo y compartiendo temporales
-   se pueden quitar del orden de 800 biestables, unos 4 kGE.
+   se pueden quitar del orden de 800 biestables, unos 4 kGE. Estimado.
 
-Con las tres, el motor digital bajaría a **≈ 20-25 kGE** (los 5 kGE del
-nivel superior apenas se reducen), que es el orden de
-magnitud que estimaba el estado del arte (13 a 25 kGE) y que **cabe con
-mucho margen en el bloque mínimo de una tirada académica** (0,8 mm² en IHP;
-20 kGE × 7,26 µm² × 2,35 de crecimiento ≈ 0,34 mm² de núcleo).
+Con las dos medidas el motor digital ha pasado de 69 a 46 kGE; con la
+tercera quedaría en **≈ 42 kGE**. Es más que los 13-25 kGE que
+estimaba el estado del arte para motores de este tipo, y la tabla dice
+por qué: el generador sin su AES son 22 kGE (la mitad registros) y el
+nivel superior otros 7; llegar al rango publicado exigiría repensar el
+almacenamiento del generador, no su cifrador, y eso se deja planteado,
+no hecho. A 2,35 de crecimiento, 42 kGE × 7,26 µm² ≈ 0,72 mm² de núcleo:
+**sigue cabiendo varias veces en el bloque mínimo de una tirada
+académica** (0,8 mm² el mini@sic más pequeño; IHP no limita por bloque).
 
 **La captura de bits crudos no debe leerse en esta tabla.** Sus 46,7 kGE
 son la memoria de 4.096 bits mapeada a biestables porque el flujo no
@@ -124,5 +142,6 @@ desnudo, algo estaba mal en la lectura del informe, no en el diseño.
 - Colocar y rutar el motor completo con OpenROAD-flow-scripts sobre la
   misma biblioteca, y comparar el área de núcleo real con el factor 2,35
   publicado para el AES.
-- Sintetizar la variante con un AES compartido y la S-box compacta y
-  medir el ahorro en vez de estimarlo.
+- Sintetizar la variante del generador con menos registros y medir el
+  ahorro en vez de estimarlo (las otras dos optimizaciones ya están
+  medidas).
