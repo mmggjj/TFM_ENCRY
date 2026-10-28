@@ -87,8 +87,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install cryptography
-      - name: mbedtls 3.6 (la rama LTS que lleva ESP-IDF 5.3)
-        run: git clone --depth 1 --branch mbedtls-3.6 --recurse-submodules --shallow-submodules https://github.com/Mbed-TLS/mbedtls.git /tmp/mbedtls
+      # El tarball de release, no el clon de git: el repositorio no lleva
+      # los ficheros generados (error.c, version_features.c...) y con
+      # GEN_FILES=OFF cmake no puede configurarlo. 3.6 es la rama LTS que
+      # lleva ESP-IDF 5.3.
+      - name: mbedtls 3.6 (tarball de release)
+        run: |
+          curl -sSL -o /tmp/mbedtls.tar.bz2 https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-3.6.2/mbedtls-3.6.2.tar.bz2
+          mkdir -p /tmp/mbedtls && tar xjf /tmp/mbedtls.tar.bz2 -C /tmp/mbedtls --strip-components=1
+          test -f /tmp/mbedtls/library/error.c
       - name: banco en host
         run: python firmware/host_check/run_host.py --mbedtls /tmp/mbedtls
       - name: banco en host con ASan y UBSan

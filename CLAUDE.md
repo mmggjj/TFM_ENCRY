@@ -73,8 +73,14 @@ todo. Léelo entero antes de tocar nada.
   banco en host con mbedtls 3.6 clonado (+ `--sanear`), ESP-IDF 5.3.5 en
   contenedor (los dos proyectos, normal y `MOTOR_SIMULADO`), memoria con
   tectonic (PDF como artefacto). `sintetiza.py` ya corre en Linux sin
-  `wsl.exe` (`EN_WINDOWS`). Sin ejecutar aún en GitHub: se sabrá al hacer
-  push.
+  `wsl.exe` (`EN_WINDOWS`). Primera ejecución (push de 6330180): 7/7
+  trabajos en verde, bancos GHDL en 6 min, memoria compilada por primera
+  vez; la síntesis del runner coincide con la local dentro del 0,5 %. El
+  banco en host salió verde **a medias**: el clon git de mbedtls no
+  trae los ficheros generados y `run_host.py` degradaba en silencio al
+  modo sin mbedtls. Arreglado: tarball de release en la CI y error si se
+  pide `--mbedtls` y no compila. Subir un flujo exige un token con ámbito
+  `workflow` (el PAT anterior no lo tenía).
 - `rtl/run_tb.py` busca también `~/eda/ghdl/bin/ghdl.exe`.
 
 ## Estado al 27-10-2026 (noche): motor versión 0x03

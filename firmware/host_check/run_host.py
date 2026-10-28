@@ -119,6 +119,12 @@ def main() -> int:
     mbed = preparar_mbedtls(fuentes, mascara) if fuentes is not None else None
     if mbed is None:
         decir("mbedtls real: NO disponible; el verificador usa mbedtls_stub.c y el medidor se salta")
+        if args.mbedtls is not None:
+            # Se pidio un mbedtls concreto y no sirve: eso es un fallo, no
+            # un modo degradado. En la CI se vio pasar en verde un banco
+            # que se habia saltado el medidor entero.
+            decir("run_host: se pidio --mbedtls y no se pudo compilar")
+            return 1
     else:
         decir("mbedtls real: " + mascara.get(str(fuentes), str(fuentes)))
     decir()
