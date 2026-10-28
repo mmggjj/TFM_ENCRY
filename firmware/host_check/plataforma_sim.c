@@ -31,6 +31,23 @@ esp_err_t nvs_get_u32(nvs_handle_t h, const char *k, uint32_t *v)
 { (void)h; (void)k; if (!nvs_guardado) return ESP_ERR_NVS_NOT_FOUND; *v = nvs_valor; return ESP_OK; }
 esp_err_t nvs_set_u32(nvs_handle_t h, const char *k, uint32_t v)
 { (void)h; (void)k; nvs_valor = v; nvs_guardado = true; return ESP_OK; }
+
+/* Un solo blob: la clave privada del medidor. */
+static uint8_t nvs_blob[256];
+static size_t nvs_blob_n;
+esp_err_t nvs_get_blob(nvs_handle_t h, const char *k, void *v, size_t *n)
+{
+    (void)h; (void)k;
+    if (nvs_blob_n == 0) return ESP_ERR_NVS_NOT_FOUND;
+    if (v == NULL) { *n = nvs_blob_n; return ESP_OK; }
+    if (*n < nvs_blob_n) return ESP_ERR_NVS_INVALID_LENGTH;
+    memcpy(v, nvs_blob, nvs_blob_n); *n = nvs_blob_n; return ESP_OK;
+}
+esp_err_t nvs_set_blob(nvs_handle_t h, const char *k, const void *v, size_t n)
+{ (void)h; (void)k; if (n > sizeof nvs_blob) return ESP_FAIL; memcpy(nvs_blob, v, n); nvs_blob_n = n; return ESP_OK; }
+esp_err_t nvs_erase_key(nvs_handle_t h, const char *k)
+{ (void)h; (void)k; memset(nvs_blob, 0, sizeof nvs_blob); nvs_blob_n = 0; return ESP_OK; }
+bool plataforma_nvs_hay_blob(void) { return nvs_blob_n != 0; }
 esp_err_t nvs_commit(nvs_handle_t h) { (void)h; return ESP_OK; }
 void nvs_close(nvs_handle_t h) { (void)h; }
 

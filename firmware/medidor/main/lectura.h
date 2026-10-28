@@ -78,5 +78,11 @@ int clave_verificar(const uint8_t *publica, size_t npub,
 int clave_csr(clave_equipo_t *c, const char *sujeto, char *pem, size_t max,
               lectura_rng_t f_rng, void *p_rng);
 
+/* Clave privada en DER (SEC1 ECPrivateKey), para guardarla; quien la
+ * reciba la borra en cuanto la haya escrito. Y la operacion inversa. */
+#define PRIVADA_MAX     160     /* ECPrivateKey DER de P-256: 121 bytes */
+int clave_exportar(const clave_equipo_t *c, uint8_t *salida, size_t max, size_t *n);
+int clave_importar(clave_equipo_t *c, const uint8_t *der, size_t n);
+
 /* Borra la clave privada de memoria. */
 void clave_borrar(clave_equipo_t *c);

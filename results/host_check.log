@@ -140,7 +140,7 @@ csr: FALLO (-16000), sin clave
 2) Clave del equipo con aleatorio del motor
 sembrar: ok
   [ok ] el motor queda sembrado
-clave: ok, P-256 con 2 bloques de 32 bytes del motor
+clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
 FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
   [ok ] hay clave
   [ok ] cada bloque de la clave es una orden aleatorio aceptada por el motor
@@ -183,7 +183,7 @@ clave: FALLO, ERROR I2C (-60); sigue la clave anterior
   [ok ] con el bus caido a mitad no hay clave nueva y sigue la anterior
 
 7) Clave nueva y CSR
-clave: ok, P-256 con 2 bloques de 32 bytes del motor
+clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
 FP005b3059301306072a8648ce3d020106082a8648ce3d030107034200043034adcf3729be86cc64d4cb85f042e219abe32b5b6095ce9222826ddcadec77a459690915c5c9704556daa3e7eb17966015b087d9379df02bf50f6469a99898723e0daf
   [ok ] la segunda clave es distinta de la primera
 -----BEGIN CERTIFICATE REQUEST-----
@@ -204,7 +204,7 @@ FL005f7cdfa100112200000100000800000005000000010000041a30450220324cb5cc8282cf69f3
   [ok ] ni la publica, ni una firma, ni la CSR contienen 8 bytes seguidos de d
 
 9) Olvidar la clave
-olvidar: clave borrada
+olvidar: clave borrada de la RAM y de la NVS
   [ok ] la clave deja de valer
 lectura: primero 'clave'
 publica: FALLO, sin clave (-16000)
@@ -212,15 +212,28 @@ publica: FALLO, sin clave (-16000)
 
 10) Tras un reinicio la secuencia sigue creciendo
   [ok ] al reiniciar no hay clave en RAM
-clave: ok, P-256 con 2 bloques de 32 bytes del motor
+clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
 FP005b3059301306072a8648ce3d020106082a8648ce3d03010703420004e9cd43ea5cb995596360348f0448def28c25f3ac0187d8da045b9b10a62e460741bd1dd16e6c66ce687c0e147864602c309e9dfebc804ade2b0593e0f64ec1a87b42835c
   [ok ] clave nueva tras el reinicio
 FL005f7cdfa100112200000200000100000005000000000000041a3045022040b5f83578721f9672b10e9784af8d49647ce8ab6a5eb7c98a600f0402d482ba022100a6e7f036511fedaca4ac5d6eff1a47cb510be100fa8f6aebbf1d39898af480ac469b2548
   [ok ] arranque 2: la primera lectura supera a la ultima de antes del reinicio
 E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
   [ok ] sin NVS el contador de arranques es 0 y se avisa
+  [ok ] y sin NVS tampoco se recupera la clave
 
-esperado: validas=9 firma_invalida=1 repetidas=1 csr=1 clave_cambiada=2
+11) La clave guardada en NVS sobrevive al reinicio
+  [ok ] 'clave' la dejo guardada en la NVS
+clave recuperada de la NVS
+  [ok ] al arrancar se recupera la clave de la NVS
+FL00607cdfa100112200000300000100000005000000000000041a3046022100b658a858fee224d97c8c834cca5932f99874f230b14098ba3743c60480c1b963022100e1305998e312c9b894919ceca29bc9047d017e7d4211e6eded2f676a704f36475f734182
+  [ok ] firma con la misma identidad en el arranque 3
+  [ok ] la privada exportada es un ECPrivateKey DER de 121 bytes
+olvidar: clave borrada de la RAM y de la NVS
+  [ok ] 'olvidar' la borra tambien de la NVS
+  [ok ] y tras ese reinicio no hay clave
+lectura: primero 'clave'
+
+esperado: validas=10 firma_invalida=1 repetidas=1 csr=1 clave_cambiada=2
 test_medidor: 0 fallos
 (rc=0)
 
@@ -244,9 +257,10 @@ lectura 10: equipo 7cdfa10011220000 seq 16777224 t 5 s energia 1 Wh potencia 105
 AVISO: la publica anunciada CAMBIA (cambio 2)
 publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d03010703420004e9cd43ea5cb995596360348f0448def28c25f3ac0187d8da045b9b10a62e460741bd1dd16e6c66ce687c0e147864602c309e9dfebc804ade2b0593e0f64ec1a8
 lectura 11: equipo 7cdfa10011220000 seq 33554433 t 5 s energia 0 Wh potencia 1050 W: ok
-resumen: lecturas=11 validas=9 firma_invalida=1 repetidas=1 sin_clave=0 crc_malo=0 csr=1 csr_mala=0 clave_cambiada=2 publica_mala=0
+lectura 12: equipo 7cdfa10011220000 seq 50331649 t 5 s energia 0 Wh potencia 1050 W: ok
+resumen: lecturas=12 validas=10 firma_invalida=1 repetidas=1 sin_clave=0 crc_malo=0 csr=1 csr_mala=0 clave_cambiada=2 publica_mala=0
 (rc=1)
-  [ok ] validas: el banco mando 9, el PC encontro 9
+  [ok ] validas: el banco mando 10, el PC encontro 10
   [ok ] firma_invalida: el banco mando 1, el PC encontro 1
   [ok ] repetidas: el banco mando 1, el PC encontro 1
   [ok ] csr: el banco mando 1, el PC encontro 1

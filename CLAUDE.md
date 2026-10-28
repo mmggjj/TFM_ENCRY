@@ -57,7 +57,7 @@ Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión
   borrar_todo, sembrar/resembrar, generar, aleatorio, autenticar, capturar.
 - Bancos: `tb_motor_top` pasos nuevos 5d (agotado, con `G_PET_BITS => 4`),
   6a-6c (captura) y 8 (zeroización); `tb_ctr_drbg` con los puertos nuevos.
-  **Los siete bancos pasan** (`tb_motor_top` 55/55 comprobaciones) y
+  **Los siete bancos pasan** (`tb_motor_top` 64/64 comprobaciones tras la revisión y el AES compartido) y
   `verifica_top.py` 5/5 (`results/tb_motor_top.log`). Ojo al leer `PETICIONES` con `leer_bloque`:
   el byte bajo queda a la izquierda del vector (`x"05000000"` = 5).
 - Modelo en host (`motor_sim.c`): mismas reglas, `motor_pet_max` y
@@ -65,17 +65,72 @@ Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión
   12 (`cero`); firmware: `CTL_BORRAR_TODO`, `DG_AGOTADO`, `MOTOR_VERSION 3`,
   comando `cero` en el verificador. Banco host 0 fallos, firmware compila
   (0 avisos). **Síntesis repetida** (camino Verilog + yowasp, abajo):
-  motor_top **115,68 kGE** (+0,76 respecto a la 0x02; el DRBG +0,99 por el
-  contador saturado y el borrado), motor digital sin captura ≈ 69 kGE.
+  motor_top 115,68 kGE con dos AES (+0,76 respecto a la 0x02; el DRBG
+  +0,99 por el contador saturado y el borrado) y **101,56 kGE con el AES
+  compartido** (abajo), motor digital sin captura ≈ 55 kGE.
   `docs/sintesis_resultados.md`, `results/sintesis_sg13g2.{csv,log}` y el
   cap. 6 de la memoria (EN y ES) al día.
 - Memoria: cap. 4 (EN y ES) con el párrafo de las cuatro reglas; PDF sin
   regenerar (en este PC no hay tectonic).
+- **Segunda revisión independiente, del RTL 0x03** (otra sesión, con
+  banco extendido y mutantes en copias): un hallazgo grave y tres medios,
+  todos corregidos. **H1**: `cap_en_curso` se perdía un ciclo después de
+  lanzar cualquier captura que no fuera la primera (`cap_lleno` de la
+  anterior aún a 1), la siembra se aceptaba y la semilla volvía al buffer;
+  ahora `cap_en_curso` solo se baja con `cap_lleno = '1' and cap_arranca =
+  '0'`, y el banco (6d) hace una segunda captura, comprueba `cap_en_curso`,
+  el rechazo de `resembrar` y que la semilla no está en los 4096 bits del
+  buffer a ningún desplazamiento. **H2**: `borrar_todo` dejaba Key
+  recuperable en `temp_hi`/`kdf`/`x_df`/`aes_clave` y en la clave de ronda
+  del `aes_enc`; `ctr_drbg.borrar` limpia ahora todos los intermedios, se
+  atiende en cualquier fase (aborta) y `aes_enc` tiene entrada `borrar`.
+  **H3**: ETIQUETA seguía legible tras borrar; `aes_cmac` pone `x` a cero al
+  cargar clave y el top lee 0x30 como ceros sin `etiqueta_lista` (modelo
+  host igual). **H4**: `resembrar` sin estado se aceptaba; ahora exige
+  `drbg_sembrado`. **H7**: `modo_test` pasa por dos biestables
+  (`modo_test_s`). **H6** (documentado): `borrar_alarmas` + siembra en la
+  misma escritura aborta la siembra; bits 0 y 5 a la vez → resembrar.
+  `tb_ctr_drbg` cubre ahora `borrar` (en reposo y a mitad) y la saturación
+  con una segunda instancia `G_PET_BITS => 2`.
+- **AES compartido** (`G_AES_COMPARTIDO`, por defecto true): `aes_cmac` y
+  `ctr_drbg` tienen generic `G_AES_EXTERNO` y puertos `aes_*_o/_i`; el
+  único `aes_enc` vive en `motor_top` (`g_nucleo_unico`) y se reparte por
+  `arranca` (el núcleo captura clave y dato en ese ciclo); salida y `listo`
+  van a los dos. PSL `p_aes_uno` en el banco: nunca arrancan a la vez.
+  Síntesis: **101,56 kGE** (−14,1 respecto a los 115,68 con dos núcleos;
+  la estimación era 15,8: el reparto y la entrada `borrar` del AES se
+  comen el resto); motor digital sin captura ≈ 55 kGE. Cuidado con las
+  etiquetas de `generate`: VHDL no distingue mayúsculas y `g_aes_externo`
+  chocaba con el generic `G_AES_EXTERNO`.
 - **Reset sincronizado** (`rtl/trng/reset_sync.vhd`): activación asíncrona
   y liberación síncrona, uno por dominio (`rst_n_s` para clk, `rst_n_ro`
   para ro2). `bit_cdc` tiene reset también en origen y `trng_capture` un
   reset por dominio (`rst_n_ro`). El reset de la placa ya no llega crudo a
   ningún biestable. Siete bancos en verde tras el cambio.
+- **Propiedades PSL en `tb_motor_top`** (bloque `propiedades`, VHDL-2008 en
+  línea, no en comentarios: GHDL solo las evalúa así): con alarma no hay
+  generación ni siembra, sin test de arranque no se recoge semilla, con el
+  contador agotado no se genera, captura y siembra excluyentes, captura
+  solo en modo test, sin clave no se autentica, `borrar_todo` deja la clave
+  a cero en el ciclo, y el motor nunca se queda ocupado (`eventually!`);
+  más cuatro `cover`. Se vigilan en toda la simulación, no solo en los
+  pasos que las provocan. `run_tb.py` pasa `--psl-report` y falla si hay
+  aserción violada o cobertura sin alcanzar. Resultado: 11/11 aserciones
+  y 6/6 coberturas. Mutante (copia aparte, `generar` sin mirar la alarma):
+  lo caza `p_alm_gen` 90 µs antes que el paso 5b del banco
+  (`results/tb_motor_top_mutante.log`). **Formal con sby descartado**
+  por ahora: GHDL `--synth --out=verilog` vuelca los `cover` con sintaxis
+  VHDL que Yosys no lee, y el anillo es un segundo reloj.
+- **Basys 3 sin placa**: `rtl/fpga/basys3_top.vhd` (envoltorio: btnC como
+  reset, SDA en colector abierto, LED de latido), `synth/basys3/basys3.xdc`
+  (pines, reloj del anillo ro2 con periodo estimado 1,4 ns,
+  `ALLOW_COMBINATORIAL_LOOPS`, `DONT_TOUCH`, `set_disable_timing`),
+  `ro_pblocks.xdc` (un pblock por anillo) y `build.tcl` (flujo non-project,
+  `-tclargs programar` para grabar). Solo analizado con GHDL; **sin Vivado
+  en este PC**, sin probar.
+- **Medidor**: la clave privada se guarda en NVS (`nvs_clave()`), se
+  recupera al arrancar y `olvidar` la borra; el firmware avisa de que sin
+  cifrado de flash/NVS va en claro. Banco host paso 11.
 - **Síntesis sin OSS CAD Suite**: `synth/sintetiza.py` tiene un segundo
   camino, GHDL de Windows `--synth --out=verilog` + `yowasp-yosys` (Yosys
   por pip en WSL, `pip install --user yowasp-yosys`), mismo flujo y misma

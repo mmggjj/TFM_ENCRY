@@ -27,6 +27,7 @@ extern int  motor_fallo_tras_aleatorio;
 extern int  motor_n_tramas;
 extern int  motor_n_aleatorio;
 extern bool plataforma_nvs_rota;
+extern bool plataforma_nvs_hay_blob(void);
 
 static int fallos = 0;
 /* Lo que el banco ha mandado al PC, para que run_host.py lo contraste con
@@ -222,6 +223,26 @@ int main(void)
     iniciar_medidor();
     plataforma_nvs_rota = false;
     chk(arranques == 0, "sin NVS el contador de arranques es 0 y se avisa");
+    chk(!clave.valida, "y sin NVS tampoco se recupera la clave");
+
+    printf("\n11) La clave guardada en NVS sobrevive al reinicio\n");
+    chk(plataforma_nvs_hay_blob(), "'clave' la dejo guardada en la NVS");
+    iniciar_medidor();                         /* reinicio con NVS sana */
+    chk(clave.valida, "al arrancar se recupera la clave de la NVS");
+    uint8_t pub3[PUBLICA_MAX];
+    size_t npub3 = publica_actual(pub3);
+    cmd_lectura(1);
+    esp_validas += 1;
+    chk(npub3 > 0 && (actual.secuencia >> 24) == 3, "firma con la misma identidad en el arranque 3");
+    uint8_t der[PRIVADA_MAX];
+    size_t nder = 0;
+    chk(clave_exportar(&clave, der, sizeof der, &nder) == 0 && nder == 121 && der[0] == 0x30,
+        "la privada exportada es un ECPrivateKey DER de 121 bytes");
+    cmd_olvidar();
+    chk(!plataforma_nvs_hay_blob(), "'olvidar' la borra tambien de la NVS");
+    iniciar_medidor();
+    chk(!clave.valida, "y tras ese reinicio no hay clave");
+    cmd_lectura(1);                            /* no debe salir nada */
 
     printf("\nesperado: validas=%d firma_invalida=%d repetidas=%d csr=%d clave_cambiada=%d\n",
            esp_validas, esp_manipuladas, esp_repetidas, esp_csr, esp_cambios);

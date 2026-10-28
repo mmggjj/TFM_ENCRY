@@ -280,7 +280,7 @@ static uint8_t leer_reg(uint8_t d)
     if (d >= 0x0A && d <= 0x0D) return (uint8_t)(m.peticiones >> (8 * (d - 0x0A)));
     if (d == 0x0E) return (uint8_t)((agotado() ? 4 : 0) | (m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
     if (d >= 0x10 && d <= 0x1F) return motor_modo_test ? m.clave[d - 0x10] : 0x00;
-    if (d >= 0x30 && d <= 0x3F) return m.etiqueta[d - 0x30];
+    if (d >= 0x30 && d <= 0x3F) return (m.status & ST_ETIQ_LISTA) ? m.etiqueta[d - 0x30] : 0x00;  /* solo la del reto actual */
     if (d >= 0x40 && d <= 0x5F) return m.aleatorio[d - 0x40];
     if (d >= 0x80) return motor_modo_test ? m.captura[m.cfg_pag * 128 + (d - 0x80)] : 0x00;
     return 0x00;

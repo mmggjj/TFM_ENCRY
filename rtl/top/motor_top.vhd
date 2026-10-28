@@ -37,7 +37,12 @@ entity motor_top is
     -- Bits del contador de peticiones que cuentan para agotarlo: con todos
     -- a uno el DRBG no genera mas hasta resembrar (SP 800-90A,
     -- reseed_interval). 32 en hardware; el banco lo baja para probarlo.
-    G_PET_BITS   : positive := 32
+    G_PET_BITS   : positive := 32;
+    -- Un solo nucleo AES para el generador y el autenticador. El
+    -- secuenciador ya los serializa (nunca cifran a la vez), asi que el
+    -- segundo nucleo era area sin uso: la primera optimizacion del
+    -- capitulo de integrado. false deja un nucleo por bloque.
+    G_AES_COMPARTIDO : boolean := true
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -99,6 +104,14 @@ architecture rtl of motor_top is
   signal drbg_pet    : unsigned(31 downto 0);
   signal aleatorio   : std_logic_vector(255 downto 0) := (others => '0');
 
+  -- Nucleo AES compartido
+  signal aes_arranca, cmac_aes_arranca, drbg_aes_arranca : std_logic;
+  signal aes_borrar  : std_logic;
+  signal aes_clave, cmac_aes_clave, drbg_aes_clave : std_logic_vector(127 downto 0);
+  signal aes_dato, cmac_aes_dato, drbg_aes_dato : std_logic_vector(127 downto 0);
+  signal aes_salida  : std_logic_vector(127 downto 0) := (others => '0');
+  signal aes_listo   : std_logic := '0';
+
   -- Clave y autenticador
   signal clave       : std_logic_vector(127 downto 0) := (others => '0');
   signal clave_valida : std_logic := '0';
@@ -130,6 +143,9 @@ architecture rtl of motor_top is
   signal reg_we, reg_re : std_logic;
   signal reg_rdato : std_logic_vector(7 downto 0);
   signal status    : std_logic_vector(7 downto 0);
+  -- modo_test es un interruptor de la placa: dos biestables antes de
+  -- usarlo en la maquina de estados.
+  signal modo_test_s : std_logic_vector(1 downto 0) := (others => '0');
 
   function byte_de(v : std_logic_vector; i : integer) return std_logic_vector is
     -- byte i contando desde la izquierda de un vector (N-1 downto 0)
@@ -141,6 +157,15 @@ begin
 
   led_alarma <= alm;
   ocupado <= '0' when orden = LIBRE else '1';
+
+  p_modo_test : process (clk, rst_n_s)
+  begin
+    if rst_n_s = '0' then
+      modo_test_s <= (others => '0');
+    elsif rising_edge(clk) then
+      modo_test_s <= modo_test_s(0) & modo_test;
+    end if;
+  end process p_modo_test;
 
   -- ------------------------------------------------------------------
   -- Resets. El del anillo solo se suelta cuando el anillo oscila, y el
@@ -188,10 +213,13 @@ begin
   -- Criptografia
   -- ------------------------------------------------------------------
   u_drbg : entity work.ctr_drbg
-    generic map (G_PET_BITS => G_PET_BITS)
+    generic map (G_PET_BITS => G_PET_BITS, G_AES_EXTERNO => G_AES_COMPARTIDO)
     port map (clk => clk, rst_n => rst_n_s,
               instanciar => drbg_inst, resembrar => drbg_reseed,
               borrar => drbg_borrar, agotado => drbg_agotado,
+              aes_arranca_o => drbg_aes_arranca, aes_borrar_o => aes_borrar, aes_clave_o => drbg_aes_clave,
+              aes_dato_o => drbg_aes_dato, aes_salida_i => aes_salida,
+              aes_listo_i => aes_listo,
               entropia => semilla(383 downto 128),
               nonce => semilla(127 downto 0),
               generar => drbg_gen, salida => drbg_salida,
@@ -199,13 +227,31 @@ begin
               sembrado => drbg_sembrado, peticiones => drbg_pet);
 
   u_cmac : entity work.aes_cmac
+    generic map (G_AES_EXTERNO => G_AES_COMPARTIDO)
     port map (clk => clk, rst_n => rst_n_s,
+              aes_arranca_o => cmac_aes_arranca, aes_borrar_o => open, aes_clave_o => cmac_aes_clave,
+              aes_dato_o => cmac_aes_dato, aes_salida_i => aes_salida,
+              aes_listo_i => aes_listo,
               carga_clave => cmac_carga, clave => clave,
               clave_lista => cmac_clave_lista,
               inicia => cmac_inicia, bloque => reto,
               bloque_val => cmac_bloque_val, ultimo => '1',
               n_bytes => to_unsigned(16, 5),
               etiqueta => etiqueta, listo => cmac_listo, ocupado => cmac_ocupado);
+
+  -- El nucleo compartido. aes_enc captura clave y dato en el ciclo de
+  -- arranca, asi que basta elegir las entradas por quien arranca; la
+  -- salida y el listo van a los dos, y solo el que lanzo el cifrado esta
+  -- esperandolos.
+  g_nucleo_unico : if G_AES_COMPARTIDO generate
+    aes_arranca <= cmac_aes_arranca or drbg_aes_arranca;
+    aes_clave   <= cmac_aes_clave when cmac_aes_arranca = '1' else drbg_aes_clave;
+    aes_dato    <= cmac_aes_dato  when cmac_aes_arranca = '1' else drbg_aes_dato;
+    u_aes : entity work.aes_enc
+      port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                clave => aes_clave, dato => aes_dato,
+                salida => aes_salida, listo => aes_listo, ocupado => open);
+  end generate g_nucleo_unico;
 
   -- ------------------------------------------------------------------
   -- I2C
@@ -217,7 +263,7 @@ begin
               reg_dir => reg_dir, reg_wdato => reg_wdato, reg_we => reg_we,
               reg_rdato => reg_rdato, reg_re => reg_re, ocupado => open);
 
-  status <= modo_test & etiqueta_lista & cap_lleno & clave_valida &
+  status <= modo_test_s(1) & etiqueta_lista & cap_lleno & clave_valida &
             alm_apt & alm_rct & ocupado & drbg_sembrado;
 
   cap_dir <= std_logic_vector(resize(pagina & unsigned(reg_dir(6 downto 0)), 16));
@@ -244,13 +290,18 @@ begin
       when 16#0D# => reg_rdato <= std_logic_vector(drbg_pet(31 downto 24));
       when 16#0E# => reg_rdato <= "00000" & drbg_agotado & rechazada & arrancado;
       when 16#10# to 16#1F# =>
-        if modo_test = '1' then
+        if modo_test_s(1) = '1' then
           reg_rdato <= byte_de(clave, d - 16#10#);
         end if;
-      when 16#30# to 16#3F# => reg_rdato <= byte_de(etiqueta, d - 16#30#);
+      when 16#30# to 16#3F# =>
+        -- Solo la etiqueta del reto actual: sin esto, tras borrar_todo o
+        -- con un reto nuevo a medias seguia leyendose la anterior.
+        if etiqueta_lista = '1' then
+          reg_rdato <= byte_de(etiqueta, d - 16#30#);
+        end if;
       when 16#40# to 16#5F# => reg_rdato <= byte_de(aleatorio, d - 16#40#);
       when 16#80# to 16#FF# =>
-        if modo_test = '1' then
+        if modo_test_s(1) = '1' then
           reg_rdato <= cap_dato;
         end if;
       when others => null;
@@ -287,7 +338,11 @@ begin
 
       en_anillos <= '1';    -- los anillos corren siempre tras el reset
 
-      if cap_lleno = '1' then
+      -- cap_lleno sigue a 1 un ciclo despues de lanzar la captura siguiente
+      -- (trng_capture lo baja al ver arranca): sin la segunda condicion toda
+      -- captura salvo la primera se daba por acabada al instante y una
+      -- siembra volvia a poder solapar una captura (revision del 27-10).
+      if cap_lleno = '1' and cap_arranca = '0' then
         cap_en_curso <= '0';
       end if;
 
@@ -326,7 +381,8 @@ begin
                 orden <= ZEROIZANDO;
               elsif reg_wdato(0) = '1' or reg_wdato(5) = '1' then
                 if alm = '0' and arrancado = '1' and cap_en_curso = '0'
-                   and to_integer(kd_sel) >= G_KD_MIN then
+                   and to_integer(kd_sel) >= G_KD_MIN
+                   and (reg_wdato(0) = '1' or drbg_sembrado = '1') then   -- resembrar necesita estado
                   siembra_es_reseed <= reg_wdato(5);
                   recogiendo  <= '1';
                   n_recogidos <= (others => '0');
@@ -365,7 +421,7 @@ begin
                 -- Capturar: solo en modo test (sin el, el buffer no se puede
                 -- leer y una captura solo serviria para guardar bits), con
                 -- el motor libre y sin otra captura en marcha.
-                if modo_test = '1' and cap_en_curso = '0' then
+                if modo_test_s(1) = '1' and cap_en_curso = '0' then
                   cap_arranca <= '1';
                   cap_en_curso <= '1';
                   rechazada <= '0';

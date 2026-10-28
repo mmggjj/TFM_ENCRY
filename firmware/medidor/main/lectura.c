@@ -2,6 +2,7 @@
 #include <string.h>
 #include "mbedtls/build_info.h"
 #include "mbedtls/ecp.h"
+#include "mbedtls/platform_util.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/x509_csr.h"
 #include "lectura.h"
@@ -115,6 +116,31 @@ int clave_csr(clave_equipo_t *c, const char *sujeto, char *pem, size_t max,
     if (r == 0) r = mbedtls_x509write_csr_pem(&csr, (unsigned char *)pem, max, f_rng, p_rng);
     mbedtls_x509write_csr_free(&csr);
     return r;
+}
+
+int clave_exportar(const clave_equipo_t *c, uint8_t *salida, size_t max, size_t *n)
+{
+    if (!c->valida) return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    int r = mbedtls_pk_write_key_der(&c->pk, salida, max);   /* desde el final */
+    if (r < 0) return r;
+    *n = (size_t)r;
+    memmove(salida, salida + max - *n, *n);
+    mbedtls_platform_zeroize(salida + *n, max - *n);
+    return 0;
+}
+
+int clave_importar(clave_equipo_t *c, const uint8_t *der, size_t n)
+{
+    mbedtls_pk_context nueva;
+    mbedtls_pk_init(&nueva);
+    /* Sin f_rng: la clave no se cega al importar, solo al usarla. */
+    int r = mbedtls_pk_parse_key(&nueva, der, n, NULL, 0, NULL, NULL);
+    if (r == 0 && mbedtls_pk_get_type(&nueva) != MBEDTLS_PK_ECKEY) r = MBEDTLS_ERR_PK_TYPE_MISMATCH;
+    if (r != 0) { mbedtls_pk_free(&nueva); return r; }
+    mbedtls_pk_free(&c->pk);
+    c->pk = nueva;
+    c->valida = true;
+    return 0;
 }
 
 void clave_borrar(clave_equipo_t *c)

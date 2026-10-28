@@ -75,6 +75,73 @@ begin
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
 
+  -- Propiedades de seguridad del secuenciador, en PSL (VHDL-2008), vigiladas
+  -- en cada ciclo de toda la simulacion y no solo en los pasos que las
+  -- provocan. Se leen senales internas del DUT por nombre externo; el
+  -- bloque va despues de dut para que ya este elaborado. GHDL las informa
+  -- al final (--psl-report) y una violacion es un error de aserción. Las
+  -- ordenes se deciden en un ciclo y sus pulsos salen en el siguiente, de
+  -- ahi las secuencias de dos ciclos {condicion; pulso}.
+  propiedades : block
+    alias alm          is << signal .tb_motor_top.dut.alm : std_logic >>;
+    alias ocupado      is << signal .tb_motor_top.dut.ocupado : std_logic >>;
+    alias drbg_gen     is << signal .tb_motor_top.dut.drbg_gen : std_logic >>;
+    alias drbg_inst    is << signal .tb_motor_top.dut.drbg_inst : std_logic >>;
+    alias drbg_reseed  is << signal .tb_motor_top.dut.drbg_reseed : std_logic >>;
+    alias drbg_borrar  is << signal .tb_motor_top.dut.drbg_borrar : std_logic >>;
+    alias drbg_agotado is << signal .tb_motor_top.dut.drbg_agotado : std_logic >>;
+    alias cap_arranca  is << signal .tb_motor_top.dut.cap_arranca : std_logic >>;
+    alias cap_en_curso is << signal .tb_motor_top.dut.cap_en_curso : std_logic >>;
+    alias recogiendo   is << signal .tb_motor_top.dut.recogiendo : std_logic >>;
+    alias cmac_inicia  is << signal .tb_motor_top.dut.cmac_inicia : std_logic >>;
+    alias clave_valida is << signal .tb_motor_top.dut.clave_valida : std_logic >>;
+    alias clave        is << signal .tb_motor_top.dut.clave : std_logic_vector(127 downto 0) >>;
+    alias arrancado    is << signal .tb_motor_top.dut.arrancado : std_logic >>;
+    alias dut_modo_test is << signal .tb_motor_top.dut.modo_test : std_logic >>;
+    alias cmac_aes_arranca is << signal .tb_motor_top.dut.cmac_aes_arranca : std_logic >>;
+    alias drbg_aes_arranca is << signal .tb_motor_top.dut.drbg_aes_arranca : std_logic >>;
+  begin
+    default clock is rising_edge(clk);
+    -- Con alarma no sale nada: ni generacion ni siembra.
+    p_alm_gen    : assert never {alm = '1'; drbg_gen = '1'}
+      report "generacion del DRBG con alarma";
+    p_alm_siemb  : assert never {alm = '1'; drbg_inst = '1' or drbg_reseed = '1'}
+      report "siembra del DRBG con alarma";
+    -- Sin test de arranque no se siembra.
+    p_arranque   : assert never {arrancado = '0'; recogiendo = '1' and ocupado = '1'}
+      report "recogida de semilla sin test de arranque";
+    -- Contador agotado: no se genera.
+    p_agotado    : assert never {drbg_agotado = '1'; drbg_gen = '1'}
+      report "generacion con el contador de peticiones agotado";
+    -- La captura y la siembra se excluyen, y la captura solo en modo test.
+    p_cap_ocup   : assert never {ocupado = '1'; cap_arranca = '1'}
+      report "captura lanzada con el motor ocupado";
+    p_cap_test   : assert never {dut_modo_test = '0'; cap_arranca = '1'}
+      report "captura lanzada sin modo test";
+    p_siemb_cap  : assert never {cap_en_curso = '1' and ocupado = '0'; recogiendo = '1'}
+      report "siembra aceptada con una captura en curso";
+    -- Sin clave valida no se autentica.
+    p_cmac       : assert never {clave_valida = '0'; cmac_inicia = '1'}
+      report "autenticacion sin clave valida";
+    -- Borrar todo deja la clave a cero en el mismo ciclo.
+    p_borrar     : assert always (drbg_borrar = '1' ->
+                                  (clave = (127 downto 0 => '0') and clave_valida = '0'))
+      report "borrar_todo con la clave aun cargada";
+    -- Ninguna orden deja el motor ocupado para siempre.
+    p_vivo       : assert always (ocupado = '1' -> eventually! (ocupado = '0'))
+      report "el motor se queda ocupado";
+    -- El AES compartido: el generador y el autenticador nunca lo piden a la vez.
+    p_aes_uno    : assert never (cmac_aes_arranca = '1' and drbg_aes_arranca = '1')
+      report "los dos bloques arrancan el AES en el mismo ciclo";
+    c_aes_cmac   : cover {cmac_aes_arranca = '1'};
+    c_aes_drbg   : cover {drbg_aes_arranca = '1'};
+    -- Lo que el banco tiene que haber ejercitado.
+    c_gen        : cover {drbg_gen = '1'};
+    c_borrar     : cover {drbg_borrar = '1'};
+    c_captura    : cover {cap_arranca = '1'};
+    c_agotado    : cover {drbg_agotado = '1'};
+  end block propiedades;
+
   principal : process
     variable fallos : natural := 0;
     file f : text;
@@ -216,6 +283,12 @@ begin
     end procedure;
 
     alias rct_alm is << signal .tb_motor_top.dut.u_salud.rct_alm : std_logic >>;
+    alias semilla is << signal .tb_motor_top.dut.semilla : std_logic_vector(383 downto 0) >>;
+    alias cap_en_curso_i is << signal .tb_motor_top.dut.cap_en_curso : std_logic >>;
+    alias drbg_temp_hi is << signal .tb_motor_top.dut.u_drbg.temp_hi : std_logic_vector(127 downto 0) >>;
+    alias drbg_kdf is << signal .tb_motor_top.dut.u_drbg.kdf : std_logic_vector(127 downto 0) >>;
+    alias drbg_x_df is << signal .tb_motor_top.dut.u_drbg.x_df : std_logic_vector(127 downto 0) >>;
+    alias cmac_x is << signal .tb_motor_top.dut.u_cmac.x : std_logic_vector(127 downto 0) >>;
 
     variable b, status : std_logic_vector(7 downto 0);
     variable pet1, pet2 : std_logic_vector(31 downto 0);
@@ -224,6 +297,9 @@ begin
     variable captura : std_logic_vector(127 downto 0);
     variable ack : boolean;
     variable distintos : natural;
+    variable buffer_cap : std_logic_vector(4095 downto 0);
+    variable pag : std_logic_vector(1023 downto 0);
+    variable hallada : boolean;
   begin
     -- Anillos con jitter. El retardo por etapa se pone diez veces mayor
     -- que el fisico (1,5 ns en vez de 150 ps) SOLO en este banco: con la
@@ -420,6 +496,37 @@ begin
     end loop;
     comprobar(distintos >= 8, "bits crudos con contenido variado: " & hex(captura));
 
+    report "6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra";
+    -- Revision del 27-10 (H1): cap_lleno sigue a 1 un ciclo tras lanzar la
+    -- captura siguiente, cap_en_curso se perdia, la siembra se aceptaba y
+    -- la semilla acababa en el buffer, legible en modo test.
+    escribir_reg(x"03", x"10");                 -- capturar, otra vez
+    wait for 1 us;
+    comprobar(cap_en_curso_i = '1', "cap_en_curso sigue a 1 con la segunda captura en marcha");
+    orden_rechazada(x"20", "resembrar durante la segunda captura se rechaza");
+    for i in 1 to 400 loop
+      leer_reg(x"02", status);
+      exit when status(5) = '1';
+    end loop;
+    comprobar(status(5) = '1', "segunda captura llena");
+    -- Y ahora una siembra entera, con el buffer leido despues: la semilla
+    -- no puede estar en el, a ningun desplazamiento de bit.
+    escribir_reg(x"03", x"20");                 -- resembrar
+    esperar_libre(status);
+    comprobar(status(0) = '1', "resembrado tras la segunda captura");
+    for p in 0 to 3 loop
+      escribir_reg(x"05", std_logic_vector(to_unsigned(p, 8)));
+      leer_bloque(x"80", 128, pag);
+      buffer_cap(4095 - 1024 * p downto 3072 - 1024 * p) := pag;
+    end loop;
+    hallada := false;
+    for pos in 0 to 4096 - 384 loop
+      if buffer_cap(4095 - pos downto 3712 - pos) = semilla then
+        hallada := true;
+      end if;
+    end loop;
+    comprobar(not hallada, "la semilla no aparece en el buffer de captura");
+
     report "7) Sin modo test la clave no se lee";
     modo_test <= '0';
     wait for 1 us;
@@ -434,6 +541,13 @@ begin
     escribir_reg(x"03", x"80");                 -- borrar_todo
     esperar_libre(status);
     comprobar(status(4) = '0' and status(0) = '0', "sin clave valida y sin sembrar");
+    leer_bloque(x"30", 16, captura);
+    comprobar(captura = (127 downto 0 => '0'), "ETIQUETA a ceros tras borrar");
+    comprobar(drbg_temp_hi = (127 downto 0 => '0') and drbg_kdf = (127 downto 0 => '0')
+              and drbg_x_df = (127 downto 0 => '0'),
+              "sin residuos de la clave en los registros intermedios del DRBG");
+    comprobar(cmac_x = (127 downto 0 => '0'), "sin residuo en el encadenamiento del CMAC");
+    orden_rechazada(x"20", "resembrar tras borrar se rechaza: no hay estado");
     leer_bloque(x"10", 16, captura);
     comprobar(captura = (127 downto 0 => '0'), "CLAVE a ceros (en modo test, que si se lee)");
     leer_bloque(x"40", 32, aleatorio);

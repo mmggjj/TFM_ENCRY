@@ -1,23 +1,22 @@
 Executing action: all (aliases: build)
 Running ninja in directory /tmp/tfm/firmware/medidor/build
 Executing "ninja all"...
-[1/11] Performing build step for 'bootloader'
+[1/10] Performing build step for 'bootloader'
 [1/1] cd /tmp/tfm/firmware/medidor/build/bootloader/esp-idf/esptool_py && $HOME/.espressif/python_env/idf5.3_py3.10_env/bin/python $IDF_PATH/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /tmp/tfm/firmware/medidor/build/bootloader/bootloader.bin
 Bootloader binary size 0x53a0 bytes. 0x2c60 bytes (35%) free.
-[2/9] Building C object esp-idf/motor_i2c/CMakeFiles/__idf_motor_i2c.dir/motor_i2c.c.obj
-[3/9] Linking C static library esp-idf/motor_i2c/libmotor_i2c.a
-[4/9] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
-[5/9] Linking C static library esp-idf/main/libmain.a
-[6/9] Generating ld/sections.ld
-[7/9] Linking CXX executable medidor.elf
-[8/9] Generating binary image from built executable
+[2/8] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/lectura.c.obj
+[3/8] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+[4/8] Linking C static library esp-idf/main/libmain.a
+[5/8] Generating ld/sections.ld
+[6/8] Linking CXX executable medidor.elf
+[7/8] Generating binary image from built executable
 esptool.py v4.12.0
 Creating esp32c3 image...
 Merged 1 ELF section
 Successfully created esp32c3 image.
 Generated /tmp/tfm/firmware/medidor/build/medidor.bin
-[9/9] cd /tmp/tfm/firmware/medidor/build/esp-idf/esptool_py && $HOME/.espressif/python_env/idf5.3_py3.10_env/bin/python $IDF_PATH/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /tmp/tfm/firmware/medidor/build/partition_table/partition-table.bin /tmp/tfm/firmware/medidor/build/medidor.bin
-medidor.bin binary size 0x4bce0 bytes. Smallest app partition is 0x100000 bytes. 0xb4320 bytes (70%) free.
+[8/8] cd /tmp/tfm/firmware/medidor/build/esp-idf/esptool_py && $HOME/.espressif/python_env/idf5.3_py3.10_env/bin/python $IDF_PATH/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /tmp/tfm/firmware/medidor/build/partition_table/partition-table.bin /tmp/tfm/firmware/medidor/build/medidor.bin
+medidor.bin binary size 0x555a0 bytes. Smallest app partition is 0x100000 bytes. 0xaaa60 bytes (67%) free.
 
 Project build complete. To flash, run:
  idf.py flash

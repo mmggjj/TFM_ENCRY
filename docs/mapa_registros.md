@@ -23,7 +23,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x0E | DIAG | R | ver bits abajo |
 | 0x10–0x1F | CLAVE | R | clave actual, 16 bytes. **Solo legible en modo test** |
 | 0x20–0x2F | RETO | W | nonce de 16 bytes para el reto-respuesta |
-| 0x30–0x3F | ETIQUETA | R | CMAC(RETO) con la clave actual, 16 bytes |
+| 0x30–0x3F | ETIQUETA | R | CMAC(RETO) con la clave actual, 16 bytes. Se lee como ceros mientras `etiqueta_lista` = 0 (reto nuevo a medias, tras `generar` o tras `borrar_todo`) |
 | 0x40–0x5F | ALEATORIO | R | 32 bytes de la última orden `aleatorio`: una generación del DRBG **independiente de la clave**. Nunca contiene la clave |
 | 0x80–0xFF | CAPTURA | R | 128 bytes de la página CFG_PAG del buffer de bits crudos. **Solo en modo test** |
 
@@ -89,7 +89,7 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
 | 4 | capturar | llena el buffer de captura con un trozo de bits crudos. **Solo en modo test** (sin él el buffer no se lee), con el motor libre y sin otra captura en marcha. Mientras hay una captura en curso se rechazan `sembrar` y `resembrar`, y al revés: el buffer recoge los mismos bits crudos que la semilla, y hasta la versión 0x02 una captura lanzada durante una siembra dejaba la semilla legible en modo test |
 | 5 | resembrar | como sembrar pero **sobre** el estado actual, sin borrarlo |
 | 6 | aleatorio | pide otros 256 bits al DRBG y los deja en ALEATORIO. Generación independiente: el DRBG ya actualizó su estado tras `generar`, así que no hay relación calculable con la clave |
-| 7 | borrar_todo | zeroización: CLAVE, el estado del DRBG (clave, V, contador), RETO, ALEATORIO y la semilla recogida a cero, y la clave nula cargada en el autenticador. Se atiende siempre que el motor esté libre, también con alarma. Después hay que `sembrar` (no `resembrar`: no hay estado) y `generar`. El buffer de captura no se borra: por la regla de `capturar`, nunca contiene bits de una semilla |
+| 7 | borrar_todo | zeroización: CLAVE, el estado del DRBG (clave, V, contador y todos sus registros intermedios, incluido el núcleo AES), RETO, ALEATORIO, ETIQUETA y la semilla recogida a cero, y la clave nula cargada en el autenticador (que también borra su encadenamiento). Se atiende siempre que el motor esté libre, también con alarma. Después hay que `sembrar` (no `resembrar`: no hay estado) y `generar`. El buffer de captura no se borra: por la regla de `capturar`, nunca contiene bits de una semilla |
 
 **Historial:** hasta el 15-09-2026 `generar` dejaba sus 256 bits en
 ALEATORIO, legible sin modo test, y los 128 primeros eran la clave: **el
@@ -97,7 +97,7 @@ registro filtraba la clave**. Se detectó en la revisión previa al
 traspaso y se separó en dos órdenes. El banco `tb_motor_top` comprueba
 ahora que ALEATORIO no contiene la clave en ninguna de sus mitades.
 
-Una orden por escritura: si llegan varios bits a la vez se atiende el de mayor prioridad, en este orden: `borrar_todo`, `sembrar`/`resembrar`, `generar`, `aleatorio`, `autenticar`, `capturar`. `borrar_alarmas` va aparte y se atiende siempre, junto con la orden que acompañe.
+Una orden por escritura: si llegan varios bits a la vez se atiende el de mayor prioridad, en este orden: `borrar_todo`, `sembrar`/`resembrar` (si van los dos, `resembrar`), `generar`, `aleatorio`, `autenticar`, `capturar`. `borrar_alarmas` va aparte y se atiende siempre, junto con la orden que acompañe; pero **no combinarlo con `sembrar`/`resembrar` en la misma escritura**: la siembra se acepta y se aborta en el ciclo siguiente, porque borrar las alarmas reinicia la ventana del test de arranque (queda `rechazada = 1` y hay que repetir el test).
 
 Las órdenes largas (sembrar, generar) no estiran el reloj I2C: el maestro
 las lanza, sondea `ocupado` en STATUS y recoge el resultado después. Es

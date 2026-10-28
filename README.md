@@ -23,7 +23,8 @@ reinicios) y es la justificación del diseño de caja blanca.
 | `docs/` | plan, arquitectura, mapa de registros, estados del arte (TRNG, cripto, plataforma, vía ASIC) con ~200 referencias etiquetadas, resultados del modelo y de la síntesis |
 | `analysis/` | modelo estocástico del anillo, estimadores de jitter, banco SPICE, modelo de referencia del DRBG (960 vectores CAVP), verificación cruzada |
 | `rtl/` | VHDL-2008 portable: `trng/`, `io/`, `aes/`, `drbg/`, `top/`; bancos en `tb/`; `run_tb.py` los ejecuta todos con GHDL |
-| `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque |
+| `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (sin probar) |
+| `rtl/fpga/` | envoltorio del motor para la Basys 3 (reset, SDA en colector abierto, LED de latido) |
 | `firmware/verificador/` | proyecto ESP-IDF: maestro I2C, provisión, reto-respuesta con mbedtls, volcado de bits al PC |
 | `firmware/medidor/` | proyecto ESP-IDF para ESP32-C3: el motor usado por un producto; clave ECDSA P-256 generada con aleatorio del motor, petición de certificado y lecturas de energía firmadas (`docs/lecturas_firmadas.md`) |
 | `firmware/componentes/motor_i2c/` | capa de acceso al motor compartida por los dos firmwares (`docs/mapa_registros.md` en C) |
@@ -43,7 +44,7 @@ reinicios) y es la justificación del diseño de caja blanca.
 - Firmware del ESP32: el verificador (esp32) y el medidor con lecturas
   firmadas (esp32c3) compilan con ESP-IDF 5.3.5 y pasan su banco en el PC
   contra el motor simulado (27-10-2026, `results/host_check.log`).
-- Síntesis: los bloques digitales sobre IHP SG13G2 (motor versión 0x03, 27-10-2026); motor ≈ 69 kGE sin la captura (116 con ella),
+- Síntesis: los bloques digitales sobre IHP SG13G2 (motor versión 0x03, 27-10-2026); motor ≈ 55 kGE sin la captura (102 con ella) con un solo AES compartido,
   con camino documentado hacia ≈ 20 kGE.
 - Pendiente: hardware (Basys 3 + ESP32 en la mesa), campaña de entropía,
   simulación del anillo con el kit de la tecnología real, memoria.

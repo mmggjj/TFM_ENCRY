@@ -38,10 +38,15 @@ synthesized; they are the one block designed at transistor level
 
 Table~\ref{tab:synth} gives the result for each block. The digital
 engine --- everything except the capture buffer --- is about
-\textbf{69~kGE}: 63.8~kGE in the blocks of the table and 5.1~kGE in the
-top-level sequencer and register file, which only appear when the whole
-engine is synthesized. AES is close to half of it: the authenticator and
-the generator each instantiate their own encryption core, 15.7~kGE apiece.
+\textbf{55~kGE}. Synthesized on their own, the authenticator and the
+generator each carry their own encryption core, 16~kGE apiece, and that
+is how their rows in the table are measured; in the whole engine a single
+core serves both, because the sequencer never lets them run at the same
+time (Section~\ref{sec:opt}), so the rows do not add up to the engine's
+figure. Roughly: the shared AES 16~kGE, the authenticator without it 7,
+the generator without it 22, health tests 1.3, sampler, crossing and
+resets 0.4, \ac{I2C} 1.1, and some 6.6~kGE of top-level sequencer,
+registers and core arbitration.
 The capture buffer is reported for completeness but must not be read as
 part of the product: its 46.8~kGE are a 4096-bit memory mapped onto
 flip-flops because the flow has no SRAM macros. In the FPGA it occupies a
@@ -58,9 +63,9 @@ disabled at production.
 \toprule
 Block & Cells & Flip-flops & Area ($\mu\mathrm{m}^2$) & kGE \\
 \midrule
-AES-128 encryption core       & 10\,369 & 262   & 113\,763 & 15.68 \\
-AES-CMAC (with its AES)        & 13\,131 & 912   & 168\,775 & 23.26 \\
-CTR\_DRBG with df (with its AES) & 19\,345 & 2\,357 & 274\,420 & 37.81 \\
+AES-128 encryption core (with clear input) & 10\,571 & 262 & 116\,550 & 16.06 \\
+AES-CMAC (with its AES)        & 13\,289 & 912   & 169\,382 & 23.34 \\
+CTR\_DRBG with df (with its AES) & 19\,881 & 2\,357 & 276\,945 & 38.16 \\
 Health tests (RCT, APT)        & 588     & 86    & 9\,137   & 1.26 \\
 ERO sampler and 24-bit divider & 127     & 28    & 2\,371   & 0.33 \\
 Bit clock-domain crossing      & 11      & 7     & 408      & 0.06 \\
@@ -68,7 +73,7 @@ Reset synchronizer (one per clock domain) & 3 & 3 & 147      & 0.02 \\
 I2C slave (with bus-hang guard) & 435    & 89    & 7\,729   & 1.07 \\
 \midrule
 Capture buffer (4096-bit RAM as flip-flops) & 12\,526 & 4\,140 & 339\,386 & 46.76 \\
-Whole engine, rings as wires   & 49\,548 & 8\,435 & 839\,558 & 115.68 \\
+Whole engine, rings as wires, one shared AES & 39\,735 & 8\,175 & 737\,071 & 101.56 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,7 +90,8 @@ synthesis of the engine at register-map version~3, which added the
 zeroization command, a request counter that saturates instead of
 wrapping, the capture exclusion rules and the reset synchronizers; the
 generator grew by 1.0~kGE for the saturating counter and the clear path,
-and the whole engine by 0.8~kGE. The flow for this run read the
+and the whole engine by 0.8~kGE, to 115.7~kGE with two cores; sharing
+the core then took it to the 101.6~kGE of the table. The flow for this run read the
 \ac{VHDL} through GHDL's own Verilog netlist output and the
 \texttt{pip}-installable build of Yosys rather than the GHDL plugin;
 on the unchanged AES core the two paths agree within 0.9\,\%.
@@ -98,10 +104,15 @@ verifiable, not small --- and it points at three optimizations, in order
 of return on effort:
 
 \begin{enumerate}
-\item \textbf{One shared AES core.} The top-level sequencer already
-serializes commands: the generator and the authenticator never run at the
-same time. Sharing the core saves $\approx$15.8~kGE, a quarter of the
-engine, for a trivial arbiter.
+\item \textbf{One shared AES core --- done.} The top-level sequencer
+already serializes commands: the generator and the authenticator never
+run at the same time. The core now lives in the top level and is handed
+to whichever block raises its start pulse; a property in the system
+bench checks that the two never do so in the same cycle. Measured
+saving: \textbf{14.1~kGE} (115.7 to 101.6), a little under the 15.8
+estimated, because the arbitration costs about half a kGE and the clear
+input that the review required on the core and on the generator costs
+another. A generic keeps the two-core arrangement available.
 \item \textbf{Compact S-box datapath.} Twenty independent S-box tables
 synthesize to 15.8~kGE for the whole core; area-optimized designs in the
 literature range from 2.4~kGE for an 8-bit datapath at 226 cycles per

@@ -37,6 +37,7 @@
 #include "esp_rom_crc.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "mbedtls/platform_util.h"
 #include "motor_i2c.h"
 #include "lectura.h"
 
@@ -147,6 +148,39 @@ static void cmd_publica(void)
     trama_pc('P', der, n);
 }
 
+/* La clave privada se guarda en NVS para que sobreviva al reinicio: sin
+ * eso cada arranque pediria una clave nueva al motor y la publica
+ * registrada dejaria de valer. OJO: NVS a secas la guarda en claro en la
+ * flash. En producto hay que activar el cifrado de flash y de NVS
+ * (CONFIG_NVS_ENCRYPTION, misma API), o dejar la clave en el motor cuando
+ * haga de elemento seguro. Aqui se avisa en vez de fingir que no pasa. */
+static bool nvs_clave(bool guardar)
+{
+    nvs_handle_t h;
+    uint8_t der[PRIVADA_MAX];
+    size_t n = sizeof der;
+    bool ok = false;
+    if (nvs_open("medidor", NVS_READWRITE, &h) != ESP_OK) return false;
+    if (guardar) {
+        ok = clave_exportar(&clave, der, sizeof der, &n) == 0 &&
+             nvs_set_blob(h, "clave", der, n) == ESP_OK && nvs_commit(h) == ESP_OK;
+    } else {
+        ok = nvs_get_blob(h, "clave", der, &n) == ESP_OK && clave_importar(&clave, der, n) == 0;
+    }
+    nvs_close(h);
+    mbedtls_platform_zeroize(der, sizeof der);
+    return ok;
+}
+
+static void nvs_olvidar_clave(void)
+{
+    nvs_handle_t h;
+    if (nvs_open("medidor", NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_erase_key(h, "clave");
+    nvs_commit(h);
+    nvs_close(h);
+}
+
 static void cmd_clave(void)
 {
     uint32_t antes = motor_rng_bloques();
@@ -169,8 +203,10 @@ static void cmd_clave(void)
                (diag & DG_AGOTADO) ? " (contador agotado: resembrar)" : "", sigue);
         return;
     }
-    printf("clave: ok, P-256 con %" PRIu32 " bloques de 32 bytes del motor\n",
-           motor_rng_bloques() - antes);
+    printf("clave: ok, P-256 con %" PRIu32 " bloques de 32 bytes del motor; %s\n",
+           motor_rng_bloques() - antes,
+           nvs_clave(true) ? "guardada en NVS (en claro si la flash no va cifrada)"
+                           : "NO guardada: sin NVS, se pierde al reiniciar");
     cmd_publica();
 }
 
@@ -219,7 +255,8 @@ static void cmd_lectura(int n)
 static void cmd_olvidar(void)
 {
     clave_borrar(&clave);
-    printf("olvidar: clave borrada\n");
+    nvs_olvidar_clave();
+    printf("olvidar: clave borrada de la RAM y de la NVS\n");
 }
 
 /* ---- consola minima --------------------------------------------------- */
@@ -286,6 +323,9 @@ static void iniciar_medidor(void)
     n_lecturas = 0;
     ult_instante_ms = ahora_ms();
     contar_arranque();
+    /* Si hay clave guardada se recupera: el equipo sigue firmando con la
+     * misma identidad que registro. Si no, hace falta 'clave'. */
+    if (nvs_clave(false)) printf("clave recuperada de la NVS\n");
 }
 
 void app_main(void)

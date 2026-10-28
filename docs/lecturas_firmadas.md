@@ -129,7 +129,8 @@ Las tramas son las `F` de siempre (tipo, longitud, carga, CRC32), así que
   parsea y lleva la pública del equipo; ni pública, ni firma, ni CSR
   contienen 8 bytes seguidos de la privada; tras `olvidar` no sale nada;
   tras un reinicio (RAM a cero, NVS no) la secuencia sigue creciendo y sin
-  NVS se avisa.
+  NVS se avisa; la clave guardada en NVS se recupera al arrancar y
+  `olvidar` la borra también de allí.
 - La salida del banco pasa por `analysis/verifica_lecturas.py`, que verifica
   con `cryptography`, **otra implementación que mbedtls**: 9 válidas, 1 firma
   inválida, 1 repetida y 2 cambios de clave, exactamente los plantados; la
@@ -224,12 +225,19 @@ auditable** (el TFM entero) y una clave que nace fuera del SoC. Como prueba
 de concepto para presentar la idea, encaja; como producto, la decisión es
 de coste y de certificación.
 
+**La clave se guarda en NVS** (`nvs_clave()` en `main.c`): `clave` la
+escribe como ECPrivateKey DER en el espacio `medidor`, al arrancar se
+recupera y el equipo sigue firmando con la misma identidad, y `olvidar` la
+borra de la RAM y de la NVS. El banco lo comprueba (paso 11: reinicio con
+NVS sana recupera la clave; sin NVS no; `olvidar` la quita). **Aviso que
+el propio firmware imprime:** NVS a secas guarda el blob en claro en la
+flash. En producto hay que activar el cifrado de flash y de NVS
+(`CONFIG_NVS_ENCRYPTION`, misma API) o, mejor, que el motor haga de
+elemento seguro y guarde él la clave (segunda fase del diseño: hoy solo
+guarda una AES-128 y no firma).
+
 Lo que esta demo no hace y un producto tendría que hacer:
 
-- **Guardar la clave.** Aquí vive en RAM y se borra con `olvidar`; en
-  producto iría a NVS cifrado (con cifrado de flash) o, mejor, el motor
-  haría de elemento seguro y guardaría él la clave, que es la segunda fase
-  del diseño (hoy el motor solo guarda una clave AES-128 y no firma).
 - **Hora real** en vez de segundos desde el arranque.
 - **Resembrado** del motor por política (`PETICIONES`), que sigue siendo
   obligación del maestro.

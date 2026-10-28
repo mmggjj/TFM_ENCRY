@@ -40,6 +40,7 @@ FUENTES = [
     "drbg/ctr_drbg.vhd",
     "tb/drbg_vectores_pkg.vhd",      # generado por analysis/gen_drbg_vectores.py
     "top/motor_top.vhd",
+    "fpga/basys3_top.vhd",           # envoltorio de placa: solo se analiza, no tiene banco
 ]
 BANCOS = [
     ("tb_ring_osc", "tb/tb_ring_osc.vhd", ["-Pbuild/unisim"]),
@@ -106,8 +107,21 @@ def main():
         if filtro and filtro not in nombre:
             continue
         print(f"\n--- {nombre} ---")
+        # Las propiedades PSL del banco (si las tiene) se informan aparte: una
+        # asercion violada ya hace fallar la simulacion, pero el informe dice
+        # ademas cuantas se evaluaron y que coberturas se alcanzaron.
+        psl = CONSTRUIR / f"{nombre}_psl.json"
         rc = correr(["-r", "--std=08", "--workdir=rtl/build/work",
-                     "-Prtl/build/unisim", nombre], nombre)
+                     "-Prtl/build/unisim", nombre, f"--psl-report={psl}"], nombre)
+        if psl.exists():
+            import json
+            s = json.loads(psl.read_text())["summary"]
+            if s["assert"] or s["cover"]:
+                print(f"  PSL: {s['assert']} aserciones ({s['assert-failure']} violadas), "
+                      f"{s['cover']} coberturas ({s['cover-pass']} alcanzadas)")
+                if s["assert-failure"] or s["cover-pass"] < s["cover"]:
+                    print("  --> PSL: aserciones violadas o coberturas sin alcanzar")
+                    rc = rc or 1
         if rc:
             fallidos.append(nombre)
 

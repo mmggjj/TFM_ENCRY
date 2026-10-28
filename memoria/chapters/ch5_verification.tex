@@ -148,8 +148,19 @@ register map had placed on the host were moved into the hardware: a seed
 command issued with the divider below its minimum is now refused, and a
 write to the divider register while a command is running is ignored. A
 rule that only the documentation enforces is a rule that a careless host
-breaks; the bench now exercises both. The bench also had to be told to
-stop: with the rings running after reset, a simulation whose stimulus has
+breaks; the bench now exercises both. The security rules of the
+sequencer are also written as PSL properties inside the bench, checked
+on every clock of the whole simulation rather than only at the steps
+that provoke them: no generation and no seeding while an alarm is
+raised, no seed collection before the start-up test, no generation with
+the request counter exhausted, capture and seeding mutually exclusive
+and capture only in test mode, no authentication without a valid key,
+zeroization clearing the key in the same cycle, and the engine never
+staying busy forever; four cover directives confirm that the bench
+reaches the states those properties guard. A mutant of the sequencer
+that drops the alarm check on key generation is caught both by the step
+that expects the refusal and by the property. The bench also had to be
+told to stop: with the rings running after reset, a simulation whose stimulus has
 finished never runs out of events, and the first re-run consumed
 forty-five minutes of CPU after its last check had passed.
 

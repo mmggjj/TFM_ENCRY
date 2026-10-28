@@ -26,7 +26,8 @@ entity ctr_drbg is
   generic (
     -- Bits del contador de peticiones que cuentan para agotarlo (SP 800-90A,
     -- reseed_interval). 32 en hardware; los bancos lo bajan para probarlo.
-    G_PET_BITS : positive := 32
+    G_PET_BITS : positive := 32;
+    G_AES_EXTERNO : boolean := false
   );
   port (
     clk        : in  std_logic;
@@ -47,7 +48,17 @@ entity ctr_drbg is
     peticiones : out unsigned(31 downto 0);           -- reseed_counter
     -- El contador llego a 2^G_PET_BITS - 1: no se genera mas hasta
     -- resembrar. El contador no da la vuelta.
-    agotado    : out std_logic
+    agotado    : out std_logic;
+
+    -- Nucleo AES externo (G_AES_EXTERNO): lo pone quien instancia y lo
+    -- puede compartir con otro bloque, porque este solo cifra cuando se
+    -- lo ordenan y nunca a la vez que el otro.
+    aes_arranca_o : out std_logic;
+    aes_borrar_o  : out std_logic;
+    aes_clave_o   : out std_logic_vector(127 downto 0);
+    aes_dato_o    : out std_logic_vector(127 downto 0);
+    aes_salida_i  : in  std_logic_vector(127 downto 0) := (others => '0');
+    aes_listo_i   : in  std_logic := '0'
   );
 end entity ctr_drbg;
 
@@ -121,10 +132,22 @@ begin
   agotado    <= '1' when cnt_reseed(G_PET_BITS - 1 downto 0) = (G_PET_BITS - 1 downto 0 => '1')
                 else '0';
 
-  nucleo : entity work.aes_enc
-    port map (clk => clk, rst_n => rst_n, arranca => aes_arranca,
-              clave => aes_clave, dato => aes_dato,
-              salida => aes_salida, listo => aes_listo, ocupado => open);
+  g_nucleo_propio : if not G_AES_EXTERNO generate
+    nucleo : entity work.aes_enc
+      port map (clk => clk, rst_n => rst_n, arranca => aes_arranca, borrar => borrar,
+                clave => aes_clave, dato => aes_dato,
+                salida => aes_salida, listo => aes_listo, ocupado => open);
+  end generate g_nucleo_propio;
+
+  g_nucleo_externo : if G_AES_EXTERNO generate
+    aes_salida <= aes_salida_i;
+    aes_listo  <= aes_listo_i;
+  end generate g_nucleo_externo;
+
+  aes_arranca_o <= aes_arranca;
+  aes_borrar_o  <= borrar;
+  aes_clave_o   <= aes_clave;
+  aes_dato_o    <= aes_dato;
 
   p_drbg : process (clk, rst_n)
     variable iv : std_logic_vector(127 downto 0);
@@ -147,17 +170,28 @@ begin
       aes_arranca <= '0';
       listo <= '0';
 
+      if borrar = '1' then
+        -- Zeroizacion, en cualquier fase: aborta lo que haya en curso y
+        -- deja a cero el estado, la semilla capturada, la salida y todos
+        -- los registros intermedios. De temp_hi se recupera Key exacta
+        -- tras un generar, y de kdf y x_df la semilla derivada; el nucleo
+        -- AES guarda la clave de ronda, de la que se recupera la clave.
+        key <= (others => '0'); v <= (others => '0');
+        valido <= '0'; cnt_reseed <= (others => '0');
+        ent_r <= (others => '0'); nonce_r <= (others => '0');
+        material <= (others => '0'); sal_r <= (others => '0');
+        temp_hi <= (others => '0'); kdf <= (others => '0');
+        x_df <= (others => '0'); t0 <= (others => '0');
+        cadena <= (others => '0');
+        aes_clave <= (others => '0'); aes_dato <= (others => '0');
+        i_bcc <= 0; j_bcc <= 0; paso <= 0; lanzado <= '0';
+        fase <= REPOSO; tras_update <= REPOSO;
+        listo <= '1';
+      else
       case fase is
 
         when REPOSO =>
-          if borrar = '1' then
-            -- Zeroizacion: estado, semilla capturada y salida a cero.
-            key <= (others => '0'); v <= (others => '0');
-            valido <= '0'; cnt_reseed <= (others => '0');
-            ent_r <= (others => '0'); nonce_r <= (others => '0');
-            material <= (others => '0'); sal_r <= (others => '0');
-            listo <= '1';
-          elsif instanciar = '1' or resembrar = '1' then
+          if instanciar = '1' or resembrar = '1' then
             if instanciar = '1' then
               key <= (others => '0');
               v   <= (others => '0');
@@ -287,6 +321,7 @@ begin
           end if;
 
       end case;
+      end if;
     end if;
   end process p_drbg;
 

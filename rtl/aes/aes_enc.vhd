@@ -26,6 +26,7 @@ entity aes_enc is
     clk    : in  std_logic;
     rst_n  : in  std_logic;
     arranca : in  std_logic;                       -- pulso de un ciclo
+    borrar  : in  std_logic := '0';                -- pulso: aborta y deja estado y clave de ronda a cero
     clave  : in  std_logic_vector(127 downto 0);
     dato   : in  std_logic_vector(127 downto 0);
     salida : out std_logic_vector(127 downto 0);
@@ -60,7 +61,15 @@ begin
     elsif rising_edge(clk) then
       listo <= '0';
 
-      if arranca = '1' and activo = '0' then
+      if borrar = '1' then
+        -- Zeroizacion: lo que queda del ultimo cifrado (el estado y la
+        -- clave de ronda, de la que se recupera la clave) y lo que haya en
+        -- vuelo.
+        estado_dato <= (others => '0');
+        clave_ronda <= (others => '0');
+        ronda       <= 0;
+        activo      <= '0';
+      elsif arranca = '1' and activo = '0' then
         -- Ronda inicial: solo AddRoundKey con la clave original.
         estado_dato <= dato xor clave;
         clave_ronda <= clave;

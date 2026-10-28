@@ -164,8 +164,20 @@ hardware: una orden de siembra emitida con el divisor por debajo de su
 mínimo ahora se rechaza, y una escritura en el registro del divisor
 mientras se ejecuta una orden se ignora. Una regla que solo impone la
 documentación es una regla que un anfitrión descuidado incumple; el
-banco ahora prueba ambas. Además, hubo que indicarle al banco que se
-detuviera: con los anillos funcionando tras el reset, una simulación
+banco ahora prueba ambas. Las reglas de seguridad del secuenciador
+están escritas además como propiedades PSL dentro del banco, comprobadas
+en cada ciclo de toda la simulación y no solo en los pasos que las
+provocan: ni generación ni siembra con una alarma activa, ninguna
+recogida de semilla antes del test de arranque, ninguna generación con
+el contador de peticiones agotado, captura y siembra mutuamente
+excluyentes y captura solo en modo de prueba, ninguna autenticación sin
+clave válida, el borrado total deja la clave a cero en el mismo ciclo, y
+el motor nunca se queda ocupado para siempre; cuatro directivas de
+cobertura confirman que el banco llega a los estados que esas
+propiedades vigilan. Un mutante del secuenciador que omite la
+comprobación de alarma al generar la clave lo detectan tanto el paso que
+espera el rechazo como la propiedad. Además, hubo que indicarle al banco
+que se detuviera: con los anillos funcionando tras el reset, una simulación
 cuyos estímulos han terminado nunca se queda sin eventos, y la primera
 repetición consumió cuarenta y cinco minutos de CPU después de haber
 superado su última comprobación.
