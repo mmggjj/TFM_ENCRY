@@ -13,7 +13,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x01 | VERSION | R | 0x03 (0x02: DIAG y test de arranque; 0x01 hasta el 27-10-2026). 0x03 anade `borrar_todo`, `DIAG.agotado`, las reglas de `capturar` y CFG_KD de reset 24 |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
-| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). **Tras el reset vale 24** (generico `G_KD_RESET`; hasta la version 0x02 era 7): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). Con el anillo de IHP en ss/tt/ff de −40 a 125 °C, el valor fijo que cubre todo el rango es **22** (peor caso ss a −40 °C; `anillo_ihp.md` §4.2). **Tras el reset vale 24** (generico `G_KD_RESET`; hasta la version 0x02 era 7): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre |
 | 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
 | 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
 | 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |

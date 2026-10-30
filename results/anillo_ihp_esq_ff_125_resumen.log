@@ -1,0 +1,11 @@
+4 realizaciones independientes, tstop 400n, escala 1 (ruido del PDK), mos_ff, 125 C
+  rep  1: 1274 cruces, T 309.004 ps, sigma 207.85 fs, exp 0.89
+  rep  2: 1275 cruces, T 309.003 ps, sigma 205.82 fs, exp 0.95
+  rep  3: 1275 cruces, T 308.994 ps, sigma 212.51 fs, exp 1.13
+  rep  4: 1275 cruces, T 308.999 ps, sigma 214.66 fs, exp 1.14
+
+  sigma por periodo = 210.2 +- 2.0 fs (1 sigma de la media; dispersion entre repeticiones 1.9 % en sigma)
+  Q por periodo = 4.6293e-07 +- 8.98e-09
+  K_D = 493808 (intervalo 1 sigma 484410 - 503577); 6.55 kbit/s a 3.236 GHz
+
+datos en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_esq_ff_125_resumen.csv

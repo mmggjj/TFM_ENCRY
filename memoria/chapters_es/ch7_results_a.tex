@@ -181,6 +181,22 @@ requerido en la esquina típica a temperatura ambiente. Ahora tiene 24 bits (cua
 flip-flops, 0,04~kGE), y el banco del motor completo y su verificación
 cruzada se volvieron a ejecutar con él.
 
+\paragraph{Esquinas y temperatura.} El punto térmico se repitió en las
+esquinas lenta, típica y rápida a $-40$, 27 y 125~$^\circ$C, recalculando
+el ruido de los dispositivos en cada punto y con cuatro realizaciones por
+punto \simu{}. El peor caso es el frío, no el calor: $\sigma/T$ crece con
+la temperatura en las tres esquinas, porque el ruido térmico va con $kT$
+y el periodo cambia poco, así que el divisor necesario baja en un factor
+de 2,5 a 3,5 de $-40$ a 125~$^\circ$C. La esquina lenta es peor que la
+rápida, y las dos cosas se combinan peor que su producto: la esquina lenta
+a $-40~^\circ$C ($\sigma/T = 3{,}15\times10^{-4}$, periodo 438,6~ps) pide
+$K_D = 2\,306\,215$. Ahí $2^{20}$ da $H_\infty = 0{,}78$ y $2^{21}$ solo
+0,970, así que un divisor fijo válido en todo el rango es $2^{22}$, con
+$H_\infty = 0{,}9995$ en el peor punto y de 0,51 a 0,82~kbit/s según la
+esquina. El registro del divisor arranca en $2^{24}$, así que un maestro
+que no lo escriba ya está del lado seguro; un valor menor tiene que salir
+de la esquina más fría en la que deba funcionar el producto.
+
 \paragraph{Ruido de parpadeo.} Añadir el ruido $1/f$ del \ac{PDK} no
 cambia nada en 400~ns: $\sigma$ sube un 3,8\,\%, dentro de la dispersión
 entre realizaciones, y la separación $E[D^2] = a_1 M + a_2 M^2$, validada

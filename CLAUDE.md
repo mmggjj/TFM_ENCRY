@@ -393,7 +393,12 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   del propio modelo; 5 etapas a 2,73 GHz, σ = 176,7 ± 2,0 fs por periodo
   (media de 8 realizaciones, dispersión 3,3 %; 30-10-2026, antes 180 fs de
   una sola), K_D = 981 095 (959 000 – 1 004 000), 2,79 kbit/s; con 2²⁰,
-  H_∞ = 0,9853. **ngspice 47 no deja fijar la realización de `trnoise`**
+  H_∞ = 0,9853. Eso es tt a 27 °C. **Esquinas ss/tt/ff a −40/27/125 °C
+  (30-10, `anillo_ihp.md` §4.2): el peor caso es el frío y la esquina
+  lenta; ss a −40 °C pide K_D = 2 306 215, así que un divisor fijo para
+  todo el rango es 2²² (`CFG_KD` = 22, H_∞ = 0,9995, 0,51-0,82 kbit/s);
+  2²¹ se queda en 0,970.** `anillo_ihp.py` admite `--esquina` y `--temp`.
+  **ngspice 47 no deja fijar la realización de `trnoise`**
   (Wallace sembrado con `getpid()`; `rndseed`, `setseed` y
   `.options seed` no le llegan): la incertidumbre sale de repetir
   (`analysis/anillo_ihp_repeticiones.py`). Necesita ngspice 47 y

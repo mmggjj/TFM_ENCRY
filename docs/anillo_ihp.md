@@ -164,6 +164,45 @@ ocho, dio 171,06 fs (−0,97). El periodo, la potencia,
 V_T y la densidad de ruido no dependen de la realización y coinciden entre
 Windows y Linux (la densidad, bit a bit).
 
+### 4.2 Esquinas y temperatura (30-10-2026)
+
+Esquinas ss, tt y ff a −40, 27 y 125 °C; en cada punto se recalcula la
+densidad del PDK (`--esquina`, `--temp`; el `.temp` llega también al
+transitorio: a 125 °C el periodo pasa a 379,9 ps). Cuatro realizaciones
+por punto (ocho en tt a 27 °C), 400 ns, solo con el térmico. Ficheros
+`results/anillo_ihp_esq_<esquina>_<T>_*` (−40 se escribe `m40`).
+
+| Esquina | T | Periodo (ps) | P (µW) | σ (fs) | σ/T | K_D para H_∞ ≥ 0,98 | H_∞ con 2²⁰ | 2²¹ | 2²² |
+|---|---|---|---|---|---|---|---|---|---|
+| ss | −40 °C | 438,6 | 117,5 | 138,1 ± 1,3 | 3,15·10⁻⁴ | **2 306 215** (2 262 960 – 2 351 156) | 0,781 | **0,970** | 0,9995 |
+| ss | 27 °C | 451,7 | 113,8 | 187,8 ± 2,1 | 4,16·10⁻⁴ | 1 322 114 | 0,950 | 0,9986 | 1,0000 |
+| ss | 125 °C | 469,6 | 109,6 | 274,8 ± 5,5 | 5,85·10⁻⁴ | 667 499 | 0,9985 | 1,0000 | 1,0000 |
+| tt | −40 °C | 358,8 | 146,2 | 141,7 ± 0,6 | 3,95·10⁻⁴ | 1 465 702 | 0,929 | 0,9971 | 1,0000 |
+| tt | 27 °C | 366,0 | 143,0 | 176,7 ± 2,0 | 4,83·10⁻⁴ | 981 095 | 0,985 | 0,9999 | 1,0000 |
+| tt | 125 °C | 379,9 | 138,3 | 239,1 ± 3,2 | 6,29·10⁻⁴ | 577 234 | 0,9995 | 1,0000 | 1,0000 |
+| ff | −40 °C | 289,7 | 184,8 | 125,0 ± 3,1 | 4,32·10⁻⁴ | 1 227 368 | 0,962 | 0,9992 | 1,0000 |
+| ff | 27 °C | 295,7 | 180,8 | 153,8 ± 2,6 | 5,20·10⁻⁴ | 845 499 | 0,993 | 1,0000 | 1,0000 |
+| ff | 125 °C | 309,0 | 174,3 | 210,2 ± 2,0 | 6,80·10⁻⁴ | 493 808 | 0,9999 | 1,0000 | 1,0000 |
+
+H_∞ con el Q medio; a −1σ de Q, el peor punto da 0,773 / 0,968 / 0,9994.
+
+Lectura:
+
+- **El frío es el peor caso, no el calor.** σ/T sube con T en las tres
+  esquinas (el térmico va con kT y el periodo cambia poco), así que el
+  K_D necesario cae de −40 a 125 °C en un factor 3,5 (ss), 2,5 (tt) y
+  2,5 (ff).
+- **La esquina lenta es peor que la rápida** a igual temperatura: con
+  menos corriente baja más el ruido que lo que se alarga el periodo.
+- **ss a −40 °C combina las dos peor que su producto**: por separado, Q ×
+  0,74 (ss) y Q × 0,67 (frío) darían × 0,50; juntas dan × 0,43.
+- **2²⁰ solo cumple en tt a 27 °C o mejor; 2²¹ no cubre ss a −40 °C
+  (0,970); 2²² cubre toda la rejilla** (0,9995 en el peor punto) con 0,51 –
+  0,82 kbit/s según la esquina.
+- La dispersión entre realizaciones va del 0,8 al 5,0 % en σ (cuatro
+  realizaciones dan una estimación pobre de la dispersión; el error de la
+  media sale de ella).
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
 Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
@@ -177,6 +216,14 @@ Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
 | Si se cuenta también el jitter de RO2 (independiente e igual) | K_D = 490 548 → 5,6 kbit/s |
 | Con el divisor que admite el RTL, 2²⁰ | Q = 0,244 ± 0,006, H_∞ = 0,9853 (0,9836 – 0,9868); 2,606 kbit/s |
 | Para la consigna Q = 0,30 | K_D ≥ 1 287 499 → 2²¹: H_∞ = 0,9999, 1,303 kbit/s |
+| **Peor punto de la rejilla (ss, −40 °C, §4.2)** | K_D ≥ 2 306 215 → **2²²**: Q = 0,416, H_∞ = 0,9995, 0,544 kbit/s (también cumple la consigna Q = 0,30, que pide 3 026 540) |
+
+Lo de arriba es tt a 27 °C. Para un divisor fijo que valga de −40 a
+125 °C en ss/tt/ff, hace falta 2²² (`CFG_KD` = 22): el caudal baja a
+0,51 – 0,82 kbit/s. Alternativa: fijar `CFG_KD` según la temperatura
+medida (2²⁰ basta en tt por encima de 27 °C), que exige un sensor y una
+tabla caracterizada por chip. `CFG_KD` arranca en 24 tras el reset, así
+que un maestro que no lo escriba ya está del lado seguro.
 
 El caudal cae dentro del rango que se estimó sin transistores reales
 (1-17 kbit/s, `modelo_ero_resultados.md`). La cifra conservadora es la
@@ -187,7 +234,8 @@ silicio.
 **Consecuencia de diseño aplicada:** el contador del divisor del ERO tenía
 20 bits, K_D máximo 2²⁰ = 1 048 576, solo un 11 % por encima de lo
 necesario en esquina típica a 27 °C con la primera realización (un 7 %,
-de 4 a 9 % a ±1σ, con la media de ocho). Pasa a 24 bits (`G_CNT_BITS`, K_D
+de 4 a 9 % a ±1σ, con la media de ocho; en frío o en ss no basta, §4.2).
+Pasa a 24 bits (`G_CNT_BITS`, K_D
 máximo 16,8 millones; 0,29 → 0,33 kGE; motor entero 114,73 → 114,92 kGE).
 `tb_motor_top` 18/18, `verifica_top.py` 5/5 y `tb_ring_osc` re-ejecutados
 con el cambio. `CFG_KD` efectivo pasa a 0-24 (`mapa_registros.md`).
@@ -295,9 +343,11 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
 
 - Ruido transitorio cicloestacionario (Spectre) para cerrar el factor ~2
   del térmico y situar el 1/f entre los dos extremos.
-- Esquinas (ss, ff) y temperatura (−40 a 125 °C): el ruido térmico sube
-  con T y el K_D necesario cambia. Cada esquina cuesta ~13 min de
-  simulación con un hilo.
+- Esquinas ss/tt/ff y −40/27/125 °C: hechas (§4.2). Quedan sf/fs
+  (asimétricas, que tocan la ISF), la tensión (±10 % de V_DD), el
+  desapareamiento (`mos_tt_mismatch`, que además diferencia RO1 de RO2) y
+  más realizaciones en el peor punto. Cada realización cuesta ~11 min con
+  un hilo (~30 min con ocho en paralelo en este PC).
 - Anillos más largos (menos σ/T por periodo, misma constante de difusión)
   y la relación jitter-potencia.
 - Trazado y extracción de parásitos: el 1 fF por nudo es una estimación.

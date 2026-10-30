@@ -191,7 +191,8 @@ quit
 
 def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
            cl="1f", tstop="100n", paso="0.2p", paso_max="1p", nt=5e-13,
-           esquina="mos_tt", descartar=20, k_flicker=0.0, devolver_cruces=False):
+           esquina="mos_tt", descartar=20, k_flicker=0.0, devolver_cruces=False,
+           temp=27.0):
     """Transitorio del anillo con s_i [A^2/Hz] blanco y, si k_flicker > 0,
     k_flicker/f [A^2] de 1/f, inyectados en cada nudo.
     Devuelve el resultado de jitter_desde_cruces mas potencia y tiempos."""
@@ -199,7 +200,7 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
     txt = netlist(n_etapas=n_etapas, vdd=vdd, lmin=l, wn=wn, wp=wp, cl=cl,
                   tstop=tstop, paso=paso, paso_max=paso_max,
                   densidad_ruido=s_i, nt_ruido=nt,
-                  cabecera=cabecera_ihp(esquina), flicker=flk,
+                  cabecera=cabecera_ihp(esquina) + f".temp {temp}\n", flicker=flk,
                   guardar=f"v(n{n_etapas}) i(vdd)")
     t0 = time.time()
     nombres, m, log = simular(txt, orden=NGSPICE, spiceinit=SPICEINIT,
@@ -221,7 +222,8 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
         corr = -m[sel, ii[0]]
         p = vdd * float(np.trapezoid(corr, t[sel]) / (t[sel][-1] - t[sel][0]))
     r.update({"potencia_W": p, "segundos": dur, "s_i": s_i, "n_etapas": n_etapas,
-              "tstop": tstop, "nt": nt, "cl": cl, "k_flicker": k_flicker})
+              "tstop": tstop, "nt": nt, "cl": cl, "k_flicker": k_flicker,
+              "temp": temp, "esquina": esquina})
     if devolver_cruces:
         r["cruces"] = tc
     return r
@@ -542,6 +544,7 @@ def main() -> int:
     ap.add_argument("--tstop", default="100n")
     ap.add_argument("--nt", type=float, default=5e-13)
     ap.add_argument("--esquina", default="mos_tt")
+    ap.add_argument("--temp", type=float, default=27.0, help="grados C")
     ap.add_argument("--sesion", default=time.strftime("%Y%m%d_%H%M%S"))
     ap.add_argument("--escalas", default="0,1,4",
                     help="multiplos de la densidad del PDK a simular (0 = resolucion)")
@@ -550,7 +553,7 @@ def main() -> int:
 
     print("== 1. Ruido del inversor en su punto de conmutacion (PDK IHP) ==")
     r1, f, s_i, log1 = ruido_inversor(wn=args.wn, wp=args.wp,
-                                      esquina=args.esquina)
+                                      esquina=args.esquina, temp=args.temp)
     np.savetxt(RES / f"anillo_ihp_ruido_{args.sesion}.csv",
                np.column_stack([f, s_i]), delimiter=",",
                header="f_Hz,S_i_A2Hz", comments="")
@@ -560,7 +563,7 @@ def main() -> int:
         return 0
 
     print("\n== 2. Anillo en transitorio ==")
-    vt = vt_nmos(wn=args.wn, esquina=args.esquina)
+    vt = vt_nmos(wn=args.wn, esquina=args.esquina, temp=args.temp)
     print(f"  V_T del nmos (extrapolacion lineal) = {vt:.4f} V")
     filas = []
     salida = RES / f"anillo_ihp_{args.sesion}.csv"
@@ -574,7 +577,7 @@ def main() -> int:
             s = esc * r1["s_termico_A2Hz"]
             r = anillo(s, n_etapas=args.etapas, wn=args.wn, wp=args.wp,
                        cl=args.cl, tstop=args.tstop, nt=args.nt,
-                       esquina=args.esquina)
+                       esquina=args.esquina, temp=args.temp)
             fila = [esc, s, args.etapas, args.cl, args.tstop, args.nt,
                     r["n_cruces"], r["periodo"] * 1e12,
                     r["sigma_periodo"] * 1e15, r["sigma_rel"],
@@ -604,7 +607,7 @@ def main() -> int:
         f0 = 1e12 / u["periodo_ps"]
         gam = r1["gamma_efectiva"]
         v_car = v_caracteristica(r1)
-        ab = abidi_sigma_rel(u["potencia_uW"] * 1e-6, 1.2, v_car, f0)
+        ab = abidi_sigma_rel(u["potencia_uW"] * 1e-6, 1.2, v_car, f0, temp=args.temp)
         print(f"  Abidi (orden de magnitud; V_car = 4 I_trip/(gamma g_nudo) = {v_car:.3f} V, "
               f"gamma medida {gam:.2f}): sigma/T = {ab:.3e} frente a {u['sigma_rel']:.3e} "
               f"simulado (cociente {u['sigma_rel'] / ab:.2f})")

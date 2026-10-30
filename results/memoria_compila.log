@@ -1,487 +1,27 @@
-note: connecting to https://relay.fullyjustified.net/default_bundle_v33.tar
-note: resolved to https://data1b.fullyjustified.net/tlextras-2022.0r0.tar
-note: downloading index https://data1b.fullyjustified.net/tlextras-2022.0r0.tar.index.gz
-note: downloading SHA256SUM
-note: generating format "latex"
-note: downloading tectonic-format-latex.tex
-note: downloading xelatex.ini
-note: downloading latex.ltx
-note: downloading texsys.cfg
-note: downloading expl3.ltx
-note: downloading expl3-code.tex
-note: downloading cmr10.tfm
-note: downloading UnicodeData.txt
-note: downloading CaseFolding.txt
-note: downloading SpecialCasing.txt
-note: downloading fonttext.cfg
-note: downloading fonttext.ltx
-note: downloading omlenc.def
-note: downloading omsenc.def
-note: downloading ot1enc.def
-note: downloading t1enc.def
-note: downloading ts1enc.def
-note: downloading tuenc.def
-note: downloading tulmr.fd
-note: downloading tulmss.fd
-note: downloading tulmtt.fd
-note: downloading ts1lmr.fd
-note: downloading t1cmr.fd
-note: downloading ot1cmr.fd
-note: downloading ot1cmss.fd
-note: downloading ot1cmtt.fd
-note: downloading fontmath.cfg
-note: downloading fontmath.ltx
-note: downloading omlcmm.fd
-note: downloading omscmsy.fd
-note: downloading omxcmex.fd
-note: downloading ucmr.fd
-note: downloading preload.cfg
-note: downloading preload.ltx
-note: downloading cmex10.tfm
-note: downloading line10.tfm
-note: downloading linew10.tfm
-note: downloading lcircle10.tfm
-note: downloading lcirclew10.tfm
-note: downloading cmr5.tfm
-note: downloading cmr7.tfm
-note: downloading cmmi5.tfm
-note: downloading cmmi7.tfm
-note: downloading cmmi10.tfm
-note: downloading cmsy5.tfm
-note: downloading cmsy7.tfm
-note: downloading cmsy10.tfm
-note: downloading atveryend.sty
-note: downloading atveryend-ltx.sty
-note: downloading atbegshi.sty
-note: downloading atbegshi-ltx.sty
-note: downloading load-unicode-data.tex
-note: downloading hyphen.cfg
-note: downloading xebabel.def
-note: downloading language.dat
-note: downloading hyphen.tex
-note: downloading dumyhyph.tex
-note: downloading zerohyph.tex
-note: downloading dehypht-x-2022-03-16.tex
-note: downloading dehypht-x-2022-03-16.pat
-note: downloading dehyphn-x-2022-03-16.tex
-note: downloading dehyphn-x-2022-03-16.pat
-note: downloading loadhyph-af.tex
-note: downloading hyph-af.tex
-note: downloading hyph-quote-af.tex
-note: downloading loadhyph-grc.tex
-note: downloading hyph-grc.tex
-note: downloading ibyhyph.tex
-note: downloading loadhyph-hy.tex
-note: downloading hyph-hy.tex
-note: downloading loadhyph-eu.tex
-note: downloading hyph-eu.tex
-note: downloading loadhyph-be.tex
-note: downloading hyph-be.tex
-note: downloading hyph-quote-be.tex
-note: downloading loadhyph-bg.tex
-note: downloading hyph-bg.tex
-note: downloading loadhyph-ca.tex
-note: downloading hyph-ca.tex
-note: downloading loadhyph-zh-latn-pinyin.tex
-note: downloading hyph-zh-latn-pinyin.tex
-note: downloading loadhyph-cu.tex
-note: downloading hyph-cu.tex
-note: downloading loadhyph-cop.tex
-note: downloading hyph-cop.tex
-note: downloading loadhyph-hr.tex
-note: downloading hyph-hr.tex
-note: downloading loadhyph-cs.tex
-note: downloading hyph-cs.tex
-note: downloading loadhyph-da.tex
-note: downloading hyph-da.tex
-note: downloading loadhyph-nl.tex
-note: downloading hyph-nl.tex
-note: downloading loadhyph-en-gb.tex
-note: downloading hyph-en-gb.tex
-note: downloading loadhyph-en-us.tex
-note: downloading hyph-en-us.tex
-note: downloading loadhyph-eo.tex
-note: downloading hyph-eo.tex
-note: downloading loadhyph-et.tex
-note: downloading hyph-et.tex
-note: downloading loadhyph-mul-ethi.tex
-note: downloading hyph-mul-ethi.tex
-note: downloading loadhyph-fi.tex
-note: downloading hyph-fi.tex
-note: downloading loadhyph-fi-x-school.tex
-note: downloading hyph-fi-x-school.tex
-note: downloading loadhyph-fr.tex
-note: downloading hyph-fr.tex
-note: downloading hyph-quote-fr.tex
-note: downloading loadhyph-fur.tex
-note: downloading hyph-fur.tex
-note: downloading hyph-quote-fur.tex
-note: downloading loadhyph-gl.tex
-note: downloading hyph-gl.tex
-note: downloading loadhyph-ka.tex
-note: downloading hyph-ka.tex
-note: downloading loadhyph-de-1901.tex
-note: downloading hyph-de-1901.tex
-note: downloading loadhyph-de-1996.tex
-note: downloading hyph-de-1996.tex
-note: downloading loadhyph-de-ch-1901.tex
-note: downloading hyph-de-ch-1901.tex
-note: downloading loadhyph-el-polyton.tex
-note: downloading hyph-el-polyton.tex
-note: downloading loadhyph-el-monoton.tex
-note: downloading hyph-el-monoton.tex
-note: downloading loadhyph-hu.tex
-note: downloading hyph-hu.tex
-note: downloading loadhyph-is.tex
-note: downloading hyph-is.tex
-note: downloading loadhyph-as.tex
-note: downloading hyph-as.tex
-note: downloading loadhyph-bn.tex
-note: downloading hyph-bn.tex
-note: downloading loadhyph-gu.tex
-note: downloading hyph-gu.tex
-note: downloading loadhyph-hi.tex
-note: downloading hyph-hi.tex
-note: downloading loadhyph-kn.tex
-note: downloading hyph-kn.tex
-note: downloading loadhyph-ml.tex
-note: downloading hyph-ml.tex
-note: downloading loadhyph-mr.tex
-note: downloading hyph-mr.tex
-note: downloading loadhyph-or.tex
-note: downloading hyph-or.tex
-note: downloading loadhyph-pi.tex
-note: downloading hyph-pi.tex
-note: downloading loadhyph-pa.tex
-note: downloading hyph-pa.tex
-note: downloading loadhyph-ta.tex
-note: downloading hyph-ta.tex
-note: downloading loadhyph-te.tex
-note: downloading hyph-te.tex
-note: downloading loadhyph-id.tex
-note: downloading hyph-id.tex
-note: downloading loadhyph-ia.tex
-note: downloading hyph-ia.tex
-note: downloading loadhyph-ga.tex
-note: downloading hyph-ga.tex
-note: downloading loadhyph-it.tex
-note: downloading hyph-it.tex
-note: downloading hyph-quote-it.tex
-note: downloading loadhyph-kmr.tex
-note: downloading hyph-kmr.tex
-note: downloading loadhyph-la-x-classic.tex
-note: downloading hyph-la-x-classic.tex
-note: downloading loadhyph-la.tex
-note: downloading hyph-la.tex
-note: downloading loadhyph-la-x-liturgic.tex
-note: downloading hyph-la-x-liturgic.tex
-note: downloading loadhyph-lv.tex
-note: downloading hyph-lv.tex
-note: downloading loadhyph-lt.tex
-note: downloading hyph-lt.tex
-note: downloading loadhyph-mk.tex
-note: downloading hyph-mk.tex
-note: downloading loadhyph-mn-cyrl.tex
-note: downloading hyph-mn-cyrl.tex
-note: downloading loadhyph-mn-cyrl-x-lmc.tex
-note: downloading hyph-mn-cyrl-x-lmc.tex
-note: downloading loadhyph-nb.tex
-note: downloading hyph-nb.tex
-note: downloading hyph-no.tex
-note: downloading loadhyph-nn.tex
-note: downloading hyph-nn.tex
-note: downloading loadhyph-oc.tex
-note: downloading hyph-oc.tex
-note: downloading hyph-quote-oc.tex
-note: downloading loadhyph-pms.tex
-note: downloading hyph-pms.tex
-note: downloading hyph-quote-pms.tex
-note: downloading loadhyph-pl.tex
-note: downloading hyph-pl.tex
-note: downloading loadhyph-pt.tex
-note: downloading hyph-pt.tex
-note: downloading loadhyph-ro.tex
-note: downloading hyph-ro.tex
-note: downloading loadhyph-rm.tex
-note: downloading hyph-rm.tex
-note: downloading hyph-quote-rm.tex
-note: downloading loadhyph-ru.tex
-note: downloading hyph-ru.tex
-note: downloading loadhyph-sa.tex
-note: downloading hyph-sa.tex
-note: downloading loadhyph-sr-latn.tex
-note: downloading hyph-sh-latn.tex
-note: downloading hyph-sh-cyrl.tex
-note: downloading loadhyph-sr-cyrl.tex
-note: downloading loadhyph-sk.tex
-note: downloading hyph-sk.tex
-note: downloading loadhyph-sl.tex
-note: downloading hyph-sl.tex
-note: downloading loadhyph-es.tex
-note: downloading hyph-es.tex
-note: downloading loadhyph-sv.tex
-note: downloading hyph-sv.tex
-note: downloading loadhyph-th.tex
-note: downloading hyph-th.tex
-note: downloading loadhyph-tr.tex
-note: downloading hyph-tr.tex
-note: downloading loadhyph-tk.tex
-note: downloading hyph-tk.tex
-note: downloading loadhyph-uk.tex
-note: downloading hyph-uk.tex
-note: downloading hyph-quote-uk.tex
-note: downloading loadhyph-hsb.tex
-note: downloading hyph-hsb.tex
-note: downloading loadhyph-cy.tex
-note: downloading hyph-cy.tex
-note: downloading latex2e-first-aid-for-external-files.ltx
 note: Running TeX ...
-note: downloading report.cls
-note: downloading size12.clo
-note: downloading lmroman12-regular.otf
-note: downloading tex-text.tec
-note: downloading inputenc.sty
-note: downloading fontenc.sty
-note: downloading t1lmr.fd
-note: downloading ec-lmr12.tfm
-note: downloading babel.sty
-note: downloading txtbabel.def
-note: downloading english.ldf
-note: downloading geometry.sty
-note: downloading keyval.sty
-note: downloading ifvtex.sty
-note: downloading iftex.sty
-note: downloading graphicx.sty
-note: downloading graphics.sty
-note: downloading trig.sty
-note: downloading graphics.cfg
-note: downloading xetex.def
-note: downloading amsmath.sty
-note: downloading amsopn.sty
-note: downloading amstext.sty
-note: downloading amsgen.sty
-note: downloading amsbsy.sty
-note: downloading amssymb.sty
-note: downloading amsfonts.sty
-note: downloading booktabs.sty
-note: downloading multirow.sty
-note: downloading longtable.sty
-note: downloading array.sty
-note: downloading listings.sty
-note: downloading lstmisc.sty
-note: downloading listings.cfg
-note: downloading xcolor.sty
-note: downloading color.cfg
-note: downloading tikz.sty
-note: downloading pgf.sty
-note: downloading pgfrcs.sty
-note: downloading pgfutil-common.tex
-note: downloading pgfutil-common-lists.tex
-note: downloading pgfutil-latex.def
-note: downloading pgfrcs.code.tex
-note: downloading pgf.revision.tex
-note: downloading pgfcore.sty
-note: downloading pgfsys.sty
-note: downloading pgfsys.code.tex
-note: downloading pgfkeys.code.tex
-note: downloading pgfkeysfiltered.code.tex
-note: downloading pgf.cfg
-note: downloading pgfsys-xetex.def
-note: downloading pgfsys-dvipdfmx.def
-note: downloading pgfsys-common-pdf.def
-note: downloading pgfsyssoftpath.code.tex
-note: downloading pgfsysprotocol.code.tex
-note: downloading pgfcore.code.tex
-note: downloading pgfmath.code.tex
-note: downloading pgfmathcalc.code.tex
-note: downloading pgfmathutil.code.tex
-note: downloading pgfmathparser.code.tex
-note: downloading pgfmathfunctions.code.tex
-note: downloading pgfmathfunctions.basic.code.tex
-note: downloading pgfmathfunctions.trigonometric.code.tex
-note: downloading pgfmathfunctions.random.code.tex
-note: downloading pgfmathfunctions.comparison.code.tex
-note: downloading pgfmathfunctions.base.code.tex
-note: downloading pgfmathfunctions.round.code.tex
-note: downloading pgfmathfunctions.misc.code.tex
-note: downloading pgfmathfunctions.integerarithmetics.code.tex
-note: downloading pgfmathfloat.code.tex
-note: downloading pgfint.code.tex
-note: downloading pgfcorepoints.code.tex
-note: downloading pgfcorepathconstruct.code.tex
-note: downloading pgfcorepathusage.code.tex
-note: downloading pgfcorescopes.code.tex
-note: downloading pgfcoregraphicstate.code.tex
-note: downloading pgfcoretransformations.code.tex
-note: downloading pgfcorequick.code.tex
-note: downloading pgfcoreobjects.code.tex
-note: downloading pgfcorepathprocessing.code.tex
-note: downloading pgfcorearrows.code.tex
-note: downloading pgfcoreshade.code.tex
-note: downloading pgfcoreimage.code.tex
-note: downloading pgfcoreexternal.code.tex
-note: downloading pgfcorelayers.code.tex
-note: downloading pgfcoretransparency.code.tex
-note: downloading pgfcorepatterns.code.tex
-note: downloading pgfcorerdf.code.tex
-note: downloading pgfmoduleshapes.code.tex
-note: downloading pgfmoduleplot.code.tex
-note: downloading pgfcomp-version-0-65.sty
-note: downloading pgfcomp-version-1-18.sty
-note: downloading pgffor.sty
-note: downloading pgfkeys.sty
-note: downloading pgfmath.sty
-note: downloading pgffor.code.tex
-note: downloading tikz.code.tex
-note: downloading pgflibraryplothandlers.code.tex
-note: downloading pgfmodulematrix.code.tex
-note: downloading tikzlibrarytopaths.code.tex
-note: downloading pgflibraryarrows.meta.code.tex
-note: downloading tikzlibrarypositioning.code.tex
-note: downloading tikzlibraryshapes.geometric.code.tex
-note: downloading pgflibraryshapes.geometric.code.tex
-note: downloading tikzlibrarycalc.code.tex
-note: downloading tikzlibrarychains.code.tex
-note: downloading pgfplots.sty
-note: downloading pgfplots.revision.tex
-note: downloading pgfsys-luatex.def
-note: downloading pgfplots.code.tex
-note: downloading pgfplotscore.code.tex
-note: downloading pgfplotssysgeneric.code.tex
-note: downloading pgfplotslibrary.code.tex
-note: downloading pgfplotsoldpgfsupp_loader.code.tex
-note: downloading pgflibraryfpu.code.tex
-note: downloading pgfplotsutil.code.tex
-note: downloading pgfplotsliststructure.code.tex
-note: downloading pgfplotsliststructureext.code.tex
-note: downloading pgfplotsarray.code.tex
-note: downloading pgfplotsmatrix.code.tex
-note: downloading pgfplotstableshared.code.tex
-note: downloading pgfplotsdeque.code.tex
-note: downloading pgfplotsbinary.code.tex
-note: downloading pgfplotsbinary.data.code.tex
-note: downloading pgfplotsutil.verb.code.tex
-note: downloading pgflibrarypgfplots.surfshading.code.tex
-note: downloading pgflibrarypgfplots.surfshading.pgfsys-xetex.def
-note: downloading pgflibrarypgfplots.surfshading.pgfsys-dvipdfmx.def
-note: downloading pgfplotscolormap.code.tex
-note: downloading pgfplotscolor.code.tex
-note: downloading pgfplotsstackedplots.code.tex
-note: downloading pgfplotsplothandlers.code.tex
-note: downloading pgfplotsmeshplothandler.code.tex
-note: downloading pgfplotsmeshplotimage.code.tex
-note: downloading pgfplots.scaling.code.tex
-note: downloading pgfplotscoordprocessing.code.tex
-note: downloading pgfplots.errorbars.code.tex
-note: downloading pgfplots.markers.code.tex
-note: downloading pgfplotsticks.code.tex
-note: downloading pgfplots.paths.code.tex
-note: downloading tikzlibrarydecorations.code.tex
-note: downloading pgfmoduledecorations.code.tex
-note: downloading tikzlibrarydecorations.pathmorphing.code.tex
-note: downloading pgflibrarydecorations.pathmorphing.code.tex
-note: downloading tikzlibrarydecorations.pathreplacing.code.tex
-note: downloading pgflibrarydecorations.pathreplacing.code.tex
-note: downloading tikzlibrarypgfplots.contourlua.code.tex
-note: downloading tikzlibraryplotmarks.code.tex
-note: downloading pgflibraryplotmarks.code.tex
-note: downloading hyperref.sty
-note: downloading ltxcmds.sty
-note: downloading pdftexcmds.sty
-note: downloading infwarerr.sty
-note: downloading kvsetkeys.sty
-note: downloading kvdefinekeys.sty
-note: downloading pdfescape.sty
-note: downloading hycolor.sty
-note: downloading letltxmacro.sty
-note: downloading auxhook.sty
-note: downloading kvoptions.sty
-note: downloading pd1enc.def
-note: downloading intcalc.sty
-note: downloading etexcmds.sty
-note: downloading puenc.def
-note: downloading url.sty
-note: downloading pzdr.tfm
-note: downloading bitset.sty
-note: downloading bigintcalc.sty
-note: downloading hxetex.def
-note: downloading stringenc.sty
-note: downloading rerunfilecheck.sty
-note: downloading uniquecounter.sty
-note: downloading tocbibind.sty
-note: downloading acronym.sty
-note: downloading suffix.sty
-note: downloading xstring.sty
-note: downloading xstring.tex
-note: downloading caption.sty
-note: downloading caption3.sty
-note: downloading ltcaption.sty
-note: downloading subcaption.sty
-note: downloading setspace.sty
-note: downloading l3backend-xetex.def
-note: downloading ts1cmr.fd
-note: downloading nameref.sty
-note: downloading refcount.sty
-note: downloading gettitlestring.sty
-note: downloading ec-lmr17.tfm
-note: downloading ec-lmbx12.tfm
-note: downloading ec-lmri12.tfm
-note: downloading cmr12.tfm
-note: downloading cmr8.tfm
-note: downloading cmr6.tfm
-note: downloading cmmi12.tfm
-note: downloading cmmi8.tfm
-note: downloading cmmi6.tfm
-note: downloading cmsy8.tfm
-note: downloading cmsy6.tfm
-note: downloading cmex8.tfm
-note: downloading cmex7.tfm
-note: downloading umsa.fd
-note: downloading msam10.tfm
-note: downloading msam7.tfm
-note: downloading umsb.fd
-note: downloading msbm10.tfm
-note: downloading msbm7.tfm
-note: downloading ec-lmcsc10.tfm
-note: downloading ts1-lmr12.tfm
-note: downloading t1lmtt.fd
-note: downloading ec-lmtt12.tfm
-note: downloading ec-lmr10.tfm
-note: downloading msam5.tfm
-note: downloading msbm5.tfm
-note: downloading ec-lmr8.tfm
-note: downloading ec-lmtt8.tfm
-note: downloading ec-lmr6.tfm
 warning: chapters/esp32_blackbox:410: Overfull \hbox (2.70352pt too wide) in paragraph at lines 392--410
 warning: chapters/ch3_entropy:78: Overfull \hbox (19.4623pt too wide) in paragraph at lines 78--78
-note: downloading cmti12.tfm
-note: downloading cmti8.tfm
-note: downloading cmti7.tfm
-note: downloading cmti10.tfm
 warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragraph at lines 89--89
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
-note: downloading ec-lmbx10.tfm
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
 warning: chapters/ch7_results:147: Overfull \hbox (1.39993pt too wide) in paragraph at lines 137--147
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-note: downloading ec-lmtt10.tfm
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
 note: Running BibTeX on tfm_main.aux ...
-note: downloading IEEEtran.bst
 note: Rerunning TeX because bibtex was run ...
 warning: chapters/esp32_blackbox:410: Overfull \hbox (2.70352pt too wide) in paragraph at lines 392--410
 warning: chapters/ch3_entropy:78: Overfull \hbox (19.4623pt too wide) in paragraph at lines 78--78
@@ -489,24 +29,24 @@ warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragr
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
-warning: chapters/ch7_results:276: Underfull \hbox (badness 2213) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
-warning: chapters/ch7_results:332: Underfull \hbox (badness 4193) in paragraph at lines 331--332
+warning: chapters/ch7_results:293: Underfull \hbox (badness 2213) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
+warning: chapters/ch7_results:349: Underfull \hbox (badness 4193) in paragraph at lines 348--349
 warning: tfm_main.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
@@ -536,24 +76,24 @@ warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragr
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
-warning: chapters/ch7_results:276: Underfull \hbox (badness 2213) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
-warning: chapters/ch7_results:332: Underfull \hbox (badness 4193) in paragraph at lines 331--332
+warning: chapters/ch7_results:293: Underfull \hbox (badness 2213) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
+warning: chapters/ch7_results:349: Underfull \hbox (badness 4193) in paragraph at lines 348--349
 warning: tfm_main.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
@@ -584,24 +124,24 @@ warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragr
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
-warning: chapters/ch7_results:276: Underfull \hbox (badness 2213) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
-warning: chapters/ch7_results:332: Underfull \hbox (badness 4193) in paragraph at lines 331--332
+warning: chapters/ch7_results:293: Underfull \hbox (badness 2213) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
+warning: chapters/ch7_results:349: Underfull \hbox (badness 4193) in paragraph at lines 348--349
 warning: tfm_main.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
@@ -632,24 +172,24 @@ warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragr
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
-warning: chapters/ch7_results:276: Underfull \hbox (badness 2213) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
-warning: chapters/ch7_results:332: Underfull \hbox (badness 4193) in paragraph at lines 331--332
+warning: chapters/ch7_results:293: Underfull \hbox (badness 2213) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
+warning: chapters/ch7_results:349: Underfull \hbox (badness 4193) in paragraph at lines 348--349
 warning: tfm_main.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
@@ -680,24 +220,24 @@ warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragr
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
-warning: chapters/ch7_results:276: Underfull \hbox (badness 2213) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
-warning: chapters/ch7_results:332: Underfull \hbox (badness 4193) in paragraph at lines 331--332
+warning: chapters/ch7_results:293: Underfull \hbox (badness 2213) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
+warning: chapters/ch7_results:349: Underfull \hbox (badness 4193) in paragraph at lines 348--349
 warning: tfm_main.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
@@ -728,24 +268,24 @@ warning: chapters/ch5_verification:89: Underfull \hbox (badness 10000) in paragr
 warning: chapters/ch6_asic:81: Overfull \hbox (72.40762pt too wide) in paragraph at lines 62--81
 warning: chapters/ch7_results:37: Underfull \hbox (badness 1762) in paragraph at lines 35--37
 warning: chapters/ch7_results:94: Overfull \hbox (0.5981pt too wide) in paragraph at lines 84--94
-warning: chapters/ch7_results:276: Underfull \hbox (badness 2213) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:276: Underfull \hbox (badness 10000) in paragraph at lines 275--276
-warning: chapters/ch7_results:323: Underfull \hbox (badness 10000) in paragraph at lines 323--323
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 2608) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 10000) in paragraph at lines 326--326
-warning: chapters/ch7_results:326: Underfull \hbox (badness 4792) in paragraph at lines 326--326
-warning: chapters/ch7_results:327: Underfull \hbox (badness 5847) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 10000) in paragraph at lines 327--327
-warning: chapters/ch7_results:327: Underfull \hbox (badness 6001) in paragraph at lines 327--327
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 327--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:328: Underfull \hbox (badness 10000) in paragraph at lines 328--328
-warning: chapters/ch7_results:329: Underfull \hbox (badness 2744) in paragraph at lines 328--329
-warning: chapters/ch7_results:329: Underfull \hbox (badness 10000) in paragraph at lines 329--329
-warning: chapters/ch7_results:332: Underfull \hbox (badness 4193) in paragraph at lines 331--332
+warning: chapters/ch7_results:293: Underfull \hbox (badness 2213) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:293: Underfull \hbox (badness 10000) in paragraph at lines 292--293
+warning: chapters/ch7_results:340: Underfull \hbox (badness 10000) in paragraph at lines 340--340
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 2608) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 10000) in paragraph at lines 343--343
+warning: chapters/ch7_results:343: Underfull \hbox (badness 4792) in paragraph at lines 343--343
+warning: chapters/ch7_results:344: Underfull \hbox (badness 5847) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 10000) in paragraph at lines 344--344
+warning: chapters/ch7_results:344: Underfull \hbox (badness 6001) in paragraph at lines 344--344
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 344--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:345: Underfull \hbox (badness 10000) in paragraph at lines 345--345
+warning: chapters/ch7_results:346: Underfull \hbox (badness 2744) in paragraph at lines 345--346
+warning: chapters/ch7_results:346: Underfull \hbox (badness 10000) in paragraph at lines 346--346
+warning: chapters/ch7_results:349: Underfull \hbox (badness 4193) in paragraph at lines 348--349
 warning: tfm_main.bbl:62: Underfull \hbox (badness 10000) in paragraph at lines 56--62
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
 warning: tfm_main.bbl:77: Underfull \hbox (badness 10000) in paragraph at lines 73--77
@@ -772,40 +312,6 @@ warning: internal consistency problem when checking if tfm_main.bbl changed
 warning: TeX rerun seems needed, but stopping at 6 passes
 warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
 note: Running xdvipdfmx ...
-note: downloading pdftex.map
-note: downloading kanjix.map
-note: downloading ckx.map
-note: downloading texglyphlist.txt
-note: downloading pdfglyphlist.txt
-note: downloading glyphlist.txt
-note: downloading lm-ec.enc
-note: downloading lmr17.pfb
-note: downloading lmbx12.pfb
-note: downloading lmri12.pfb
 warning: Object @page.1 already defined.
-note: downloading lmr12.pfb
-note: downloading cmmi12.pfb
-note: downloading cmr12.pfb
-note: downloading cmr8.pfb
-note: downloading lmcsc10.pfb
-note: downloading cmsy10.pfb
-note: downloading cmmi8.pfb
-note: downloading cmr6.pfb
-note: downloading cmsy8.pfb
-note: downloading lm-ts1.enc
-note: downloading lmtt12.pfb
-note: downloading lmr10.pfb
-note: downloading cmmi10.pfb
-note: downloading cmr10.pfb
-note: downloading cmmi7.pfb
-note: downloading cmr7.pfb
-note: downloading cmsy7.pfb
-note: downloading cmex10.pfb
-note: downloading msbm10.pfb
-note: downloading cmmi6.pfb
-note: downloading msam10.pfb
-note: downloading lmr8.pfb
-note: downloading cmti12.pfb
-note: downloading lmtt10.pfb
-note: Writing `tfm_main.pdf` (552.29 KiB)
+note: Writing `tfm_main.pdf` (553.50 KiB)
 note: Skipped writing 6 intermediate files (use --keep-intermediates to keep them)

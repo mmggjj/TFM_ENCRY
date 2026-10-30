@@ -14,6 +14,8 @@ con el mismo numero de periodos. K_D va con 1/Q.
 
     python analysis/anillo_ihp_repeticiones.py            8 repeticiones, 400 ns
     python analysis/anillo_ihp_repeticiones.py --n 12 --procesos 6
+    python analysis/anillo_ihp_repeticiones.py --n 4 --esquina mos_ss --temp 125 \
+        --escalas-primera 1 --prefijo ss125_
 """
 from __future__ import annotations
 
@@ -30,16 +32,17 @@ RES = RAIZ / "results"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
-def correr(k: int, tstop: str, prefijo: str) -> Path:
-    sesion = f"{prefijo}{k:02d}"
+def correr(k: int, args) -> Path:
+    sesion = f"{args.prefijo}{k:02d}"
     js = RES / f"anillo_ihp_{sesion}.json"
     if js.exists():
         return js
-    escalas = "0,1,4" if k == 1 else "1"
+    escalas = args.escalas_primera if k == 1 else "1"
     log = RES / f"anillo_ihp_{sesion}.log"
     with log.open("w", encoding="utf-8") as fh:
         r = subprocess.run([sys.executable, str(RAIZ / "analysis" / "anillo_ihp.py"),
-                            "--tstop", tstop, "--escalas", escalas, "--sesion", sesion],
+                            "--tstop", args.tstop, "--escalas", escalas, "--sesion", sesion,
+                            "--esquina", args.esquina, "--temp", str(args.temp)],
                            stdout=fh, stderr=subprocess.STDOUT, timeout=6 * 3600)
     if r.returncode or not js.exists():
         raise RuntimeError(f"{sesion} devolvio {r.returncode}; ver {log}")
@@ -52,11 +55,14 @@ def main() -> int:
     ap.add_argument("--procesos", type=int, default=8)
     ap.add_argument("--tstop", default="400n")
     ap.add_argument("--prefijo", default="rep400n_")
+    ap.add_argument("--esquina", default="mos_tt")
+    ap.add_argument("--temp", type=float, default=27.0)
+    ap.add_argument("--escalas-primera", default="0,1,4",
+                    help="escalas de la primera realizacion (las demas, solo 1)")
     args = ap.parse_args()
 
     with ThreadPoolExecutor(max_workers=args.procesos) as ex:
-        rutas = list(ex.map(lambda k: correr(k, args.tstop, args.prefijo),
-                            range(1, args.n + 1)))
+        rutas = list(ex.map(lambda k: correr(k, args), range(1, args.n + 1)))
 
     filas, extra = [], {}
     for k, js in enumerate(rutas, 1):
@@ -88,7 +94,8 @@ def main() -> int:
         for f in filas:
             fh.write(",".join(str(f[c]) for c in cab) + "\n")
 
-    print(f"{n} realizaciones independientes, tstop {args.tstop}, escala 1 (ruido del PDK)")
+    print(f"{n} realizaciones independientes, tstop {args.tstop}, escala 1 (ruido del PDK), "
+          f"{args.esquina}, {args.temp:g} C")
     for f in filas:
         print(f"  rep {f['rep']:2d}: {f['n_cruces']} cruces, T {f['periodo_ps']:.3f} ps, "
               f"sigma {f['sigma_fs']:.2f} fs, exp {f['exponente']:.2f}")
