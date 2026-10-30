@@ -33,7 +33,7 @@ RES = RAIZ / "results"
 DIR90B = RES / "entropia90b"
 BITS = DIR90B / "bits"
 CSV = RES / "entropia_90b.csv"
-HERRAMIENTA = "~/SP800-90B_EntropyAssessment/cpp"   # en WSL
+HERRAMIENTA = "~/SP800-90B_EntropyAssessment/cpp"   # en WSL o en Linux
 
 AGOSTO = RES / "esp32_rng_agosto"
 FUENTES = {
@@ -67,7 +67,16 @@ FUENTES = {
 
 def a_wsl(p: Path) -> str:
     p = p.resolve()
+    if sys.platform != "win32":
+        return p.as_posix()
     return "/mnt/" + p.drive[0].lower() + p.as_posix()[2:]
+
+
+def bash(orden: str) -> list[str]:
+    """Orden de bash en WSL (Windows) o directamente (Linux)."""
+    if sys.platform == "win32":
+        return ["wsl.exe", "-e", "bash", "-lc", orden]
+    return ["bash", "-lc", orden]
 
 
 def desempaquetar(nombre: str, origen: Path) -> Path:
@@ -102,7 +111,7 @@ def ejecutar(nombre: str, fichero: Path, test: str, modo: str) -> dict:
     orden = (f"cd {HERRAMIENTA} && /usr/bin/time -f 'tiempo_s=%e maxrss_kB=%M' "
              f"./{binario} -i -a -v -o {a_wsl(js)} {a_wsl(fichero)} {bits}")
     t0 = time.time()
-    r = subprocess.run(["wsl.exe", "-e", "bash", "-lc", orden],
+    r = subprocess.run(bash(orden),
                        capture_output=True, text=True, timeout=4 * 3600)
     texto = r.stdout + r.stderr
     log.write_text(texto, encoding="utf-8")

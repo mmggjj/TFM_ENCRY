@@ -30,7 +30,18 @@ todo. Léelo entero antes de tocar nada.
   nombres de servidores) se copia a este repositorio, que es público.
 - Windows 11 + PowerShell 5.1 (sin `&&`); los proyectos ESP32 pueden ir
   en WSL o en Windows con `C:\esp\esp-idf` (v5.3.2). Commits con autor
-  `MarioGarciaJimenez <mariogj.03@gmail.com>` y coautoría de Claude.
+  `MarioGarciaJimenez <mariogj.03@gmail.com>`, **sin** línea de coautoría
+  de Claude (`Co-Authored-By`) ni ninguna otra atribución (Mario, 30-10-2026).
+- **También hay un PC con Linux (Ubuntu)** desde el 30-10-2026. Los scripts
+  que llamaban a `wsl.exe` usan `bash()`/`a_wsl()`: en Windows pasan por
+  WSL y en Linux van directos. Herramientas: GHDL 7.0-dev (LLVM, elabora a
+  ejecutable) y Yosys en `~/eda/oss-cad-suite/bin`; Python con numpy/scipy
+  en `~/eda/venv` (el `python3` del sistema no los tiene); batería del NIST
+  en `~/SP800-90B_EntropyAssessment/cpp`; tectonic en `~/eda/bin`; ngspice 47
+  + OpenVAF + PDK IHP con `~/eda/instala_ngspice_ihp.sh` (la 47 está en
+  `ng-spice-rework/47/` de SourceForge, no en `ng-spice-rel`). Comprobado
+  en Linux: 7 bancos y `verifica_top` 5/5 (volcado idéntico al de Windows),
+  síntesis con las mismas celdas y área, `ea_iid` corre.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 

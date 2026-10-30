@@ -61,7 +61,16 @@ BLOQUES = {
 
 def wsl(p: Path) -> str:
     s = str(p).replace("\\", "/")
+    if sys.platform != "win32":
+        return s
     return "/mnt/" + s[0].lower() + s[2:]
+
+
+def bash(orden: str) -> list[str]:
+    """Orden de bash en WSL (Windows) o directamente (Linux)."""
+    if sys.platform == "win32":
+        return ["wsl.exe", "-e", "bash", "-lc", orden]
+    return ["bash", "-lc", orden]
 
 
 def area_nand2(lib: Path) -> float:
@@ -94,8 +103,7 @@ opt_clean -purge
 stat -liberty {wsl(LIB)}
 """)
     t0 = time.time()
-    r = subprocess.run(["wsl.exe", "-e", "bash", "-lc",
-                        f"{YOSYS} -q -l {wsl(log)} -s {wsl(ys)}"],
+    r = subprocess.run(bash(f"{YOSYS} -q -l {wsl(log)} -s {wsl(ys)}"),
                        capture_output=True, text=True, timeout=3600)
     dur = time.time() - t0
     salida = log.read_text(errors="replace") if log.exists() else r.stdout + r.stderr

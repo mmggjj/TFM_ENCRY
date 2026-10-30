@@ -30,6 +30,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 
 import numpy as np
@@ -284,12 +285,19 @@ def hay_ngspice():
     return shutil.which("ngspice") is not None or _ngspice_wsl() is not None
 
 
+def bash(orden):
+    """Orden de bash en WSL (Windows) o directamente (Linux)."""
+    if sys.platform == "win32":
+        return ["wsl.exe", "-e", "bash", "-lc", orden]
+    return ["bash", "-lc", orden]
+
+
 def _ngspice_wsl():
-    """Devuelve la orden con la que invocar ngspice en WSL, o None."""
+    """Devuelve la orden con la que invocar ngspice en WSL (o Linux), o None."""
     for orden in (NGSPICE_WSL, "ngspice"):
         try:
             r = subprocess.run(
-                ["wsl.exe", "-e", "bash", "-lc", f"{orden} -v 2>&1 | head -2"],
+                bash(f"{orden} -v 2>&1 | head -2"),
                 capture_output=True, text=True, timeout=120)
             if "ngspice" in r.stdout.lower():
                 return orden
@@ -299,8 +307,10 @@ def _ngspice_wsl():
 
 
 def a_wsl(p):
-    """Ruta de Windows vista desde WSL."""
+    """Ruta de Windows vista desde WSL; en Linux, la ruta absoluta."""
     p = os.path.abspath(p).replace("\\", "/")
+    if sys.platform != "win32":
+        return p
     return "/mnt/" + p[0].lower() + p[2:]
 
 
@@ -329,9 +339,8 @@ def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800,
         orden = orden or _ngspice_wsl()
         if orden is None:
             raise RuntimeError("no se encuentra ngspice ni en Windows ni en WSL")
-        cmd = ["wsl.exe", "-e", "bash", "-lc",
-               f"cd '{a_wsl(directorio)}' && "
-               f"{orden} -b -r '{a_wsl(raw)}' '{a_wsl(sp)}'"]
+        cmd = bash(f"cd '{a_wsl(directorio)}' && "
+                   f"{orden} -b -r '{a_wsl(raw)}' '{a_wsl(sp)}'")
     else:
         cmd = [orden or "ngspice", "-b", "-r", raw, sp]
 
