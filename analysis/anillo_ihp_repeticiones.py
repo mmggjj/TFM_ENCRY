@@ -42,7 +42,8 @@ def correr(k: int, args) -> Path:
     with log.open("w", encoding="utf-8") as fh:
         r = subprocess.run([sys.executable, str(RAIZ / "analysis" / "anillo_ihp.py"),
                             "--tstop", args.tstop, "--escalas", escalas, "--sesion", sesion,
-                            "--esquina", args.esquina, "--temp", str(args.temp)],
+                            "--esquina", args.esquina, "--temp", str(args.temp),
+                            "--vdd", str(args.vdd)],
                            stdout=fh, stderr=subprocess.STDOUT, timeout=6 * 3600)
     if r.returncode or not js.exists():
         raise RuntimeError(f"{sesion} devolvio {r.returncode}; ver {log}")
@@ -57,6 +58,7 @@ def main() -> int:
     ap.add_argument("--prefijo", default="rep400n_")
     ap.add_argument("--esquina", default="mos_tt")
     ap.add_argument("--temp", type=float, default=27.0)
+    ap.add_argument("--vdd", type=float, default=1.2)
     ap.add_argument("--escalas-primera", default="0,1,4",
                     help="escalas de la primera realizacion (las demas, solo 1)")
     args = ap.parse_args()
@@ -95,7 +97,7 @@ def main() -> int:
             fh.write(",".join(str(f[c]) for c in cab) + "\n")
 
     print(f"{n} realizaciones independientes, tstop {args.tstop}, escala 1 (ruido del PDK), "
-          f"{args.esquina}, {args.temp:g} C")
+          f"{args.esquina}, {args.temp:g} C, {args.vdd:g} V")
     for f in filas:
         print(f"  rep {f['rep']:2d}: {f['n_cruces']} cruces, T {f['periodo_ps']:.3f} ps, "
               f"sigma {f['sigma_fs']:.2f} fs, exp {f['exponente']:.2f}")

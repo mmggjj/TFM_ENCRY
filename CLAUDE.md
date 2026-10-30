@@ -397,7 +397,14 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   (30-10, `anillo_ihp.md` §4.2): el peor caso es el frío y la esquina
   lenta; ss a −40 °C pide K_D = 2 306 215, así que un divisor fijo para
   todo el rango es 2²² (`CFG_KD` = 22, H_∞ = 0,9995, 0,51-0,82 kbit/s);
-  2²¹ se queda en 0,970.** `anillo_ihp.py` admite `--esquina` y `--temp`.
+  2²¹ se queda en 0,970.** Con V_DD ± 10 % y sf/fs a −40 °C (30-10): la
+  tensión baja manda; ss a −40 °C y 1,08 V pide K_D = 3 913 109, 2²² da
+  0,9855 con solo un 7 % de margen, así que **con ±10 % el divisor fijo
+  recomendado es 2²³** (0,9999, 0,20-0,41 kbit/s); sf/fs a −40 °C piden
+  1,32 y 1,55 M. `anillo_ihp.py` y `anillo_ihp_repeticiones.py` admiten
+  `--esquina`, `--temp` y `--vdd`; a 1,08 V cada realización tarda ~29 min.
+  `spice_ring.simular()` borra su directorio temporal: `/tmp` es un tmpfs
+  de 5,5 GB en RAM y los `.raw` lo llenaron.
   **ngspice 47 no deja fijar la realización de `trnoise`**
   (Wallace sembrado con `getpid()`; `rndseed`, `setseed` y
   `.options seed` no le llegan): la incertidumbre sale de repetir

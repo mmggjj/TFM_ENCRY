@@ -191,11 +191,23 @@ de 2,5 a 3,5 de $-40$ a 125~$^\circ$C. La esquina lenta es peor que la
 rápida, y las dos cosas se combinan peor que su producto: la esquina lenta
 a $-40~^\circ$C ($\sigma/T = 3{,}15\times10^{-4}$, periodo 438,6~ps) pide
 $K_D = 2\,306\,215$. Ahí $2^{20}$ da $H_\infty = 0{,}78$ y $2^{21}$ solo
-0,970, así que un divisor fijo válido en todo el rango es $2^{22}$, con
-$H_\infty = 0{,}9995$ en el peor punto y de 0,51 a 0,82~kbit/s según la
-esquina. El registro del divisor arranca en $2^{24}$, así que un maestro
-que no lo escriba ya está del lado seguro; un valor menor tiene que salir
-de la esquina más fría en la que deba funcionar el producto.
+0,970, así que un divisor fijo válido en todo el rango a la tensión
+nominal de 1,2~V es $2^{22}$, con $H_\infty = 0{,}9995$ en el peor punto
+y de 0,51 a 0,82~kbit/s según la esquina. La alimentación es el tercer
+factor, y el más fuerte. A $-40~^\circ$C en la esquina lenta, bajar la
+tensión un 10\,\%, a 1,08~V, alarga el periodo un 34\,\% mientras
+$\sigma$ apenas se mueve, así que el divisor necesario crece en un factor
+1,70, hasta $K_D = 3\,913\,109$ (de $3{,}74$ a $4{,}10\times10^6$ a
+$\pm1\sigma$); a 1,32~V baja en un factor 0,79. Las esquinas asimétricas
+a $-40~^\circ$C (sf, fs) piden 1,32 y $1{,}55\times10^6$, cerca de tt (1,47) y por debajo de ss.
+En el peor punto, $2^{22}$ todavía da $H_\infty = 0{,}9855$, pero con un
+7\,\% de margen sobre $K_D$, el mismo margen que se juzgó escaso para
+$2^{20}$ en el punto típico; $2^{23}$ da 0,9999 y de 0,20 a
+0,41~kbit/s, unos 1,9~s para los 384 bits de una siembra en el peor caso.
+El registro del divisor arranca en $2^{24}$, así que un maestro que no lo
+escriba ya está del lado seguro; un valor menor tiene que salir de la
+esquina más fría y la tensión más baja a las que deba funcionar el
+producto.
 
 \paragraph{Ruido de parpadeo.} Añadir el ruido $1/f$ del \ac{PDK} no
 cambia nada en 400~ns: $\sigma$ sube un 3,8\,\%, dentro de la dispersión

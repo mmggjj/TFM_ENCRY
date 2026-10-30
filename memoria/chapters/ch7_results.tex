@@ -186,11 +186,22 @@ than the fast one, and the two combine worse than their product: the
 slow corner at $-40~^\circ$C ($\sigma/T = 3.15\times10^{-4}$, period
 438.6~ps) needs $K_D = 2\,306\,215$. There $2^{20}$ gives
 $H_\infty = 0.78$ and $2^{21}$ only 0.970, so a fixed divider valid over
-the whole range is $2^{22}$, with $H_\infty = 0.9995$ at the worst point
-and 0.51 to 0.82~kbit/s depending on the corner. The divider register
-resets to $2^{24}$, so a master that does not write it is already on the
-safe side; a lower setting has to come from the coldest corner the
-product must work in.
+the whole range at the nominal 1.2~V is $2^{22}$, with
+$H_\infty = 0.9995$ at the worst point and 0.51 to 0.82~kbit/s depending
+on the corner. Supply is the third factor and the strongest. At
+$-40~^\circ$C in the slow corner, lowering the supply by 10\,\% to
+1.08~V lengthens the period by 34\,\% while $\sigma$ hardly moves, so
+the required divider grows by a factor of 1.70 to $K_D = 3\,913\,109$
+($3.74$ to $4.10\times10^6$ at $\pm1\sigma$); at 1.32~V it shrinks by a
+factor of 0.79. The asymmetric corners at $-40~^\circ$C (sf, fs) need
+1.32 and $1.55\times10^6$, close to tt (1.47) and below ss. At the worst point,
+$2^{22}$ still gives $H_\infty = 0.9855$, but with a 7\,\% margin on
+$K_D$, the same margin judged too thin for $2^{20}$ at the typical
+point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 1.9~s for the
+384 bits of a seeding in the worst case. The divider register resets to
+$2^{24}$, so a master that does not write it is already on the safe
+side; a lower setting has to come from the coldest corner and the lowest
+supply the product must work at.
 
 \paragraph{Flicker noise.} Adding the $1/f$ noise of the \ac{PDK} leaves
 400~ns unchanged: $\sigma$ rises by 3.8\,\%, within the spread between
@@ -432,7 +443,8 @@ What remains approximate is how that noise is applied: stationary
 injection may overestimate the thermal variance by up to a factor of two
 against a cyclostationary model, and pre-layout wiring is a 1~fF
 estimate. Process corners and temperature were covered (ss, tt, ff at
-$-40$ to 125~$^\circ$C); the asymmetric corners, supply variation and
+$-40$ to 125~$^\circ$C), and at $-40~^\circ$C also the asymmetric
+corners and a $\pm10$\,\% supply; the other corners at low supply and
 device mismatch were not. The figure is therefore a simulated value with a
 factor-of-two band, not the jitter of a fabricated device.
 \item[Recovered $Q$.] The estimator reproduces a known $Q$ with a bias

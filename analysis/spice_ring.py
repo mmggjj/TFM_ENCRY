@@ -321,6 +321,7 @@ def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800,
     orden: ejecutable de ngspice (por defecto, el que se encuentre).
     spiceinit: texto de un .spiceinit, p. ej. para cargar modelos OSDI.
     """
+    propio = directorio is None          # temporal nuestro: se borra al acabar
     directorio = directorio or tempfile.mkdtemp(prefix="ring_")
     os.makedirs(directorio, exist_ok=True)
     sp = os.path.join(directorio, "ring.sp")
@@ -348,6 +349,9 @@ def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800,
     if not os.path.exists(raw):
         raise RuntimeError(f"ngspice no genero el raw.\n{r.stdout}\n{r.stderr}")
     nombres, m = leer_raw(raw)
+    if propio:
+        # 400 ns a 0,2 ps son cientos de MB por raw; /tmp es un tmpfs en RAM
+        shutil.rmtree(directorio, ignore_errors=True)
     return nombres, m, r.stdout + r.stderr
 
 

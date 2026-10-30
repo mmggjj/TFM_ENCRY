@@ -77,6 +77,7 @@ ngspice 47 y OpenVAF-Reloaded.
 | Contraste con Abidi (JSSC 2006) | mismo orden: la simulación da 0,41 veces su fórmula |
 | Divisor para H_min ≥ 0,98 | K_D ≈ 981 000 (959 000 – 1 004 000) → 2,8 kbit/s por anillo (tt, 27 °C) |
 | Esquinas y temperatura (ss/tt/ff, −40 a 125 °C) | peor caso ss a −40 °C: K_D ≈ 2,3 M → divisor fijo 2²², 0,5-0,8 kbit/s |
+| Alimentación ±10 % y esquinas sf/fs (a −40 °C) | peor caso ss a 1,08 V: K_D ≈ 3,9 M; 2²² queda con un 7 % de margen → divisor fijo 2²³, 0,2-0,4 kbit/s |
 
 - Contador del divisor ampliado de 20 a 24 bits: con 20, el K_D máximo dejaba solo un
   11 % de margen.
