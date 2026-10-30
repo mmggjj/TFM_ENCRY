@@ -46,7 +46,16 @@ N_REIN, N_MUES = 1000, 1000
 
 def a_wsl(p: Path) -> str:
     p = p.resolve()
+    if sys.platform != "win32":
+        return p.as_posix()
     return "/mnt/" + p.drive[0].lower() + p.as_posix()[2:]
+
+
+def bash(orden: str) -> list[str]:
+    """Orden de bash en WSL (Windows) o directamente (Linux)."""
+    if sys.platform == "win32":
+        return ["wsl.exe", "-e", "bash", "-lc", orden]
+    return ["bash", "-lc", orden]
 
 
 # variante -> (condicion de la campana con la que se fija H_I, guarda "antes")
@@ -89,7 +98,7 @@ def ea_restart(datos: np.ndarray, bits: int, h_i: float, dest: Path, etiqueta: s
     ruta = dest / f"restart_{etiqueta}.bin"          # derivado, no se versiona
     ruta.write_bytes(datos.astype(np.uint8).tobytes())
     orden = f"cd {HERRAMIENTA} && ./ea_restart -n -v {a_wsl(ruta)} {bits} {h_i:.6f}"
-    r = subprocess.run(["wsl.exe", "-e", "bash", "-lc", orden], capture_output=True, text=True,
+    r = subprocess.run(bash(orden), capture_output=True, text=True,
                        timeout=4 * 3600)
     texto = r.stdout + r.stderr
     (dest / f"ea_restart_{etiqueta}.log").write_text(texto, encoding="utf-8")

@@ -41,7 +41,7 @@ from pathlib import Path
 
 import numpy as np
 
-from spice_ring import (a_wsl, cruces_subida, jitter_desde_cruces, netlist,
+from spice_ring import (a_wsl, bash, cruces_subida, jitter_desde_cruces, netlist,
                         simular)
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -56,7 +56,7 @@ PDK = "$HOME/eda/IHP-Open-PDK/ihp-sg13g2"
 
 
 def _home_wsl() -> str:
-    r = subprocess.run(["wsl.exe", "-e", "bash", "-lc", "echo $HOME"],
+    r = subprocess.run(bash("echo $HOME"),
                        capture_output=True, text=True, timeout=60)
     return [l for l in r.stdout.splitlines() if l.startswith("/")][-1].strip()
 
@@ -95,8 +95,7 @@ def _lote(texto, directorio, timeout=3600):
     with open(os.path.join(directorio, ".spiceinit"), "w", newline="\n") as f:
         f.write(SPICEINIT)
     r = subprocess.run(
-        ["wsl.exe", "-e", "bash", "-lc",
-         f"cd '{a_wsl(directorio)}' && {NGSPICE} -b banco.sp"],
+        bash(f"cd '{a_wsl(directorio)}' && {NGSPICE} -b banco.sp"),
         capture_output=True, text=True, timeout=timeout)
     return r.stdout + r.stderr
 

@@ -23,6 +23,7 @@ GHDL_CANDIDATOS = [
     Path(os.environ.get("LOCALAPPDATA", "")) / "ghdl" / "bin" / "ghdl.exe",
     Path.home() / "eda" / "ghdl" / "bin" / "ghdl.exe",   # mismo sitio que usa synth/sintetiza.py
     Path("ghdl"),
+    Path.home() / "eda" / "oss-cad-suite" / "bin" / "ghdl",
 ]
 
 # Orden de analisis: las dependencias primero.
@@ -70,6 +71,9 @@ def buscar_ghdl():
 def main():
     filtro = sys.argv[1] if len(sys.argv) > 1 else ""
     ghdl = buscar_ghdl()
+    version = subprocess.run([ghdl, "--version"], capture_output=True,
+                             text=True).stdout
+    mcode = "mcode" in version
     UNISIM.mkdir(parents=True, exist_ok=True)
     WORK.mkdir(parents=True, exist_ok=True)
     os.chdir(RAIZ.parent)
@@ -113,8 +117,22 @@ def main():
         # asercion violada ya hace fallar la simulacion, pero el informe dice
         # ademas cuantas se evaluaron y que coberturas se alcanzaron.
         psl = CONSTRUIR / f"{nombre}_psl.json"
-        rc = correr(["-r", "--std=08", "--workdir=rtl/build/work",
-                     "-Prtl/build/unisim", nombre, f"--psl-report={psl}"], nombre)
+        opciones = ["--std=08", "--workdir=rtl/build/work", "-Prtl/build/unisim"]
+        if mcode:
+            rc = correr(["-r"] + opciones + [nombre, f"--psl-report={psl}"], nombre)
+        else:
+            # LLVM/GCC: elaborar a un ejecutable y lanzarlo desde la raiz
+            exe = CONSTRUIR / nombre
+            rc = correr(["-e"] + opciones + ["-o", str(exe), nombre], nombre)
+            if not rc:
+                r = subprocess.run([str(exe), f"--psl-report={psl}"],
+                                   capture_output=True, text=True, timeout=7200)
+                salida = (r.stdout + r.stderr).rstrip()
+                if salida:
+                    print(salida)
+                rc = r.returncode
+                if rc:
+                    print(f"  --> {nombre} devolvio {rc}")
         if psl.exists():
             import json
             s = json.loads(psl.read_text())["summary"]

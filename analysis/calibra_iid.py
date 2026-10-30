@@ -18,6 +18,7 @@ import glob
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -38,14 +39,15 @@ def genera(n_bytes: int, n_bits: int) -> None:
         if not f.exists():
             b = np.frombuffer((CAL / f"csprng_{i:03d}.bin").read_bytes(), dtype=np.uint8)
             f.write_bytes(np.unpackbits(b).tobytes())
-    wsl = "/mnt/" + CAL.drive[0].lower() + CAL.as_posix()[2:]
+    en_windows = sys.platform == "win32"
+    wsl = ("/mnt/" + CAL.drive[0].lower() + CAL.as_posix()[2:]) if en_windows else CAL.as_posix()
     ea = "~/SP800-90B_EntropyAssessment/cpp/ea_iid"
     orden = (f"cd {wsl} && "
              f"ls csprng_*.bin | while read f; do [ -f \"$f.iid8.json\" ] || echo \"$f\"; done | "
              f"xargs -P 12 -I{{}} sh -c 'OMP_NUM_THREADS=1 {ea} -i -a -o {{}}.iid8.json {{}} 8 > {{}}.iid8.log 2>&1'; "
              f"ls csprng_*.bits | while read f; do [ -f \"$f.iid1.json\" ] || echo \"$f\"; done | "
              f"xargs -P 12 -I{{}} sh -c 'OMP_NUM_THREADS=1 {ea} -i -a -o {{}}.iid1.json {{}} 1 > {{}}.iid1.log 2>&1'")
-    subprocess.run(["wsl.exe", "-e", "bash", "-lc", orden], check=True)
+    subprocess.run((["wsl.exe", "-e"] if en_windows else []) + ["bash", "-lc", orden], check=True)
 
 
 def resume() -> None:

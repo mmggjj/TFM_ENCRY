@@ -30,7 +30,24 @@ todo. Léelo entero antes de tocar nada.
   nombres de servidores) se copia a este repositorio, que es público.
 - Windows 11 + PowerShell 5.1 (sin `&&`); los proyectos ESP32 pueden ir
   en WSL o en Windows con `C:\esp\esp-idf` (v5.3.2). Commits con autor
-  `MarioGarciaJimenez <mariogj.03@gmail.com>` y coautoría de Claude.
+  `MarioGarciaJimenez <mariogj.03@gmail.com>`, **sin** línea de coautoría
+  de Claude (`Co-Authored-By`) ni ninguna otra atribución (Mario, 30-10-2026).
+- **También hay un PC con Linux (Ubuntu)** desde el 30-10-2026. Los scripts
+  de análisis que llamaban a `wsl.exe` usan `bash()`/`a_wsl()` (y
+  `sintetiza.py`, `sh()`/`EN_WINDOWS`): en Windows pasan por WSL y en Linux
+  van directos. Herramientas: GHDL 5.0.1 de apt (mcode, el mismo que la CI);
+  Yosys en `~/eda/oss-cad-suite/bin`; Python con numpy/scipy en `~/eda/venv`
+  (el `python3` del sistema no los tiene); batería del NIST en
+  `~/SP800-90B_EntropyAssessment/cpp`; tectonic en `~/eda/bin`; ngspice 47 +
+  OpenVAF + PDK IHP con `~/eda/instala_ngspice_ihp.sh` (la 47 está en
+  `ng-spice-rework/47/` de SourceForge, no en `ng-spice-rel`). **No usar el
+  GHDL 7.0-dev de oss-cad-suite** (LLVM): `tb_motor_top` muere con SIGSEGV
+  en las propiedades PSL sobre nombres externos (gdb: `c_agotado`; quitada
+  esa, `c_captura`); los otros seis bancos pasan con él. `run_tb.py` admite
+  GHDL LLVM/GCC (elabora a ejecutable) por si se arregla. Comprobado en
+  Linux con el motor 0x03: 7 bancos (175 [ok], PSL 11/11 y 6/6 coberturas,
+  volcado idéntico al de la rama), `verifica_top` 5/5, `ea_iid` corre, y la
+  densidad de ruido del inversor IHP idéntica bit a bit a la de Windows.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
