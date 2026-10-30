@@ -119,59 +119,71 @@ típica, 1~fF por nodo como estimación del cableado previa al layout), con
 la densidad de ruido medida en los mismos dispositivos
 (Sección~\ref{sec:spice}) inyectada en cada nodo. La
 Tabla~\ref{tab:ihp_ring} da el resultado sobre 400~ns, unos 1070
-periodos por punto.
+periodos por punto. El simulador saca una realización de ruido nueva en
+cada ejecución y no se le puede hacer repetir una (en ngspice~47 el
+generador gaussiano de la fuente de ruido transitorio se siembra con el
+identificador del proceso, y ninguna de sus opciones de semilla llega a
+él), así que la incertidumbre del jitter se obtuvo repitiendo: el punto
+térmico del \ac{PDK} se simuló ocho veces.
 
 \begin{table}[htbp]
 \centering
 \caption{Anillo de cinco etapas en IHP SG13G2 \simu{}. La densidad de ruido
 no se supone: es el suelo blanco del propio modelo de ruido de los
-transistores en el punto de conmutación. La potencia es la media sobre
-periodos completos.}
+transistores en el punto de conmutación. El punto térmico es la media de
+ocho realizaciones independientes, $\pm$ una desviación típica de la
+media; las demás filas son realizaciones únicas. La potencia es la media
+sobre periodos completos.}
 \label{tab:ihp_ring}
 \small
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
 Ruido inyectado & $T$ (ps) & $\sigma$ (fs) & $\sigma/T$ & Exponente & $P$ ($\mu$W) \\
 \midrule
-ninguno (suelo numérico)        & 366,04 & 0,70   & $1{,}9\times10^{-6}$ & 0,47 & 143,0 \\
-térmico del \ac{PDK}, $4{,}13\times10^{-24}$~A$^2$/Hz & 365,97 & 180,37 & $4{,}93\times10^{-4}$ & 1,05 & 143,0 \\
-térmico $\times4$               & 365,97 & 358,64 & $9{,}80\times10^{-4}$ & 1,08 & 143,0 \\
-térmico + $1/f$ del \ac{PDK}    & 365,97 & 183,33 & $5{,}01\times10^{-4}$ & 1,01 & 143,0 \\
+ninguno (suelo numérico)        & 366,04 & 0,68   & $1{,}8\times10^{-6}$ & 0,42 & 143,0 \\
+térmico del \ac{PDK}, $4{,}13\times10^{-24}$~A$^2$/Hz & 365,97 & $176{,}7 \pm 2{,}0$ & $4{,}83\times10^{-4}$ & 0,99 & 143,0 \\
+térmico $\times4$               & 365,98 & 351,0  & $9{,}59\times10^{-4}$ & 0,92 & 143,0 \\
+térmico + $1/f$ del \ac{PDK}    & 365,97 & 183,3  & $5{,}01\times10^{-4}$ & 1,01 & 143,0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Primero, la resolución: 0,70~fs, 259 veces por debajo del jitter que
-produce el ruido de los dispositivos, y con un exponente de 0,47 que la
-identifica como ruido numérico y no como un paseo aleatorio. Cuadruplicar
-la densidad duplica el jitter con un 0,6\,\% de diferencia
-($\times1{,}988$), y el periodo medio no se mueve, así que el banco se
-mantiene en el régimen lineal que el banco provisional abandonaba en su
-punto más alto. El exponente de acumulación es 1,05: ruido blanco, como
-supone el modelo estocástico. Como comprobación independiente, la
-expresión cerrada de Abidi para osciladores en
+Primero, la resolución: 0,68~fs, 262 veces por debajo del jitter que
+produce el ruido de los dispositivos, y con un exponente de 0,42 que la
+identifica como ruido numérico y no como un paseo aleatorio. Las ocho
+realizaciones térmicas se dispersan un 3,3\,\% en $\sigma$ (de 169,0 a
+186,5~fs), así que una ejecución suelta lleva esa incertidumbre y la media,
+un 1,2\,\%. Cuadruplicar la densidad multiplica el jitter por
+$1{,}99 \pm 0{,}06$ frente al 2 esperado, y el periodo medio no se mueve,
+así que el banco se mantiene en el régimen lineal que el banco provisional
+abandonaba en su punto más alto. El exponente de acumulación es 0,99 de
+media: ruido blanco, como supone el modelo estocástico. Como comprobación
+independiente, la expresión cerrada de Abidi para osciladores en
 anillo~\cite{abidi_2006_ring}, evaluada con magnitudes medidas en el
 mismo punto de polarización, predice $\sigma/T = 1{,}2\times10^{-3}$; la
-simulación da 0,42 veces ese valor, el mismo orden. La forma de canal
+simulación da 0,41 veces ese valor, el mismo orden. La forma de canal
 largo de esa fórmula, que pasa por la tensión umbral, no se aplica aquí:
 en el punto de conmutación los dispositivos están solo 0,07~V por encima
 del umbral.
 
-Con $\sigma/T = 4{,}93\times10^{-4}$, el divisor para $Q \ge 0{,}2286$ es
-$K_D = 941\,107$, un intervalo de muestreo de 344~$\mu$s con un anillo de
-muestreo idéntico, y 2,9~kbit/s por \ac{ERO}; si además se cuenta el
+Con $\sigma/T = 4{,}83\times10^{-4}$, el divisor para $Q \ge 0{,}2286$ es
+$K_D = 981\,095$ (de $958\,895$ a $1\,004\,347$ dentro de una desviación
+típica), un intervalo de muestreo de 359~$\mu$s con un anillo de
+muestreo idéntico, y 2,79~kbit/s por \ac{ERO}; si además se cuenta el
 jitter independiente del anillo de muestreo, $K_D$ se reduce a la mitad y
 la tasa se duplica, pero eso exige que los dos anillos no compartan ruido
 a través de la alimentación o del sustrato, algo que solo el silicio
 puede mostrar. Una consecuencia de diseño se aplicó de inmediato: el
 contador del divisor tenía 20 bits, así que el mayor $K_D$ era
-$2^{20} = 1\,048\,576$, un margen del 11\,\% sobre lo requerido en la
-esquina típica a temperatura ambiente. Ahora tiene 24 bits (cuatro
+$2^{20} = 1\,048\,576$, un margen del 7\,\% (del 4 al 9\,\%) sobre lo
+requerido en la esquina típica a temperatura ambiente. Ahora tiene 24 bits (cuatro
 flip-flops, 0,04~kGE), y el banco del motor completo y su verificación
 cruzada se volvieron a ejecutar con él.
 
 \paragraph{Ruido de parpadeo.} Añadir el ruido $1/f$ del \ac{PDK} no
-cambia nada en 400~ns: la separación $E[D^2] = a_1 M + a_2 M^2$, validada
+cambia nada en 400~ns: $\sigma$ sube un 3,8\,\%, dentro de la dispersión
+entre realizaciones, y la separación $E[D^2] = a_1 M + a_2 M^2$, validada
 antes sobre fases sintéticas (componente térmica recuperada al 0,1\,\%
 con y sin $1/f$), da un $a_2$ compatible con cero. Amplificar la fuente
 $1/f$ para hacerla visible no funciona, y el motivo es instructivo: la
@@ -193,7 +205,7 @@ esquina $1/f^3$ es 36~kHz y el parpadeo iguala al jitter térmico tras
 27\,000 periodos; con cada dispositivo confinado a su lóbulo, la
 frecuencia de esquina es 5,3~MHz y el cruce, 185 periodos. En ambos
 casos, con el divisor de funcionamiento el parpadeo domina la varianza
-acumulada, por un factor de entre 35 y 5\,000. De ahí se siguen dos
+acumulada, por un factor de entre 36 y 5\,300. De ahí se siguen dos
 consecuencias. El jitter que fija la cota de entropía debe medirse con
 acumulación corta, por debajo de unos cien periodos para este anillo, y
 separarse del término cuadrático --- deducirlo del jitter acumulado total

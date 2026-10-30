@@ -1,0 +1,16 @@
+8 realizaciones independientes, tstop 400n, escala 1 (ruido del PDK)
+  rep  1: 1074 cruces, T 365.974 ps, sigma 178.71 fs, exp 0.99
+  rep  2: 1074 cruces, T 365.967 ps, sigma 186.51 fs, exp 0.96
+  rep  3: 1073 cruces, T 365.968 ps, sigma 173.84 fs, exp 1.08
+  rep  4: 1073 cruces, T 365.972 ps, sigma 175.13 fs, exp 1.02
+  rep  5: 1074 cruces, T 365.964 ps, sigma 175.04 fs, exp 0.94
+  rep  6: 1073 cruces, T 365.972 ps, sigma 182.54 fs, exp 0.93
+  rep  7: 1073 cruces, T 365.959 ps, sigma 171.78 fs, exp 1.00
+  rep  8: 1073 cruces, T 365.969 ps, sigma 169.03 fs, exp 1.01
+
+  sigma por periodo = 176.7 +- 2.0 fs (1 sigma de la media; dispersion entre repeticiones 3.3 % en sigma)
+  Q por periodo = 2.3301e-07 +- 5.39e-09
+  K_D = 981095 (intervalo 1 sigma 958895 - 1004347); 2.79 kbit/s a 2.732 GHz
+  rep 1: resolucion 0.675 fs; ley de la raiz S x4 -> sigma x1.964
+
+datos en /tmp/claude-1000/-home-mmggjj-workspace-TFM-ENCRY/6b2110e4-e8f8-48c6-b398-c50362191b3c/scratchpad/wt_feat/results/anillo_ihp_rep400n_resumen.csv

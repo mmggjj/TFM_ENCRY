@@ -390,10 +390,16 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   Tabla~" con mayúscula.
 - **Anillo con transistores reales del PDK abierto IHP SG13G2**
   (`analysis/anillo_ihp.py`, `docs/anillo_ihp.md`): el ruido inyectado sale
-  del propio modelo; 5 etapas a 2,73 GHz, σ = 180 fs por periodo,
-  K_D ≈ 941 000, 2,9 kbit/s. Necesita ngspice 47 y OpenVAF-Reloaded,
-  compilados en WSL (`~/eda/ngspice47`, `~/eda/bin/openvaf-r`); el
-  ngspice 41 de conda-forge no carga estos modelos. Receta en el documento.
+  del propio modelo; 5 etapas a 2,73 GHz, σ = 176,7 ± 2,0 fs por periodo
+  (media de 8 realizaciones, dispersión 3,3 %; 30-10-2026, antes 180 fs de
+  una sola), K_D = 981 095 (959 000 – 1 004 000), 2,79 kbit/s; con 2²⁰,
+  H_∞ = 0,9853. **ngspice 47 no deja fijar la realización de `trnoise`**
+  (Wallace sembrado con `getpid()`; `rndseed`, `setseed` y
+  `.options seed` no le llegan): la incertidumbre sale de repetir
+  (`analysis/anillo_ihp_repeticiones.py`). Necesita ngspice 47 y
+  OpenVAF-Reloaded, compilados en WSL o en Linux (`~/eda/ngspice47`,
+  `~/eda/bin/openvaf-r`); el ngspice 41 de conda-forge no carga estos
+  modelos. Receta en el documento.
 - Contador del divisor del ERO de **20 a 24 bits** (`G_CNT_BITS`): con 20
   el K_D máximo dejaba solo un 11 % de margen. CFG_KD efectivo 0-24.
 - Las notas internas de la bibliografía van en `annote` (antes `note`, y

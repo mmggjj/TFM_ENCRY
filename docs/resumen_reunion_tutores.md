@@ -71,18 +71,18 @@ ngspice 47 y OpenVAF-Reloaded.
 | Anillo de 5 etapas, 400 ns | Resultado |
 |---|---|
 | Periodo y potencia | 366 ps (2,73 GHz), 143 µW |
-| Resolución del banco | 0,70 fs |
-| Jitter con el ruido del PDK | 180 fs por periodo, σ/T = 4,9·10⁻⁴, exponente 1,05 |
-| Ley de la raíz | ruido ×4 → jitter ×1,988 (teórico ×2,000) |
-| Contraste con Abidi (JSSC 2006) | mismo orden: la simulación da 0,42 veces su fórmula |
-| Divisor para H_min ≥ 0,98 | K_D ≈ 941 000 → 2,9 kbit/s por anillo |
+| Resolución del banco | 0,68 fs |
+| Jitter con el ruido del PDK | 176,7 ± 2,0 fs por periodo (media de 8 realizaciones, dispersión 3,3 %), σ/T = 4,8·10⁻⁴, exponente 0,99 |
+| Ley de la raíz | ruido ×4 → jitter ×1,99 ± 0,06 (teórico ×2,000) |
+| Contraste con Abidi (JSSC 2006) | mismo orden: la simulación da 0,41 veces su fórmula |
+| Divisor para H_min ≥ 0,98 | K_D ≈ 981 000 (959 000 – 1 004 000) → 2,8 kbit/s por anillo |
 
 - Contador del divisor ampliado de 20 a 24 bits: con 20, el K_D máximo dejaba solo un
   11 % de margen.
 - **Ruido 1/f:** con la función de sensibilidad al impulso (Hajimiri y Lee) y el 1/f de
   cada transistor (el pMOS tiene 3 veces más que el nMOS), el 1/f iguala al térmico
   entre los 185 y los 27 000 periodos según cómo actúe el ruido en el periodo; en el
-  punto de trabajo domina el jitter acumulado entre 35 y 5 000 veces. La medida que
+  punto de trabajo domina el jitter acumulado entre 36 y 5 300 veces. La medida que
   fija la entropía en la FPGA tiene que hacerse con acumulaciones cortas (< ~100
   periodos) y separando componentes. Cerrar la horquilla pide ruido transitorio
   cicloestacionario (Spectre).

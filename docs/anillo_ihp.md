@@ -6,8 +6,12 @@ modelo PSP 103.6, licencia Apache 2.0) y cierra la cadena
 transistor → ruido → jitter → min-entropía **sin suponer el ruido**: la
 densidad que se inyecta sale del propio modelo del PDK.
 
-Código: `analysis/anillo_ihp.py` (usa `analysis/spice_ring.py`).
-Resultados: `results/anillo_ihp_*`.
+Código: `analysis/anillo_ihp.py` (usa `analysis/spice_ring.py`) y
+`analysis/anillo_ihp_repeticiones.py` (§4.1). Resultados: `results/anillo_ihp_*`.
+
+Revisado el 30-10-2026: §4 y §5 pasan de una realización (σ = 180,37 fs,
+K_D = 941 107) a la media de ocho (σ = 176,7 ± 2,0 fs, K_D = 981 095);
+los ficheros `anillo_ihp_e5_400n.*` se sustituyeron por `anillo_ihp_rep400n_*`.
 
 ## 1. Herramientas (WSL, espacio de usuario, sin root)
 
@@ -62,7 +66,7 @@ del anillo tiene que reproducir.
 | V_trip | 0,6305 V (V_DD/2 = 0,6: inversor equilibrado) |
 | Corriente en V_trip | 11,3 µA |
 | Conductancia del nudo | 0,238 mS |
-| Ruido térmico S_th | **4,126·10⁻²⁴ A²/Hz**, plano de 100 kHz a 10 GHz |
+| Ruido térmico S_th | **4,127·10⁻²⁴ A²/Hz**, plano de 100 kHz a 10 GHz |
 | γ efectiva = S_th / (4kT·g) | 1,04 (canal corto: más de los 2/3 de canal largo) |
 | Ruido 1/f | **S = K/f^α con K = 8,156·10⁻¹⁷ A², α = 1,000** |
 | Frecuencia de esquina 1/f | **19,8 MHz** |
@@ -72,7 +76,10 @@ El espectro es 1/f puro más un suelo plano hasta 10 GHz; por encima de
 30 GHz sube (ruido inducido en puerta), lejos de lo que importa aquí. Un
 primer cálculo del suelo como mediana entre 100 MHz y 1 GHz daba
 4,385·10⁻²⁴, un 6 % de más, porque a 100 MHz el 1/f todavía suma un 20 %:
-se corrigió restando el 1/f antes de tomar la mediana.
+se corrigió restando el 1/f antes de tomar la mediana. La mediana se toma
+de 100 kHz a 3 GHz (planitud 1,002); los resultados guardados hasta el
+30-10 se habían hecho con la banda desde 1 kHz (4,126·10⁻²⁴, planitud
+1,11), un 0,013 % menos.
 
 ## 3. Calibración de la fuente 1/f de ngspice
 
@@ -80,15 +87,21 @@ se corrigió restando el 1/f antes de tomar la mediana.
 no da la relación con la densidad con precisión suficiente: se midió con
 una fuente sola sobre 1 Ω, 1 µs a paso 0,5 ps, periodograma de Welch.
 
-| NAMP | Semilla | S·f por bandas 10 MHz … 1 THz (A²) |
+| NAMP | `rndseed` | S·f por bandas 10 MHz … 1 THz (A²) |
 |---|---|---|
 | 1 | 1 | 0,341 · 0,318 · 0,315 · 0,321 · 0,381 |
 | 2 | 1 | 1,197 · 1,201 · 1,252 · 1,260 · 1,491 |
 | 1 | 2 | 0,350 · 0,318 · 0,317 · 0,323 · 0,381 |
 
 S·f es plano de 10 MHz a 100 GHz (la última banda sube por la retención de
-muestras), escala con NAMP² (×3,92 frente a ×4, misma semilla) y no
-depende de la semilla. **K = 0,317·NAMP², que es 1/π al 0,4 %.** Para el
+muestras), escala con NAMP² (×3,92 frente a ×4) y dos realizaciones con
+NAMP = 1 coinciden. **K = 0,317·NAMP², que es 1/π al 0,4 %.** La columna
+`rndseed` no fija la realización: en ngspice 47 el ruido de `trnoise`
+(blanco y 1/f) sale del generador de Wallace, que se siembra con
+`getpid()` al arrancar, y ni `set rndseed`, ni `setseed`, ni
+`.options seed` lo resiembran (solo tocan el Tausworthe;
+`src/frontend/trannoise/wallace.c`, `initw`; comprobado el 30-10 con un
+circuito mínimo). Las tres filas son realizaciones independientes. Para el
 PDK: NAMP = √(π·K) = 1,60·10⁻⁸ A. Un primer ajuste en escala logarítmica
 sobre toda la banda daba ×5,75 en vez de ×4, porque lo dominaban los bines
 altos: se cambió a media de S·f en 0,1-10 GHz.
@@ -101,44 +114,69 @@ L = 0,13 µm, 1 fF por nudo como estimación del cableado (antes del trazado),
 ruido con NT = 0,5 ps (banda de 1 THz, muy por encima de los flancos). Se
 descartan los 20 primeros cruces (arranque).
 
-| Ruido inyectado | Cruces | Periodo (ps) | σ por periodo (fs) | σ/T | Exponente | Potencia (µW) |
-|---|---|---|---|---|---|---|
-| ninguno (resolución del banco) | 1071 | 366,039 | 0,696 | 1,90·10⁻⁶ | 0,47 | 143,0 |
-| térmico del PDK, 4,126·10⁻²⁴ A²/Hz | 1073 | 365,972 | **180,37** | **4,93·10⁻⁴** | 1,05 | 143,0 |
-| térmico ×4 | 1074 | 365,967 | 358,64 | 9,80·10⁻⁴ | 1,08 | 143,0 |
-| térmico + 1/f del PDK | 1073 | 365,974 | 183,33 | 5,01·10⁻⁴ | 1,005 | 143,0 |
+| Ruido inyectado | Realizaciones | Cruces | Periodo (ps) | σ por periodo (fs) | σ/T | Exponente | Potencia (µW) |
+|---|---|---|---|---|---|---|---|
+| ninguno (resolución del banco) | 1 (determinista) | 1071 | 366,039 | 0,675 | 1,85·10⁻⁶ | 0,42 | 143,0 |
+| térmico del PDK, 4,127·10⁻²⁴ A²/Hz | **8** | 1073-1074 | 365,968 | **176,7 ± 2,0** | **4,83·10⁻⁴** | 0,99 (0,93-1,08) | 143,0 |
+| térmico ×4 | 1 | 1073 | 365,978 | 351,0 | 9,59·10⁻⁴ | 0,92 | 143,0 |
+| térmico + 1/f del PDK | 1 | 1073 | 365,974 | 183,33 | 5,01·10⁻⁴ | 1,005 | 143,0 |
+
+El ± es una desviación típica de la media de las ocho; σ medio sale de
+promediar Q = (σ/T)². La fila con 1/f es de la tanda del 08-10 (S_th de
+4,126·10⁻²⁴); el resto, del 30-10 en Linux (`anillo_ihp_rep400n_*`).
 
 Lectura:
 
-- **Resolución primero.** Sin ruido el banco mide 0,70 fs, 259 veces por
-  debajo del jitter con el ruido del PDK. Su exponente (0,47) muestra que
+- **Resolución primero.** Sin ruido el banco mide 0,68 fs, 262 veces por
+  debajo del jitter con el ruido del PDK. Su exponente (0,42) muestra que
   ese suelo es ruido numérico, no un paseo aleatorio.
-- **Ley de la raíz.** Ruido ×4 → σ ×1,988 frente a ×2,000 teórico (0,6 %).
-  El periodo medio no se mueve (365,97 ps en los tres puntos con ruido): el
-  banco está dentro del régimen lineal, al contrario que el punto alto del
-  banco genérico.
-- **Exponente 1,05.** Ruido blanco: la varianza acumulada crece lineal con
-  el número de periodos, como supone el modelo de Baudet.
+- **Ley de la raíz.** Ruido ×4 → σ ×1,99 ± 0,06 frente a ×2,000 teórico
+  (la ×4 es una realización, con la dispersión de una sola). El periodo
+  medio no se mueve (365,97 ps en todos los puntos con ruido): el banco está
+  dentro del régimen lineal, al contrario que el punto alto del banco
+  genérico.
+- **Exponente 0,99** (media de ocho). Ruido blanco: la varianza acumulada
+  crece lineal con el número de periodos, como supone el modelo de Baudet.
 - **Contraste con Abidi** (JSSC 2006, orden de magnitud). Con
   V_car = 4·I_trip/(γ·g_nudo) = 0,181 V, todo medido en el mismo punto,
-  la fórmula da σ/T = 1,18·10⁻³; la simulación da 0,42 veces eso. Mismo
+  la fórmula da σ/T = 1,18·10⁻³; la simulación da 0,41 veces eso. Mismo
   orden. Dos tropiezos documentados: una primera versión de la fórmula
   olvidaba el factor f₀ y daba 10⁻⁸ (cuatro órdenes de menos), y la forma
   de canal largo con V_T (V_car = (V_DD/2 − V_T)/γ) no sirve aquí porque
   en el punto de conmutación los transistores están casi en el umbral
   (V_trip − V_T ≈ 0,07 V); con ella salía un cociente de 0,20.
 
+### 4.1 Incertidumbre: ocho realizaciones
+
+ngspice 47 no deja fijar la realización del ruido (§3), así que cada
+ejecución es otra realización y la incertidumbre sale de repetir:
+`analysis/anillo_ihp_repeticiones.py` lanza ocho en paralelo.
+
+| Realización | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| σ (fs) | 178,7 | 186,5 | 173,8 | 175,1 | 175,0 | 182,5 | 171,8 | 169,0 |
+
+Dispersión entre realizaciones: 3,3 % en σ (5,7 fs), algo más que el
+2,2 % que darían ~1070 periodos independientes. Lo que antes era la cifra
+(180,37 fs, una realización en Windows) queda a +0,65 veces la dispersión
+entre realizaciones de la media; otra en Linux el 30-10, fuera de estas
+ocho, dio 171,06 fs (−0,97). El periodo, la potencia,
+V_T y la densidad de ruido no dependen de la realización y coinciden entre
+Windows y Linux (la densidad, bit a bit).
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
-Con σ = 180,37 fs y T = 365,97 ps:
+Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
 
 | Magnitud | Valor |
 |---|---|
-| Q por periodo, (σ/T)² | 2,43·10⁻⁷ |
-| Constante de difusión c = σ²/T | 8,89·10⁻¹⁷ s |
-| K_D para H_min ≥ 0,98 (Q ≥ 0,2286), contando solo el jitter de RO1 | 941 107 |
-| Intervalo de muestreo y caudal con RO2 igual (2,73 GHz) | 344 µs → **2,9 kbit/s** |
-| Si se cuenta también el jitter de RO2 (independiente e igual) | K_D = 470 553 → 5,8 kbit/s |
+| Q por periodo, (σ/T)² | (2,330 ± 0,054)·10⁻⁷ |
+| Constante de difusión c = σ²/T | 8,53·10⁻¹⁷ s |
+| K_D para H_min ≥ 0,98 (Q ≥ 0,2286), contando solo el jitter de RO1 | **981 095** (958 895 – 1 004 347 a ±1σ) |
+| Intervalo de muestreo y caudal con RO2 igual (2,73 GHz) | 359 µs → **2,79 kbit/s** (2,72 – 2,85) |
+| Si se cuenta también el jitter de RO2 (independiente e igual) | K_D = 490 548 → 5,6 kbit/s |
+| Con el divisor que admite el RTL, 2²⁰ | Q = 0,244 ± 0,006, H_∞ = 0,9853 (0,9836 – 0,9868); 2,606 kbit/s |
+| Para la consigna Q = 0,30 | K_D ≥ 1 287 499 → 2²¹: H_∞ = 0,9999, 1,303 kbit/s |
 
 El caudal cae dentro del rango que se estimó sin transistores reales
 (1-17 kbit/s, `modelo_ero_resultados.md`). La cifra conservadora es la
@@ -148,7 +186,8 @@ silicio.
 
 **Consecuencia de diseño aplicada:** el contador del divisor del ERO tenía
 20 bits, K_D máximo 2²⁰ = 1 048 576, solo un 11 % por encima de lo
-necesario en esquina típica a 27 °C. Pasa a 24 bits (`G_CNT_BITS`, K_D
+necesario en esquina típica a 27 °C con la primera realización (un 7 %,
+de 4 a 9 % a ±1σ, con la media de ocho). Pasa a 24 bits (`G_CNT_BITS`, K_D
 máximo 16,8 millones; 0,29 → 0,33 kGE; motor entero 114,73 → 114,92 kGE).
 `tb_motor_top` 18/18, `verifica_top.py` 5/5 y `tb_ring_osc` re-ejecutados
 con el cambio. `CFG_KD` efectivo pasa a 0-24 (`mapa_registros.md`).
@@ -157,8 +196,10 @@ con el cambio. `CFG_KD` efectivo pasa a 0-24 (`mapa_registros.md`).
 
 ### 6.1 Con el 1/f real, 400 ns no lo ven
 
-Térmico + 1/f del PDK, 400 ns: σ = 183,3 fs frente a 180,4 fs sin 1/f, y
-el exponente baja a 1,005. El separador (`separar_componentes`, ajuste
+Térmico + 1/f del PDK, 400 ns: σ = 183,3 fs (una realización) frente a
+176,7 ± 2,0 fs sin 1/f (ocho). La diferencia, +3,8 %, es 1,2 veces la
+dispersión entre realizaciones (§4.1): σ por sí solo no distingue el 1/f.
+El separador (`separar_componentes`, ajuste
 ponderado de E[D²] = a₁M + a₂M², validado antes con fases sintéticas:
 sesgo del térmico −0,1 % con y sin 1/f, 8 semillas) da
 a₂ = (−0,5 ± 1,3)·10⁻²⁸ s²: compatible con cero. Solo permite decir que
@@ -221,16 +262,19 @@ compensarse.
 
 Con los cuatro nudos de inversor y el de la NAND:
 
-| Cómo actúa el ruido | Esquina 1/f³ | 1/f = térmico a | A K_D = 941 107 (344 µs), 1/f / térmico |
+| Cómo actúa el ruido | Esquina 1/f³ | 1/f = térmico a | A K_D = 981 095 (359 µs), 1/f / térmico |
 |---|---|---|---|
-| (a) estacionario, los dos transistores todo el periodo (lo que hace el banco) | 36,5 kHz | 27 000 periodos (9,9 µs) | 35 |
-| (b) cada transistor solo en su lóbulo | 5,3 MHz | 185 periodos (68 ns) | 5 080 |
+| (a) estacionario, los dos transistores todo el periodo (lo que hace el banco) | 36,5 kHz | 27 000 periodos (9,9 µs) | 36 |
+| (b) cada transistor solo en su lóbulo | 5,3 MHz | 185 periodos (68 ns) | 5 300 |
+
+El cociente es τ/τ_cruce con τ = K_D·T; sale de la ISF y no del σ
+simulado (`anillo_ihp_isf_extra.log` lo da para K_D = 941 107: 35 y 5 080).
 
 El caso real está entre los dos: el ruido de un transistor no se enciende y
 apaga de golpe con su lóbulo. Lo que no depende del caso:
 
 1. **En el punto de trabajo del generador el 1/f domina el jitter
-   acumulado**, entre 35 y 5 000 veces. Si la cota de entropía se sacara de
+   acumulado**, entre 36 y 5 300 veces. Si la cota de entropía se sacara de
    la varianza total acumulada a K_D, se acreditaría entropía que no hay.
 2. **La medida que fija la cota tiene que hacerse con acumulaciones
    cortas**, por debajo de ~100 periodos en este anillo, donde manda el
@@ -239,7 +283,8 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
    y lo que tendrá que hacer la campaña en la FPGA.
 3. En el caso (b) la varianza térmica es 0,48 veces la del banco: el ruido
    estacionario la sobrestima, y K_D podría tener que doblarse
-   (≈ 1,96 millones). El contador de 24 bits lo cubre. En sentido
+   (≈ 2,04 millones, todavía por debajo de 2²¹). El contador de 24 bits
+   lo cubre. En sentido
    contrario, durante una conmutación real el transistor activo lleva más
    corriente que en el punto de conmutación (11 µA) y mete más ruido. La
    herramienta que resuelve las dos cosas a la vez es un análisis de ruido

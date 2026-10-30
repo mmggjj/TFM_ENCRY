@@ -74,7 +74,8 @@ pip, mismo `abc` y misma biblioteca), porque en este PC no hay OSS CAD
 Suite; en los bloques sin cambios da entre 0,1 y 0,9 % menos que el
 plugin. Cambios anteriores:
 el ERO pasó de 20 a 24 bits de contador (0,29 → 0,33 kGE) porque el anillo
-de IHP pide K_D ≈ 941 000 (`anillo_ihp.md`); el I2C y la captura se
+de IHP pide K_D ≈ 941 000 (981 000 con la media de ocho realizaciones,
+`anillo_ihp.md`); el I2C y la captura se
 actualizaron tras la guarda de bus colgado y la lectura a cero hasta trozo
 completo.
 
