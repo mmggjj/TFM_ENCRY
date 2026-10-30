@@ -191,13 +191,14 @@ $H_\infty = 0.9995$ at the worst point and 0.51 to 0.82~kbit/s depending
 on the corner. Supply is the third factor and the strongest. At
 $-40~^\circ$C in the slow corner, lowering the supply by 10\,\% to
 1.08~V lengthens the period by 34\,\% while $\sigma$ hardly moves, so
-the required divider grows by a factor of 1.70 to $K_D = 3\,913\,109$
-($3.74$ to $4.10\times10^6$ at $\pm1\sigma$); at 1.32~V it shrinks by a
-factor of 0.79. The asymmetric corners at $-40~^\circ$C (sf, fs) need
-1.32 and $1.55\times10^6$, close to tt (1.47) and below ss. At the worst point,
-$2^{22}$ still gives $H_\infty = 0.9855$, but with a 7\,\% margin on
-$K_D$, the same margin judged too thin for $2^{20}$ at the typical
-point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 1.9~s for the
+the required divider grows by a factor of 1.65 to $K_D = 3\,808\,445$
+($3.71$ to $3.91\times10^6$ at $\pm1\sigma$, eight realizations); at
+1.32~V it shrinks by a factor of 0.79. The asymmetric corners at
+$-40~^\circ$C (sf, fs) need 1.32 and $1.55\times10^6$, close to tt (1.47)
+and below ss; at 1.08~V, tt, sf and fs need 1.93, 1.57 and
+$1.74\times10^6$, half of ss. At the worst point, $2^{22}$ still gives
+$H_\infty = 0.9873$, but with a 10\,\% margin on $K_D$, close to the
+7\,\% judged too thin for $2^{20}$ at the typical point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 1.9~s for the
 384 bits of a seeding in the worst case. The divider register resets to
 $2^{24}$, so a master that does not write it is already on the safe
 side; a lower setting has to come from the coldest corner and the lowest
@@ -444,8 +445,9 @@ injection may overestimate the thermal variance by up to a factor of two
 against a cyclostationary model, and pre-layout wiring is a 1~fF
 estimate. Process corners and temperature were covered (ss, tt, ff at
 $-40$ to 125~$^\circ$C), and at $-40~^\circ$C also the asymmetric
-corners and a $\pm10$\,\% supply; the other corners at low supply and
-device mismatch were not. The figure is therefore a simulated value with a
+corners, a $\pm10$\,\% supply and the tt, sf and fs corners at low
+supply; ff at low supply, low supply when hot, and device mismatch were
+not. The figure is therefore a simulated value with a
 factor-of-two band, not the jitter of a fabricated device.
 \item[Recovered $Q$.] The estimator reproduces a known $Q$ with a bias
 below 2\,\% and a dispersion of 4.0\,\% over eight seeds with 20\,000

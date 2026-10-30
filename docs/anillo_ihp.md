@@ -187,22 +187,25 @@ por punto (ocho en tt a 27 °C), 400 ns, solo con el térmico. Ficheros
 H_∞ con el Q medio; a −1σ de Q, ss a −40 °C da 0,773 / 0,968 / 0,9994.
 
 **Alimentación ±10 % y esquinas asimétricas, a −40 °C** (30-10-2026,
-`--vdd`; cuatro realizaciones por punto; ficheros
+`--vdd`; cuatro realizaciones por punto, ocho en ss a 1,08 V; ficheros
 `anillo_ihp_esq_ss_m40_v108_*`, `_ss_m40_v132_*`, `_sf_m40_*`,
-`_fs_m40_*`). La densidad del inversor se recalcula también con la
+`_fs_m40_*`, y `_tt_m40_v108_*`, `_sf_m40_v108_*`, `_fs_m40_v108_*`). La densidad del inversor se recalcula también con la
 tensión: a 1,08 V en ss y −40 °C el inversor conmuta casi en inversión
 débil (V_T 0,66 V, corriente de conmutación 0,8 µA) y el térmico baja a
 5,13·10⁻²⁵ A²/Hz.
 
 | Punto (−40 °C) | V_DD | Periodo (ps) | P (µW) | σ (fs) | σ/T | K_D para H_∞ ≥ 0,98 | H_∞ con 2²¹ | 2²² | 2²³ |
 |---|---|---|---|---|---|---|---|---|---|
-| **ss** | **1,08 V** | 587,7 | 70,8 | 142,0 ± 3,3 | 2,42·10⁻⁴ | **3 913 109** (3 741 085 – 4 101 716) | 0,845 | **0,9855** | 0,9999 |
+| **ss** | **1,08 V** | 587,7 | 70,8 | 144,0 ± 1,8 | 2,45·10⁻⁴ | **3 808 445** (3 713 192 – 3 908 714) | 0,855 | **0,9873** | 0,9999 |
+| tt | 1,08 V | 465,7 | 91,0 | 160,2 ± 1,2 | 3,44·10⁻⁴ | 1 932 207 | 0,986 | 0,9999 | 1,0000 |
+| sf | 1,08 V | 467,9 | 90,5 | 178,7 ± 3,8 | 3,82·10⁻⁴ | 1 566 766 | 0,9956 | 1,0000 | 1,0000 |
+| fs | 1,08 V | 464,2 | 91,2 | 168,1 ± 0,9 | 3,62·10⁻⁴ | 1 743 907 | 0,9919 | 1,0000 | 1,0000 |
 | ss | 1,20 V | 438,6 | 117,5 | 138,1 ± 1,3 | 3,15·10⁻⁴ | 2 306 215 | 0,970 | 0,9995 | 1,0000 |
 | ss | 1,32 V | 350,9 | 178,1 | 124,5 ± 1,3 | 3,55·10⁻⁴ | 1 816 181 | 0,990 | 0,9999 | 1,0000 |
 | sf | 1,20 V | 359,1 | 146,1 | 149,3 ± 0,8 | 4,16·10⁻⁴ | 1 321 853 | 0,9986 | 1,0000 | 1,0000 |
 | fs | 1,20 V | 358,2 | 146,4 | 137,7 ± 0,3 | 3,85·10⁻⁴ | 1 546 328 | 0,9960 | 1,0000 | 1,0000 |
 
-A −1σ de Q, ss a 1,08 V da 0,828 / 0,9819 / 0,9998.
+A −1σ de Q, ss a 1,08 V da 0,845 / 0,9856 / 0,9999. Con las cuatro primeras realizaciones de ss a 1,08 V salía K_D = 3 913 109 y 0,9855 con 2²²; las ocho lo bajan un 3 % y reducen a la mitad el error.
 
 Lectura:
 
@@ -220,17 +223,18 @@ Lectura:
 - **La tensión baja es el tercer factor, y el más fuerte.** En ss a
   −40 °C, de 1,2 a 1,08 V el periodo se alarga un 34 % y σ casi no cambia
   (el ruido baja con la corriente al mismo ritmo que sube el tiempo de
-  conmutación), así que σ/T cae y K_D sube × 1,70. A 1,32 V pasa lo
+  conmutación), así que σ/T cae y K_D sube × 1,65. A 1,32 V pasa lo
   contrario (× 0,79). El peor punto simulado es **ss, −40 °C, 1,08 V:
-  K_D = 3,91 M**.
-- **2²² aún lo cubre, pero justo:** H_∞ = 0,9855 (0,9819 a −1σ), un 7 %
-  de margen en K_D y 1,5 errores estándar; el mismo margen que se juzgó
-  insuficiente para 2²⁰ en tt a 27 °C (§5). **2²³ da 0,9999** en el peor
+  K_D = 3,81 M**. En tt el mismo paso de tensión pide × 1,32.
+- **2²² aún lo cubre, pero justo:** H_∞ = 0,9873 (0,9856 a −1σ), un 10 %
+  de margen en K_D y 3,6 errores estándar; un margen del orden del que se
+  juzgó insuficiente para 2²⁰ en tt a 27 °C (7 %, §5). **2²³ da 0,9999** en el peor
   punto (0,20 – 0,41 kbit/s en los puntos simulados).
 - **Las esquinas asimétricas quedan cerca de tt (1,47 M) y por debajo de ss:** sf y fs a −40 °C
-  piden 1,32 M y 1,55 M, menos que ss (2,31 M). Ni sf/fs ni tt/ff se han
-  simulado a 1,08 V; si el factor × 1,70 de ss se aplicara a fs, pediría
-  ≈ 2,6 M [estimado], por debajo de ss a 1,08 V.
+  piden 1,32 M y 1,55 M, menos que ss (2,31 M). A 1,08 V tt, sf y fs
+  piden 1,93, 1,57 y 1,74 M, la mitad que ss: **ss a −40 °C y 1,08 V es el
+  peor punto simulado**. ff a 1,08 V no se ha simulado (es la esquina con
+  menos K_D en todo lo demás).
 - La dispersión entre realizaciones va del 0,8 al 5,0 % en σ (cuatro
   realizaciones dan una estimación pobre de la dispersión; el error de la
   media sale de ella).
@@ -249,12 +253,12 @@ Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
 | Con el divisor que admite el RTL, 2²⁰ | Q = 0,244 ± 0,006, H_∞ = 0,9853 (0,9836 – 0,9868); 2,606 kbit/s |
 | Para la consigna Q = 0,30 | K_D ≥ 1 287 499 → 2²¹: H_∞ = 0,9999, 1,303 kbit/s |
 | Peor punto de la rejilla a 1,2 V (ss, −40 °C, §4.2) | K_D ≥ 2 306 215 → 2²²: Q = 0,416, H_∞ = 0,9995, 0,544 kbit/s (también cumple la consigna Q = 0,30, que pide 3 026 540) |
-| **Peor punto con V_DD −10 % (ss, −40 °C, 1,08 V, §4.2)** | K_D ≥ 3 913 109 → 2²² da Q = 0,245, H_∞ = 0,9855 (7 % de margen; no cumple la consigna Q = 0,30, que pide 5 135 445); **2²³**: Q = 0,490, H_∞ = 0,9999, 0,203 kbit/s |
+| **Peor punto con V_DD −10 % (ss, −40 °C, 1,08 V, §4.2)** | K_D ≥ 3 808 445 → 2²² da Q = 0,252, H_∞ = 0,9873 (10 % de margen; no cumple la consigna Q = 0,30, que pide 4 997 959); **2²³**: Q = 0,504, H_∞ = 0,9999, 0,203 kbit/s |
 
 Lo de arriba es tt a 27 °C. Para un divisor fijo que valga de −40 a
 125 °C en ss/tt/ff a 1,2 V, hace falta 2²² (`CFG_KD` = 22): el caudal baja a
 0,51 – 0,82 kbit/s. **Si además se admite V_DD ± 10 %, 2²² queda con un
-7 % de margen y lo recomendable es 2²³ (`CFG_KD` = 23): 0,20 – 0,41
+10 % de margen y lo recomendable es 2²³ (`CFG_KD` = 23): 0,20 – 0,41
 kbit/s, ≈ 1,9 s para los 384 bits de una siembra en el peor punto.**
 Alternativa: fijar `CFG_KD` según la temperatura
 medida (2²⁰ basta en tt por encima de 27 °C), que exige un sensor y una
@@ -379,12 +383,12 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
 
 - Ruido transitorio cicloestacionario (Spectre) para cerrar el factor ~2
   del térmico y situar el 1/f entre los dos extremos.
-- Esquinas ss/tt/ff y −40/27/125 °C, sf/fs y ±10 % de V_DD a −40 °C:
-  hechas (§4.2). Quedan las otras esquinas a 1,08 V (se espera que no
-  superen a ss), más realizaciones en ss a −40 °C y 1,08 V (la dispersión
-  de cuatro, 4,6 %, es la mayor de la tabla) y el desapareamiento
-  (`mos_tt_mismatch`, que además diferencia RO1 de RO2). Cada realización cuesta ~11 min con
-  un hilo (~30 min con ocho en paralelo en este PC).
+- Esquinas ss/tt/ff y −40/27/125 °C; sf/fs, ±10 % de V_DD y tt/sf/fs a
+  1,08 V, todo a −40 °C: hechas (§4.2). Quedan ff a 1,08 V, la tensión baja
+  en caliente (se espera mejor, como a 1,2 V) y el desapareamiento
+  (`mos_tt_mismatch`, que además diferencia RO1 de RO2). Cada realización
+  cuesta ~11 min con un hilo (~30 min con ocho en paralelo en este PC;
+  ~29 min en ss a 1,08 V con ocho).
 - Anillos más largos (menos σ/T por periodo, misma constante de difusión)
   y la relación jitter-potencia.
 - Trazado y extracción de parásitos: el 1 fF por nudo es una estimación.
