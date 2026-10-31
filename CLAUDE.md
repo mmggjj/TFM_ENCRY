@@ -405,7 +405,10 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   1,32 y 1,55 M. **Desapareamiento** (`--mismatch`, §4.3, 31-10): 48 chips
   en tt a 27 °C, periodo con dispersión 1,31 % (RO1 y RO2 difieren ~1,4 %),
   σ = 177,2 ± 0,7 fs y la dispersión de σ/T (2,6 %) no supera la del ruido
-  solo: Q no cambia de forma medible; K_D por chip 0,87-1,09 M. ngspice
+  solo: Q no cambia de forma medible; K_D por chip 0,87-1,09 M. En ss, −40 °C, 1,08 V (16
+  chips, uno excluido por cruces espurios: `cruces_subida` no tiene
+  histéresis) K_D medio 3,89 M y el peor chip 4,49 M > 2²² (H_∞ 0,973);
+  2²³ lo cubre (0,9996): se mantiene 2²³ con ±10 %. ngspice
   tampoco deja fijar la semilla del sorteo. `anillo_ihp.py` y
   `anillo_ihp_repeticiones.py` admiten `--esquina`, `--temp`, `--vdd` y
   `--mismatch`; a 1,08 V cada realización tarda ~29 min.

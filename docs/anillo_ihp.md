@@ -280,6 +280,47 @@ Lectura:
   en ese orden; si se enganchan por acoplamiento es otra cuestión
   (trazado), no de este banco.
 
+**ss, −40 °C, 1,08 V (el peor punto de §4.2), 16 chips** [simulado]. Uno,
+el 9, da σ = 780 fs y exponente 0,33, y no es jitter: sus 676 + 10 cruces
+a 590,8 ps ocupan 405,3 ns, más que los 400 ns simulados, cuando los
+otros quince ocupan 392,1 – 394,0 ns. Hay al menos ~20 cruces de más
+(dobles cruces de un flanco lento por V_DD/2, que `cruces_subida` no
+filtra porque no tiene histéresis), y un error de fase blanco así da
+justo un exponente bajo. La forma de onda no se guarda y la realización
+no se puede repetir (sin semilla), así que se excluye por esa
+inconsistencia y no por su valor. En los 48 de tt ese cociente va de
+396,1 a 398,9 ns, sin ninguno fuera. El resumen del script
+(`_resumen.log`) lo incluye; las cifras de abajo son de los otros quince,
+calculadas del mismo `_resumen.csv`.
+
+| | Nominal (8 realizaciones, §4.2) | Con desapareamiento (15 chips) |
+|---|---|---|
+| Periodo | 587,7 ps | 587,3 ps, dispersión **1,64 %** |
+| Potencia | 70,8 µW | 70,8 µW, dispersión 1,6 % |
+| σ por periodo | 144,0 ± 1,8 fs | 142,5 ± 1,2 fs |
+| Dispersión de σ/T entre ejecuciones | 3,6 % | 3,2 % (IC 95 % 2,4 – 5,1) |
+| K_D para H_∞ ≥ 0,98 | 3 808 445 | 3 885 159 (3 821 396 – 3 951 085) |
+| K_D de cada ejecución | — | 3 496 727 – **4 494 997**, mediana 3 825 074 |
+| H_∞ con 2²² (media / −1σ / peor chip) | 0,9873 / 0,9856 / — | 0,9860 / 0,9848 / **0,973** |
+| H_∞ con 2²³ (media / peor chip) | 0,9999 / — | 0,9999 / **0,9996** |
+
+Lectura:
+
+- **Lo mismo que en tt:** la media de σ y la dispersión de σ/T no se
+  separan del caso nominal; el periodo se dispersa un 1,6 % (RO1 frente a
+  RO2: mediana 1,6 %, máximo 6,2 %).
+- **σ sigue aquí al periodo con más fuerza** (r = 0,83, σ ∝ T^2,3): en el
+  peor punto el chip lento tiene *más* σ/T, no menos.
+- **El peor chip ya no cabe en 2²²:** pide 4,49 M > 4,19 M y da
+  H_∞ = 0,973. Ese máximo lleva dentro el error de estimación de un solo
+  chip (~650 periodos), así que es pesimista, pero el margen de 2²² sobre
+  la media también baja (de 10 % a 8 %). **2²³ cubre el peor chip con
+  margen 1,87 (H_∞ = 0,9996).** Se mantiene la recomendación de §5: con
+  ±10 % de alimentación, 2²³.
+- Pendiente del banco: histéresis en la detección de cruces (o rechazar
+  ejecuciones cuyo cociente cruces × periodo no cuadre con el tiempo
+  simulado), y guardar la forma de onda cuando el exponente se aparte de 1.
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
 Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
@@ -300,7 +341,10 @@ Lo de arriba es tt a 27 °C. Para un divisor fijo que valga de −40 a
 125 °C en ss/tt/ff a 1,2 V, hace falta 2²² (`CFG_KD` = 22): el caudal baja a
 0,51 – 0,82 kbit/s. **Si además se admite V_DD ± 10 %, 2²² queda con un
 10 % de margen y lo recomendable es 2²³ (`CFG_KD` = 23): 0,20 – 0,41
-kbit/s, ≈ 1,9 s para los 384 bits de una siembra en el peor punto.**
+kbit/s, ≈ 1,9 s para los 384 bits de una siembra en el peor punto.** El
+Monte Carlo de desapareamiento (§4.3) lo confirma: en ese punto el peor de
+quince chips pide 4,49 M, por encima de 2²² (H_∞ = 0,973), y 2²³ lo cubre
+con H_∞ = 0,9996.
 Alternativa: fijar `CFG_KD` según la temperatura
 medida (2²⁰ basta en tt por encima de 27 °C), que exige un sensor y una
 tabla caracterizada por chip. `CFG_KD` arranca en 24 tras el reset, así
@@ -425,8 +469,9 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
 - Ruido transitorio cicloestacionario (Spectre) para cerrar el factor ~2
   del térmico y situar el 1/f entre los dos extremos.
 - Esquinas ss/tt/ff y −40/27/125 °C; sf/fs, ±10 % de V_DD y tt/sf/fs a
-  1,08 V, todo a −40 °C: hechas (§4.2); desapareamiento en tt a 27 °C,
-  hecho (§4.3). Quedan ff a 1,08 V y la tensión baja en caliente (se espera
+  1,08 V, todo a −40 °C: hechas (§4.2); desapareamiento en tt a 27 °C y
+  en ss a −40 °C y 1,08 V, hecho (§4.3), con histéresis pendiente en la
+  detección de cruces. Quedan ff a 1,08 V y la tensión baja en caliente (se espera
   mejor, como a 1,2 V). Cada realización
   cuesta ~11 min con un hilo (~30 min con ocho en paralelo en este PC;
   ~29 min en ss a 1,08 V con ocho).

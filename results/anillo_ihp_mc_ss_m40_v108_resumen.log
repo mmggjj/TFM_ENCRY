@@ -1,0 +1,24 @@
+16 realizaciones independientes, tstop 400n, escala 1 (ruido del PDK), mos_ss, -40 C, 1.08 V, con desapareamiento
+  rep  1: 652 cruces, T 593.790 ps, sigma 145.43 fs, exp 0.93
+  rep  2: 659 cruces, T 588.872 ps, sigma 140.36 fs, exp 0.99
+  rep  3: 678 cruces, T 572.348 ps, sigma 129.07 fs, exp 1.05
+  rep  4: 667 cruces, T 581.466 ps, sigma 135.02 fs, exp 0.86
+  rep  5: 667 cruces, T 580.834 ps, sigma 143.68 fs, exp 0.66
+  rep  6: 665 cruces, T 582.482 ps, sigma 135.27 fs, exp 1.17
+  rep  7: 659 cruces, T 587.734 ps, sigma 141.55 fs, exp 0.89
+  rep  8: 651 cruces, T 595.577 ps, sigma 148.86 fs, exp 0.90
+  rep  9: 676 cruces, T 590.823 ps, sigma 780.00 fs, exp 0.33
+  rep 10: 653 cruces, T 592.719 ps, sigma 142.23 fs, exp 1.05
+  rep 11: 674 cruces, T 574.778 ps, sigma 140.51 fs, exp 0.94
+  rep 12: 645 cruces, T 599.515 ps, sigma 147.77 fs, exp 1.00
+  rep 13: 669 cruces, T 579.953 ps, sigma 140.29 fs, exp 1.03
+  rep 14: 661 cruces, T 586.130 ps, sigma 145.73 fs, exp 0.84
+  rep 15: 634 cruces, T 608.813 ps, sigma 155.67 fs, exp 1.06
+  rep 16: 662 cruces, T 584.675 ps, sigma 145.14 fs, exp 0.98
+
+  sigma por periodo = 238.0 +- 76.3 fs (1 sigma de la media; dispersion entre repeticiones 128.3 % en sigma)
+  Q por periodo = 1.6409e-07 +- 1.05e-07
+  K_D = 1393111 (intervalo 1 sigma 848707 - 3885423); 1.22 kbit/s a 1.702 GHz
+  periodo 587.532 ps, dispersion 9.338 ps (1.59 %); K_D de cada realizacion: 131161 - 4494997 (mediana 3825074)
+
+datos en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_mc_ss_m40_v108_resumen.csv
