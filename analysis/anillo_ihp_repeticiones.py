@@ -92,18 +92,20 @@ def main() -> int:
 
     out = RES / f"anillo_ihp_{args.prefijo}resumen.csv"
     cab = ["rep", "n_cruces", "periodo_ps", "sigma_fs", "sigma_rel", "q_periodo",
-           "exponente", "potencia_uW", "segundos"]
+           "exponente", "potencia_uW", "segundos", "n_espurios"]
     with out.open("w", encoding="utf-8", newline="\n") as fh:
         fh.write(",".join(cab) + "\n")
         for f in filas:
-            fh.write(",".join(str(f[c]) for c in cab) + "\n")
+            # los JSON anteriores a la histeresis no tienen n_espurios
+            fh.write(",".join(str(f.get(c, "")) for c in cab) + "\n")
 
     print(f"{n} realizaciones independientes, tstop {args.tstop}, escala 1 (ruido del PDK), "
           f"{args.esquina}, {args.temp:g} C, {args.vdd:g} V"
           + (", con desapareamiento" if args.mismatch else ""))
     for f in filas:
         print(f"  rep {f['rep']:2d}: {f['n_cruces']} cruces, T {f['periodo_ps']:.3f} ps, "
-              f"sigma {f['sigma_fs']:.2f} fs, exp {f['exponente']:.2f}")
+              f"sigma {f['sigma_fs']:.2f} fs, exp {f['exponente']:.2f}"
+              + (f", {f['n_espurios']} dobles cruces" if f.get("n_espurios") else ""))
     print(f"\n  sigma por periodo = {s_m:.1f} +- {s_se:.1f} fs (1 sigma de la media; "
           f"dispersion entre repeticiones {100 * q_sd / q_m / 2:.1f} % en sigma)")
     print(f"  Q por periodo = {q_m:.4e} +- {q_se:.2e}")

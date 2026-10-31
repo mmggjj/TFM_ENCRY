@@ -317,9 +317,19 @@ Lectura:
   la media también baja (de 10 % a 8 %). **2²³ cubre el peor chip con
   margen 1,87 (H_∞ = 0,9996).** Se mantiene la recomendación de §5: con
   ±10 % de alimentación, 2²³.
-- Pendiente del banco: histéresis en la detección de cruces (o rechazar
-  ejecuciones cuyo cociente cruces × periodo no cuadre con el tiempo
-  simulado), y guardar la forma de onda cuando el exponente se aparte de 1.
+- **Banco corregido (31-10):** `cruces_subida` admite histéresis y
+  `anillo_ihp.py` la usa (10 % de V_DD: un cruce solo cuenta si la señal
+  bajó de 0,48 V desde el anterior). Cuenta los dobles cruces que quita en
+  el tramo analizado (`n_espurios`, en el CSV y el JSON) y, si hay alguno
+  o el exponente se aparta de 1 más de 0,25, guarda los cruces y la forma
+  de onda a su alrededor en `_diag.npz`. Comprobación (tt, 27 °C, 100 ns,
+  una realización, `results/anillo_ihp_hist_tt_100n.log`): 0 dobles cruces
+  en el tramo analizado y 2 en el arranque (a 0,09 ns, con el nudo parado
+  en V_DD/2, dentro de los 20 descartados), σ = 165,1 fs, dentro de la
+  dispersión de una realización de ~230 periodos. Los resultados anteriores
+  no cambian: los dobles cruces del arranque ya se descartaban, y el chip 9
+  sigue excluido (su forma de onda no se guardó y ese sorteo no se puede
+  repetir, sin semilla). Un caso así queda ahora contado y guardado.
 
 ## 5. Del jitter al divisor [simulado → estimado]
 
@@ -470,8 +480,8 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
   del térmico y situar el 1/f entre los dos extremos.
 - Esquinas ss/tt/ff y −40/27/125 °C; sf/fs, ±10 % de V_DD y tt/sf/fs a
   1,08 V, todo a −40 °C: hechas (§4.2); desapareamiento en tt a 27 °C y
-  en ss a −40 °C y 1,08 V, hecho (§4.3), con histéresis pendiente en la
-  detección de cruces. Quedan ff a 1,08 V y la tensión baja en caliente (se espera
+  en ss a −40 °C y 1,08 V, hecho (§4.3); la detección de cruces tiene ya
+  histéresis (31-10). Quedan ff a 1,08 V y la tensión baja en caliente (se espera
   mejor, como a 1,2 V). Cada realización
   cuesta ~11 min con un hilo (~30 min con ocho en paralelo en este PC;
   ~29 min en ss a 1,08 V con ocho).

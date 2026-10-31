@@ -193,6 +193,10 @@ quit
 # 2. Anillo en transitorio
 # --------------------------------------------------------------------
 
+# histeresis de la deteccion de cruces, en fraccion de V_DD
+HISTERESIS = 0.1
+
+
 def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
            cl="1f", tstop="100n", paso="0.2p", paso_max="1p", nt=5e-13,
            esquina="mos_tt", descartar=20, k_flicker=0.0, devolver_cruces=False,
@@ -214,10 +218,23 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
     iv = nombres.index(f"v(n{n_etapas})")
     ii = [k for k, n in enumerate(nombres) if "vdd" in n.lower() and "#branch" in n.lower()
           or n.lower() == "i(vdd)"]
-    tc = cruces_subida(t, m[:, iv], vdd / 2.0)
+    v = m[:, iv]
+    tc_crudo = cruces_subida(t, v, vdd / 2.0)
+    tc = cruces_subida(t, v, vdd / 2.0, histeresis=HISTERESIS * vdd)
     if tc.size < 60:
         raise RuntimeError(f"solo {tc.size} cruces; ngspice dijo:\n{log[-3000:]}")
     r = jitter_desde_cruces(tc, descartar=descartar)
+    # dobles cruces que quita la histeresis en el tramo analizado (los del
+    # arranque, con el nudo parado en V_DD/2, caen en los descartados); con
+    # alguno, o con un exponente lejos de 1, se guardan los cruces y la
+    # forma de onda a su alrededor
+    sobran = np.setdiff1d(tc_crudo, tc)
+    r["n_espurios"] = int(np.count_nonzero(sobran > tc[descartar]))
+    if r["n_espurios"] or abs(r["exponente"] - 1.0) > 0.25:
+        ventanas = [(t >= x - 2 * r["periodo"]) & (t <= x + 2 * r["periodo"]) for x in sobran]
+        sel = np.logical_or.reduce(ventanas) if ventanas else np.zeros(t.size, bool)
+        r["diagnostico"] = {"cruces_crudos": tc_crudo, "cruces": tc,
+                            "t": t[sel], "v": v[sel]}
     # potencia media sobre periodos enteros, quitando el arranque
     p = float("nan")
     if ii:
@@ -577,7 +594,7 @@ def main() -> int:
     salida = RES / f"anillo_ihp_{args.sesion}.csv"
     cab = ["escala", "s_i_A2Hz", "etapas", "cl", "tstop", "nt_s", "n_cruces",
            "periodo_ps", "sigma_fs", "sigma_rel", "q_periodo", "exponente",
-           "potencia_uW", "segundos"]
+           "potencia_uW", "segundos", "n_espurios"]
     with salida.open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(cab)
@@ -591,14 +608,20 @@ def main() -> int:
                     r["n_cruces"], r["periodo"] * 1e12,
                     r["sigma_periodo"] * 1e15, r["sigma_rel"],
                     r["q_por_periodo"], r["exponente"],
-                    r["potencia_W"] * 1e6, r["segundos"]]
+                    r["potencia_W"] * 1e6, r["segundos"], r["n_espurios"]]
             w.writerow(fila)
             fh.flush()
             filas.append(dict(zip(cab, fila)))
             print(f"  escala {esc:4g}: S_i {s:.3e} A2/Hz, {r['n_cruces']} cruces, "
                   f"T {r['periodo'] * 1e12:.3f} ps, sigma {r['sigma_periodo'] * 1e15:.3f} fs, "
                   f"sigma/T {r['sigma_rel']:.3e}, exp {r['exponente']:.2f}, "
-                  f"P {r['potencia_W'] * 1e6:.1f} uW, {r['segundos']:.0f} s", flush=True)
+                  f"P {r['potencia_W'] * 1e6:.1f} uW, {r['segundos']:.0f} s, "
+                  f"{r['n_espurios']} dobles cruces quitados", flush=True)
+            if "diagnostico" in r:
+                diag = RES / f"anillo_ihp_{args.sesion}_e{esc:g}_diag.npz"
+                np.savez_compressed(diag, **r["diagnostico"])
+                print(f"  AVISO: dobles cruces o exponente lejos de 1; cruces y forma "
+                      f"de onda en {diag}", flush=True)
 
     print("\n== 3. Lectura ==")
     base = [x for x in filas if x["escala"] == 0]
