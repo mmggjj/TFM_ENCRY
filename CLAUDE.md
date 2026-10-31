@@ -72,6 +72,14 @@ simulated source under the same battery" (EN y ES). Resultados:
 - `ea_iid` en bits tarda ~28 min por secuencia de 10⁶: no se ha corrido.
   La columna `IID` del CSV de la herramienta es el tipo de prueba, no el
   veredicto (`testCases.0.passed*`).
+- **Siguiente paso (acordado con Mario el 31-10, para el 01-11):** repetir
+  el ideal y el motor a 2²³ (los tres casos) con ~8,4·10⁶ bits, la longitud
+  de las dos capturas largas del ESP32 sin radio (`esp_rf_off_1/2`), no-IID
+  en bit y byte e IID en byte, y ver si el techo del estimador sube lo
+  bastante para separar el ESP32 del motor. `fuente_simulada_90b.py` tiene
+  `N_BITS` fijo en 10⁶: añadir `--n` y un sufijo en el nombre para no pisar
+  las filas de 10⁶. Después, documentar en `docs/fuente_simulada_90b.md` y
+  en el cap. 7 (EN y ES).
 
 ## Estado al 28-10-2026: AES de 32 bits, I2C bajo abuso, placa y CI
 
