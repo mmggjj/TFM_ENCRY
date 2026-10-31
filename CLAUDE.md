@@ -402,8 +402,13 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   realizaciones; tt/sf/fs a 1,08 V piden la mitad), 2²² da 0,9873 con solo
   un 10 % de margen, así que **con ±10 % el divisor fijo
   recomendado es 2²³** (0,9999, 0,20-0,41 kbit/s); sf/fs a −40 °C piden
-  1,32 y 1,55 M. `anillo_ihp.py` y `anillo_ihp_repeticiones.py` admiten
-  `--esquina`, `--temp` y `--vdd`; a 1,08 V cada realización tarda ~29 min.
+  1,32 y 1,55 M. **Desapareamiento** (`--mismatch`, §4.3, 31-10): 48 chips
+  en tt a 27 °C, periodo con dispersión 1,31 % (RO1 y RO2 difieren ~1,4 %),
+  σ = 177,2 ± 0,7 fs y la dispersión de σ/T (2,6 %) no supera la del ruido
+  solo: Q no cambia de forma medible; K_D por chip 0,87-1,09 M. ngspice
+  tampoco deja fijar la semilla del sorteo. `anillo_ihp.py` y
+  `anillo_ihp_repeticiones.py` admiten `--esquina`, `--temp`, `--vdd` y
+  `--mismatch`; a 1,08 V cada realización tarda ~29 min.
   `spice_ring.simular()` borra su directorio temporal: `/tmp` es un tmpfs
   de 5,5 GB en RAM y los `.raw` lo llenaron.
   **ngspice 47 no deja fijar la realización de `trnoise`**

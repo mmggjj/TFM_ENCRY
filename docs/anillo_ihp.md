@@ -239,6 +239,47 @@ Lectura:
   realizaciones dan una estimación pobre de la dispersión; el error de la
   media sale de ella).
 
+### 4.3 Desapareamiento: Monte Carlo de chips (31-10-2026)
+
+`--mismatch` usa la sección `<esquina>_mismatch` de `cornerMOSlv.lib` y
+`mm_ok=1` en cada transistor: el PDK sortea por instancia V_T, movilidad,
+W y L (`sg13g2_moslv_mismatch.lib`). ngspice tampoco deja fijar la semilla
+de ese sorteo (`rndseed` no le llega), así que cada ejecución es un chip
+distinto con su propia realización de ruido. La densidad de ruido sigue
+saliendo del inversor nominal; lo que cambia de chip a chip es el anillo.
+Sin `--mismatch` el resultado es el de siempre (366,0389 ps, idéntico).
+Ficheros `results/anillo_ihp_mc_<punto>_*` (un CSV de ruido por tanda).
+
+**tt, 27 °C, 1,2 V, 48 chips** [simulado]:
+
+| | Nominal (8 realizaciones, §4.1) | Con desapareamiento (48 chips) |
+|---|---|---|
+| Periodo | 366,04 ps | 365,91 ps, dispersión **1,31 %** (4,79 ps; 357,8 – 374,5) |
+| Potencia | 143,0 µW | 143,1 µW, dispersión 1,2 % |
+| σ por periodo | 176,7 ± 2,0 fs | 177,2 ± 0,7 fs |
+| Dispersión de σ/T entre ejecuciones | 3,3 % (IC 95 % 2,2 – 6,7) | 2,6 % (IC 95 % 2,2 – 3,2) |
+| K_D para H_∞ ≥ 0,98 | 981 095 | 974 260 (967 086 – 981 541) |
+| K_D de cada ejecución | 959 000 – 1 004 000 (de la media) | 874 619 – 1 090 974, mediana 971 107 |
+
+Lectura:
+
+- **El desapareamiento mueve el periodo, no el jitter relativo.** La media
+  de σ no cambia y la dispersión de σ/T entre chips (2,6 %) no supera la
+  que da el propio ruido entre realizaciones del mismo anillo (3,3 %, con
+  solo ocho). Con esta resolución el desapareamiento no añade dispersión
+  medible a Q; como cota, a lo sumo ~3 % en σ/T (~6 % en K_D).
+- **σ absoluto sí sigue al periodo:** r = 0,54 (p = 7·10⁻⁵), σ ∝ T^1,25
+  entre chips. El chip lento tiene más jitter por periodo y casi el mismo
+  σ/T (∝ T^0,25), que es lo que fija la entropía.
+- **El K_D de cada chip incluye el error de estimación** de su propia
+  realización (~1070 periodos), así que el intervalo 0,87 – 1,09 M es un
+  envolvente pesimista. El máximo queda 3,8 veces por debajo de 2²².
+- **RO1 y RO2 nunca son iguales:** entre dos chips del sorteo (las 1128
+  parejas de los 48) la diferencia de periodo tiene mediana 1,4 %, p95
+  3,5 % y máximo 4,6 %. Dos anillos idénticos en el mismo dado se separan
+  en ese orden; si se enganchan por acoplamiento es otra cuestión
+  (trazado), no de este banco.
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
 Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
@@ -384,9 +425,9 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
 - Ruido transitorio cicloestacionario (Spectre) para cerrar el factor ~2
   del térmico y situar el 1/f entre los dos extremos.
 - Esquinas ss/tt/ff y −40/27/125 °C; sf/fs, ±10 % de V_DD y tt/sf/fs a
-  1,08 V, todo a −40 °C: hechas (§4.2). Quedan ff a 1,08 V, la tensión baja
-  en caliente (se espera mejor, como a 1,2 V) y el desapareamiento
-  (`mos_tt_mismatch`, que además diferencia RO1 de RO2). Cada realización
+  1,08 V, todo a −40 °C: hechas (§4.2); desapareamiento en tt a 27 °C,
+  hecho (§4.3). Quedan ff a 1,08 V y la tensión baja en caliente (se espera
+  mejor, como a 1,2 V). Cada realización
   cuesta ~11 min con un hilo (~30 min con ocho en paralelo en este PC;
   ~29 min en ss a 1,08 V con ocho).
 - Anillos más largos (menos σ/T por periodo, misma constante de difusión)
