@@ -72,15 +72,19 @@ SPICEINIT = "\n".join(
 SPICEINIT += "set num_threads=1\n"
 
 
-def cabecera_ihp(esquina="mos_tt"):
+def cabecera_ihp(esquina="mos_tt", mismatch=False):
+    """mismatch: seccion <esquina>_mismatch y mm_ok=1 en cada transistor
+    (agauss por instancia; ngspice no deja fijar su semilla)."""
+    lib = f"{esquina}_mismatch" if mismatch else esquina
+    mm = int(mismatch)
     return f"""
 * ---- CABECERA: PDK abierto IHP SG13G2, transistores lv (1,2 V) -----
-.lib {MODELOS}/cornerMOSlv.lib {esquina}
+.lib {MODELOS}/cornerMOSlv.lib {lib}
 .subckt nmos_tec d g s b w=1u l=0.13u
-xm d g s b sg13_lv_nmos w={{w}} l={{l}}
+xm d g s b sg13_lv_nmos w={{w}} l={{l}} mm_ok={mm}
 .ends
 .subckt pmos_tec d g s b w=2u l=0.13u
-xm d g s b sg13_lv_pmos w={{w}} l={{l}}
+xm d g s b sg13_lv_pmos w={{w}} l={{l}} mm_ok={mm}
 .ends
 * --------------------------------------------------------------------
 """
@@ -192,7 +196,7 @@ quit
 def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
            cl="1f", tstop="100n", paso="0.2p", paso_max="1p", nt=5e-13,
            esquina="mos_tt", descartar=20, k_flicker=0.0, devolver_cruces=False,
-           temp=27.0):
+           temp=27.0, mismatch=False):
     """Transitorio del anillo con s_i [A^2/Hz] blanco y, si k_flicker > 0,
     k_flicker/f [A^2] de 1/f, inyectados en cada nudo.
     Devuelve el resultado de jitter_desde_cruces mas potencia y tiempos."""
@@ -200,7 +204,7 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
     txt = netlist(n_etapas=n_etapas, vdd=vdd, lmin=l, wn=wn, wp=wp, cl=cl,
                   tstop=tstop, paso=paso, paso_max=paso_max,
                   densidad_ruido=s_i, nt_ruido=nt,
-                  cabecera=cabecera_ihp(esquina) + f".temp {temp}\n", flicker=flk,
+                  cabecera=cabecera_ihp(esquina, mismatch) + f".temp {temp}\n", flicker=flk,
                   guardar=f"v(n{n_etapas}) i(vdd)")
     t0 = time.time()
     nombres, m, log = simular(txt, orden=NGSPICE, spiceinit=SPICEINIT,
@@ -223,7 +227,7 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
         p = vdd * float(np.trapezoid(corr, t[sel]) / (t[sel][-1] - t[sel][0]))
     r.update({"potencia_W": p, "segundos": dur, "s_i": s_i, "n_etapas": n_etapas,
               "tstop": tstop, "nt": nt, "cl": cl, "k_flicker": k_flicker,
-              "temp": temp, "esquina": esquina})
+              "temp": temp, "esquina": esquina, "mismatch": mismatch})
     if devolver_cruces:
         r["cruces"] = tc
     return r
@@ -546,6 +550,8 @@ def main() -> int:
     ap.add_argument("--esquina", default="mos_tt")
     ap.add_argument("--temp", type=float, default=27.0, help="grados C")
     ap.add_argument("--vdd", type=float, default=1.2, help="voltios")
+    ap.add_argument("--mismatch", action="store_true",
+                    help="desapareamiento del PDK en el anillo (el ruido sale del inversor nominal)")
     ap.add_argument("--sesion", default=time.strftime("%Y%m%d_%H%M%S"))
     ap.add_argument("--escalas", default="0,1,4",
                     help="multiplos de la densidad del PDK a simular (0 = resolucion)")
@@ -579,7 +585,8 @@ def main() -> int:
             s = esc * r1["s_termico_A2Hz"]
             r = anillo(s, n_etapas=args.etapas, wn=args.wn, wp=args.wp,
                        cl=args.cl, tstop=args.tstop, nt=args.nt,
-                       esquina=args.esquina, temp=args.temp, vdd=args.vdd)
+                       esquina=args.esquina, temp=args.temp, vdd=args.vdd,
+                       mismatch=args.mismatch)
             fila = [esc, s, args.etapas, args.cl, args.tstop, args.nt,
                     r["n_cruces"], r["periodo"] * 1e12,
                     r["sigma_periodo"] * 1e15, r["sigma_rel"],
