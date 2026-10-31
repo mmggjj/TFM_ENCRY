@@ -193,7 +193,10 @@ Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión
   `ALLOW_COMBINATORIAL_LOOPS`, `DONT_TOUCH`, `set_disable_timing`),
   `ro_pblocks.xdc` (un pblock por anillo) y `build.tcl` (flujo non-project,
   `-tclargs programar` para grabar). Solo analizado con GHDL; **sin Vivado
-  en este PC**, sin probar.
+  en este PC**, sin probar. Instalación de Vivado en el Windows de Mario y
+  grabación (también con `openFPGALoader` desde Linux):
+  `docs/instalacion_vivado_windows.md` (31-10, sin ejecutar). El Ubuntu
+  26.04 no está entre los Linux que soporta AMD (22.04 y 24.04).
 - **Medidor**: la clave privada se guarda en NVS (`nvs_clave()`), se
   recupera al arrancar y `olvidar` la borra; el firmware avisa de que sin
   cifrado de flash/NVS va en claro. Banco host paso 11.

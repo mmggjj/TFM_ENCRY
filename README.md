@@ -24,7 +24,7 @@ reinicios) y es la justificación del diseño de caja blanca.
 | `analysis/` | modelo estocástico del anillo, estimadores de jitter, banco SPICE, modelo de referencia del DRBG (960 vectores CAVP), verificación cruzada, verificador de lecturas firmadas del PC y sesión con el medidor en placa (`placa_medidor.py`) |
 | `.github/workflows/` | CI: modelo y estimadores, siete bancos GHDL con PSL, síntesis Yosys, banco en host con mbedtls real (y con ASan), compilación ESP-IDF de los dos firmwares y memoria en PDF con tectonic |
 | `rtl/` | VHDL-2008 portable: `trng/`, `io/`, `aes/`, `drbg/`, `top/`; bancos en `tb/`; `run_tb.py` los ejecuta todos con GHDL |
-| `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (sin probar) |
+| `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (sin probar; instalación en Windows en `docs/instalacion_vivado_windows.md`) |
 | `rtl/fpga/` | envoltorio del motor para la Basys 3 (reset, SDA en colector abierto, LED de latido) |
 | `firmware/verificador/` | proyecto ESP-IDF: maestro I2C, provisión, reto-respuesta con mbedtls, volcado de bits al PC |
 | `firmware/medidor/` | proyecto ESP-IDF para ESP32-C3: el motor usado por un producto; clave ECDSA P-256 generada con aleatorio del motor, petición de certificado y lecturas de energía firmadas (`docs/lecturas_firmadas.md`) |

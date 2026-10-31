@@ -132,6 +132,8 @@ Detalles eléctricos (esquemático hoja 1–2, [VERIFICADO]): pulsadores PTA-142
 
 ## 3. Vivado ML Standard (gratuito) — versión, instalación, flujo Tcl
 
+Receta paso a paso para el PC de Windows (descarga, instalación, drivers, `build.tcl`, grabar): **`docs/instalacion_vivado_windows.md`**.
+
 ### 3.1 Versión vigente y requisitos
 
 - Versión actual: **Vivado 2026.1** (UG973 2026.1 English, "Release Date 2026-06-23") con actualización **2026.1.1** ya publicada en la página de descargas [VERIFICADO: https://www.amd.com/en/support/downloads/adaptive-socs-and-fpgas/development-tools/2026-1.html y https://docs.amd.com/r/en-US/ug973-vivado-release-notes-install-license/Release-Notes].

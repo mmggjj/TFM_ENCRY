@@ -1,4 +1,5 @@
 # Flujo non-project de Vivado para la Basys 3 (docs/plataforma_y_flujo.md 3.3).
+# Instalacion en Windows y puesta en marcha: docs/instalacion_vivado_windows.md
 #
 #   cd synth/basys3
 #   vivado -mode batch -source build.tcl -log build.log -journal build.jou
