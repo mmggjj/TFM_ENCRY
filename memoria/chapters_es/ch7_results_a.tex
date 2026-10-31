@@ -206,7 +206,16 @@ peor punto, $2^{22}$ todavía da $H_\infty = 0{,}9873$, pero con un
 10\,\% de margen sobre $K_D$, cerca del 7\,\% que se juzgó escaso para
 $2^{20}$ en el punto típico; $2^{23}$ da 0,9999 y de 0,20 a
 0,41~kbit/s, unos 1,9~s para los 384 bits de una siembra en el peor caso.
-El registro del divisor arranca en $2^{24}$, así que un maestro que no lo
+El desapareamiento, sorteado por transistor con los modelos estadísticos
+del \ac{PDK} y con una realización de ruido nueva en cada ejecución,
+dispersa el periodo un 1,3\,\% en 48 chips en el punto típico y un
+1,6\,\% en 15 en el peor punto, pero deja $\sigma/T$ donde estaba: su
+dispersión entre chips (2,6 y 3,2\,\%) no supera la que da el ruido solo
+entre ejecuciones. Una decimosexta ejecución en el peor punto se descartó
+porque su número de cruces no cabe en el tiempo simulado. El peor de los
+15 chips pide $K_D = 4{,}49\times10^6$, por encima de $2^{22}$
+($H_\infty = 0{,}973$), y $2^{23}$ lo sigue cubriendo
+($H_\infty = 0{,}9996$). El registro del divisor arranca en $2^{24}$, así que un maestro que no lo
 escriba ya está del lado seguro; un valor menor tiene que salir de la
 esquina más fría y la tensión más baja a las que deba funcionar el
 producto.

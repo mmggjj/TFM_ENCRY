@@ -199,7 +199,16 @@ and below ss; at 1.08~V, tt, sf and fs need 1.93, 1.57 and
 $1.74\times10^6$, half of ss. At the worst point, $2^{22}$ still gives
 $H_\infty = 0.9873$, but with a 10\,\% margin on $K_D$, close to the
 7\,\% judged too thin for $2^{20}$ at the typical point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 1.9~s for the
-384 bits of a seeding in the worst case. The divider register resets to
+384 bits of a seeding in the worst case. Device mismatch, drawn per
+transistor from the \ac{PDK} statistical models with a new noise
+realization in every run, spreads the period by 1.3\,\% over 48 dies at
+the typical point and by 1.6\,\% over 15 at the worst point, but leaves
+$\sigma/T$ where it was: its die-to-die spread (2.6 and 3.2\,\%) is no
+larger than the run-to-run spread of the noise alone. A sixteenth
+worst-point run was discarded because its crossing count does not fit in
+the simulated time. The worst of the 15 dies needs
+$K_D = 4.49\times10^6$, above $2^{22}$ ($H_\infty = 0.973$), and $2^{23}$
+still covers it ($H_\infty = 0.9996$). The divider register resets to
 $2^{24}$, so a master that does not write it is already on the safe
 side; a lower setting has to come from the coldest corner and the lowest
 supply the product must work at.
@@ -446,8 +455,8 @@ against a cyclostationary model, and pre-layout wiring is a 1~fF
 estimate. Process corners and temperature were covered (ss, tt, ff at
 $-40$ to 125~$^\circ$C), and at $-40~^\circ$C also the asymmetric
 corners, a $\pm10$\,\% supply and the tt, sf and fs corners at low
-supply; ff at low supply, low supply when hot, and device mismatch were
-not. The figure is therefore a simulated value with a
+supply, and device mismatch at the typical and the worst point; ff at
+low supply and low supply when hot were not. The figure is therefore a simulated value with a
 factor-of-two band, not the jitter of a fabricated device.
 \item[Recovered $Q$.] The estimator reproduces a known $Q$ with a bias
 below 2\,\% and a dispersion of 4.0\,\% over eight seeds with 20\,000
