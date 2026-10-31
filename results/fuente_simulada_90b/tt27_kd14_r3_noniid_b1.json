@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/tt27_kd14_r3_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/tt27_kd14_r3.bits 1",
+   "dateTimeStamp" : "20261031194624",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/tt27_kd14_r3.bits",
+   "sha256" : "afc079089cd44a9e2f9332bfbb5ee5e25b3d3bf572d609f01b4aafc0886a8a98",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99621669222379461,
+         "mcvEstimateMode" : 500025.0,
+         "mcvEstimatePHat" : 0.50002500000000005,
+         "mcvEstimatePU" : 0.50131291529412236,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 1.0,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.16779958180791021,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.11021691594958057,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.18522390264165087,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.30227259399854739,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 1.0,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.22426278149189896,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.15997126255709559,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.15997219481806446,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.11021691594958057,
+         "hOriginal" : 0.11021691594958057,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

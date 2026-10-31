@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/ss40v108_kd24_r3_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_kd24_r3.bits 1",
+   "dateTimeStamp" : "20261031195023",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_kd24_r3.bits",
+   "sha256" : "1cd3e97c2985fda7fcc33b56a1cc51f6416d4b64f86da31b4af8639601a5e7e0",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99618503640890155,
+         "mcvEstimateMode" : 500036.0,
+         "mcvEstimatePHat" : 0.50003600000000004,
+         "mcvEstimatePU" : 0.50132391529239406,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.90011112236307123,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99884028550028647,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.81640320832250379,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.92162256445118362,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.98989296416564132,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99592448215088059,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99323402888785284,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99575055400157775,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99855972294121886,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.81640320832250379,
+         "hOriginal" : 0.81640320832250379,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

@@ -52,6 +52,27 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 31-10-2026: la fuente simulada bajo SP 800-90B
+
+`analysis/fuente_simulada_90b.py` genera bits **simulados** del ERO (modelo
+estocástico con el Q de los transistores IHP: tt 27 °C, ss −40 °C 1,08 V y
+el peor chip con desapareamiento) para divisores 2¹⁴-2²⁴, tres semillas,
+10⁶ bits, más bits uniformes de referencia, y los pasa por la batería del
+NIST con la misma vía que el ESP32. Lectura en **`docs/fuente_simulada_90b.md`**,
+figura y tabla con `analysis/fuente_simulada_figura.py`, cap. 7 §"The
+simulated source under the same battery" (EN y ES). Resultados:
+
+- A 10⁶ bits la batería **se satura en 0,839 ± 0,021** (bits uniformes); todo
+  punto con H_∞ ≥ 0,97 del modelo da 0,82-0,87. El ESP32 (0,85) y el motor
+  a 2²³ (0,84-0,85) son **indistinguibles** a esta N.
+- Con poca entropía la batería **sobreestima** (2¹⁴: modelo ≈ 0, NIST
+  0,07-0,11): no es una cota; el divisor lo fija el modelo.
+- La vía IID en byte **acepta** 2²¹ del peor caso (H_∞ 0,79) en 2 de 3 y ss
+  (0,85) en 3 de 3, con crédito 0,86-0,90: refuerza llevar la cifra no-IID.
+- `ea_iid` en bits tarda ~28 min por secuencia de 10⁶: no se ha corrido.
+  La columna `IID` del CSV de la herramienta es el tipo de prueba, no el
+  veredicto (`testCases.0.passed*`).
+
 ## Estado al 28-10-2026: AES de 32 bits, I2C bajo abuso, placa y CI
 
 - **`rtl/aes/aes_enc_32.vhd`**: segundo núcleo AES, ruta de 32 bits (4
@@ -441,7 +462,7 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
 | `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls, sobre `componentes/motor_i2c` | compilado (27-10, 5.3.5) y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio; banco en PC 0 fallos |
 | `firmware/medidor/` | ESP-IDF 5, ESP32-C3: clave P-256 del motor, CSR, lecturas firmadas (`docs/lecturas_firmadas.md`) | compilado (27-10, 5.3.5); banco en PC + `verifica_lecturas.py` 0 fallos; nada en placa |
 | `firmware/host_check/` | `run_host.py`: los dos firmwares contra `motor_sim.c` y mbedtls real | `results/host_check.log` |
-| `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 bajo SP 800-90B); 8 y apéndices pendientes |
+| `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 y la fuente simulada bajo SP 800-90B) y apéndices A-C; 8 pendiente |
 
 **Pendiente de hardware:** puesta en marcha en la Basys 3, campaña de
 entropía del motor, ESP32 en el bucle con el motor. Lo que sí está hecho

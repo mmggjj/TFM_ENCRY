@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/ss40v108_kd23_r3_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_kd23_r3.bits 1",
+   "dateTimeStamp" : "20261031195008",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_kd23_r3.bits",
+   "sha256" : "0dd6a0f9f9165980f403d30130d7d4155a9f72cd378e7281d10aa66de08325bf",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99521555467754297,
+         "mcvEstimateMode" : 500373.0,
+         "mcvEstimatePHat" : 0.50037299999999996,
+         "mcvEstimatePU" : 0.50166091493735943,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.91870227449180109,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99853885271263476,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.81154006056987738,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93978015269195192,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.99632531459110452,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99579500362846052,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99800349635813235,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99861016182280882,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.9972458702400534,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.81154006056987738,
+         "hOriginal" : 0.81154006056987738,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

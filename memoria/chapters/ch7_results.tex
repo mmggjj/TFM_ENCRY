@@ -42,7 +42,9 @@ O7 & met    & Synthesis on IHP SG13G2, per-block area and optimization path
               (Chapter~\ref{ch:ch6_asic}) \\
 O8 & partial& Structural comparison closed (Section~\ref{sec:se_comparison});
               the ESP32 side of the numerical comparison is measured under
-              SP 800-90B (Section~\ref{sec:esp32_90b}); the engine side needs O6 \\
+              SP 800-90B (Section~\ref{sec:esp32_90b}); the engine side is
+              simulated under the same battery (Section~\ref{sec:sim_90b})
+              and its measurement needs O6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -437,6 +439,63 @@ whatever the estimators return, is the bound that Section~\ref{sec:opoint}
 derives for the engine from a physical measurement. That asymmetry is the
 comparison.
 
+\section{The simulated source under the same battery}
+\label{sec:sim_90b}
+
+Before the campaign, the engine side of O8 can be run in simulation
+through exactly the pipeline that produced the ESP32 figures: same
+binaries, options and length. The bits come from the stochastic model of
+the \ac{ERO} driven by the jitter of the open-\ac{PDK} ring
+(Section~\ref{sec:ihp_ring}) at three points --- tt at 27~$^\circ$C, ss at
+$-40~^\circ$C and 1.08~V, and the worst chip with mismatch at that point
+--- for dividers from $2^{14}$ to $2^{24}$, three seeds each, $10^6$ bits
+per sequence \simu{}. As a reference, uniform independent bits of the same
+length were run through the same battery. Figure~\ref{fig:sim_90b} sets
+the exact min-entropy of the model against the non-IID estimate.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{fuente_simulada_90b.pdf}
+\caption{Min-entropy of the simulated source against the divider
+\simu{}: the stochastic model (lines) and the SP~800-90B non-IID estimate
+on $10^6$ bits (markers, mean and standard deviation of three seeds). The
+grey band is the estimate for uniform independent bits of the same
+length; the hatched band spans the thirty-six ESP32 captures of
+conditions A--D \meas{}.}
+\label{fig:sim_90b}
+\end{figure}
+
+Four readings follow. First, at $10^6$ bits the battery saturates: uniform
+bits score $0.839 \pm 0.021$, and every point where the model gives
+$H_\infty \ge 0.97$ scores between 0.82 and 0.87, always limited by the
+compression estimator. Above that ceiling the battery tells nothing
+apart, so the ESP32, at 0.85, and the engine at the recommended $2^{23}$,
+at 0.84 to 0.85 in the three cases, are indistinguishable at this length;
+the figures must not be compared as if they differed. Second, at low
+entropy the battery \emph{overestimates}: at $2^{14}$ the model gives
+$H_\infty \approx 0$ and the battery 0.07 to 0.11, and up to $2^{19}$ at
+the worst point 0.10 to 0.32 against 0 to 0.25. The source is then nearly
+deterministic, its phase advancing by a known step with little noise, and
+generic predictors do not exploit that structure fully; the model does,
+because it grants the attacker the previous phase. A divider chosen too
+small would not have been caught by the battery alone, which is the case
+AIS~31 makes for a stochastic model, here in the design's own numbers.
+Third, the IID track accepts data that is not full-entropy: at $2^{21}$
+the worst chip ($H_\infty = 0.79$) and the ss point (0.85) pass the three
+IID tests in five sequences of six, and the IID credit, the byte
+most-common-value estimate, would be 0.86 to 0.90 bit per bit, above the
+model; at $2^{20}$ ($H_\infty \approx 0.5$) the $\chi^2$ test rejects
+every sequence. This supports carrying the non-IID figure for the ESP32
+and applying the same rule to the engine. Fourth, between those regimes,
+for $H_\infty$ from about 0.5 to 0.95, the estimate sits below the model,
+as a conservative estimator should.
+
+These bits contain only white Gaussian jitter. Flicker noise, coupling
+between rings, a shared supply and slow drift are absent, and they are
+what the battery is least able to see and the campaign must measure.
+Three seeds make the spreads indicative only. The reading in Spanish, with
+the byte and IID tables, is in \nolinkurl{docs/fuente_simulada_90b.md}.
+
 \section{Uncertainty budget}
 \label{sec:uncertainty}
 
@@ -492,7 +551,9 @@ confidence. The size of the generator's internal state is not documented.
 \item[Min-entropy of the built device.] Not yet bounded. The model, the
 estimator and the cutoffs are ready; the number requires the campaign of
 Section~\ref{sec:protocol}. No value is offered here, and none should be
-inferred from the simulated jitter.
+inferred from the simulated jitter, nor from the simulated source of
+Section~\ref{sec:sim_90b}, whose bits carry only the noise the model puts
+in.
 \end{description}
 
 \section{The pending campaign}

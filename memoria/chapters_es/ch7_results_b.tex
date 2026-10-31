@@ -31,6 +31,66 @@ ESP32 no puede aportar, devuelvan lo que devuelvan los estimadores, es la
 cota que la Sección~\ref{sec:opoint} deriva para el motor a partir de una
 medida física. Esa asimetría es la comparación.
 
+\section{La fuente simulada bajo la misma batería}
+\label{sec:sim_90b}
+
+Antes de la campaña, el lado del motor en O8 puede pasarse en simulación
+exactamente por la cadena que dio las cifras del ESP32: mismos binarios,
+opciones y longitud. Los bits salen del modelo estocástico del \ac{ERO}
+alimentado con el jitter del anillo del \ac{PDK} abierto
+(Sección~\ref{sec:ihp_ring}) en tres puntos ---tt a 27~$^\circ$C, ss a
+$-40~^\circ$C y 1,08~V, y el peor chip con desapareamiento en ese
+punto--- para divisores de $2^{14}$ a $2^{24}$, tres semillas cada uno,
+$10^6$ bits por secuencia \simu{}. Como referencia, se pasaron por la
+misma batería bits uniformes e independientes de la misma longitud. La
+Figura~\ref{fig:sim_90b} enfrenta la min-entropía exacta del modelo con la
+estimación no IID.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{fuente_simulada_90b.pdf}
+\caption{Min-entropía de la fuente simulada frente al divisor \simu{}: el
+modelo estocástico (líneas) y la estimación no IID de SP~800-90B sobre
+$10^6$ bits (marcadores, media y desviación típica de tres semillas). La
+banda gris es la estimación para bits uniformes e independientes de la
+misma longitud; la rayada abarca las treinta y seis capturas del ESP32 de
+las condiciones A--D \meas{}.}
+\label{fig:sim_90b}
+\end{figure}
+
+De ello se siguen cuatro lecturas. Primera, a $10^6$ bits la batería se
+satura: los bits uniformes puntúan $0{,}839 \pm 0{,}021$, y todo punto en
+que el modelo da $H_\infty \ge 0{,}97$ puntúa entre 0,82 y 0,87, siempre
+limitado por el estimador de compresión. Por encima de ese techo la
+batería no distingue nada, así que el ESP32, con 0,85, y el motor con el
+divisor recomendado de $2^{23}$, con 0,84 a 0,85 en los tres casos, son
+indistinguibles a esta longitud; las cifras no deben compararse como si
+fueran distintas. Segunda, con poca entropía la batería
+\emph{sobreestima}: con $2^{14}$ el modelo da $H_\infty \approx 0$ y la
+batería de 0,07 a 0,11, y hasta $2^{19}$ en el peor punto de 0,10 a 0,32
+frente a 0 a 0,25. La fuente es entonces casi determinista, con la fase
+avanzando un paso conocido y poco ruido, y los predictores genéricos no
+explotan del todo esa estructura; el modelo sí, porque concede al atacante
+la fase anterior. Un divisor demasiado pequeño no se habría detectado solo
+con la batería, que es el argumento de AIS~31 para exigir un modelo
+estocástico, aquí con los números del propio diseño. Tercera, la vía IID
+acepta datos que no son de entropía completa: con $2^{21}$ el peor chip
+($H_\infty = 0{,}79$) y el punto ss (0,85) pasan las tres pruebas IID en
+cinco secuencias de seis, y el crédito IID, la estimación del valor más
+común por bytes, sería de 0,86 a 0,90 bit por bit, por encima del modelo;
+con $2^{20}$ ($H_\infty \approx 0{,}5$) la prueba $\chi^2$ rechaza todas
+las secuencias. Esto respalda llevar la cifra no IID para el ESP32 y
+aplicar la misma regla al motor. Cuarta, entre esos regímenes, para
+$H_\infty$ de alrededor de 0,5 a 0,95, la estimación queda por debajo del
+modelo, como debe hacer un estimador conservador.
+
+Estos bits solo contienen jitter gaussiano blanco. El ruido de parpadeo,
+el acoplamiento entre anillos, una alimentación compartida y las derivas
+lentas no están, y son lo que la batería menos puede ver y lo que la
+campaña debe medir. Con tres semillas, las dispersiones son solo
+indicativas. La lectura completa, con las tablas en bytes y de la vía
+IID, está en \nolinkurl{docs/fuente_simulada_90b.md}.
+
 \section{Balance de incertidumbre}
 \label{sec:uncertainty}
 
@@ -92,7 +152,9 @@ estado interno del generador no está documentado.
 \item[Min-entropía del dispositivo construido.] Aún no acotada. El modelo,
 el estimador y los umbrales de corte están listos; el número requiere la
 campaña de la Sección~\ref{sec:protocol}. Aquí no se ofrece ningún valor,
-y no debe inferirse ninguno del jitter simulado.
+y no debe inferirse ninguno del jitter simulado, ni de la fuente simulada
+de la Sección~\ref{sec:sim_90b}, cuyos bits solo llevan el ruido que el
+modelo les pone.
 \end{description}
 
 \section{La campaña pendiente}

@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/ss40v108_peor_kd23_r1_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_peor_kd23_r1.bits 1",
+   "dateTimeStamp" : "20261031195156",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_peor_kd23_r1.bits",
+   "sha256" : "a0f2947645fc64d105ee3767510e88ea0d03b6503567a929b3790027373b2239",
+   "testCases" : [
+      {
+         "hOriginal" : 0.9947037476971452,
+         "mcvEstimateMode" : 500551.0,
+         "mcvEstimatePHat" : 0.50055099999999997,
+         "mcvEstimatePU" : 0.50183891451370721,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.92325034031284747,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.998692832823739,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.84707805785015367,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.92162256445118362,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.99238548208182487,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99533472987980631,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99909019874372718,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99880619397941894,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99697230185406271,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.84707805785015367,
+         "hOriginal" : 0.84707805785015367,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

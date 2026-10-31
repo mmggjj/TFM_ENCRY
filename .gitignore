@@ -47,3 +47,7 @@ results/esp32_reinicios/*/*/restart_*.bin
 firmware/*/build_*/
 # Logs serie de las tandas y capturas apartadas (un nivel mas hondo)
 results/esp32_campana_rng/*/*/serie_*.log
+# Secuencias simuladas de la fuente (se regeneran con analysis/fuente_simulada_90b.py)
+results/fuente_simulada_90b/secuencias/
+# Log por pasada: el mismo texto va integro en results/fuente_simulada_90b*.log
+results/fuente_simulada_90b/*.log
