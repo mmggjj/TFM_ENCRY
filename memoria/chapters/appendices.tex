@@ -1,11 +1,311 @@
+% Rutas y nombres en \texttt no se dividen: se deja holgura al espaciado.
+\sloppy
+
 \chapter{Register Map}
 \label{app:regs}
-% TODO from docs/mapa_registros.md
+
+This appendix is the interface contract between the engine and its host,
+version 0x03 of the \ac{RTL}. The same text, with the history of each
+rule, is kept in the repository as \nolinkurl{docs/mapa_registros.md}; the
+\ac{RTL} (\nolinkurl{rtl/top/motor_top.vhd}), the host model
+(\nolinkurl{firmware/host_check/motor_sim.c}) and the access layer of the
+firmware (\nolinkurl{firmware/componentes/motor_i2c}) follow it.
+
+The engine answers at 7-bit \ac{I2C} address 0x30. A write sets an 8-bit
+register pointer that auto-increments on every data byte, read or
+written. The slave never stretches the clock: long commands are launched
+by writing \texttt{CONTROL} and the host polls \texttt{STATUS} until
+\texttt{busy} clears. Undefined addresses read as 0x00 and writes to
+read-only addresses are ignored. Register, bit and command names are
+translated here; the repository uses the Spanish ones
+(\texttt{CLAVE}, \texttt{RETO}, \texttt{sembrar}, \ldots).
+
+\begin{table}[htbp]
+\centering\small
+\caption{Registers. R: read, W: write.}
+\label{tab:app_regs}
+\begin{tabular}{@{}llc>{\raggedright\arraybackslash}p{0.56\linewidth}@{}}
+\toprule
+Address & Name & Access & Content \\
+\midrule
+0x00 & ID & R & 0xA5 \\
+0x01 & VERSION & R & 0x03 \\
+0x02 & STATUS & R & Table~\ref{tab:app_status} \\
+0x03 & CONTROL & W & commands, Table~\ref{tab:app_control}; self-clearing \\
+0x04 & CFG\_KD & R/W & divider exponent, $K_D = 2^{\text{value}}$, effective
+  range 0--24 (larger values act as 24). Resets to 24. Written only while
+  the engine is idle; a write during a command is ignored \\
+0x05 & CFG\_PAG & R/W & page of the capture buffer, 0--3 \\
+0x06--0x07 & RCT\_MAX & R & longest run seen by the \ac{RCT}, low byte first \\
+0x08--0x09 & APT\_MAX & R & largest count seen by the \ac{APT}, low byte first \\
+0x0A--0x0D & REQUESTS & R & reseed counter of the \ac{DRBG}, 32 bits, low byte
+  first. Saturates at $2^{32}-1$ \\
+0x0E & DIAG & R & Table~\ref{tab:app_diag} \\
+0x10--0x1F & KEY & R & current key, 16 bytes. \textbf{Test mode only} \\
+0x20--0x2F & CHALLENGE & W & 16-byte nonce for challenge-response \\
+0x30--0x3F & TAG & R & $\mathrm{CMAC}_{\text{KEY}}(\text{CHALLENGE})$, 16 bytes;
+  reads as zeros while \texttt{tag\_ready} is 0 \\
+0x40--0x5F & RANDOM & R & 32 bytes from the last \texttt{random} command, a
+  \ac{DRBG} generation independent of the key \\
+0x80--0xFF & CAPTURE & R & 128 bytes of raw bits, page CFG\_PAG.
+  \textbf{Test mode only} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{STATUS (0x02).}
+\label{tab:app_status}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.6\linewidth}@{}}
+\toprule
+Bit & Name & Meaning \\
+\midrule
+0 & seeded & the \ac{DRBG} holds a valid state \\
+1 & busy & a command is running; do not send another \\
+2 & rct\_alarm & repetition count test fired (stuck source) \\
+3 & apt\_alarm & adaptive proportion test fired (biased source) \\
+4 & key\_valid & a key is loaded in the authenticator \\
+5 & capture\_full & the capture buffer holds a chunk \\
+6 & tag\_ready & TAG belongs to the current CHALLENGE \\
+7 & test\_mode & the test pin is active \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{DIAG (0x0E).}
+\label{tab:app_diag}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.6\linewidth}@{}}
+\toprule
+Bit & Name & Meaning \\
+\midrule
+0 & started & the start-up test has passed: one full \ac{APT} window (1024
+  samples) without alarm since reset or since the last
+  \texttt{clear\_alarms} \\
+1 & rejected & the last command written to CONTROL was ignored, or, for a
+  seeding, aborted. Cleared by the next accepted command \\
+2 & exhausted & the request counter is at $2^{32}-1$; \texttt{generate} and
+  \texttt{random} are refused until the engine is reseeded \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{CONTROL (0x03). One command per write.}
+\label{tab:app_control}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+Bit & Command & Action \\
+\midrule
+0 & seed & collect 384 raw bits (256 of entropy, 128 of nonce), wait until
+  the health tests have judged all of them, and instantiate the \ac{DRBG}
+  from scratch \\
+1 & generate & draw 256 bits; the first 128 become KEY and are loaded into
+  the authenticator, the rest are discarded. Nothing becomes readable \\
+2 & authenticate & TAG $\leftarrow \mathrm{CMAC}_{\text{KEY}}(\text{CHALLENGE})$ \\
+3 & clear\_alarms & clear the health alarms; restarts the start-up window \\
+4 & capture & fill the capture buffer with raw bits. Test mode only, engine
+  idle, no capture in progress \\
+5 & reseed & as \texttt{seed}, but on top of the current state; requires a
+  seeded \ac{DRBG} \\
+6 & random & draw 256 bits into RANDOM \\
+7 & clear\_all & zeroization: KEY, the whole \ac{DRBG} state and its
+  intermediates (including the \ac{AES} core), CHALLENGE, RANDOM, TAG and
+  the collected seed to zero, and the zero key loaded into the
+  authenticator. Accepted whenever the engine is idle, also with an
+  alarm \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Rules enforced by the hardware.} A refused command does not
+raise \texttt{busy} and sets \texttt{DIAG.rejected}.
+\begin{itemize}
+\item With a health alarm set, \texttt{seed}, \texttt{reseed},
+  \texttt{generate} and \texttt{random} are refused; \texttt{authenticate}
+  is still served, because it uses the key already generated and draws
+  no entropy.
+\item No seeding before the start-up test has passed
+  (SP~800-90B~\S4.3~\cite{turan_2018_sp80090b}). The seed enters the
+  \ac{DRBG} only after the \ac{APT} window that contains its last bit
+  closes without alarm; an alarm or a \texttt{clear\_alarms} during
+  collection aborts the seeding and leaves the previous state untouched.
+  A seeding takes at most $384 + 1024$ raw bits.
+\item \texttt{seed} and \texttt{reseed} are refused with
+  \texttt{CFG\_KD} below the minimum (generic \texttt{G\_KD\_MIN}, 6 by
+  default), below which the bit-level clock-domain crossing loses bits
+  silently and the health tests cannot tell.
+\item A capture and a seeding exclude each other, so the capture buffer
+  never holds bits of a seed.
+\item The request counter does not wrap: at $2^{32}-1$ the engine
+  refuses to generate until reseeded (\texttt{DIAG.exhausted}). The
+  reseeding policy below that ceiling is the host's.
+\end{itemize}
+
+\paragraph{Priority.} If several command bits arrive in one write, only
+the highest-priority one is served: \texttt{clear\_all}, then
+\texttt{seed}/\texttt{reseed} (\texttt{reseed} if both), \texttt{generate},
+\texttt{random}, \texttt{authenticate}, \texttt{capture}.
+\texttt{clear\_alarms} is served alongside any of them, but it must not
+share a write with a seeding: it restarts the start-up window, so the
+seeding is accepted and aborted on the next cycle.
+
+\paragraph{Typical host sequence.}
+\begin{enumerate}
+\item Read ID (0xA5) and VERSION (0x03).
+\item Write \texttt{CFG\_KD} with the divider of the characterization, or
+  leave the reset value.
+\item Poll DIAG until \texttt{started}; write \texttt{seed}; poll STATUS
+  until \texttt{busy} clears; check \texttt{DIAG.rejected} $= 0$,
+  \texttt{seeded} $= 1$ and no alarm.
+\item Write \texttt{generate}, poll, check \texttt{DIAG.rejected}. A key
+  now exists.
+\item Bench provisioning only, in test mode: read KEY.
+\item Challenge-response: write CHALLENGE, write \texttt{authenticate},
+  poll, read TAG and compare it with the \ac{CMAC} computed by the host.
+\item Random for the host: write \texttt{random}, poll, read RANDOM.
+\end{enumerate}
+
+\paragraph{Test mode.} The \texttt{test\_mode} pin, synchronized by two
+flip-flops, enables reading KEY and CAPTURE and the \texttt{capture}
+command. On the \ac{FPGA} it is a board switch; on an integrated circuit
+it would be a fuse blown at production.
 
 \chapter{Official Test Vectors Used}
 \label{app:vectors}
-% TODO
+
+Table~\ref{tab:app_vectors} lists where every reference value used by the
+benches comes from, and how each check closes. Official vectors are used
+where a standard publishes them. Where the hardware's input layout
+differs from any published case, the expected values come from a
+reference model in Python that is itself checked against the official
+vectors first, and written independently of the \ac{VHDL}.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Reference values and their origin. Counts are checks passed in
+the last run (\nolinkurl{results/tb_motor_top.log}, 175 in total, with
+11 of 11 \acs{PSL} assertions and 6 of 6 cover points).}
+\label{tab:app_vectors}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+\toprule
+Block & Source of the expected values & Where checked \\
+\midrule
+\ac{AES}-128 (both cores) & FIPS~197~\cite{nist_2023_fips197},
+  Appendix~B and Appendix~C.1; SP~800-38A, F.1.1 ECB-AES128, three
+  blocks; a thousand chained encryptions repeated; Appendix~C.1 again
+  after \texttt{clear} & \texttt{tb\_aes\_enc}, 18 checks, the two cores
+  with the same stimuli and required to agree \\
+\ac{AES}-\ac{CMAC} & RFC~4493~\cite{song_2006_rfc4493} (the examples of
+  SP~800-38B~\cite{nist_2016_sp80038b}): the four messages of 0, 16, 40
+  and 64 bytes under key \texttt{2b7e1516\ldots}, and the 16-byte case
+  repeated & \texttt{tb\_aes\_cmac}, 5 checks \\
+\ac{CTRDRBG}, reference model &
+  \ac{CAVP} \texttt{drbgtestvectors}~\cite{nist_cavp_drbg},
+  \texttt{CTR\_DRBG\_no\_reseed.rsp} and \texttt{CTR\_DRBG\_pr\_false.rsp},
+  AES-128 with and without derivation function: $4 \times 240 = 960$ cases &
+  \nolinkurl{analysis/ctr_drbg_ref.py}, 960 of 960 \\
+\ac{CTRDRBG}, \ac{RTL} & the reference model above, with the hardware's
+  input layout (256-bit entropy, 128-bit nonce, no personalization):
+  \nolinkurl{analysis/gen_drbg_vectores.py} writes
+  \texttt{drbg\_vectores\_pkg.vhd} & \texttt{tb\_ctr\_drbg}, 18 checks,
+  including zeroization and counter saturation \\
+Whole engine & the key comes from ring noise, so the bench dumps key,
+  challenge and tag, and the \ac{CMAC} is recomputed with the Python model
+  & \nolinkurl{analysis/verifica_top.py}, 5 of 5 \\
+Firmware against the engine model & \ac{CMAC} and ECDSA of the target's
+  mbedtls 3.6, compiled for the PC; signed readings checked with the
+  \texttt{cryptography} library & \texttt{run\_host.py}, 0 failures;
+  \texttt{verifica\_lecturas.py} \\
+Health-test cut-offs & SP~800-90B~\S4.4~\cite{turan_2018_sp80090b}
+  formulas for $H = 0.98$ and $\alpha = 2^{-20}$: \ac{RCT} $C = 22$, \ac{APT} $W = 1024$,
+  $C = 596$ & \nolinkurl{analysis/cortes_salud.py}; behaviour in
+  \texttt{tb\_health\_tests}, 15 checks \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The CAVP files are kept in the repository
+(\nolinkurl{tests/vectors/drbg/}), so the validation does not depend on the
+\ac{NIST} site staying as it is. The entropy estimates of
+Chapter~\ref{ch:ch7_results} are not test vectors: they come from the
+\ac{NIST} SP~800-90B tool~\cite{nist_ea_github}, run unchanged.
 
 \chapter{Reproduction Guide}
 \label{app:repro}
-% TODO
+
+Everything in this work that does not need the boards is rerun on every
+push by a continuous-integration workflow
+(\nolinkurl{.github/workflows/verifica.yml}) on a clean Ubuntu machine that
+is not the author's: seven jobs, no credentials. The repository is
+public: \url{https://github.com/mmggjj/TFM_ENCRY}. The commands below are
+the ones the workflow runs, so a green run reproduces them. Outputs are
+never filtered: the scripts print the full tool output and fail on any
+error.
+
+\begin{table}[htbp]
+\centering\small
+\caption{What the workflow reproduces.}
+\label{tab:app_ci}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.27\linewidth}@{}}
+\toprule
+Job & Command & Result \\
+\midrule
+Model and estimators & \texttt{python} \nolinkurl{analysis/ero_model.py},
+  \texttt{jitter\_estimator.py}, \texttt{ctr\_drbg\_ref.py},
+  \texttt{cortes\_salud.py}, \texttt{fuzz\_verifica\_lecturas.py},
+  \texttt{verifica\_lecturas.py} on the board log & self-checks, 960
+  \ac{CAVP} cases, board readings valid \\
+\ac{VHDL} benches & \texttt{python} \nolinkurl{rtl/run_tb.py}, then
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 7 benches, \acs{PSL}
+  report as artefact \\
+Synthesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} &
+  area per block in kGE (Chapter~\ref{ch:ch6_asic}) \\
+Firmware on the PC & \texttt{python} \nolinkurl{firmware/host_check/run_host.py}
+  \texttt{--mbedtls <dir>}, and again with \texttt{--sanear} & 0 failures, with
+  ASan and UBSan \\
+ESP-IDF build & \texttt{idf.py set-target}, \texttt{build}, \texttt{size},
+  and \texttt{idf.py -B build\_sim -DMOTOR\_SIMULADO=1 build}, for the
+  verifier (ESP32) and the meter (ESP32-C3) & 4 images \\
+Thesis & \texttt{tectonic tfm\_main.tex} and \texttt{tfm\_main\_es.tex} &
+  both PDFs as artefacts \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Tools.} Python~3.12 with \texttt{numpy}, \texttt{scipy} and
+\texttt{cryptography}; GHDL from the Ubuntu packages (5.0.1 with the mcode back-end on the
+author's machine) for the benches, which must be run with \acs{VHDL}-2008; Yosys through
+\texttt{yowasp-yosys}, or the OSS CAD Suite with the GHDL plug-in, and the
+IHP SG13G2 standard-cell library of the open
+\ac{PDK}~\cite{ihp_openpdk_repo}; mbedtls~3.6.2 from its release tarball
+(a git clone lacks the generated sources); ESP-IDF~5.3.5, the workflow
+using the \nolinkurl{espressif/idf:v5.3.5} container; tectonic~0.15. The
+GHDL~7.0 development build with the LLVM back-end crashes on the
+\acs{PSL} properties of \texttt{tb\_motor\_top} that use external names,
+and should not be used.
+
+\paragraph{Outside the workflow.} Three parts need software or hardware
+the workflow does not have:
+\begin{itemize}
+\item \emph{Transistor-level ring.} ngspice~47~\cite{ngspice_47} with
+  OpenVAF-Reloaded~\cite{openvaf_reloaded} to compile the PSP models of
+  the \ac{PDK}; \texttt{python} \nolinkurl{analysis/anillo_ihp_repeticiones.py},
+  with \texttt{--esquina}, \texttt{--temp}, \texttt{--vdd} and
+  \texttt{--mismatch} for corners, supply and mismatch. ngspice cannot
+  fix the noise realization, so every run is a new one and the
+  uncertainty comes from repeating. One 400~ns realization takes about
+  30 minutes.
+\item \emph{SP~800-90B estimates of the ESP32.} The \ac{NIST}
+  tool~\cite{nist_ea_github} built from source;
+  \texttt{python} \nolinkurl{analysis/entropia_90b.py}, then
+  \texttt{resumen\_90b.py}, on the captures kept in \nolinkurl{results/};
+  the restart test with \texttt{reinicios\_90b.py}. New captures need an
+  ESP32 and \nolinkurl{analysis/campana_rng.py}.
+\item \emph{\ac{FPGA}.} Vivado (free tier, Artix-7 included) and
+  \nolinkurl{synth/basys3/build.tcl}; installation and programming are
+  described in \nolinkurl{docs/instalacion_vivado_windows.md}.
+\end{itemize}

@@ -306,5 +306,5 @@ warning: TeX rerun seems needed, but stopping at 6 passes
 warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
 note: Running xdvipdfmx ...
 warning: Object @page.1 already defined.
-note: Writing `tfm_main.pdf` (556.09 KiB)
+note: Writing `tfm_main.pdf` (582.75 KiB)
 note: Skipped writing 6 intermediate files (use --keep-intermediates to keep them)

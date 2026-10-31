@@ -1,11 +1,318 @@
+% Rutas y nombres en \texttt no se dividen: se deja holgura al espaciado.
+\sloppy
+
 \chapter{Mapa de registros}
 \label{app:regs}
-% PENDIENTE a partir de docs/mapa_registros.md
+
+Este apéndice es el contrato de interfaz entre el motor y su maestro, en
+la versión 0x03 del \ac{RTL}. El mismo texto, con la historia de cada
+regla, está en el repositorio como \nolinkurl{docs/mapa_registros.md}; lo
+siguen el \ac{RTL} (\nolinkurl{rtl/top/motor_top.vhd}), el modelo del PC
+(\nolinkurl{firmware/host_check/motor_sim.c}) y la capa de acceso del
+firmware (\nolinkurl{firmware/componentes/motor_i2c}).
+
+El motor responde en la dirección \ac{I2C} de 7 bits 0x30. Una escritura
+fija un puntero de registro de 8 bits que avanza con cada byte de datos,
+leído o escrito. El esclavo nunca estira el reloj: las órdenes largas se
+lanzan escribiendo \texttt{CONTROL} y el maestro sondea \texttt{STATUS}
+hasta que baja \texttt{ocupado}. Las direcciones no definidas se leen como
+0x00 y las escrituras en registros de solo lectura se ignoran.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Registros. R: lectura, W: escritura.}
+\label{tab:app_regs}
+\begin{tabular}{@{}llc>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
+\toprule
+Dirección & Nombre & Acceso & Contenido \\
+\midrule
+0x00 & ID & R & 0xA5 \\
+0x01 & VERSION & R & 0x03 \\
+0x02 & STATUS & R & Tabla~\ref{tab:app_status} \\
+0x03 & CONTROL & W & órdenes, Tabla~\ref{tab:app_control}; se autolimpian \\
+0x04 & CFG\_KD & R/W & exponente del divisor, $K_D = 2^{\text{valor}}$, rango
+  efectivo 0--24 (los valores mayores equivalen a 24). Tras el reset vale
+  24. Solo con el motor libre: una escritura con una orden en curso se
+  ignora \\
+0x05 & CFG\_PAG & R/W & página del búfer de captura, 0--3 \\
+0x06--0x07 & RCT\_MAX & R & racha más larga vista por el \ac{RCT}, byte bajo
+  primero \\
+0x08--0x09 & APT\_MAX & R & cuenta más alta vista por el \ac{APT}, byte bajo
+  primero \\
+0x0A--0x0D & PETICIONES & R & contador de resembrado del \ac{DRBG}, 32 bits,
+  byte bajo primero. Se satura en $2^{32}-1$ \\
+0x0E & DIAG & R & Tabla~\ref{tab:app_diag} \\
+0x10--0x1F & CLAVE & R & clave actual, 16 bytes. \textbf{Solo en modo test} \\
+0x20--0x2F & RETO & W & nonce de 16 bytes para el reto-respuesta \\
+0x30--0x3F & ETIQUETA & R & $\mathrm{CMAC}_{\text{CLAVE}}(\text{RETO})$, 16
+  bytes; se lee como ceros mientras \texttt{etiqueta\_lista} vale 0 \\
+0x40--0x5F & ALEATORIO & R & 32 bytes de la última orden \texttt{aleatorio},
+  una generación del \ac{DRBG} independiente de la clave \\
+0x80--0xFF & CAPTURA & R & 128 bytes de bits crudos, página CFG\_PAG.
+  \textbf{Solo en modo test} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{STATUS (0x02).}
+\label{tab:app_status}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.6\linewidth}@{}}
+\toprule
+Bit & Nombre & Significado \\
+\midrule
+0 & sembrado & el \ac{DRBG} tiene estado válido \\
+1 & ocupado & hay una orden en curso; no mandar otra \\
+2 & alarma\_rct & test de repetición disparado (fuente pegada) \\
+3 & alarma\_apt & test de proporción disparado (fuente sesgada) \\
+4 & clave\_valida & hay clave cargada en el autenticador \\
+5 & captura\_llena & el búfer de captura tiene un trozo listo \\
+6 & etiqueta\_lista & ETIQUETA corresponde al RETO actual \\
+7 & modo\_test & el pin de test está activo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{DIAG (0x0E).}
+\label{tab:app_diag}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.6\linewidth}@{}}
+\toprule
+Bit & Nombre & Significado \\
+\midrule
+0 & arrancado & el test de arranque ha pasado: una ventana completa del
+  \ac{APT} (1024 muestras) sin alarma desde el reset o desde el último
+  \texttt{borrar\_alarmas} \\
+1 & rechazada & la última orden escrita en CONTROL se ignoró o, si era una
+  siembra, se abortó. Se baja con la siguiente orden aceptada \\
+2 & agotado & el contador de peticiones está en $2^{32}-1$;
+  \texttt{generar} y \texttt{aleatorio} se rechazan hasta resembrar \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{CONTROL (0x03). Una orden por escritura.}
+\label{tab:app_control}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.64\linewidth}@{}}
+\toprule
+Bit & Orden & Qué hace \\
+\midrule
+0 & sembrar & recoge 384 bits crudos (256 de entropía y 128 de nonce),
+  espera a que los tests de salud los hayan evaluado enteros e instancia el
+  \ac{DRBG} desde cero \\
+1 & generar & pide 256 bits; los 128 primeros pasan a ser la CLAVE y se
+  cargan en el autenticador, el resto se descarta. No deja nada legible \\
+2 & autenticar & ETIQUETA $\leftarrow \mathrm{CMAC}_{\text{CLAVE}}(\text{RETO})$ \\
+3 & borrar\_alarmas & baja las alarmas de salud; reinicia la ventana de
+  arranque \\
+4 & capturar & llena el búfer de captura con bits crudos. Solo en modo test,
+  con el motor libre y sin otra captura en marcha \\
+5 & resembrar & como \texttt{sembrar}, pero sobre el estado actual; exige un
+  \ac{DRBG} sembrado \\
+6 & aleatorio & pide 256 bits y los deja en ALEATORIO \\
+7 & borrar\_todo & zeroización: CLAVE, todo el estado del \ac{DRBG} y sus
+  intermedios (también el núcleo \ac{AES}), RETO, ALEATORIO, ETIQUETA y la
+  semilla recogida a cero, y la clave nula cargada en el autenticador. Se
+  atiende siempre que el motor esté libre, también con alarma \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reglas que impone el hardware.} Una orden rechazada no llega a
+subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
+\begin{itemize}
+\item Con una alarma de salud levantada se rechazan \texttt{sembrar},
+  \texttt{resembrar}, \texttt{generar} y \texttt{aleatorio};
+  \texttt{autenticar} se sigue atendiendo, porque usa la clave ya generada
+  y no consume entropía.
+\item No se siembra antes de pasar el test de arranque
+  (SP~800-90B~\S4.3~\cite{turan_2018_sp80090b}). La semilla solo entra en
+  el \ac{DRBG} cuando se cierra sin alarma la ventana del \ac{APT} que
+  contiene su último bit; una alarma o un \texttt{borrar\_alarmas} durante
+  la recogida aborta la siembra y deja el estado anterior intacto. Una
+  siembra tarda como mucho $384 + 1024$ bits crudos.
+\item \texttt{sembrar} y \texttt{resembrar} se rechazan con
+  \texttt{CFG\_KD} por debajo del mínimo (genérico \texttt{G\_KD\_MIN}, 6
+  por defecto), por debajo del cual el cruce de dominio de reloj del bit
+  pierde bits en silencio sin que los tests de salud puedan notarlo.
+\item Una captura y una siembra se excluyen, así que el búfer de captura
+  nunca contiene bits de una semilla.
+\item El contador de peticiones no da la vuelta: en $2^{32}-1$ el motor se
+  niega a generar hasta resembrar (\texttt{DIAG.agotado}). La política de
+  resembrado por debajo de ese tope es del maestro.
+\end{itemize}
+
+\paragraph{Prioridad.} Si llegan varios bits de orden en una misma
+escritura, solo se atiende el de mayor prioridad: \texttt{borrar\_todo},
+después \texttt{sembrar}/\texttt{resembrar} (\texttt{resembrar} si van los
+dos), \texttt{generar}, \texttt{aleatorio}, \texttt{autenticar},
+\texttt{capturar}. \texttt{borrar\_alarmas} se atiende junto con
+cualquiera de ellas, pero no debe compartir escritura con una siembra:
+reinicia la ventana de arranque, así que la siembra se acepta y se aborta
+en el ciclo siguiente.
+
+\paragraph{Secuencia típica del maestro.}
+\begin{enumerate}
+\item Leer ID (0xA5) y VERSION (0x03).
+\item Escribir \texttt{CFG\_KD} con el divisor de la caracterización, o
+  dejar el valor de reset.
+\item Sondear DIAG hasta \texttt{arrancado}; escribir \texttt{sembrar};
+  sondear STATUS hasta que baje \texttt{ocupado}; comprobar
+  \texttt{DIAG.rechazada} $= 0$, \texttt{sembrado} $= 1$ y sin alarmas.
+\item Escribir \texttt{generar}, sondear, comprobar \texttt{DIAG.rechazada}.
+  Ya hay clave.
+\item Solo para provisionar en banco, en modo test: leer CLAVE.
+\item Reto-respuesta: escribir RETO, escribir \texttt{autenticar}, sondear,
+  leer ETIQUETA y compararla con el \ac{CMAC} que calcula el maestro.
+\item Aleatorio para el maestro: escribir \texttt{aleatorio}, sondear, leer
+  ALEATORIO.
+\end{enumerate}
+
+\paragraph{Modo test.} El pin \texttt{modo\_test}, sincronizado con dos
+biestables, habilita la lectura de CLAVE y CAPTURA y la orden
+\texttt{capturar}. En la \ac{FPGA} es un interruptor de la placa; en un
+circuito integrado sería un fusible que se quema en producción.
 
 \chapter{Vectores de prueba oficiales utilizados}
 \label{app:vectors}
-% PENDIENTE
 
-\chapter{Gu\'ia de reproducci\'on}
+La Tabla~\ref{tab:app_vectors} recoge de dónde sale cada valor de
+referencia que usan los bancos y cómo se cierra cada comprobación. Se usan
+vectores oficiales siempre que una norma los publica. Donde la
+disposición de entrada del hardware no coincide con ningún caso publicado,
+los valores esperados salen de un modelo de referencia en Python que se
+contrasta antes con los vectores oficiales y que está escrito de forma
+independiente del \ac{VHDL}.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Valores de referencia y su origen. Las cuentas son las
+comprobaciones superadas en la última ejecución
+(\nolinkurl{results/tb_motor_top.log}, 175 en total, con 11 de 11
+aserciones \acs{PSL} y 6 de 6 coberturas).}
+\label{tab:app_vectors}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+\toprule
+Bloque & Origen de los valores esperados & Dónde se comprueba \\
+\midrule
+\ac{AES}-128 (los dos núcleos) & FIPS~197~\cite{nist_2023_fips197},
+  apéndices~B y C.1; SP~800-38A, F.1.1 ECB-AES128, tres bloques; mil
+  cifrados encadenados repetidos; de nuevo el apéndice~C.1 tras
+  \texttt{borrar} & \texttt{tb\_aes\_enc}, 18 comprobaciones, los dos
+  núcleos con los mismos estímulos y obligados a coincidir \\
+\ac{AES}-\ac{CMAC} & RFC~4493~\cite{song_2006_rfc4493} (los ejemplos de
+  SP~800-38B~\cite{nist_2016_sp80038b}): los cuatro mensajes de 0, 16, 40
+  y 64 bytes con la clave \texttt{2b7e1516\ldots}, y el de 16 bytes
+  repetido & \texttt{tb\_aes\_cmac}, 5 comprobaciones \\
+\ac{CTRDRBG}, modelo de referencia &
+  \texttt{drbgtestvectors} del \ac{CAVP}~\cite{nist_cavp_drbg},
+  \texttt{CTR\_DRBG\_no\_reseed.rsp} y \texttt{CTR\_DRBG\_pr\_false.rsp},
+  AES-128 con y sin función de derivación: $4 \times 240 = 960$ casos &
+  \nolinkurl{analysis/ctr_drbg_ref.py}, 960 de 960 \\
+\ac{CTRDRBG}, \ac{RTL} & el modelo de referencia anterior, con la
+  disposición de entrada del hardware (entropía de 256 bits, nonce de 128,
+  sin personalización): \nolinkurl{analysis/gen_drbg_vectores.py} escribe
+  \texttt{drbg\_vectores\_pkg.vhd} & \texttt{tb\_ctr\_drbg}, 18
+  comprobaciones, incluidas la zeroización y la saturación del contador \\
+Motor completo & la clave sale del ruido del anillo, así que el banco
+  vuelca clave, reto y etiqueta y el \ac{CMAC} se recalcula con el modelo en
+  Python & \nolinkurl{analysis/verifica_top.py}, 5 de 5 \\
+Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
+  del objetivo, compilado para el PC; las lecturas firmadas se verifican
+  con la biblioteca \texttt{cryptography} & \texttt{run\_host.py}, 0 fallos;
+  \texttt{verifica\_lecturas.py} \\
+Cortes de los tests de salud & fórmulas de
+  SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}98$ y
+  $\alpha = 2^{-20}$: \ac{RCT} $C = 22$, \ac{APT} $W = 1024$, $C = 596$ &
+  \nolinkurl{analysis/cortes_salud.py}; comportamiento en
+  \texttt{tb\_health\_tests}, 15 comprobaciones \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Los ficheros del \ac{CAVP} se guardan en el repositorio
+(\nolinkurl{tests/vectors/drbg/}), así que la validación no depende de que la
+web del \ac{NIST} siga igual. Las estimaciones de entropía del
+Capítulo~\ref{ch:ch7_results} no son vectores de prueba: salen de la
+herramienta SP~800-90B del \ac{NIST}~\cite{nist_ea_github}, ejecutada sin
+cambios.
+
+\chapter{Guía de reproducción}
 \label{app:repro}
-% PENDIENTE
+
+Todo lo que en este trabajo no necesita las placas se vuelve a ejecutar en
+cada push mediante un flujo de integración continua
+(\nolinkurl{.github/workflows/verifica.yml}) en una máquina Ubuntu limpia que
+no es la del autor: siete trabajos, sin credenciales. El repositorio es
+público: \url{https://github.com/mmggjj/TFM_ENCRY}. Las órdenes de abajo
+son las que ejecuta el flujo, así que una ejecución en verde las
+reproduce. Las salidas nunca se filtran: los scripts imprimen la salida
+completa de cada herramienta y fallan ante cualquier error.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Lo que reproduce el flujo de integración continua.}
+\label{tab:app_ci}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.27\linewidth}@{}}
+\toprule
+Trabajo & Orden & Resultado \\
+\midrule
+Modelo y estimadores & \texttt{python} \nolinkurl{analysis/ero_model.py},
+  \texttt{jitter\_estimator.py}, \texttt{ctr\_drbg\_ref.py},
+  \texttt{cortes\_salud.py}, \texttt{fuzz\_verifica\_lecturas.py},
+  \texttt{verifica\_lecturas.py} sobre el log de la placa & autopruebas, 960
+  casos del \ac{CAVP}, lecturas de la placa válidas \\
+Bancos \ac{VHDL} & \texttt{python} \nolinkurl{rtl/run_tb.py} y después
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 7 bancos, informe \acs{PSL}
+  como artefacto \\
+Síntesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} & área por bloque en
+  kGE (Capítulo~\ref{ch:ch6_asic}) \\
+Firmware en el PC & \texttt{python} \nolinkurl{firmware/host_check/run_host.py}
+  \texttt{--mbedtls <dir>}, y otra vez con \texttt{--sanear} & 0 fallos, también con
+  ASan y UBSan \\
+Compilación con ESP-IDF & \texttt{idf.py set-target}, \texttt{build},
+  \texttt{size}, e \texttt{idf.py -B build\_sim -DMOTOR\_SIMULADO=1 build},
+  para el verificador (ESP32) y el medidor (ESP32-C3) & 4 imágenes \\
+Memoria & \texttt{tectonic tfm\_main.tex} y \texttt{tfm\_main\_es.tex} &
+  los dos PDF como artefactos \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Herramientas.} Python~3.12 con \texttt{numpy}, \texttt{scipy} y
+\texttt{cryptography}; GHDL de los paquetes de Ubuntu (5.0.1 con el motor
+mcode en la máquina del autor) para los bancos, que se ejecutan en
+\acs{VHDL}-2008; Yosys mediante \texttt{yowasp-yosys}, o la OSS CAD Suite
+con el plugin de GHDL, y la biblioteca de celdas estándar IHP SG13G2 del
+\ac{PDK} abierto~\cite{ihp_openpdk_repo}; mbedtls~3.6.2 del tarball de
+publicación (un clon de git no trae los fuentes generados); ESP-IDF~5.3.5,
+en la integración continua con el contenedor \nolinkurl{espressif/idf:v5.3.5};
+tectonic~0.15. La versión de desarrollo GHDL~7.0 con el motor LLVM se cae
+con las propiedades \acs{PSL} de \texttt{tb\_motor\_top} que usan nombres
+externos, y no debe usarse.
+
+\paragraph{Fuera del flujo.} Tres partes necesitan software o hardware que
+el flujo no tiene:
+\begin{itemize}
+\item \emph{Anillo a nivel de transistor.} ngspice~47~\cite{ngspice_47} con
+  OpenVAF-Reloaded~\cite{openvaf_reloaded} para compilar los modelos PSP
+  del \ac{PDK}; \texttt{python} \nolinkurl{analysis/anillo_ihp_repeticiones.py}, con
+  \texttt{--esquina}, \texttt{--temp}, \texttt{--vdd} y \texttt{--mismatch}
+  para esquinas, alimentación y desapareamiento. ngspice no deja fijar la
+  realización del ruido, así que cada ejecución es una nueva y la
+  incertidumbre sale de repetir. Una realización de 400~ns tarda unos 30
+  minutos.
+\item \emph{Estimaciones SP~800-90B del ESP32.} La herramienta del
+  \ac{NIST}~\cite{nist_ea_github} compilada desde el fuente;
+  \texttt{python} \nolinkurl{analysis/entropia_90b.py} y después
+  \texttt{resumen\_90b.py}, sobre las capturas guardadas en
+  \nolinkurl{results/}; la prueba de reinicios con \texttt{reinicios\_90b.py}.
+  Las capturas nuevas necesitan un ESP32 y \nolinkurl{analysis/campana_rng.py}.
+\item \emph{\ac{FPGA}.} Vivado (nivel gratuito, con el Artix-7 incluido) y
+  \nolinkurl{synth/basys3/build.tcl}; la instalación y la grabación se
+  describen en \nolinkurl{docs/instalacion_vivado_windows.md}.
+\end{itemize}

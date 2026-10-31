@@ -105,7 +105,7 @@ como trabajan los elementos seguros comerciales.
 
 ## Secuencia típica del ESP32
 
-1. Leer ID, comprobar 0xA5. Leer VERSION, comprobar 0x02.
+1. Leer ID, comprobar 0xA5. Leer VERSION, comprobar 0x03.
 2. Escribir CFG_KD con el divisor decidido en la caracterización.
 3. Sondear DIAG hasta `arrancado = 1`. CONTROL ← sembrar. Sondear STATUS
    hasta `ocupado = 0`. Comprobar `DIAG.rechazada = 0`, `sembrado = 1` y
