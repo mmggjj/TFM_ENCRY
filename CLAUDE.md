@@ -45,7 +45,8 @@ todo. Léelo entero antes de tocar nada.
   en las propiedades PSL sobre nombres externos (gdb: `c_agotado`; quitada
   esa, `c_captura`); los otros seis bancos pasan con él. `run_tb.py` admite
   GHDL LLVM/GCC (elabora a ejecutable) por si se arregla. Comprobado en
-  Linux con el motor 0x03: 7 bancos (175 [ok], PSL 11/11 y 6/6 coberturas,
+  Linux con el motor 0x03: 7 bancos (175 [ok]; 177 desde el 31-10, con
+  K1/K2 de RFC 4493 comparadas en `tb_aes_cmac`, PSL 11/11 y 6/6 coberturas,
   volcado idéntico al de la rama), `verifica_top` 5/5, `ea_iid` corre, y la
   densidad de ruido del inversor IHP idéntica bit a bit a la de Windows.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las

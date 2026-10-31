@@ -23,7 +23,7 @@ rtl/tb/tb_ring_osc.vhd:128:7:@60552056024fs:(report note): tb_ring_osc: 0 fallos
 simulation stopped @60552056024fs
 
 --- tb_i2c_slave ---
-../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
 rtl/tb/tb_i2c_slave.vhd:280:5:@2us:(report note): 1) Direccionamiento
 rtl/tb/tb_i2c_slave.vhd:134:9:@23us:(report note):   [ok ] reconoce su propia direccion en escritura
 rtl/tb/tb_i2c_slave.vhd:285:5:@23us:(report note): 2) Escritura de varios bytes con autoincremento
@@ -127,16 +127,17 @@ rtl/tb/tb_aes_enc.vhd:122:9:@1286265ns:(report note):   [ok ] Apendice C.1 otra 
 rtl/tb/tb_aes_enc.vhd:254:7:@1286265ns:(report note): tb_aes_enc: 0 fallos
 
 --- tb_aes_cmac ---
-rtl/tb/tb_aes_cmac.vhd:121:5:@55ns:(report note): 1) Carga de clave y subclaves
-rtl/tb/tb_aes_cmac.vhd:125:5:@205ns:(report note):   subclaves calculadas
-rtl/tb/tb_aes_cmac.vhd:127:5:@205ns:(report note): 2) Vectores de RFC 4493
-rtl/tb/tb_aes_cmac.vhd:107:9:@365ns:(report note):   [ok ] Mlen = 0 -> bb1d6929e95937287fa37d129b756746
-rtl/tb/tb_aes_cmac.vhd:107:9:@525ns:(report note):   [ok ] Mlen = 16 -> 070a16b46b4d4144f79bdd9dd04a287c
-rtl/tb/tb_aes_cmac.vhd:107:9:@965ns:(report note):   [ok ] Mlen = 40 -> dfa66747de9ae63030ca32611497c827
-rtl/tb/tb_aes_cmac.vhd:107:9:@1545ns:(report note):   [ok ] Mlen = 64 -> 51f0bebf7e3b9d92fc49741779363cfe
-rtl/tb/tb_aes_cmac.vhd:158:5:@1545ns:(report note): 3) Repeticion: el mismo mensaje debe dar la misma etiqueta
-rtl/tb/tb_aes_cmac.vhd:107:9:@1705ns:(report note):   [ok ] Mlen = 16 repetido -> 070a16b46b4d4144f79bdd9dd04a287c
-rtl/tb/tb_aes_cmac.vhd:165:7:@1705ns:(report note): tb_aes_cmac: 0 fallos
+rtl/tb/tb_aes_cmac.vhd:136:5:@55ns:(report note): 1) Carga de clave y subclaves
+rtl/tb/tb_aes_cmac.vhd:85:9:@205ns:(report note):   [ok ] K1 = fbeed618357133667c85e08f7236a8de
+rtl/tb/tb_aes_cmac.vhd:85:9:@205ns:(report note):   [ok ] K2 = f7ddac306ae266ccf90bc11ee46d513b
+rtl/tb/tb_aes_cmac.vhd:144:5:@205ns:(report note): 2) Vectores de RFC 4493
+rtl/tb/tb_aes_cmac.vhd:122:9:@365ns:(report note):   [ok ] Mlen = 0 -> bb1d6929e95937287fa37d129b756746
+rtl/tb/tb_aes_cmac.vhd:122:9:@525ns:(report note):   [ok ] Mlen = 16 -> 070a16b46b4d4144f79bdd9dd04a287c
+rtl/tb/tb_aes_cmac.vhd:122:9:@965ns:(report note):   [ok ] Mlen = 40 -> dfa66747de9ae63030ca32611497c827
+rtl/tb/tb_aes_cmac.vhd:122:9:@1545ns:(report note):   [ok ] Mlen = 64 -> 51f0bebf7e3b9d92fc49741779363cfe
+rtl/tb/tb_aes_cmac.vhd:175:5:@1545ns:(report note): 3) Repeticion: el mismo mensaje debe dar la misma etiqueta
+rtl/tb/tb_aes_cmac.vhd:122:9:@1705ns:(report note):   [ok ] Mlen = 16 repetido -> 070a16b46b4d4144f79bdd9dd04a287c
+rtl/tb/tb_aes_cmac.vhd:182:7:@1705ns:(report note): tb_aes_cmac: 0 fallos
 
 --- tb_ctr_drbg ---
 rtl/tb/tb_ctr_drbg.vhd:109:5:@55ns:(report note): 1) Instanciar con entropia y nonce
@@ -191,8 +192,8 @@ rtl/tb/tb_health_tests.vhd:76:9:@565036ns:(report note):   [ok ] tras borrar, la
 rtl/tb/tb_health_tests.vhd:218:7:@565036ns:(report note): tb_health_tests: 0 fallos
 
 --- tb_motor_top ---
-../../src/ieee2008/numeric_std-body.vhdl:1793:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
-../../src/ieee2008/numeric_std-body.vhdl:3053:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
 rtl/tb/tb_motor_top.vhd:315:5:@2200ns:(report note): 1) Identificacion
 rtl/tb/tb_motor_top.vhd:153:9:@43200ns:(report note):   [ok ] ID = 0xA5
 rtl/tb/tb_motor_top.vhd:153:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
@@ -277,4 +278,3 @@ simulation stopped @16218700ns
 
 === resumen ===
 todos los bancos pasan
-rc=0

@@ -75,6 +75,21 @@ begin
   principal : process
     variable fallos : natural := 0;
 
+    alias k1 is << signal .tb_aes_cmac.dut.k1 : std_logic_vector(127 downto 0) >>;
+    alias k2 is << signal .tb_aes_cmac.dut.k2 : std_logic_vector(127 downto 0) >>;
+
+    procedure comprobar_sub(nombre : in string;
+                            obtenido, esperado : in std_logic_vector(127 downto 0)) is
+    begin
+      if obtenido = esperado then
+        report "  [ok ] " & nombre & " = " & hex(obtenido);
+      else
+        report "  [FALLO] " & nombre & ": obtenido " & hex(obtenido) &
+               ", esperado " & hex(esperado) severity error;
+        fallos := fallos + 1;
+      end if;
+    end procedure;
+
     procedure pulso(signal s : out std_logic) is
     begin
       s <= '1';
@@ -122,7 +137,9 @@ begin
     clave <= C_K;
     pulso(carga_clave);
     wait until rising_edge(clk) and clave_lista = '1';
-    report "  subclaves calculadas";
+    -- RFC 4493, 4: subclaves de la clave de ejemplo
+    comprobar_sub("K1", k1, x"fbeed618357133667c85e08f7236a8de");
+    comprobar_sub("K2", k2, x"f7ddac306ae266ccf90bc11ee46d513b");
 
     report "2) Vectores de RFC 4493";
 
