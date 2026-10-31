@@ -187,7 +187,7 @@ vectors first, and written independently of the \ac{VHDL}.
 \begin{table}[htbp]
 \centering\small
 \caption{Reference values and their origin. Counts are checks passed in
-the last run (\nolinkurl{results/tb_motor_top.log}, 175 in total, with
+the last run (\nolinkurl{results/tb_motor_top.log}, 177 in total, with
 11 of 11 \acs{PSL} assertions and 6 of 6 cover points).}
 \label{tab:app_vectors}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
@@ -202,7 +202,7 @@ Block & Source of the expected values & Where checked \\
 \ac{AES}-\ac{CMAC} & RFC~4493~\cite{song_2006_rfc4493} (the examples of
   SP~800-38B~\cite{nist_2016_sp80038b}): the four messages of 0, 16, 40
   and 64 bytes under key \texttt{2b7e1516\ldots}, and the 16-byte case
-  repeated & \texttt{tb\_aes\_cmac}, 5 checks \\
+  repeated; the subkeys $K_1$ and $K_2$ of the same example & \texttt{tb\_aes\_cmac}, 7 checks \\
 \ac{CTRDRBG}, reference model &
   \ac{CAVP} \texttt{drbgtestvectors}~\cite{nist_cavp_drbg},
   \texttt{CTR\_DRBG\_no\_reseed.rsp} and \texttt{CTR\_DRBG\_pr\_false.rsp},
@@ -309,3 +309,50 @@ the workflow does not have:
   \nolinkurl{synth/basys3/build.tcl}; installation and programming are
   described in \nolinkurl{docs/instalacion_vivado_windows.md}.
 \end{itemize}
+
+\paragraph{First ESP32 campaign.} The analysis of the first campaign
+(Sections~\ref{sec:esp32_sp80022} to~\ref{sec:esp32_harvester}) reruns
+without the board from the files kept in
+\nolinkurl{results/esp32_rng_agosto}, with \texttt{numpy}, \texttt{scipy},
+\texttt{matplotlib} and \texttt{cryptography}:
+\begin{itemize}
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/nist_sp800_22.py} runs
+  the self-test of the SP~800-22 battery (operating-system data, zeros,
+  alternating pattern).
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/harvester_from_sources.py}
+  writes the 1000 seeds of the off-line validation to
+  \texttt{seeds\_rep1.bin}, from \texttt{puf\_boot1.bin} and
+  \texttt{condD\_rep1.bin}.
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/run_campaign.py} runs
+  \texttt{nist\_analysis.py}, \texttt{entropy\_analysis.py},
+  \texttt{temperature\_correlation.py}, \texttt{harvester\_validation.py}
+  and the off-line mode of \texttt{mqtt\_tls\_demo.py}. Each writes its CSV
+  and figures into the data directory, and \texttt{run\_campaign.py} copies
+  the figures into \nolinkurl{memoria/figures} under their own names; the
+  thesis uses only \texttt{nist\_heatmap.pdf}, as
+  \texttt{esp32\_nist\_heatmap.pdf}. The four scripts also run one by one,
+  with \texttt{-d <data directory>} and \texttt{--figdir <directory>}.
+  Rerun on 2026-10-31 on a copy of the data, they reproduce the CSV files
+  kept, value for value.
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/make_result_tables.py}
+  writes the result tables as \LaTeX{} into \texttt{tablas\_generadas.tex},
+  and \texttt{python} \nolinkurl{analysis/esp32_rng/figuras_memoria.py}
+  draws Figures~\ref{fig:esp32_metrics}, \ref{fig:esp32_temp}
+  and~\ref{fig:esp32_harvester} into \nolinkurl{memoria/figures}.
+\end{itemize}
+A new capture needs an ESP32 with \nolinkurl{firmware/esp32_rng} built and
+flashed (\texttt{idf.py set-target esp32}, \texttt{build},
+\texttt{-p <port> flash}; ESP-IDF~5.3, console at 115\,200~baud). Then
+\texttt{python} \nolinkurl{analysis/esp32_rng/capture_rng.py}
+\texttt{--port <port>} \texttt{--reps <n>} resets the board through RTS
+and collects $n$ valid sequences per condition, with the SRAM patterns
+(\texttt{puf\_boot<k>.bin}), the seeds and \texttt{capture\_log.csv}; by
+default it writes into \nolinkurl{results/esp32_rng_agosto}, so
+\texttt{-o <directory>} keeps new data apart. A reset through RTS keeps
+the SRAM powered and does not give a new power-up pattern: for the clean
+series, unplug the board, plug it in again and run
+\texttt{python} \nolinkurl{analysis/esp32_rng/capture_puf.py}
+\texttt{--port <port>} once per power-up, which adds one
+\texttt{puf\_pc<N>.bin}. The later campaigns use the same firmware with
+\nolinkurl{analysis/campana_rng.py}, which keeps the whole serial stream
+and numbers the repetitions from \texttt{--primera-rep}.

@@ -115,6 +115,110 @@ Sección~\ref{sec:esp32_harvester}. El firmware está en
 \path{firmware/esp32_rng}, y las herramientas, en \path{analysis/esp32_rng}
 y \path{analysis/campana_rng.py}.
 
+% firmware/esp32_rng/sdkconfig.defaults (240 MHz, FREERTOS_HZ 1000);
+% main.c (tarea de campaña en el núcleo 1, prioridad 5; 64 B por línea;
+% trozos de 4 KiB; pausa de 100 ms; 2 s entre ciclos); rng_sampler.c (tarea
+% del ADC en el núcleo 0, prioridad 3); esp-idf-v5.3.2/components/esp_wifi/
+% Kconfig (tarea del Wi-Fi en el núcleo 0 por defecto)
+El firmware hace funcionar la CPU a 240~MHz, para que las tasas de la
+Sección~\ref{sec:esp32_shannon} se refieran a un reloj fijo, con el tick
+de FreeRTOS a 1~kHz. Tras la copia de la SRAM, \texttt{app\_main} imprime
+la dirección MAC y la versión de ESP-IDF y arranca una única tarea de
+campaña fijada al núcleo~1. La tarea del ADC de las condiciones A y C
+funciona en el núcleo~0, con menor prioridad, junto a la tarea del
+controlador de Wi-Fi, que ESP-IDF coloca en el núcleo~0 por defecto
+(Figura~\ref{fig:esp32_tasks}). La tarea de campaña ejecuta las cuatro
+condiciones, imprime 100 semillas del recolector y, tras 2~s, empieza el
+ciclo siguiente, indefinidamente. Todo artefacto sale del dispositivo
+como una trama entre una línea \texttt{BEGIN} y una \texttt{END}
+---\texttt{PUF} para el patrón de SRAM, \texttt{RNG} para una secuencia,
+\texttt{SEEDS} para las semillas y \texttt{CYCLE} alrededor de un ciclo
+entero---, con sus metadatos como pares clave--valor en la cabecera, una
+carga útil de 64 bytes por línea hexadecimal y el CRC-32 de los bytes en
+bruto, de \texttt{esp\_rom\_crc32\_le}, en la línea de cierre. Una
+secuencia se transmite en trozos de 4~KiB, cediendo un tick del
+planificador entre trozos al perro guardián y al controlador de la UART,
+tras una pausa de 100~ms una vez detenida la tarea del ADC.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Latex,
+  box/.style={draw, rounded corners=1pt, align=center, minimum height=8mm,
+              inner sep=3pt, fill=gray!8},
+  hw/.style={draw, align=center, minimum height=8mm, inner sep=3pt}]
+\node[box] (camp) at (0,0) {tarea de campaña\\núcleo 1, prioridad 5};
+\node[hw] (rng) at (3.6,0) {\texttt{RNG\_DATA\_REG}\\\texttt{esp\_fill\_random}};
+\node[box] (buf) at (7.0,0) {búfer de\\125\,000~B en RAM};
+\node[hw] (uart) at (10.0,0) {UART0\\115\,200~baudios};
+\node[box] (adc) at (0,-1.7) {tarea del ADC\\núcleo 0, prioridad 3};
+\node[hw] (sar) at (3.2,-1.7) {SAR ADC1, canal~0\\GPIO36 flotante};
+\node[box] (wifi) at (0,-3.1) {tarea del Wi-Fi\\núcleo 0};
+\node[hw] (radio) at (6.2,-3.1) {radio\\arrancada, sin asociar};
+\draw[->] (camp) -- (rng);
+\draw[->] (rng) -- (buf);
+\draw[->] (buf) -- (uart);
+\draw[->] (adc) -- (sar);
+\draw[->] (wifi) -- (radio);
+\draw[->, dashed] (sar.north) -- (sar.north |- rng.south);
+\draw[->, dashed] (radio.north) |- (4.8,-1.7) -- ([xshift=1.2cm]rng.south);
+\end{tikzpicture}
+\caption{Tareas y núcleos del firmware de captura. La tarea de campaña lee
+el generador a RAM mientras se mantiene la condición; la tarea del ADC
+(condiciones A y C) y el controlador de Wi-Fi (A y B) funcionan en el otro
+núcleo. Las flechas discontinuas son los caminos por los que las fuentes
+documentadas pueden llegar al generador. La tarea del ADC se detiene
+antes de transmitir el búfer.}
+\label{fig:esp32_tasks}
+\end{figure}
+
+% sdkconfig.defaults (460800/921600 no dieron salida de la aplicación);
+% capture_rng.py (saneado, reconexión, numeración en el anfitrión);
+% docs/esp32_linea_base_90b.md 4 (unos 25 s por condición)
+La velocidad serie no fue la primera elección. A 460\,800 y
+921\,600~baudios seguía llegando el mensaje inicial del cargador de
+arranque de segunda etapa, a la velocidad por defecto de la ROM, pero la
+salida de la aplicación no llegaba nunca; no se investigó la causa, y se
+mantuvieron 115\,200~baudios. A esa velocidad los 250\,000 caracteres
+hexadecimales de una secuencia necesitan unos 22~s (calculado, diez bits
+de línea por carácter, sin contar los saltos de línea ni las líneas de
+trama), frente a los unos 25~s observados por condición. En el anfitrión
+(\path{analysis/esp32_rng/capture_rng.py}), una pequeña máquina de estados
+recoge las líneas hexadecimales entre las marcas e ignora todo lo demás
+fuera de un bloque; antes de decodificar elimina todo carácter que no sea
+hexadecimal, como dejaría un fragmento suelto de un mensaje de registro, y
+descarta un medio byte final impar, de modo que una línea intercalada
+acaba en un rechazo del CRC y no en un fallo de decodificación. En el
+banco apareció un fallo más: ante picos de corriente, sobre todo con la
+radio y el ADC activos a la vez, la placa se reiniciaba y su puente
+USB--serie, un CP2102, volvía a enumerarse, lo que invalidaba el puerto
+abierto en mitad de una lectura. Se atribuyó a una caída de tensión
+(\emph{brown-out}) y no se midió. La herramienta de captura descarta
+entonces el bloque en curso, reabre el puerto hasta que reaparece y
+sigue; y numera ella misma las repeticiones, por el número de secuencias
+válidas que ya tiene de cada condición, porque el contador del firmware
+vuelve a empezar con la placa. Una reconexión puede, por tanto, perder un
+bloque, pero nunca duplicarlo ni sobrescribirlo.
+
+% firmware/esp32_rng/main/mqtt_reporter.c, Kconfig.projbuild
+El firmware contiene además un camino opcional de telemetría,
+\texttt{mqtt\_reporter}, implementado y nunca activado. Un menú de
+configuración (\texttt{Kconfig.projbuild}) recoge el nombre de la red, su
+contraseña y la URI del broker, para que ninguna credencial se compile
+desde el fuente; tras el primer ciclo, el firmware intenta asociarse y
+conectarse solo si el nombre de la red difiere de su valor de relleno, y
+si no, avisa de que MQTT está desactivado y sigue por el enlace serie.
+Activo, publicaría la condición, la temperatura del chip y la tasa en los
+temas \texttt{esp32/rng/condition}, \texttt{esp32/rng/temperature} y
+\texttt{esp32/rng/throughput}, y la última semilla de cada ciclo en
+\texttt{esp32/harvester/seed}. Ninguna campaña configuró las
+credenciales, así que la radio nunca se asoció, como exigen las
+condiciones. Activarlo habría cambiado los ciclos posteriores, con una
+radio asociada, y la URI del broker por defecto es \texttt{mqtt://} sin
+cifrar, así que la semilla habría cruzado la red en claro: tal como está
+escrito es un camino de telemetría para el banco, no para material de
+claves. Las secuencias nunca estuvieron pensadas para él, ya que las
+condiciones C y D necesitan la radio apagada.
+
 % capture_log.csv de cada campaña: crc_ok = 1 en las 24 filas
 \begin{table}[htbp]
 \centering
@@ -157,6 +261,22 @@ análisis de segundo nivel de SP~800-22 usa las cuatro, y los estimadores
 de SP~800-90B de la Sección~\ref{sec:esp32_90b}, todas menos la segunda
 tanda de la cuarta, que se reserva para una comprobación.
 
+% docs/esp32_linea_base_90b.md 1: en el tercer chip los bloques repetidos
+% fueron de la condición A, del segundo ciclo; D, C y B, siempre del primero.
+El firmware no se detiene tras un ciclo: vuelve a la condición~D con la
+radio parada pero habiendo funcionado, y el primer diseño pretendía
+comparar esas D posteriores con la del arranque en frío, para ver si el
+estado residual de la radio cambia la salida. No se capturó ninguna.
+Todas las secuencias de la condición~D conservadas, en las cuatro
+campañas, vienen del primer ciclo tras un arranque en frío; los dos
+bloques tomados de un segundo ciclo en el tercer chip eran de la
+condición~A. La prueba de reinicios de la Sección~\ref{sec:esp32_90b}
+responde a la pregunta más directamente de lo que habría podido una D
+posterior: una vez que la radio ha funcionado, el generador ha recibido
+ruido (Tabla~\ref{tab:esp32_fuentes}), así que una D posterior continúa
+desde un estado que ya no es el fijo, y la estadística que sigue, que no
+separa D de A, tampoco habría separado las dos D.
+
 \section{La batería SP 800-22}
 \label{sec:esp32_sp80022}
 
@@ -181,6 +301,29 @@ rachas o por la de entropía aproximada. La supera: los ceros fallan las
 quince pruebas, y el patrón alternado falla todas salvo las de
 frecuencia, frecuencia por bloques y sumas acumuladas, que una secuencia
 perfectamente equilibrada tiene que pasar.
+
+% SP 800-22 Rev. 1a 2.5.7 (n >= 38 MQ), 2.9.7 (L = 7 desde n = 904960),
+% 2.14.7 (J >= 500); E[J] y P(J < 500) calculados
+La longitud de $10^6$ bits es también la que permite que cada prueba
+funcione en el régimen que necesitan sus aproximaciones (calculado a
+partir de los parámetros de la norma). La prueba de rango de matrices usa
+matrices de $32\times32$, de 1024 bits, y necesita al menos 38 para su
+$\chi^2$ de tres clases; $10^6$ bits dan 976. La prueba universal de
+Maurer alcanza su configuración de $L = 7$, con $Q = 1280$ bloques de
+inicialización, solo a partir de 904\,960 bits. Las dos pruebas de
+excursiones aleatorias solo se aplican cuando el paseo $\pm1$ de la
+secuencia vuelve a cero al menos $J = 500$ veces. Para un paseo simétrico
+de $n$ pasos $E[J] \approx \sqrt{2n/\pi}$, así que el umbral pide en
+promedio unos $3{,}9\times10^5$ bits, y con $10^6$ bits
+$E[J] \approx 800$. La dispersión es grande: $J/\sqrt{n}$ tiende al valor
+absoluto de una variable normal estándar, así que una fuente perfecta de
+$10^6$ bits se queda por debajo de 500 retornos con probabilidad 0,38. La
+norma considera entonces no aplicables las pruebas de excursiones; la
+implementación de este trabajo registra el caso como un fallo con una
+nota, de modo que un paseo corto no puede pasar inadvertido, y las cuatro
+secuencias de la primera campaña tuvieron retornos suficientes. La misma
+dispersión explica que solo 34 de las 59 secuencias del análisis de
+segundo nivel de más abajo entren en esas pruebas.
 
 \begin{figure}[htbp]
 \centering
@@ -285,8 +428,28 @@ $1/\sqrt{n} = 0{,}001$, y el mayor de mil valores así tiene una mediana de
 0,0034 para ruido blanco. La planitud de un único periodograma sin
 promediar de ruido blanco no es 1 sino $e^{-\gamma} \approx 0{,}561$,
 siendo $\gamma$ la constante de Euler, porque cada intervalo de
-frecuencia sigue una distribución exponencial. En todas las columnas las
-cuatro condiciones quedan donde quedaría una fuente perfecta. Como
+frecuencia sigue una distribución exponencial. La
+Figura~\ref{fig:esp32_metrics} muestra las dos distribuciones que hay
+detrás de esas columnas: en las cuatro condiciones las mil
+autocorrelaciones tipificadas siguen una distribución normal estándar y
+los intervalos del periodograma una exponencial, como en el ruido blanco.
+En todas las columnas las cuatro condiciones quedan donde quedaría una
+fuente perfecta.
+
+% analysis/esp32_rng/figuras_memoria.py, a partir de condX_rep1.bin
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{esp32_metricas.pdf}
+\caption{Autocorrelación y periodograma de las cuatro secuencias de la
+primera campaña \meas{}, frente al ruido blanco (discontinua). (a)
+Distribución de $r_k\sqrt{n}$ para retardos $k$ de 1 a 1000,
+$n = 10^6$; para ruido blanco es normal estándar. (b) Distribución de los
+intervalos del periodograma de los primeros 65\,536 bits, divididos por
+su media, en escala logarítmica; para ruido blanco es exponencial, y por
+eso la planitud espectral de un único periodograma tiende a
+$e^{-\gamma} \approx 0{,}561$ y no a 1.}
+\label{fig:esp32_metrics}
+\end{figure} Como
 SP~800-22, son promedios sobre la salida que una secuencia determinista
 puede alcanzar, y la entropía de Shannon no es la magnitud que necesita
 una clave: la generación de claves cuenta la min-entropía, el logaritmo
@@ -327,11 +490,31 @@ de temperatura de la campaña es un paso del sensor. La correlación entre
 la entropía de bytes y la temperatura sobre las cuatro secuencias,
 $r = 0{,}795$ con $p = 0{,}21$, se calculó por tanto frente al bit menos
 significativo del sensor, y no aporta información; no se afirma ningún
-efecto de la temperatura, en ningún sentido. Los tres chips identificados
+efecto de la temperatura, en ningún sentido. La
+Figura~\ref{fig:esp32_temp} muestra los datos en la unidad del propio
+sensor: una secuencia leyó 126~$^\circ$F de principio a fin, dos leyeron
+127~$^\circ$F, una pasó del primer valor al segundo mientras se generaba,
+y las cuatro entropías quedan a menos de dos desviaciones típicas de una
+fuente perfecta de la misma longitud. Los tres chips identificados
 leyeron después de 49,4 a 51,7, de 61,7 a 64,4 y de 42,8 a 45,0~$^\circ$C
 en la misma escala sin calibrar, así que chip y temperatura están confundidos. Un
 estudio de temperatura necesita un sensor calibrado y un barrido
 controlado, y no se hizo ninguno.
+
+% analysis/esp32_rng/figuras_memoria.py, a partir de capture_log.csv y
+% temperature_correlation.csv
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.62\textwidth]{esp32_temperatura.pdf}
+\caption{Entropía de bytes de las cuatro secuencias de la primera campaña
+frente a la lectura del sensor del chip \meas{}, en su propia unidad, un
+entero sin calibrar en grados Fahrenheit; una barra abarca las lecturas
+anterior y posterior a la secuencia. La banda es una fuente perfecta de
+125\,000 bytes, media y una desviación típica (calculado). Toda la
+campaña es un paso del sensor, así que la correlación de $r = 0{,}795$
+calculada sobre estos puntos no dice nada de la temperatura.}
+\label{fig:esp32_temp}
+\end{figure}
 
 \section{Un recolector de claves multifuente}
 \label{sec:esp32_harvester}
@@ -372,6 +555,102 @@ da la única garantía que no necesita independencia entre fuentes que
 comparten chip, alimentación y temperatura:
 $H_\infty(X_1 \| X_2 \| X_3) \geq \max_i H_\infty(X_i)$.
 
+% firmware/esp32_rng/main/adc_noise.c: LSB de cada conversión de 12 bits,
+% 8 por byte, 2048 cada vez; el par (1,0) da 1
+La afirmación del corrector se apoya en una línea. Para bits
+independientes con una probabilidad desconocida $p$ de valer uno,
+$\Pr[01] = (1-p)\,p = \Pr[10]$, así que un par conservado da 0 y 1 con
+probabilidad $1/2$ cada uno, sea cual sea $p$. Un par se conserva con
+probabilidad $2p(1-p)$ y da un bit por cada dos, así que el rendimiento es
+de $p(1-p)$ bits de salida por bit de entrada, como mucho $1/4$, con
+$p = 1/2$ (Figura~\ref{fig:esp32_vn}). El corrector elimina el sesgo, no la
+correlación: para bits dependientes $\Pr[01]$ y $\Pr[10]$ no tienen por
+qué ser iguales. El firmware toma el bit menos significativo de cada
+conversión de 12 bits, empaqueta ocho por byte, corrige 2048 cada vez y
+repite hasta tener 32 bytes. No existe una captura aparte de estos bits,
+así que no se midieron ni su sesgo ni su correlación.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.55\textwidth, height=4.2cm,
+  xlabel={probabilidad de un uno a la entrada, $p$},
+  ylabel={probabilidad, rendimiento}, xmin=0, xmax=1, ymin=0, ymax=0.55,
+  legend style={draw=none, font=\footnotesize, at={(0.5,1.02)},
+    anchor=south}, legend columns=2,
+  /pgf/number format/use comma,
+  tick label style={font=\footnotesize}, label style={font=\footnotesize}]
+\addplot[domain=0:1, samples=101, thick, dashed] {2*x*(1-x)};
+\addlegendentry{par conservado, $2p(1-p)$}
+\addplot[domain=0:1, samples=101, thick] {x*(1-x)};
+\addlegendentry{bits de salida por bit de entrada, $p(1-p)$}
+\end{axis}
+\end{tikzpicture}
+\caption{Rendimiento del corrector de Von Neumann sobre bits de entrada
+independientes (calculado). Incluso una entrada sin sesgo pierde tres
+cuartas partes de sus bits; la salida carece de sesgo para todo $p$ de
+$(0,1)$ solo si los bits de entrada son independientes.}
+\label{fig:esp32_vn}
+\end{figure}
+
+Aplicar el hash a la concatenación se justifica, bajo hipótesis, con la
+teoría de los extractores de aleatoriedad. El lema del hash
+sobrante~\cite{impagliazzo_1989_pseudorandom} establece que una función
+elegida al azar de una familia de hash universal, aplicada a una entrada
+de min-entropía $k$, da una salida de $\ell$ bits a distancia estadística
+$\varepsilon$ de la uniforme siempre que
+\begin{equation}
+k \geq \ell + 2\log_2(1/\varepsilon);
+\label{eq:esp32_lhl}
+\end{equation}
+para $\ell = 256$ y $\varepsilon = 2^{-32}$ la entrada necesita 320 bits
+de min-entropía. SHA-256 es una función fija, no un miembro de una familia
+elegido al azar, así que el lema no se le aplica tal como está enunciado;
+su uso como extractor se apoya en modelos idealizados, o en análisis como
+el de Dodis et al.~\cite{dodis_2004_randomness} para las construcciones
+HMAC y en cascada bajo hipótesis sobre la función de compresión, y
+SP~800-90B admite una función hash aprobada como componente de
+acondicionamiento verificado~\cite{turan_2018_sp80090b}. Lo que importa
+aquí es la condición más que la cota: la reserva solo está cerca de la
+uniforme si las entradas reúnen unos 320 bits de min-entropía, y los
+párrafos siguientes muestran que eso no se midió para ninguna de ellas.
+La cota de la concatenación se sigue de una desigualdad que vale para
+cualquier distribución conjunta, porque el trío más probable no es más
+probable que el valor más probable de cualquiera de sus componentes,
+\begin{equation}
+\max_{x_1,x_2,x_3}\Pr[X_1{=}x_1,X_2{=}x_2,X_3{=}x_3]
+\;\leq\; \min_i \max_{x_i}\Pr[X_i{=}x_i],
+\end{equation}
+y tomando $-\log_2$ en los dos lados se obtiene. Combinar con XOR fuentes
+de la misma anchura también conserva la mejor min-entropía, pero solo si
+las fuentes son independientes, y no puede suponerse de tres fuentes en
+un mismo chip; la concatenación no necesita esa hipótesis, a costa de una
+entrada del hash más larga. Si el ADC no entrega datos, su campo se llena
+de ceros y la reserva se forma con las otras dos fuentes.
+
+% entropy_harvester.c: contador de 4 bytes, 32 B nuevos por bloque,
+% resembrado SHA256(pool || r || a) tras las 100 semillas de cada ciclo
+El trinquete de la Ecuación~\eqref{eq:esp32_ratchet} da secreto hacia
+delante (\emph{forward secrecy}): la reserva tras la salida $i$ no revela
+las salidas anteriores mientras SHA-256 no pueda invertirse. El resembrado
+que sigue a las 100 semillas de cada ciclo incorpora con el hash 32 bytes
+nuevos del generador y 32 del ADC,
+$\mathrm{pool} \leftarrow \mathrm{SHA256}(\mathrm{pool} \,\|\, r \,\|\, a)$,
+y pretende dar secreto hacia atrás (\emph{backward secrecy}), la
+recuperación tras quedar expuesta la reserva; lo consigue solo en la
+medida en que $r$ y $a$ lleven entropía que el atacante no pueda
+predecir, que es justo lo que no se sabe con la radio apagada. La
+construcción se parece al Hash\_DRBG de
+SP~800-90A~\cite{barker_2015_sp80090ar1} ---un estado sometido a hash,
+salidas que aplican el hash al estado, resembrados desde una fuente
+viva---, pero apunta a algo más estrecho: cien semillas de 256 bits por
+ciclo, cada una para expandirse con una función de derivación de claves,
+en lugar de flujos largos de salida, con cada salida absorbiendo una
+lectura nueva del generador y todo el estado en una palabra de 256 bits.
+Es un acondicionador pequeño de absorción y exprimido, sin los contadores
+de resembrado, las pruebas de salud ni la validación de un generador de
+SP~800-90A.
+
 % analysis/esp32_rng/harvester_from_sources.py: entradas puf_boot1.bin y
 % condD_rep1.bin, campo del ADC = 32 B del mismo flujo del RNG (sustituto).
 % docs/esp32_linea_base_90b.md 1: el firmware no se detiene tras el primer
@@ -396,7 +675,23 @@ de Hamming entre dos semillas, sobre 20\,000 pares aleatorios, promedia
 128,05 de 256 bits (50,02\,\%) con una desviación típica de 8,03, frente a
 128 y 8 para semillas uniformes independientes; y las siete pruebas de
 SP~800-22 aplicables a los 256\,000 bits del flujo de semillas pasan, con
-$p$ de 0,148 a 0,956.
+$p$ de 0,148 a 0,956 (Figura~\ref{fig:esp32_harvester}).
+
+% analysis/esp32_rng/figuras_memoria.py, a partir de seeds_rep1.bin, mismos
+% pares que harvester_validation.py (default_rng(1))
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{esp32_recolector.pdf}
+\caption{Validación fuera de línea de la construcción del recolector
+(calculado, sobre entradas medidas). (a) Distancia de Hamming entre dos de
+las 1000 semillas derivadas de un patrón de SRAM y de la secuencia de la
+condición~D, sobre 20\,000 pares aleatorios, frente a la distribución
+binomial de semillas uniformes independientes. (b) Valores $p$ de las
+siete pruebas de SP~800-22 aplicables a los 256\,000 bits del flujo de
+semillas. Ambas se pasan por construcción (véase el texto) y no dicen nada
+de la entropía de las semillas.}
+\label{fig:esp32_harvester}
+\end{figure}
 
 % calculado a partir de results/esp32_rng_agosto/puf_pc1-4.bin (serie limpia:
 % pesos 49.61 a 49.74 %, pares 6.45 a 6.81 %, media 6.63 %, estables
@@ -424,7 +719,11 @@ promedia diez pares de una serie que mezclaba ciclos de alimentación con
 reinicios que mantenían la alimentación, en la que un patrón difiere de
 los otros cuatro en el 49,6 al 49,7\,\% de sus bits, como lo harían datos
 no relacionados, y los otros seis pares difieren en el 6,5 al 7,4\,\%,
-como lo hacen los encendidos de las mismas celdas.
+como lo hacen los encendidos de las mismas celdas. La media limpia del
+6,63\,\% queda dentro del 3 al 8\,\% publicado para el ruido de arranque
+de las celdas de SRAM~\cite{holcomb_2009_powerup, vanderleest_2012_efficient};
+con una placa, cuatro encendidos y una temperatura, eso solo dice que esta
+SRAM se comporta como las de la bibliografía, no cuánto varía.
 
 % analysis/esp32_rng/mqtt_tls_demo.py, modo fuera de línea; resultado según
 % las notas de la primera campaña (sesión segura).
@@ -445,13 +744,53 @@ cambia esto: el 88\,\% de las celdas de la SRAM son una huella fija,
 conocida por cualquiera que haya leído el patrón una vez, y acotar lo que
 aporta el 12\,\% restante requeriría muchos más encendidos y un modelo de
 las celdas. El recolector es una arquitectura cuya salida es al menos tan
-fuerte como su mejor fuente, no una fuente de entropía medida. Una
-demostración fuera de línea de su uso previsto
-(\path{analysis/esp32_rng/mqtt_tls_demo.py}) expande una semilla en una
-clave de sesión con HKDF-SHA256~\cite{krawczyk_2010_hkdf} y protege un
-mensaje con AES-256-GCM, rechazando un mensaje reenviado y otro
-manipulado; ejercita la criptografía, y la clave hereda la entropía de la
-semilla sin añadir ninguna.
+fuerte como su mejor fuente, no una fuente de entropía medida.
+
+% analysis/esp32_rng/mqtt_tls_demo.py repetido el 2026-10-31 con
+% seeds_rep1.bin: determinismo True, 130/256 bits, 61 B -> 77 B, tema ajeno
+% y un bit cambiado rechazados. Nonce de os.urandom en el PC.
+El uso previsto se demostró fuera de línea
+(\path{analysis/esp32_rng/mqtt_tls_demo.py}) para un nodo conectado
+genérico, un termostato que publica telemetría. Una semilla de 32 bytes
+se expande en una clave de sesión de 256 bits con
+HKDF-SHA256~\cite{krawczyk_2010_hkdf}, que primero condensa la semilla en
+una clave pseudoaleatoria y después la expande,
+\begin{equation}
+\mathrm{PRK} = \mathrm{HMAC}_H(\mathrm{salt}, \mathrm{seed}), \qquad
+K = \mathrm{HMAC}_H(\mathrm{PRK}, \mathrm{info} \,\|\, \texttt{0x01})_{1..L},
+\label{eq:esp32_hkdf}
+\end{equation}
+con $H$ = SHA-256, sin sal (HKDF usa entonces una cadena de ceros de la
+longitud del hash), $\mathrm{info} = \texttt{"tfm-mqtt-session"}$ y
+$L = 32$ bytes, un solo bloque porque $L$ coincide con la longitud del
+hash; cambiando $\mathrm{info}$ se derivan de la misma semilla claves
+independientes para otros fines. La clave alimenta AES-256-GCM con un
+nonce de 96 bits y el tema \texttt{esp32/hvac/telemetry} como datos
+asociados, de modo que la etiqueta de 128 bits cubre texto cifrado y
+tema. Con las dos primeras semillas del conjunto de validación, la misma
+semilla da la misma clave, las dos claves difieren en 130 de 256 bits,
+un mensaje de 61 bytes hace el viaje de ida y vuelta, y el descifrado
+rechaza el mensaje presentado bajo otro tema y el mensaje con un bit del
+texto cifrado cambiado (calculado, en el PC). Ese resultado tiene dos
+límites. GCM por sí solo no rechaza un mensaje reenviado bajo el mismo
+tema, para lo que hace falta un contador en los datos autenticados, y la
+demostración no lo tiene. Y toma su nonce del sistema operativo del PC,
+no del recolector; un par de clave y nonce repetido rompería a la vez la
+confidencialidad y la autenticidad de GCM, así que en un dispositivo el
+generador de nonces necesita el mismo cuidado que la clave. El caso para
+el que se construyó el recolector es un nodo que aprovisiona su clave en
+la condición~D poco después de un arranque en frío, donde la
+Sección~\ref{sec:esp32_90b} muestra que, sin el ruido de arranque, el
+generador devuelve una de unos pocos miles de salidas, la misma en dos
+chips; derivar las claves con una función de derivación a partir de una
+reserva acondicionada, y no del registro en bruto, es la práctica que
+recomienda la RFC~4086~\cite{eastlake_2005_rfc4086}. La demostración no
+cierra ese caso: ejercita la criptografía, y la clave hereda la entropía
+de la semilla sin añadir ninguna. Un segundo modo del script, una sesión
+MQTT sobre TLS mediante el cliente paho que tomaría una semilla viva del
+tema \texttt{esp32/harvester/seed}, se implementó y nunca se ejecutó.
+Acepta cualquier certificado del broker y recibe la semilla por la red,
+así que muestra la fontanería, no un diseño de establecimiento de claves.
 
 \section{La referencia del ESP32 frente a SP 800-90B}
 \label{sec:esp32_90b}
@@ -794,6 +1133,21 @@ condiciones A y C muestra que las conversiones del ADC sí llegan al
 generador, pero según las propias tasas del manual el camino
 SAR no podría aportar un bit de ruido nuevo por bit de salida a la tasa a
 la que se leyó el generador.
+
+Algunas medidas afinarían aún la imagen del propio ESP32; se dejaron sin
+hacer porque ninguna puede cambiar esa conclusión. La fuente SRAM
+necesita decenas de encendidos, a varias temperaturas, para trazar la
+probabilidad de cambio de cada celda: tanto para acotar lo que aportan las
+celdas inestables como para dimensionar la corrección de errores de un
+extractor difuso que convertiría las celdas estables en una clave del
+dispositivo, una \ac{PUF} de SRAM que ligaría cada semilla a su
+chip~\cite{holcomb_2009_powerup}. Un estudio de temperatura necesita un
+sensor calibrado y una cámara climática, de $-20$ a $+85$~$^\circ$C. Las
+semillas producidas en el dispositivo deberían capturarse y analizarse, y
+no solo reproducirse fuera de línea. Y la prueba de reinicios, la única
+medida que separó las condiciones, debería repetirse en un chip posterior
+como el ESP32-S3, cuyo generador documenta la guía de software con otras
+tasas de lectura (Sección~\ref{sec:esp32_periph}).
 
 Lo que falta no es una prueba mejor sino un tipo distinto de
 conocimiento: un modelo de la fuente --- qué proceso físico produce la
