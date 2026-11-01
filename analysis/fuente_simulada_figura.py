@@ -65,7 +65,8 @@ def esp32() -> list[float]:
 
 
 def main() -> int:
-    filas = list(csv.DictReader(CSV.open(encoding="utf-8", newline="")))
+    filas = [f for f in csv.DictReader(CSV.open(encoding="utf-8", newline=""))
+             if f.get("n_bits") in (None, "", "1000000")]      # solo la tanda de 1e6
     nist = defaultdict(list)
     modelo = {}
     iid = defaultdict(list)

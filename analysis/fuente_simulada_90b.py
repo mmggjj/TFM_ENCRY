@@ -14,6 +14,7 @@ sustituyen a la campana en la FPGA. Lectura en docs/fuente_simulada_90b.md.
     python analysis/fuente_simulada_90b.py --kd 20 22   solo esos divisores
     python analysis/fuente_simulada_90b.py --casos ideal --kd 0   referencia uniforme
     python analysis/fuente_simulada_90b.py --tests iid --modos b8  via IID (b1 tarda ~28 min)
+    python analysis/fuente_simulada_90b.py --n 8378368 --kd 23    longitud de esp_rf_off_2
 """
 from __future__ import annotations
 
@@ -33,7 +34,7 @@ RES = e90.RES
 DIR = RES / "fuente_simulada_90b"
 SEC = DIR / "secuencias"                         # se regeneran: fuera de git
 CSV = RES / "fuente_simulada_90b.csv"
-N_BITS = 10**6                                   # como las capturas del ESP32
+N_BITS = 10**6                                   # como las capturas del ESP32; --n lo cambia
 
 # Q por periodo (sigma/T)^2 de results/anillo_ihp_*_resumen.csv
 CASOS = {
@@ -44,8 +45,13 @@ CASOS = {
 }
 
 
+def nombre_de(caso: str, kd_exp: int, rep: int) -> str:
+    sufijo = "" if N_BITS == 10**6 else f"_n{N_BITS}"   # no pisa las filas de 1e6
+    return f"{caso}_kd{kd_exp}_r{rep}{sufijo}"
+
+
 def secuencia(caso: str, kd_exp: int, rep: int) -> tuple[Path, Path, float]:
-    nombre = f"{caso}_kd{kd_exp}_r{rep}"
+    nombre = nombre_de(caso, kd_exp, rep)
     semilla = zlib.crc32(nombre.encode())          # reproducible y distinta por secuencia
     if CASOS[caso] is None:
         q = float("inf")
@@ -61,6 +67,7 @@ def secuencia(caso: str, kd_exp: int, rep: int) -> tuple[Path, Path, float]:
 
 
 def main() -> int:
+    global N_BITS
     ap = argparse.ArgumentParser()
     ap.add_argument("--kd", nargs="*", type=int,
                     default=[14, 16, 18, 19, 20, 21, 22, 23, 24])
@@ -68,7 +75,9 @@ def main() -> int:
     ap.add_argument("--reps", type=int, default=3)
     ap.add_argument("--tests", nargs="*", default=["noniid"])
     ap.add_argument("--modos", nargs="*", default=["b1", "b8"])
+    ap.add_argument("--n", type=int, default=N_BITS, help="bits por secuencia")
     args = ap.parse_args()
+    N_BITS = args.n
     SEC.mkdir(parents=True, exist_ok=True)
     e90.DIR90B = DIR                               # logs y json aqui
 
@@ -78,14 +87,15 @@ def main() -> int:
             for r in range(1, args.reps + 1):
                 b1, b8, q = secuencia(caso, k, r)
                 hmin_mod = 1.0 if q == float("inf") else entropias_exactas(q)[1]
-                nombre = f"{caso}_kd{k}_r{r}"
+                nombre = nombre_de(caso, k, r)
                 for modo, fich in (("b1", b1), ("b8", b8)):
                     if modo not in args.modos:
                         continue
                     for test in args.tests:
                         f = e90.ejecutar(nombre, fich, test, modo)
                         f.update({"caso": caso, "kd_exp": k, "rep": r,
-                                  "q_muestra": q, "hmin_modelo": hmin_mod})
+                                  "q_muestra": q, "hmin_modelo": hmin_mod,
+                                  "n_bits": N_BITS})
                         filas.append(f)
 
     if CSV.exists():                               # fusiona: una pasada parcial no borra el resto

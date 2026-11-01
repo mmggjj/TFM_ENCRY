@@ -72,14 +72,19 @@ simulated source under the same battery" (EN y ES). Resultados:
 - `ea_iid` en bits tarda ~28 min por secuencia de 10⁶: no se ha corrido.
   La columna `IID` del CSV de la herramienta es el tipo de prueba, no el
   veredicto (`testCases.0.passed*`).
-- **Siguiente paso (acordado con Mario el 31-10, para el 01-11):** repetir
-  el ideal y el motor a 2²³ (los tres casos) con ~8,4·10⁶ bits, la longitud
-  de las dos capturas largas del ESP32 sin radio (`esp_rf_off_1/2`), no-IID
-  en bit y byte e IID en byte, y ver si el techo del estimador sube lo
-  bastante para separar el ESP32 del motor. `fuente_simulada_90b.py` tiene
-  `N_BITS` fijo en 10⁶: añadir `--n` y un sufijo en el nombre para no pisar
-  las filas de 10⁶. Después, documentar en `docs/fuente_simulada_90b.md` y
-  en el cap. 7 (EN y ES).
+- **01-11: más bits** (`--n`, sufijo `_n<N>` en el nombre y columna
+  `n_bits`; `fuente_simulada_figura.py` solo lee las filas de 10⁶). 2²³ en
+  los tres casos e ideal, 3 semillas, a las longitudes de las capturas
+  largas sin radio: **`esp_rf_off_1` = 3 523 072 bits y `esp_rf_off_2` =
+  8 378 368** (no las dos ~8,4·10⁶). Las doce secuencias con H_∞ ≈ 1 dan
+  0,881 (0,860-0,925) y 0,912 (0,889-0,935); el ESP32, 0,867 y 0,911:
+  **el techo sube con N para todos y la batería sigue sin separarlos**.
+  IID en byte a 8,4·10⁶: 12/12 pasan. Limita la compresión (33 de 36) o el
+  t-Tuple. En byte, 4 secuencias bajan a 0,79-0,83 por la cota local
+  (racha r = 4) de los predictores sobre bytes, no por la fuente. Logs
+  `results/fuente_simulada_90b_n{3523072,8378368}.log`; docs §5; cap. 7 EN
+  y ES con un párrafo (O8 no puede apoyarse en la diferencia de cifras SP
+  800-90B); PDF regenerados.
 
 ## Estado al 28-10-2026: AES de 32 bits, I2C bajo abuso, placa y CI
 

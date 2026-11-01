@@ -490,6 +490,24 @@ and applying the same rule to the engine. Fourth, between those regimes,
 for $H_\infty$ from about 0.5 to 0.95, the estimate sits below the model,
 as a conservative estimator should.
 
+A longer record raises the ceiling, but for every source alike. At the
+lengths of the two long radio-off ESP32 captures, $3.52 \times 10^6$ and
+$8.38 \times 10^6$ bits, the divider $2^{23}$ was rerun in the three cases
+with uniform bits as reference, three seeds each \simu{}. The twelve
+sequences with $H_\infty \approx 1$ average 0.881 (0.860 to 0.925) and
+0.912 (0.889 to 0.935); the ESP32 captures score 0.867 and 0.911
+\meas{}, inside those spreads at both lengths, and the ideal bits score
+$0.869 \pm 0.003$ and $0.926 \pm 0.016$. The limiting estimator is still
+compression, or the t-tuple in three sequences, whose bias shrinks only
+slowly with $N$. At $8.38 \times 10^6$ bits the IID track in bytes
+accepts all twelve sequences, as it does the ESP32 capture. The
+comparison of objective O8 therefore cannot rest on a difference between
+SP~800-90B figures: above its ceiling the battery only says that both
+sources are above it. What separates them is what stands behind the
+figure, a physical model and a divider derived from it on the engine side
+and none on the ESP32 side, which without boot noise repeats sequences
+across chips (Table~\ref{tab:esp32_restart}).
+
 These bits contain only white Gaussian jitter. Flicker noise, coupling
 between rings, a shared supply and slow drift are absent, and they are
 what the battery is least able to see and the campaign must measure.

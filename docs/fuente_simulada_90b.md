@@ -131,5 +131,70 @@ Figura: `memoria/figures/fuente_simulada_90b.pdf`.
 - Tres semillas por punto: la desviación es indicativa (con 3 muestras,
   el intervalo del 95 % de σ va de 0,5σ a 6,3σ).
 - Falta la vía IID en bit (≈ 28 min por secuencia; para 2²¹ peor caso e
-  ideal serían ~3 h) y longitudes mayores: a 10⁷ bits el techo del ideal
-  debería subir y la batería empezaría a separar el ESP32 de un 2²³.
+  ideal serían ~3 h). Las longitudes mayores están en la §5: el techo sube,
+  pero la batería sigue sin separar el ESP32 de un 2²³.
+
+## 5. Más bits: la longitud de las capturas largas del ESP32 (01-11-2026)
+
+La esperanza de la §4 era que con más bits el techo del ideal subiera y
+la batería separase el ESP32 del motor. Se ha probado a las dos longitudes
+de las capturas largas sin radio del ESP32: `esp_rf_off_1` tiene
+**3 523 072 bits** y `esp_rf_off_2` **8 378 368** (no las dos ~8,4·10⁶,
+como decía una nota anterior). Solo 2²³, los tres casos y el ideal, tres
+semillas; no-IID en bit y en byte a las dos N, IID en byte solo a 8,4·10⁶.
+
+    python analysis/fuente_simulada_90b.py --n 8378368 --kd 23 --tests noniid
+    python analysis/fuente_simulada_90b.py --n 3523072 --kd 23 --tests noniid
+    ... --casos ideal --kd 0 / --tests iid --modos b8
+
+`--n` añade el sufijo `_n<N>` al nombre (y la columna `n_bits` al CSV), así
+que las filas de 10⁶ no se tocan; `fuente_simulada_figura.py` solo lee esas.
+Logs completos: `results/fuente_simulada_90b_n8378368.log` (no-IID e IID,
+36 ejecuciones) y `results/fuente_simulada_90b_n3523072.log` (no-IID, 24),
+todas con exit 0. El ideal de 3,5·10⁶ lleva `kd23` en el nombre (el ideal
+no usa el divisor; a 10⁶ y 8,4·10⁶ es `kd0`). En byte a 3,5·10⁶ son 440 384
+símbolos y la herramienta avisa de que hay menos de 10⁶ muestras; lo mismo
+pasa en byte con las secuencias de 10⁶ bits y con `esp_rf_off_1`.
+
+No-IID en bit, media ± desviación de tres semillas (SIMULADO salvo el
+ESP32, MEDIDO, una captura por longitud):
+
+| N | ideal | tt 2²³ | ss 1,08 V 2²³ | peor chip 2²³ | todas (12) | ESP32 sin radio |
+|---|---|---|---|---|---|---|
+| 10⁶ | 0,839 ± 0,021 | 0,849 ± 0,031 | 0,840 ± 0,031 | 0,848 ± 0,031 | | 0,850 (36 capturas A-D) |
+| 3,52·10⁶ | 0,869 ± 0,003 | 0,889 ± 0,033 | 0,886 ± 0,013 | 0,881 ± 0,002 | 0,881, 0,860-0,925 | **0,867** (`rf_off_1`) |
+| 8,38·10⁶ | 0,926 ± 0,016 | 0,899 ± 0,009 | 0,901 ± 0,007 | 0,921 ± 0,009 | 0,912, 0,889-0,935 | **0,911** (`rf_off_2`) |
+
+El modelo da H_∞ ≥ 0,9996 en los tres casos a 2²³: para la batería, las
+doce secuencias de cada fila son la misma fuente que el ideal.
+
+- En byte (dividido entre 8) sale lo mismo que en bit salvo en cuatro
+  secuencias: a 8,4·10⁶ el ideal r3 y el peor chip r2 dan 0,832, y a
+  3,5·10⁶ el ideal r2 y ss r2 dan 0,793. No es la fuente: es la cota local
+  de los predictores sobre bytes (Lag, LZ78Y, MultiMCW), que sale de la
+  racha más larga de aciertos (r = 4 en ~10⁶ predicciones, 6,655 bit/byte)
+  y toma valores discretos. El ESP32 en byte: 0,867 y 0,911, igual que en bit.
+- Estimador limitante en bit: la compresión en 33 de las 36 secuencias de
+  bit de las tres longitudes del 2²³ y el ideal; el t-Tuple en el resto
+  (dos ideales y un peor chip a 8,4·10⁶, que dan 0,931-0,935).
+- IID en byte a 8,4·10⁶: pasan las tres pruebas las 12 secuencias (crédito
+  8 bit/byte), igual que `esp_rf_off_2`.
+
+Lectura:
+
+1. **El techo sube con N, pero sube para todos.** Media de las secuencias
+   con H_∞ ≈ 1: 0,84 → 0,88 → 0,91. El ESP32 lo sigue: 0,850 → 0,867 →
+   0,911, y a cada longitud cae dentro de la nube de bits perfectos y de la
+   fuente simulada (a 8,4·10⁶ está a 0,001 de la media de las doce).
+2. **A ninguna de las tres longitudes la batería separa el ESP32 del
+   motor.** Lo que limita es el sesgo del estimador de compresión (y del
+   t-Tuple), que se encoge despacio con N. Ir a 10⁸ bits no cambiaría la
+   conclusión de fondo: por encima de su techo la batería solo dice que las
+   dos fuentes están por encima de su techo.
+3. **Consecuencia para la memoria:** la comparación del objetivo O8 no puede
+   apoyarse en la diferencia de las cifras SP 800-90B. Donde sí difieren las
+   dos fuentes es en lo que hay detrás de la cifra: la del motor tiene una
+   cota del modelo físico (y un divisor elegido con él) y la del ESP32 no,
+   y el ESP32 sin ruido de arranque repite secuencias entre chips
+   (`esp32_reinicios.md`). Separarlas con datos exigirá la campaña en la
+   FPGA con otras pruebas (reinicios, condiciones adversas), no más bits.

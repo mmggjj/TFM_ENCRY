@@ -84,6 +84,26 @@ aplicar la misma regla al motor. Cuarta, entre esos regímenes, para
 $H_\infty$ de alrededor de 0,5 a 0,95, la estimación queda por debajo del
 modelo, como debe hacer un estimador conservador.
 
+Un registro más largo sube el techo, pero para todas las fuentes por
+igual. A las longitudes de las dos capturas largas del ESP32 sin radio,
+$3{,}52 \times 10^6$ y $8{,}38 \times 10^6$ bits, se repitió el divisor
+$2^{23}$ en los tres casos con bits uniformes como referencia, tres
+semillas cada uno \simu{}. Las doce secuencias con $H_\infty \approx 1$
+promedian 0,881 (de 0,860 a 0,925) y 0,912 (de 0,889 a 0,935); las
+capturas del ESP32 puntúan 0,867 y 0,911 \meas{}, dentro de esas
+dispersiones en las dos longitudes, y los bits ideales
+$0{,}869 \pm 0{,}003$ y $0{,}926 \pm 0{,}016$. El estimador que limita
+sigue siendo la compresión, o el de $t$-tuplas en tres secuencias, cuyo
+sesgo solo se encoge despacio con $N$. Con $8{,}38 \times 10^6$ bits la
+vía IID en bytes acepta las doce secuencias, igual que la captura del
+ESP32. La comparación del objetivo O8 no puede apoyarse, por tanto, en
+una diferencia entre cifras de SP~800-90B: por encima de su techo la
+batería solo dice que las dos fuentes están por encima de él. Lo que las
+separa es lo que hay detrás de la cifra: un modelo físico y un divisor
+derivado de él en el lado del motor, y ninguno en el del ESP32, que sin
+el ruido de arranque repite secuencias entre chips
+(Tabla~\ref{tab:esp32_restart}).
+
 Estos bits solo contienen jitter gaussiano blanco. El ruido de parpadeo,
 el acoplamiento entre anillos, una alimentación compartida y las derivas
 lentas no están, y son lo que la batería menos puede ver y lo que la
