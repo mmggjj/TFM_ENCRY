@@ -30,6 +30,9 @@ architecture sim of tb_basys3_top is
   signal seg     : std_logic_vector(6 downto 0);
   signal an      : std_logic_vector(3 downto 0);
   signal fin     : boolean := false;
+  -- Copia de los anillos del motor: GHDL 4 no deja esperar sobre el alias
+  -- de un nombre externo, si sobre una senal del banco.
+  signal ro_mon  : std_logic_vector(1 downto 0);
 
   function de_seg(s : std_logic_vector(6 downto 0)) return integer is
   begin
@@ -59,8 +62,14 @@ begin
               led_vivo => led_vivo, sw_ro => sw_ro, ro_div => ro_div,
               seg => seg, dp => dp, an => an);
 
+  -- Despues de dut: el nombre externo tiene que estar ya elaborado.
+  b_ro : block is
+    alias ro_dut is << signal .tb_basys3_top.dut.ro_mon : std_logic_vector(1 downto 0) >>;
+  begin
+    ro_mon <= ro_dut;
+  end block b_ro;
+
   p_estimulo : process
-    alias ro_mon is << signal .tb_basys3_top.dut.ro_mon : std_logic_vector(1 downto 0) >>;
     variable n_ok, n_fallo : natural := 0;
 
     procedure chk(c : boolean; m : string) is
