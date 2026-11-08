@@ -48,7 +48,7 @@ jobs:
           python-version: "3.12"
       - run: sudo apt-get update && sudo apt-get install -y ghdl
       - run: ghdl --version
-      - name: siete bancos, con las propiedades PSL
+      - name: nueve bancos, con las propiedades PSL
         run: python rtl/run_tb.py
       - name: CMAC del banco del motor recalculado en Python
         run: python analysis/verifica_top.py
@@ -93,7 +93,7 @@ jobs:
       # lleva ESP-IDF 5.3.
       - name: mbedtls 3.6 (tarball de release)
         run: |
-          curl -sSL -o /tmp/mbedtls.tar.bz2 https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-3.6.2/mbedtls-3.6.2.tar.bz2
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/mbedtls.tar.bz2 https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-3.6.2/mbedtls-3.6.2.tar.bz2
           mkdir -p /tmp/mbedtls && tar xjf /tmp/mbedtls.tar.bz2 -C /tmp/mbedtls --strip-components=1
           test -f /tmp/mbedtls/library/error.c
       - name: banco en host
