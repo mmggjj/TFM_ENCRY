@@ -52,6 +52,44 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 08-11-2026: el primer día de placa, preparado sin placa
+
+Detalle y checklist en **`docs/puesta_en_marcha_fpga.md`**. Nada probado en
+hardware todavía.
+
+- **Frecuencímetro de los anillos** (`rtl/fpga/medidor_frec.vhd`,
+  `siete_seg.vhd`): `basys3_top` muestra en el display la frecuencia de
+  ro2 (sw1 abajo) o ro1 (sw1 arriba) en MHz con un decimal (ventana de
+  640 µs, prescaler 64, ±1 cuenta = 0,1 MHz); JA3 saca el anillo / 64 solo
+  en modo test (un anillo visible deja seguir su fase). `motor_top` tiene
+  un puerto nuevo `ro_mon` (en el ASIC no va a pad); generic `G_MEDIDOR`
+  del envoltorio para quitarlo. Bancos nuevos `tb_medidor_frec` (10/10) y
+  `tb_basys3_top` (4/4, 7 min). XDC: pines de sw1, JA3 y display; ro1 es
+  ahora reloj (2,0 ns estimados). **`build.tcl` no cargaba
+  `aes_enc_32.vhd`**: Vivado no habría elaborado; corregido.
+- Yosys `synth_xilinx` de `basys3_top` (`synth/basys3/yosys_xc7.sh`): 4769
+  LUT y 4234 FF, ~23 % y ~10 % del XC7A35T (estimación de otra herramienta).
+- Verificador: `kd [N]` y `crudo` con plazo según CFG_KD (antes ~2 s
+  fijos) y línea `crudo i kd K ms M`. Modelo `motor_sim.c`: la captura
+  tarda 4096·2^kd periodos de ro2 a 300 MHz. Banco host paso 13 y paso de
+  campaña; `consola_verificador.c` = `main.c` del verificador en el PC.
+  **GCC 15**: mbedtls necesita `MBEDTLS_FATAL_WARNINGS=OFF` (`run_host.py`).
+  Compilado con ESP-IDF 5.3.2 en el Linux (`~/esp/esp-idf-v5.3.2`).
+- `analysis/campana_motor.py` (captura por lotes, log íntegro, CRC,
+  `kdNN.bin`, `--90b`) y `jitter_estimator.py --trozos kdNN.bin
+  --kd-captura K` (Q_raw, b y CFG_KD). Los análisis con numpy se lanzan con
+  `~/eda/venv/bin/python`.
+- CFG_KD de partida en Artix-7 [ESTIMADO, 2-4 ps / 3-5 ns]: 17-21. ro2
+  real probablemente 170-330 MHz, no los 714 del XDC.
+- **Pendiente de Mario:** `T_ARRANQUE_MS`/`T_SIEMBRA_MS` están calculados
+  para ~700 MHz; con ro2 a 300 MHz y CFG_KD 24 el test de arranque tarda
+  ~1 min. Los trozos de `crudo` no son contiguos (SP 800-90B pide 10⁶
+  consecutivos): captura continua sería un cambio de RTL.
+- Cap. 8 (EN y ES) en borrador, con [PENDING]/[PENDIENTE] donde van los
+  resultados de la placa; PDF regenerados.
+- El detector de cruces del anillo IHP **ya tiene histéresis** (31-10);
+  lo que queda es repetir el chip del peor caso que se descartó.
+
 ## Estado al 31-10-2026: la fuente simulada bajo SP 800-90B
 
 `analysis/fuente_simulada_90b.py` genera bits **simulados** del ERO (modelo

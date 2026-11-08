@@ -1,16 +1,140 @@
 \chapter{Conclusiones y trabajo futuro}
 \label{ch:ch8_concl}
 
-% [BORRADOR] Material de partida: ver docs/ en el repositorio.
+% [BORRADOR, 08-11-2026] Escrito antes de la puesta en marcha en la FPGA.
+% Toda frase que depende de la placa va marcada [PENDIENTE] y hay que
+% reescribirla con las cifras medidas (docs/puesta_en_marcha_fpga.md).
 
 \section{Conclusiones}
 
-% PENDIENTE
+El trabajo se propuso diseñar un motor de generación de claves para un
+circuito integrado cuya entropía viene de osciladores en anillo simulados
+a nivel de transistor, convertir su jitter en una cota mediante un modelo
+estocástico, integrar la fuente en una \ac{FPGA} con un ESP32 y comparar
+las secuencias aleatorias de ambos. Las conclusiones siguen los objetivos
+de la Sección~\ref{sec:objectives}; cada una dice qué se ha demostrado y
+con qué evidencia, \meas{}, \simu{} o \est{}.
+
+\paragraph{La fuente de entropía se puede dimensionar desde el transistor
+(O1--O3).} El anillo de cinco etapas en el proceso abierto IHP SG13G2
+oscila a 2,73~GHz con un jitter de periodo de $176{,}7 \pm 2{,}0$~fs
+\simu{} en la esquina típica a 27~\textdegree C, sacado del ruido de los
+propios modelos de los dispositivos y no inyectado. El simulador no deja
+fijar la realización de su fuente de ruido, así que la incertidumbre sale
+de repetir la simulación, y la resolución del banco se declaró antes de
+leer ninguna cifra. El cálculo exacto con la gaussiana envuelta, y no la
+serie truncada que suele citarse, convierte el jitter en min-entropía por
+bit, y el objetivo $H_\infty \ge 0{,}98$ fija $Q \ge 0{,}2286$. Entre
+esquinas, alimentación ($\pm 10$\,\%) y desapareamiento, el peor caso es
+la esquina lenta a $-40$~\textdegree C y 1,08~V; un divisor fijo de
+$2^{23}$ cubre todos los chips simulados con $H_\infty \ge 0{,}9996$
+\simu{}, a 0,20--0,41~kbit/s. El divisor sale, por tanto, de la esquina
+fría, lenta y de alimentación baja, no de la típica, que por sí sola
+habría sugerido $2^{20}$.
+
+\paragraph{Una batería de estimadores estadísticos no sustituye al
+modelo.} Bits sacados del modelo con el jitter de IHP, y bits uniformes
+ideales, pasaron por la herramienta de SP~800-90B por la misma vía que las
+capturas del ESP32. A $10^6$ bits la herramienta se satura en
+$0{,}839 \pm 0{,}021$ \simu{}: todo punto del modelo con
+$H_\infty \ge 0{,}97$ da lo mismo, y con poca entropía la herramienta
+sobreestima. Con secuencias más largas el techo sube para todas las
+fuentes, el ESP32 incluido, y la herramienta sigue sin separarlas
+(Sección~\ref{sec:sim_90b}). Los tests estadísticos detectan defectos; no
+certifican entropía. En un oscilador en anillo la cota tiene que venir de
+la física, y ese es el argumento a favor del modelo estocástico.
+
+\paragraph{El motor digital es correcto frente a referencias
+independientes (O4).} El motor ---muestreador \ac{ERO}, tests de salud
+con test de arranque, CTR\_DRBG con función de derivación, AES-CMAC,
+zeroización y un mapa de registros por I2C--- está en VHDL-2008 portable.
+Sus bancos de pruebas reproducen los vectores oficiales de FIPS-197,
+SP~800-38B, RFC~4493 y \ac{CAVP}, y las reglas de seguridad del
+secuenciador se comprueban como propiedades \ac{PSL} en toda la
+simulación, no solo en los pasos que las provocan. Dos revisiones
+independientes encontraron defectos que los bancos no habían cazado
+---salida habilitada con una alarma de salud levantada, la semilla
+llegando al buffer de captura, valores intermedios que sobrevivían a la
+zeroización---; todos se corrigieron y cada uno tiene ahora su prueba. La
+lección es de método: un diseño verificado por su autor contra su propio
+banco no está verificado.
+
+\paragraph{El motor cabe en un circuito integrado pequeño (O7).}
+Sintetizado sobre las celdas estándar de IHP SG13G2, el motor ocupa
+92,5~kGE con un único núcleo AES de 32 bits compartido \simu{}, de los que
+unos 46~kGE son el motor digital sin el buffer de captura. Las dos
+optimizaciones aplicadas ---un núcleo AES compartido por el generador y el
+autenticador, y después una ruta de datos de 32 bits--- ahorraron
+23~kGE; no se llega a los 20--25~kGE publicados en el estado del arte, y
+está identificado el camino hasta unos 42~kGE.
+
+\paragraph{El generador del ESP32 no es una referencia en la que confiar
+a ciegas (O8, lado del ESP32).} Treinta y ocho capturas de tres chips en
+cuatro condiciones de radio y \ac{ADC} no muestran efecto medible de la
+condición ni del chip bajo SP~800-90B \meas{}. La prueba de reinicios
+enseña lo que la estadística esconde: sin el ruido que mete el cargador de
+arranque, el generador produce la misma secuencia tras cada reinicio, y
+dos chips distintos producen la misma \meas{}. Su salida es tan buena como
+su siembra, que depende de que la radio, el \ac{ADC} o el cargador de
+arranque estén activos.
+
+\paragraph{Integración en la FPGA (O5, O6).} [PENDIENTE: puesta en marcha
+en la placa, frecuencias medidas de los anillos, $Q_{\mathrm{raw}}$ y
+exponente de acumulación medidos, divisor para la \ac{FPGA}, campaña de
+SP~800-90B con los anillos reales, reto-respuesta con el ESP32 en el bus.]
+Antes de la placa, el firmware corrió contra un modelo del motor en el PC
+con el mbedtls real, en un chip emulado y en un ESP32-C3 real; el
+envoltorio de la placa, con su frecuencímetro de los anillos, se simuló
+con los anillos del motor.
+
+\paragraph{Comparación de las dos fuentes (O8).} [PENDIENTE: el motor
+medido frente al ESP32 medido con la misma batería. Lo que anticipa la
+simulación: la batería no los separará donde los dos están cerca de la
+entropía plena; los puntos informativos son los divisores bajos, donde el
+modelo predice $H_\infty < 0{,}8$ y la batería puede contradecirlo.]
 
 \section{Aportaciones}
 
-% PENDIENTE
+\begin{itemize}
+\item Una cadena del ruido del transistor a la cota de min-entropía de un
+oscilador en anillo sobre un \ac{PDK} abierto, con el divisor fijado por
+el peor caso de esquinas, alimentación y desapareamiento, y con cada
+eslabón validado con datos de respuesta conocida.
+\item La evidencia, con fuentes simuladas de entropía conocida, de que los
+estimadores de SP~800-90B se saturan por debajo de 0,9 a las longitudes
+de secuencia habituales y no distinguen en ese rango una fuente sana de
+una más débil.
+\item Una caracterización del generador del ESP32 bajo SP~800-90B con tres
+chips y cuatro condiciones, y una prueba de reinicios que muestra que, sin
+ruido externo en el arranque, chips distintos producen la misma
+secuencia. No se ha encontrado este resultado en la literatura
+consultada.
+\item Un motor de generación de claves en RTL portable con sus reglas de
+seguridad escritas como propiedades comprobadas, sintetizado sobre celdas
+estándar abiertas, con su firmware y un flujo reproducible publicados.
+\end{itemize}
 
 \section{Trabajo futuro}
 
-% PENDIENTE
+\begin{itemize}
+\item \emph{Silicio.} Fabricar el anillo y el muestreador en un shuttle
+académico y medir el jitter que este trabajo ha simulado; la \ac{FPGA}
+mide otro anillo.
+\item \emph{Modelos de fundición.} Repetir el estudio de esquinas y
+desapareamiento con los modelos de ruido de un \ac{PDK} comercial, y
+repetir el chip del peor caso que se descartó por cruces espurios, ahora
+que el detector tiene histéresis.
+\item \emph{Captura continua.} El buffer de captura entrega bloques
+independientes de 4096 bits; un modo continuo daría las muestras
+consecutivas que pide SP~800-90B.
+\item \emph{Test de jitter en línea.} Llevar el estimador de pares al RTL
+como test en línea que detecte enfriamiento y enganche, como proponen sus
+autores.
+\item \emph{Área.} Aplicar la tercera optimización para acercarse a
+42~kGE, y medir la potencia.
+\item \emph{El producto.} Guardar la clave del equipo cifrada o hacer del
+motor un elemento seguro que firme, y dar hora real a las lecturas
+firmadas.
+\item \emph{Verificación formal} de las propiedades del secuenciador,
+cuando la cadena de herramientas las lea.
+\end{itemize}

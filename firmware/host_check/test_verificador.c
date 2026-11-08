@@ -28,6 +28,7 @@ extern int  motor_fallo_bus;
 extern bool motor_colgado;
 extern int  motor_n_tramas;
 extern uint32_t motor_pet_max;
+extern bool motor_capturando;
 
 static int fallos = 0;
 
@@ -172,6 +173,40 @@ int main(void)
     cmd_generar();
     cmd_reto(3);
     chk(ult_reto.aciertos == 3, "tras borrar, sembrar y generar, el reto-respuesta vuelve a cerrar");
+
+    printf("\n13) Divisor y captura de bits crudos\n");
+    cmd_kd(30);
+    uint8_t kd = 0;
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    chk(kd != 30, "kd fuera de rango no se escribe");
+    cmd_kd(10);
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    chk(kd == 10, "kd 10 queda escrito");
+    tramas = motor_n_tramas;
+    t0 = motor_ticks();
+    cmd_crudo(3);
+    chk(motor_n_tramas == tramas + 3, "crudo 3 envia 3 tramas");
+    chk(motor_ticks() - t0 >= 3 * ((4096u << 10) / 300000u),
+        "y espera a que cada captura se llene (4096 x 2^10 periodos de ro2)");
+    cmd_kd(18);                                /* ~3,6 s por captura en el modelo */
+    tramas = motor_n_tramas;
+    t0 = motor_ticks();
+    cmd_crudo(1);
+    chk(motor_n_tramas == tramas + 1 && motor_ticks() - t0 >= 3000,
+        "con kd 18 la captura tarda mas de los 2 s del plazo antiguo y llega");
+    motor_capturando = true;
+    tramas = motor_n_tramas;
+    cmd_crudo(1);
+    chk(motor_n_tramas == tramas, "con otra captura en curso no sale trama");
+    motor_capturando = false;
+    motor_modo_test = false;
+    cmd_crudo(1);
+    chk(motor_n_tramas == tramas, "sin modo test no sale trama");
+    motor_modo_test = true;
+    cmd_kd(6);
+    cmd_crudo(1);
+    cmd_sembrar();
+    chk((motor_status() & ST_SEMBRADO) != 0, "tras capturar se vuelve a sembrar");
 
     printf("\ntest_verificador: %d fallos\n", fallos);
     return fallos == 0 ? 0 : 1;

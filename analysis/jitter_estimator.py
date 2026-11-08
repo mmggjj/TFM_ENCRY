@@ -253,6 +253,51 @@ def autotest(verbose=True):
     return not fallos
 
 
+def desde_capturas(fichero, kd_captura, N=100, bits_trozo=4096):
+    """Q_raw de una campana real: fichero con trozos de bits_trozo bits
+    (kdNN.bin de analysis/campana_motor.py, MSB primero) capturados con
+    CFG_KD = kd_captura. Cada muestra abarca 2^kd_captura periodos de ro2,
+    asi que la Q por periodo de ro2 es la de la muestra entre 2^kd."""
+    datos = np.frombuffer(open(fichero, "rb").read(), dtype=np.uint8)
+    n = datos.size // (bits_trozo // 8)
+    if n < 2:
+        raise ValueError(f"{fichero}: {n} trozos")
+    trozos = np.unpackbits(datos[: n * bits_trozo // 8]).reshape(n, bits_trozo)
+    M_list = np.unique(np.round(np.geomspace(50, bits_trozo - N, 32)).astype(int))
+    res = estimar_q_raw(trozos, M_list=M_list, N=N)
+    res["trozos"] = n
+    res["q_por_periodo"] = res["q_raw"] / 2 ** kd_captura
+    res["b"] = exponente_acumulacion(res)
+    res["kd_ro2"] = kd_necesario(res["q_por_periodo"]) if res["q_raw"] > 0 else float("inf")
+    return res
+
+
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description="Q_raw y divisor a partir de capturas del motor")
+    ap.add_argument("--trozos", help="kdNN.bin de campana_motor.py")
+    ap.add_argument("--kd-captura", type=int, default=0, help="CFG_KD con que se capturo")
+    ap.add_argument("--N", type=int, default=100)
+    ap.add_argument("--autotest", action="store_true")
+    a = ap.parse_args(argv)
+    if a.autotest or not a.trozos:
+        return 0 if autotest() else 1
+    r = desde_capturas(a.trozos, a.kd_captura, a.N)
+    print(f"{a.trozos}: {r['trozos']} trozos, CFG_KD de captura {a.kd_captura}")
+    print("  M      media c   Var(c)      usada")
+    for M, m, v, u in zip(r["M_list"], r["medias"], r["varianzas"], r["seleccion"]):
+        print(f"  {M:5d}  {m:.4f}   {v:.4e}  {'si' if u else 'no'}")
+    print(f"Q_raw por muestra {r['q_raw']:.4e} con {r['n_M_usadas']} distancias; "
+          f"kappa {r['kappa']:.3f} (1 = ruido binomial puro)")
+    print(f"Q por periodo de ro2 {r['q_por_periodo']:.4e}, sigma/T {np.sqrt(max(r['q_por_periodo'], 0)):.3e}")
+    print(f"exponente de acumulacion b = {r['b']:.3f} (1 termico; 2 flicker o global)")
+    if np.isfinite(r["kd_ro2"]):
+        import math
+        print(f"K_D para Q >= 0,2286: {r['kd_ro2']} periodos de ro2 -> CFG_KD = "
+              f"{math.ceil(math.log2(r['kd_ro2']))} (2^{math.log2(r['kd_ro2']):.2f})")
+    return 0
+
+
 if __name__ == "__main__":
     import sys
-    sys.exit(0 if autotest() else 1)
+    sys.exit(main())

@@ -57,7 +57,11 @@ entity motor_top is
     sda_in    : in  std_logic;
     sda_oe    : out std_logic;
     modo_test : in  std_logic;         -- habilita leer CLAVE y CAPTURA
-    led_alarma : out std_logic
+    led_alarma : out std_logic;
+    -- Los dos anillos, para el frecuencimetro del envoltorio de la FPGA
+    -- (0: ro1, 1: ro2). En el integrado no van a pad: un anillo visible
+    -- desde fuera deja seguir su fase y resta entropia a la muestra.
+    ro_mon    : out std_logic_vector(1 downto 0)
   );
 end entity motor_top;
 
@@ -162,6 +166,7 @@ architecture rtl of motor_top is
 begin
 
   led_alarma <= alm;
+  ro_mon <= ro2 & ro1;
   ocupado <= '0' when orden = LIBRE else '1';
 
   p_modo_test : process (clk, rst_n_s)

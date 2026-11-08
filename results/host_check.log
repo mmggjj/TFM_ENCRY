@@ -114,8 +114,64 @@ provision: ok
 reto-respuesta: 3 aciertos, 0 fallos criptograficos, 0 errores de bus, de 3
   [ok ] tras borrar, sembrar y generar, el reto-respuesta vuelve a cerrar
 
+13) Divisor y captura de bits crudos
+kd: fuera de rango (0 a 24)
+  [ok ] kd fuera de rango no se escribe
+kd 10 leido 10 ok
+  [ok ] kd 10 queda escrito
+crudo 0 kd 10 ms 13
+FR020089d4b66335c1c7e4248367d8ed9612ec453902d8e50af89d7709d1a596c1f41f95aa82ca6c49ae90cd1668baac7aa6f2b4a8ca99b2c2372acb08cf61c9c3805e6e0328da4cd76a19edd2d3994c798b0022569ad418d1fee4d9cd45a391c601ffc92ad91501432fee150287617c13629e69fc7281cd7165a63eab49cf714bce3a75a74f76ea7e64ff81eb61fdfec39b67bf0de98c7e4e32bdf97c8c6ac75ba43c02f4b2ed7216ecf3014df000108b67cf99505b179f8ed4980a6103d1bca70dbe9bbfab0ed59801d6e5f2d6f67d3ec5168e212e2daf02c6b963c98a1f7097de0c56891a2b211b01070dd8fd8b16c2a1a4e3cfd292d2984b3561d555d16c33ddc2bcf7edde13efe520c7e2abdda44d81881c531aeeeb66244c3b791ea8acfb6a68f3584606472b260e0dd2ebb21f6c3a3bc0542aabba4ef8f6c7169e731108db0460220aa74d31b55b03a00d220d475dcd9b877856d5704c9c86ea0f98f2eb9c530da7fa5ad8b0b5db50c2fd5d095a2aa5e2a3fbb71347549a316332234ece765b7571b64d216b28712e25cf3780f9dc629cd719b01e6d4a4fd17c731f4ae97bc05a310d7b9c36edca5bbc02dbb5de3d52b65702d4c44c2495c897b5128030d2db61e056fd1643c871ffca4db5a88a075ee10933a655573b1deef02f6e20024981e2a07ff8e34769e311b698b9419f1822a84bc8fda2041a90f449fe154b48962d431d994f
+crudo 1 kd 10 ms 13
+FR0200e81525cb5c8fae6d45462786e53fa98d8a718a2c75a4bc6aeeba7f39021567ea2b8cb6871b64f561ab1ce7905b901ee502a811774dcde13b8760748a76db74a1682a28838f1de43a39ccca945ce8795e918ad6de57b719df188d698e69dd2fd1085754977539d1ae059b436184bcc0154796f39e4d0c7d6599e6f302c422d3cc7a2863ef61349d66cfe0c7539d8768e41d5b826b6700d001e6c403aae6d77660ffd94f600dedc6ddcd8d306a15994e32f4d19d5cd16e5db73260621837d87936b2c896bfb55c9c83eacdedff663c315a0dcfb6de3d13956f74f787abd000e282c978417ed5de01bfabefbe112bef6b38be2216fb35ab6aa9a3f25573f237f5bbaf363a84143b43bf2a01d055f13c8daf5ea3ab934f153df2079265fac95ab57890effda52b4064554235ab337138e2cfdc8d622ba39f1daa3182a4fadc5a736c49701174b076caf2ab75251cad08eb89954db438edd1e31e5387192fe18c9c2bfcad9fac23699fcedec4ea8cccd5156223ca9a109b7d2eef05471ee6d3ba11cf68b17c8b1a1b5af9df4485ac1a9a0e3d64a84d00267bef2bc30d1196c8236630d4e2bbeefd15e7dc5a6c88740796b16b3ffe6b65795a903c68a1d330c43960981b1b8718316ef48bdb7dffe213b04d52aeb9b7271347647be937abad700b468b27cda3583b97e31614e2f82892467a40ff32671279cb8e62023910724556fd6ca623bd62
+crudo 2 kd 10 ms 13
+FR020023a0c45e38a7754c896d741bb3ef5bb221c2c59a8e53fd908c0d03d163003d86a101e4d9a8592531c79a4c7a89a72daa6af244f8454188d14e8ba3b18ce0372de21c068a752bbc3cc508b74eb0e4f81ad63d121b7e9aeccd268f7eb270b6df52d2e5dc47109884d6a13b24511f1d6bf55a7d10d817fca53d8c24effcdace4eacb32af3c4c3779a64b2beb5d1db20c6359dd60eb4d3b3f25fd7e15bb1b0a95d63d3512796c8c1fa7b80af4c5bcf13916ce99f21bc52131b2af476dba41f3908f38a2f8952f184cd71331acc032d5d6f16fc90d34fa3ee799865543c848d44771774016a658537d6b851a2bb7e002b95fcbb684b5f56c4f7bb193340a678b7beecb828513d5f27f6b1c9b12fc9dcc4c6982c11f783d6ee3eef217e9599365385ee7bd62cdbfd228cc7d3bb90b0805648ac683f2f3e2d6e2d4eecc2e822166d1191443d6c415ff80832b499e234ef2ae057691095967ec2e56a85cd8d9b3a9e2c7edb99c03a91c86c45614f7951795aa8e36a3e79e8005e52852bdf20667d4de458e6a492776dffbdce4e361fc790c8aafa0624e20682358cae14ac1492f9f8eadf9d7d570a7c14d8ca4af891dbc03cd5c660b8cce2ed58900105a493fe9d7ede3afb354477491c419314d26ed40e449a6efc6751e9bfe1eac4867ec323fca15df7d6a16e1fbdafb2d28121a6906541fe61a84f4a6731342cb7b2efdaae9037a566d17fdab4
+  [ok ] crudo 3 envia 3 tramas
+  [ok ] y espera a que cada captura se llene (4096 x 2^10 periodos de ro2)
+kd 18 leido 18 ok
+crudo 0 kd 18 ms 3580
+FR0200d8138595c2376744580ed4bd4fd21ef722685e539d8a0a4f79e4fe091ba36ff3b7f488792cf0bd84fe91424d64604486c9a2d9662de3b5a6c7b3b0e2571fd50e145d87404d45c44bd606983a67dcc0307f9996ac7c4b5243ff02255622fa643658eb76a5303af107418941a86602d8e59b6e9118b9e35bb8e6810e087b723ed35eb4798eee6a952ff3d7d759d9af3e741dcf8cd7b3e88f99699ea1e410dfb86e9331fd819b92b18e6988e8423826b755f6432ca92bbc42945ae3796ac231d95562d6d6fd68878bd2107314489acb9d900fca393a867bcfe05e484a20792375dbf94bd862d36334e3d7482b7114c80123923a5d18b52cf813744333ed66a8c860f3a0c2c604f6a9db3ed44c529d4d752f87d3483cff404f74838261ea2a2a4a1dca0ce4ce028da94062f593ff42082ec9db7605dbb7544f3ad6b02400da6e1ea57a02737c8f1dbdf11250f055581f1e3495240f4c785e874f0eab4fe91a6d8e946f0111ff1ecef0311ee1867600a4aa95c8b9e2411769902614df0f2e4d9dc3bc9ed4bbbda2aceec08d74368d18e122e19a0422b26db2d88291e7b0de84739b224756dfe902cda98f41e01c5ac13f3b5b435d0db10fe533a0cce37f50571a739e7052887320310261111fbbd25ef62ea1533b5262218503ed69823ec09cb15e0c03e67f2318828529a140fcff372aa08a65f3ed8678f074e172b2a10e63001a66eecfd37a
+  [ok ] con kd 18 la captura tarda mas de los 2 s del plazo antiguo y llega
+crudo: captura rechazada (motor ocupado?)
+  [ok ] con otra captura en curso no sale trama
+crudo: CAPTURA solo se lee en modo test
+  [ok ] sin modo test no sale trama
+kd 6 leido 6 ok
+crudo 0 kd 6 ms 0
+FR0200e69a8afe1c0f28bd4f24bc864e5c11b34ffe3ac8eeaea960604b6ec34b88293122b3303ec258fb127cb798ca14a97d63a7b72b9565d5f5c52063886becb29c0e65cc4d2824483aa000d26a147ce877239fa3b90578aeca98125303fe059f0c6a6c599290a2cc31a29f9bb61b832d3e23d0f72848a6f2e0b845e3b64a83c2b5ef1c477fbe14b060b34c16cecf430cf214041a5caa0d3d625220189da3da5292f69912b4adc214600e2a2ede6e3bd0823febdee9f81b4b4a3c63e7df3d397234d384e88046fde155270f33954a031789eef672e611bd314d20182d5e529f9225237aa5697786be9f96f134e0f54c6ae342dcca539afba1ba13ce18656daa8a902530f99cb6b83b4ca9702d9ebc9782fe734c510d47f2c85ac0e0c02d8b4abdb07ab74c316f887d18f8aab7b44139b2b58503c2ccf68a26b66be6e4f631a1a6ab58f2dcc77a5ae07204972646d0d8fb55dcbd21d2484788b32e6ca95f0e4f0a6641e72ebc410e2e45a5558b752d86ca0944ebdb8c32643f60d0e8bfde37ca4578b17334f281633726b8c39be54965ef8d50ca19822e58e3ff40a2dd776c22f01d95240f1687473c3f0ad725533c14e18cdefa0f0d53f20c9394e90b010cfb1ea11f2eb8a775f4e67fcc0bd2081fb395feaea40b019617942a009f2b0c9a4aaeba786661ed5a476c26533e2f72f2c470a0687ba1fe92352893d5549f6f9e4d2916b3190523bf
+sembrar: ok
+  [ok ] tras capturar se vuelve a sembrar
+
 test_verificador: 0 fallos
 (rc=0)
+
+== campana_motor.py contra la consola del verificador ==
+(main.c del verificador en el PC sobre el modelo; kd 6, 10 y 18, 5 trozos cada uno)
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/consola_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/consola_verificador
+(rc=0)
+$ /usr/bin/python3 analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --kd 6 10 18 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_motor
+motor: ID 0xa5, VERSION 0x03, modo test
+
+kd 6: 5/5 trozos, 10 s
+
+kd 10: 5/5 trozos, 10 s
+
+kd 18: 5/5 trozos, 10 s
+kd 6: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 0 ms, unos 0.501025390625
+kd 10: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 13 ms, unos 0.497802734375
+kd 18: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 3580 ms, unos 0.494580078125
+log integro: firmware/host_check/build/campana_motor/serie.log
+resumen: firmware/host_check/build/campana_motor/resumen.csv
+(rc=0)
+  [ok ] tres divisores, 5 trozos cada uno, 0 CRC malos
+  [ok ] kd06/10/18.bin de 2560 bytes
+$ /usr/bin/python3 analysis/campana_motor.py --reparsear firmware/host_check/build/campana_motor/corrupto/serie.log
+kd 6: 4 trozos (16384 bits), CRC malos 1, huerfanas 0, errores 0, llenado mediana 0 ms, unos 0.50091552734375
+kd 10: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 13 ms, unos 0.497802734375
+kd 18: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 3580 ms, unos 0.494580078125
+log integro: firmware/host_check/build/campana_motor/corrupto/serie.log
+resumen: firmware/host_check/build/campana_motor/corrupto/resumen.csv
+(rc=1)
+  [ok ] una trama alterada: CRC malo contado y rc=1
 
 == test_medidor ==
 $ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I $MBEDTLS/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
@@ -140,7 +196,7 @@ csr: FALLO (-16000), sin clave
 2) Clave del equipo con aleatorio del motor
 sembrar: ok
   [ok ] el motor queda sembrado
-clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
+clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
 FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
   [ok ] hay clave
   [ok ] cada bloque de la clave es una orden aleatorio aceptada por el motor
@@ -183,7 +239,7 @@ clave: FALLO, ERROR I2C (-60); sigue la clave anterior
   [ok ] con el bus caido a mitad no hay clave nueva y sigue la anterior
 
 7) Clave nueva y CSR
-clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
+clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
 FP005b3059301306072a8648ce3d020106082a8648ce3d030107034200043034adcf3729be86cc64d4cb85f042e219abe32b5b6095ce9222826ddcadec77a459690915c5c9704556daa3e7eb17966015b087d9379df02bf50f6469a99898723e0daf
   [ok ] la segunda clave es distinta de la primera
 -----BEGIN CERTIFICATE REQUEST-----
@@ -212,10 +268,10 @@ publica: FALLO, sin clave (-16000)
 
 10) Tras un reinicio la secuencia sigue creciendo
   [ok ] al reiniciar no hay clave en RAM
-clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
-FP005b3059301306072a8648ce3d020106082a8648ce3d03010703420004e9cd43ea5cb995596360348f0448def28c25f3ac0187d8da045b9b10a62e460741bd1dd16e6c66ce687c0e147864602c309e9dfebc804ade2b0593e0f64ec1a87b42835c
+clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
+FP005b3059301306072a8648ce3d020106082a8648ce3d03010703420004be5b1955b023c459784151dd7396c0da9ad4a4bc757f29f9efca8d44c19d7d9777a80442d30595766de08c7791bacf7fe689eb16dce07e07e969828ec31558d25f48a99f
   [ok ] clave nueva tras el reinicio
-FL005f7cdfa100112200000200000100000005000000000000041a3045022040b5f83578721f9672b10e9784af8d49647ce8ab6a5eb7c98a600f0402d482ba022100a6e7f036511fedaca4ac5d6eff1a47cb510be100fa8f6aebbf1d39898af480ac469b2548
+FL005e7cdfa100112200000200000100000005000000000000041a304402200ca7e927c1b1ffabb76e4f91e8ab9f93c16000f4a7b5859085f3bad3bef5fd90022046ac2bde22c584d5a49f5c1035475497de41e81e0f3fa9643a64b3c1ea27204c465af975
   [ok ] arranque 2: la primera lectura supera a la ultima de antes del reinicio
 E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
   [ok ] sin NVS el contador de arranques es 0 y se avisa
@@ -225,7 +281,7 @@ E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
   [ok ] 'clave' la dejo guardada en la NVS
 clave recuperada de la NVS
   [ok ] al arrancar se recupera la clave de la NVS
-FL00607cdfa100112200000300000100000005000000000000041a3046022100b658a858fee224d97c8c834cca5932f99874f230b14098ba3743c60480c1b963022100e1305998e312c9b894919ceca29bc9047d017e7d4211e6eded2f676a704f36475f734182
+FL005e7cdfa100112200000300000100000005000000000000041a304402206af4f801a23f938b5bfa6dc7993f0296a100e08d29862a036c3395edb0d05506022077f037930c6f47e665a99a35e0747e17ec603454c8927dd358d93af3910cf586fb50e727
   [ok ] firma con la misma identidad en el arranque 3
   [ok ] la privada exportada es un ECPrivateKey DER de 121 bytes
 olvidar: clave borrada de la RAM y de la NVS
@@ -255,7 +311,7 @@ publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d0301070342
 CSR CN=medidor-7cdfa10011220000: firma valida, publica del equipo
 lectura 10: equipo 7cdfa10011220000 seq 16777224 t 5 s energia 1 Wh potencia 1050 W: ok
 AVISO: la publica anunciada CAMBIA (cambio 2)
-publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d03010703420004e9cd43ea5cb995596360348f0448def28c25f3ac0187d8da045b9b10a62e460741bd1dd16e6c66ce687c0e147864602c309e9dfebc804ade2b0593e0f64ec1a8
+publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d03010703420004be5b1955b023c459784151dd7396c0da9ad4a4bc757f29f9efca8d44c19d7d9777a80442d30595766de08c7791bacf7fe689eb16dce07e07e969828ec31558d2
 lectura 11: equipo 7cdfa10011220000 seq 33554433 t 5 s energia 0 Wh potencia 1050 W: ok
 lectura 12: equipo 7cdfa10011220000 seq 50331649 t 5 s energia 0 Wh potencia 1050 W: ok
 resumen: lecturas=12 validas=10 firma_invalida=1 repetidas=1 sin_clave=0 crc_malo=0 csr=1 csr_mala=0 clave_cambiada=2 publica_mala=0

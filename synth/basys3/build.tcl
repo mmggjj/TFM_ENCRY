@@ -26,9 +26,12 @@ read_vhdl -vhdl2008 [list \
     $raiz/rtl/io/i2c_slave.vhd \
     $raiz/rtl/aes/aes_pkg.vhd \
     $raiz/rtl/aes/aes_enc.vhd \
+    $raiz/rtl/aes/aes_enc_32.vhd \
     $raiz/rtl/aes/aes_cmac.vhd \
     $raiz/rtl/drbg/ctr_drbg.vhd \
     $raiz/rtl/top/motor_top.vhd \
+    $raiz/rtl/fpga/medidor_frec.vhd \
+    $raiz/rtl/fpga/siete_seg.vhd \
     $raiz/rtl/fpga/basys3_top.vhd]
 read_xdc ./basys3.xdc
 read_xdc ./ro_pblocks.xdc

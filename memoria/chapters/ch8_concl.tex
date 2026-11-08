@@ -1,17 +1,132 @@
 \chapter{Conclusions and Future Work}
 \label{ch:ch8_concl}
 
-% [DRAFT] Source material: see docs/ in the repository.
+% [DRAFT, 08-11-2026] Written before the FPGA bring-up. Every sentence
+% that depends on the board is marked [PENDING] and must be rewritten with
+% the measured figures (docs/puesta_en_marcha_fpga.md).
 
 \section{Conclusions}
 
-% TODO
+The work set out to design a key-generation engine for an integrated
+circuit whose entropy comes from ring oscillators simulated at transistor
+level, to turn their jitter into a bound through a stochastic model, to
+integrate the source in an \ac{FPGA} with an ESP32, and to compare the
+random sequences of both. The conclusions follow the objectives of
+Section~\ref{sec:objectives}; each one states what was shown and on what
+evidence, \meas{}, \simu{} or \est{}.
+
+\paragraph{The entropy source can be dimensioned from the transistor
+(O1--O3).} The five-stage ring on the open IHP SG13G2 process oscillates
+at 2.73~GHz with a period jitter of $176.7 \pm 2.0$~fs \simu{} in the
+typical corner at 27~\textdegree C, taken from the noise of the device
+models themselves rather than injected. The simulator cannot fix the
+realization of its noise source, so the uncertainty comes from repeating
+the simulation, and the bench resolution was stated before any figure was
+read. The exact wrapped-Gaussian computation, not the truncated series
+usually quoted, turns the jitter into a min-entropy per bit, and the
+target $H_\infty \ge 0.98$ fixes $Q \ge 0.2286$. Across corners, supply
+($\pm 10$\,\%) and mismatch, the worst case is the slow corner at
+$-40$~\textdegree C and 1.08~V; a fixed divider of $2^{23}$ covers every
+simulated chip with $H_\infty \ge 0.9996$ \simu{}, at 0.20--0.41~kbit/s.
+The divider therefore follows from the cold, slow, low-supply corner, not
+from the typical one, which alone would have suggested $2^{20}$.
+
+\paragraph{A battery of statistical estimators cannot replace the model.}
+Bits drawn from the model with the IHP jitter, and ideal uniform bits,
+were passed through the SP~800-90B tool along the same path as the ESP32
+captures. At $10^6$ bits the tool saturates at $0.839 \pm 0.021$
+\simu{}: every point of the model with $H_\infty \ge 0.97$ reads alike,
+and with little entropy the tool overestimates. With longer sequences the
+ceiling rises for every source, ESP32 included, and the tool still does
+not separate them (Section~\ref{sec:sim_90b}). Statistical tests detect
+defects; they do not certify entropy. For a ring oscillator the bound has
+to come from the physics, and that is the argument for the stochastic
+model.
+
+\paragraph{The digital engine is correct against independent references
+(O4).} The engine --- \ac{ERO} sampler, health tests with start-up test,
+CTR\_DRBG with derivation function, AES-CMAC, zeroization and an I2C
+register map --- is portable VHDL-2008. Its testbenches reproduce the
+official FIPS-197, SP~800-38B, RFC~4493 and \ac{CAVP} vectors, and the
+security rules of the sequencer are checked as \ac{PSL} properties over
+the whole simulation, not only in the steps that exercise them. Two
+independent reviews found defects that the testbenches had not caught ---
+output still enabled with a health alarm raised, the seed reaching the
+capture buffer, intermediate values surviving zeroization ---; all were
+fixed and each now has a test. The lesson is methodological: a design
+verified by its own author against its own testbench is not verified.
+
+\paragraph{The engine fits a small integrated circuit (O7).} Synthesized
+on IHP SG13G2 standard cells, the engine occupies 92.5~kGE with one shared
+32-bit AES core \simu{}, of which about 46~kGE are the digital engine
+without the capture buffer. The two optimizations applied --- one AES core
+shared by the generator and the authenticator, then a 32-bit datapath ---
+saved 23~kGE; the published 20--25~kGE of the state of the art are not
+reached, and the path to about 42~kGE is identified.
+
+\paragraph{The ESP32 generator is not a reference to be trusted blindly
+(O8, ESP32 side).} Thirty-eight captures from three chips under four radio
+and \ac{ADC} conditions show no measurable effect of condition or chip
+under SP~800-90B \meas{}. The restart test shows what the statistics
+hide: without the noise that the bootloader injects, the generator
+produces the same sequence after every reset, and two different chips
+produce the same one \meas{}. Its output is as good as its seeding, which
+depends on the radio, the \ac{ADC} or the bootloader being active.
+
+\paragraph{Integration on the FPGA (O5, O6).} [PENDING: bring-up on the
+board, measured ring frequencies, measured $Q_{\mathrm{raw}}$ and
+accumulation exponent, divider for the \ac{FPGA}, SP~800-90B campaign on
+the real rings, challenge--response with the ESP32 on the bus.] Before
+the board, the firmware ran against a model of the engine on the host
+with the real mbedtls, in an emulated chip, and on a real ESP32-C3; the
+board wrapper with its ring frequency meter was simulated with the rings
+of the engine.
+
+\paragraph{Comparison of the two sources (O8).} [PENDING: the measured
+engine against the measured ESP32 under the same battery. Expected from
+the simulation: the battery will not separate them where both are near
+full entropy; the informative points are the low dividers, where the model
+predicts $H_\infty < 0.8$ and the battery can contradict it.]
 
 \section{Contributions}
 
-% TODO
+\begin{itemize}
+\item A chain from transistor noise to a min-entropy bound for a ring
+oscillator on an open \ac{PDK}, with the divider fixed by the worst of
+corners, supply and mismatch, and with every link validated on data of
+known answer.
+\item Evidence, on simulated sources of known entropy, that the
+SP~800-90B estimators saturate below 0.9 at the usual sequence lengths and
+cannot tell a sound source from a weaker one in that range.
+\item A characterization of the ESP32 generator under SP~800-90B with
+three chips and four conditions, and a restart test showing that, without
+external noise at boot, different chips produce the same sequence. This
+result was not found in the literature consulted.
+\item A key-generation engine in portable RTL with its security rules
+written as checked properties, synthesized on open standard cells, with
+its firmware and reproducible flow released.
+\end{itemize}
 
 \section{Future work}
 
-% TODO
-
+\begin{itemize}
+\item \emph{Silicon.} Fabricate the ring and the sampler on an academic
+shuttle and measure the jitter that this work simulated; the \ac{FPGA}
+measures a different ring.
+\item \emph{Foundry models.} Repeat the corner and mismatch study with the
+noise models of a commercial \ac{PDK}, and rerun the worst-point die
+that was discarded for spurious crossings, now that the detector has
+hysteresis.
+\item \emph{Continuous capture.} The capture buffer delivers independent
+4096-bit blocks; a continuous mode would give the consecutive samples that
+SP~800-90B asks for.
+\item \emph{Online jitter test.} Move the pair estimator into the RTL as an
+online test that detects cooling and locking, as its authors propose.
+\item \emph{Area.} Apply the third optimization to approach 42~kGE, and
+measure power.
+\item \emph{The product.} Store the device key encrypted or make the
+engine a secure element that signs, and add real time to the signed
+readings.
+\item \emph{Formal verification} of the sequencer properties, once the
+tool chain reads them.
+\end{itemize}

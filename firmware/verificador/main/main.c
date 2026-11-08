@@ -22,7 +22,9 @@
  *   generar   pide una clave nueva, la provisiona (modo test) y la muestra
  *   reto N    hace N retos-respuesta con nonces de esp_random() y cuenta
  *   aleatorio N  vuelca N bloques de 32 bytes del DRBG al PC
- *   crudo N   vuelca N trozos del buffer de captura al PC
+ *   kd [N]    escribe CFG_KD (K_D = 2^N) y lo relee; sin N solo lo lee
+ *   crudo N   vuelca N trozos del buffer de captura al PC (4096 bits cada uno,
+ *             no contiguos entre si) con su tiempo de llenado
  *   esp N     vuelca N bloques de esp_random() al PC (comparacion)
  *   cero      zeroiza el motor (clave, DRBG, RETO, ALEATORIO)
  */
@@ -240,26 +242,65 @@ static void cmd_reto(int n)
     ult_reto.errores = errores;
 }
 
+/* Plazo de una captura de 4096 bits: 4096 * 2^CFG_KD periodos de ro2,
+ * con ro2 a 100 MHz como suelo (en la FPGA se espera mas) y margen x4. */
+static uint32_t plazo_captura_ms(uint8_t kd)
+{
+    if (kd > 24) kd = 24;
+    uint64_t ms = (4096ull << kd) * 4ull / 100000ull;
+    return ms < 2000 ? 2000 : (uint32_t)ms;
+}
+
+static void cmd_kd(int v)
+{
+    uint8_t leido = 0xff;
+    motor_io_reiniciar();
+    if (v == -1) {                      /* "kd" solo: lo lee */
+        motor_reg_leer(REG_CFG_KD, &leido, 1);
+        if (!motor_io_ok()) printf("kd: ERROR I2C\n");
+        else printf("kd leido %u\n", leido);
+        return;
+    }
+    if (v < 0 || v > 24) { printf("kd: fuera de rango (0 a 24)\n"); return; }
+    motor_reg_escribir1(REG_CFG_KD, (uint8_t)v);
+    motor_reg_leer(REG_CFG_KD, &leido, 1);
+    if (!motor_io_ok()) { printf("kd: ERROR I2C\n"); return; }
+    /* Con una orden en curso el motor ignora la escritura. */
+    printf("kd %d leido %u %s\n", v, leido, leido == v ? "ok" : "IGNORADO");
+}
+
 static void cmd_crudo(int n)
 {
     uint8_t trozo[512];
+    uint8_t kd = 24;
     /* Sin modo test CAPTURA se lee como ceros: saldrian tramas de ceros con
      * CRC valido. */
     if (!(motor_status() & ST_MODO_TEST)) { printf("crudo: CAPTURA solo se lee en modo test\n"); return; }
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    const uint32_t plazo = plazo_captura_ms(kd);
     for (int t = 0; t < n; t++) {
         motor_io_reiniciar();
         motor_reg_escribir1(REG_CONTROL, CTL_CAPTURAR);
-        uint8_t st = 0;
-        for (int k = 0; k < 2000 && !(st & ST_CAPTURA_LLENA); k++) {
+        uint8_t diag = 0;
+        motor_reg_leer(REG_DIAG, &diag, 1);
+        if (diag & DG_RECHAZADA) { printf("crudo: captura rechazada (motor ocupado?)\n"); return; }
+        const TickType_t t0 = xTaskGetTickCount();
+        uint8_t st = motor_status();
+        while (!(st & ST_CAPTURA_LLENA)) {
+            if (xTaskGetTickCount() - t0 >= pdMS_TO_TICKS(plazo)) break;
+            vTaskDelay(pdMS_TO_TICKS(plazo > 10000 ? 10 : 1));
             st = motor_status();
-            if (!(st & ST_CAPTURA_LLENA)) vTaskDelay(1);
         }
-        if (!(st & ST_CAPTURA_LLENA)) { printf("crudo: captura no llena\n"); return; }
+        const uint32_t ms = (uint32_t)((xTaskGetTickCount() - t0) * portTICK_PERIOD_MS);
+        if (!(st & ST_CAPTURA_LLENA)) { printf("crudo: captura no llena en %" PRIu32 " ms (kd %u)\n", ms, kd); return; }
         for (uint8_t pag = 0; pag < 4; pag++) {
             motor_reg_escribir1(REG_CFG_PAG, pag);
             motor_reg_leer(REG_CAPTURA, trozo + 128 * pag, 128);
         }
         if (!motor_io_ok()) { printf("crudo: ERROR I2C en el trozo %d, no se envia\n", t); return; }
+        /* El tiempo de llenado da la tasa de bits: 4096 / ms, resolucion
+         * de un tick (1 ms) mas el sondeo. */
+        printf("crudo %d kd %u ms %" PRIu32 "\n", t, kd, ms);
         trama_pc('R', trozo, 512);
     }
 }
@@ -297,17 +338,18 @@ static bool leer_linea(char *linea, size_t n)
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N crudo N esp N cero\n");
+    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N kd N crudo N esp N cero\n");
     for (;;) {
         if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
-        sscanf(linea, "%15s %d", cmd, &arg);
+        const int campos = sscanf(linea, "%15s %d", cmd, &arg);
         if      (!strcmp(cmd, "id"))      cmd_id();
         else if (!strcmp(cmd, "sembrar")) cmd_sembrar();
         else if (!strcmp(cmd, "borrar"))  cmd_borrar();
         else if (!strcmp(cmd, "generar")) cmd_generar();
         else if (!strcmp(cmd, "reto"))    cmd_reto(arg);
         else if (!strcmp(cmd, "aleatorio")) cmd_aleatorio(arg);
+        else if (!strcmp(cmd, "kd"))      cmd_kd(campos >= 2 ? arg : -1);
         else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg);
         else if (!strcmp(cmd, "esp"))     cmd_esp(arg);
         else if (!strcmp(cmd, "cero"))    cmd_cero();

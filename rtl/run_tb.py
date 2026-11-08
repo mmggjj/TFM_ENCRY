@@ -43,7 +43,9 @@ FUENTES = [
     "drbg/ctr_drbg.vhd",
     "tb/drbg_vectores_pkg.vhd",      # generado por analysis/gen_drbg_vectores.py
     "top/motor_top.vhd",
-    "fpga/basys3_top.vhd",           # envoltorio de placa: solo se analiza, no tiene banco
+    "fpga/medidor_frec.vhd",
+    "fpga/siete_seg.vhd",
+    "fpga/basys3_top.vhd",           # envoltorio de placa
 ]
 BANCOS = [
     ("tb_ring_osc", "tb/tb_ring_osc.vhd", ["-Pbuild/unisim"]),
@@ -53,6 +55,8 @@ BANCOS = [
     ("tb_ctr_drbg", "tb/tb_ctr_drbg.vhd", []),
     ("tb_health_tests", "tb/tb_health_tests.vhd", []),
     ("tb_motor_top", "tb/tb_motor_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_medidor_frec", "tb/tb_medidor_frec.vhd", []),
+    ("tb_basys3_top", "tb/tb_basys3_top.vhd", ["-Pbuild/unisim"]),
 ]
 
 

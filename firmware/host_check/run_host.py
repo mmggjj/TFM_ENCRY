@@ -79,7 +79,9 @@ def preparar_mbedtls(fuentes: Path, mascara: dict[str, str]) -> tuple[list[str],
             decir("mbedtls: falta cmake para compilarlo")
             return None
         r = correr(["cmake", "-S", str(fuentes), "-B", str(bdir), "-DENABLE_TESTING=OFF",
-                    "-DENABLE_PROGRAMS=OFF", "-DGEN_FILES=OFF", "-DCMAKE_BUILD_TYPE=Release"], mascara)
+                    "-DENABLE_PROGRAMS=OFF", "-DGEN_FILES=OFF",
+                    # GCC 15 convierte en error avisos nuevos de la parte TLS, que no se usa
+                    "-DMBEDTLS_FATAL_WARNINGS=OFF", "-DCMAKE_BUILD_TYPE=Release"], mascara)
         if r.returncode != 0:
             return None
         r = correr(["cmake", "--build", str(bdir), "-j", str(os.cpu_count() or 2)], mascara)
@@ -150,6 +152,45 @@ def main() -> int:
     else:
         r = correr([str(exe)], mascara)
         fallos += r.returncode != 0
+
+    decir("\n== campana_motor.py contra la consola del verificador ==")
+    decir("(main.c del verificador en el PC sobre el modelo; kd 6, 10 y 18, 5 trozos cada uno)")
+    exe = BUILD / "consola_verificador"
+    cmd = [args.cc] + CFLAGS + incs + ["-I", str(FW / "verificador" / "main"),
+           str(HC / "consola_verificador.c")] + comunes
+    cmd += [str(HC / "mbedtls_stub.c")] if mbed is None else mbed[0] + mbed[1]
+    cmd += ["-o", str(exe)]
+    r = correr(cmd, mascara)
+    if r.returncode != 0:
+        fallos += 1
+    else:
+        carpeta = BUILD / "campana_motor"
+        shutil.rmtree(carpeta, ignore_errors=True)
+        r = correr([sys.executable, "analysis/campana_motor.py", "--simulador", str(exe),
+                    "--kd", "6", "10", "18", "--bits", "20000", "--arranque", "2",
+                    "--carpeta", str(carpeta)], mascara, timeout=600)
+        fallos += r.returncode != 0
+        import csv as _csv
+        filas = list(_csv.DictReader((carpeta / "resumen.csv").open(encoding="utf-8"))) \
+            if (carpeta / "resumen.csv").exists() else []
+        ok = [f["kd"] for f in filas] == ["6", "10", "18"] and all(
+            f["trozos"] == "5" and f["crc_malo"] == "0" and f["tramas_huerfanas"] == "0"
+            and f["errores"] == "0" for f in filas)
+        decir(f"  [{'ok ' if ok else 'FALLO'}] tres divisores, 5 trozos cada uno, 0 CRC malos")
+        fallos += not ok
+        ok = all((carpeta / f"kd{k:02d}.bin").stat().st_size == 5 * 512 for k in (6, 10, 18)) if ok else False
+        decir(f"  [{'ok ' if ok else 'FALLO'}] kd06/10/18.bin de 2560 bytes")
+        fallos += not ok
+        # Un caracter cambiado en una trama: el reparseo debe contarlo y fallar
+        log = (carpeta / "serie.log").read_text(encoding="utf-8")
+        i = log.index("\nFR0200") + 20
+        malo = carpeta / "corrupto" / "serie.log"
+        malo.parent.mkdir()
+        malo.write_text(log[:i] + ("0" if log[i] != "0" else "1") + log[i + 1:], encoding="utf-8")
+        r = correr([sys.executable, "analysis/campana_motor.py", "--reparsear", str(malo)], mascara)
+        ok = r.returncode == 1 and "CRC malos 1" in r.stdout
+        decir(f"  [{'ok ' if ok else 'FALLO'}] una trama alterada: CRC malo contado y rc=1")
+        fallos += not ok
 
     if mbed is not None:
         decir("\n== test_medidor ==")

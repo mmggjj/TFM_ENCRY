@@ -137,6 +137,8 @@ static struct {
     bool sembrado, alarma, rechazada;
     bool siembra_en_curso, siembra_nueva;
     uint32_t arranque_en, libre_en;
+    uint32_t cap_fin;                          /* tick en que se llena la captura en curso */
+    bool cap_pendiente;
 } m;
 
 static uint32_t ahora(void) { return (uint32_t)xTaskGetTickCount(); }
@@ -154,6 +156,20 @@ static bool iniciado;             /* motor_reset() hecho */
 static bool arrancado(void) { return !m.alarma && ahora() >= m.arranque_en; }
 static bool agotado(void) { return m.peticiones >= motor_pet_max; }
 static bool ocupado(void) { return motor_colgado || ahora() < m.libre_en; }
+
+/* Captura: 4096 bits a ro2 / 2^CFG_KD con ro2 a MOTOR_SIM_RO2_KHZ (estimado
+ * para la FPGA; en el integrado es mas rapido). Como el RTL, STATUS baja
+ * captura_llena al lanzarla y la sube al acabar, y mientras no se siembra. */
+#define MOTOR_SIM_RO2_KHZ 300000ull
+static void resolver_captura(void)
+{
+    if (m.cap_pendiente && ahora() >= m.cap_fin) {
+        for (size_t i = 0; i < sizeof m.captura; i++) m.captura[i] = (uint8_t)(rand() & 0xff);
+        m.status |= ST_CAPTURA_LLENA;
+        m.cap_pendiente = false;
+    }
+}
+static bool capturando(void) { resolver_captura(); return motor_capturando || m.cap_pendiente; }
 
 void motor_alarma(bool a) { m.alarma = a; }
 const uint8_t *motor_clave(void) { return m.clave; }
@@ -232,7 +248,7 @@ static void ejecutar_control(uint8_t v)
         borrar_todo();
         m.libre_en = ahora() + T_ORDEN;
     } else if (v & ((1u << 0) | (1u << 5))) {  /* sembrar / resembrar */
-        if (!arrancado() || m.cfg_kd < KD_MIN || motor_capturando) { m.rechazada = true; return; }
+        if (!arrancado() || m.cfg_kd < KD_MIN || capturando()) { m.rechazada = true; return; }
         if ((v & (1u << 5)) && !m.sembrado) { m.rechazada = true; return; }  /* resembrar actua sobre un estado */
         m.siembra_en_curso = true;
         m.siembra_nueva = (v & (1u << 0)) != 0;
@@ -258,11 +274,14 @@ static void ejecutar_control(uint8_t v)
         m.status |= ST_ETIQ_LISTA;
         m.libre_en = ahora() + T_ORDEN;
     } else {                                   /* capturar: solo en modo test, una a la vez */
-        if (!motor_modo_test || motor_capturando) { m.rechazada = true; return; }
-        /* El modelo llena el buffer al instante; motor_capturando lo pone
-         * el banco cuando quiere una captura "larga". */
-        for (size_t i = 0; i < sizeof m.captura; i++) m.captura[i] = (uint8_t)(rand() & 0xff);
-        m.status |= ST_CAPTURA_LLENA;
+        if (!motor_modo_test || capturando()) { m.rechazada = true; return; }
+        /* motor_capturando lo pone el banco cuando quiere una captura que
+         * no acabe nunca. */
+        const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
+        m.status &= (uint8_t)~ST_CAPTURA_LLENA;
+        m.cap_fin = ahora() + (uint32_t)((4096ull << kd) / MOTOR_SIM_RO2_KHZ);
+        m.cap_pendiente = true;
+        resolver_captura();
     }
     m.rechazada = false;
 }
@@ -270,6 +289,7 @@ static void ejecutar_control(uint8_t v)
 static uint8_t leer_reg(uint8_t d)
 {
     resolver_siembra();
+    resolver_captura();
     if (d == 0x00) return 0xA5;
     if (d == 0x01) return 0x03;
     if (d == 0x02) return (uint8_t)(m.status | (ocupado() ? ST_OCUPADO : 0) |
