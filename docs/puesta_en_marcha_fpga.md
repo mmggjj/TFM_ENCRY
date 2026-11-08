@@ -84,11 +84,12 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
    alimenta la placa ni al revés. Verificador normal (sin
    `MOTOR_SIMULADO`). `id` debe dar `id 0xa5 version 0x03`; sw0 arriba,
    `test=1`.
-   **Atención al test de arranque:** tras el reset CFG_KD = 24. Con ro2 a
-   300 MHz un bit tarda 56 ms y la ventana de 1024 bits del test de
-   arranque ~57 s; `sembrar` espera 30 s (`T_ARRANQUE_MS`, calculado para
-   ~700 MHz) y daría fallo. O se espera un minuto antes de `sembrar`, o
-   se baja antes con `kd 18` (≈ 0,9 s por ventana a 300 MHz).
+   **Test de arranque:** tras el reset CFG_KD = 24. Con ro2 a 300 MHz un
+   bit tarda 56 ms y la ventana de 1024 bits ~57 s. Desde el 08-11 los
+   plazos de `sembrar` salen del CFG_KD del motor (§7): con 24 espera hasta
+   687 s y lo dice (`sembrar: esperando el test de arranque (hasta 687 s)`);
+   con una alarma levantada se rinde enseguida. Para no esperar, `kd 18`
+   antes (≈ 0,9 s por ventana a 300 MHz).
 6. **Jitter (modo medida).** `kd 0` y unas 2000 capturas:
    `python analysis/campana_motor.py --puerto /dev/ttyUSB0 --kd 0 --bits 8192000`
    (2000 trozos; ~4 min de serie a 115 200 baudios) y
@@ -105,8 +106,9 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
    20 ≈ 1 h, 22 ≈ 4 h. **Lo informativo son los divisores bajos**: a 10⁶
    bits la batería se satura en 0,839 ± 0,021 y no distingue nada con
    H_∞ ≥ 0,97 (`fuente_simulada_90b.md`); donde el modelo predice
-   H_∞ < 0,8 la batería sí puede contradecirlo. Comparar cada punto con
-   `ero_model.entropias_exactas(2^kd · Q_raw)`.
+   H_∞ < 0,8 la batería sí puede contradecirlo. La comparación la hace
+   `analysis/compara_modelo_campana.py --campana <sesion> --jitter
+   <sesion>/kd00.bin` (§8): tabla, figura y un veredicto por divisor.
 8. **El medidor no debe tocar la fuente.** Repetir el paso 6 y un punto
    del 7 con `G_MEDIDOR = false` (`synth_design ... -generic G_MEDIDOR=false`
    en `build.tcl`). Si Q o H cambian más que la dispersión entre
@@ -137,13 +139,15 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
 
 ## 5. Estado de los bancos tras estos cambios
 
-- GHDL 5.0.1 (mcode): `tb_medidor_frec` 10/10, `tb_basys3_top` 4/4 (log en
-  `results/tb_basys3_top.log`), los siete de antes sin cambios en su
-  código y repetidos (`results/run_tb_todos.log`).
+- GHDL 5.0.1 (mcode): `tb_medidor_frec` 10/10, `tb_basys3_top` 4/4, los
+  siete de antes sin cambios en su código; los nueve en
+  `results/run_tb_todos.log`. En la CI (GHDL 4.1) `tb_basys3_top` no
+  analizaba: `wait on` sobre el alias de un nombre externo; ahora copia los
+  anillos a una señal del banco en un bloque tras `dut`.
 - `run_host.py` con mbedtls de ESP-IDF 5.3.2: 0 fallos (`results/host_check.log`).
   Con GCC 15 hubo que pasar `MBEDTLS_FATAL_WARNINGS=OFF` al compilar
   mbedtls: la parte TLS, que no se usa, tiene avisos nuevos en GCC 15.
-- Verificador compilado con ESP-IDF 5.3.2 en el Linux (`kd` y `crudo` nuevos): sin avisos del compilador, `results/verificador_build_esp32_idf532.log`.
+- Verificador compilado con ESP-IDF 5.3.2 en el Linux (`kd`, `crudo` y los plazos según CFG_KD): sin avisos del compilador, `results/verificador_build_esp32_idf532.log` (incremental sobre la compilación completa anterior). El medidor (esp32c3) no se compila en este PC: falta la toolchain `riscv32-esp-elf`; lo compila la CI.
 
 ## 6. Si la placa no es una Basys 3
 
@@ -155,3 +159,56 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
   tecnología (LUT1/LUT2 de Xilinx); habría que escribir su equivalente,
   restricciones nuevas y otra herramienta (Quartus, o el flujo libre de
   OSS CAD Suite para Lattice/Gowin).
+
+## 7. Plazos del firmware según CFG_KD (08-11)
+
+`T_ARRANQUE_MS` (30 s) y `T_SIEMBRA_MS` (40 s) estaban calculados para el
+anillo del integrado (~700 MHz en la cuenta de entonces). En la FPGA, con
+ro2 a 170-330 MHz [ESTIMADO] y CFG_KD = 24, el test de arranque tarda
+~1 min y `sembrar` fallaba por plazo. Ahora `motor_i2c` lee CFG_KD y
+calcula el plazo de `bits` bits como `bits · 2^CFG_KD / 100 MHz · 2`
+(`motor_plazo_bits_ms`), con los valores de antes como mínimo:
+
+| Espera | Bits | CFG_KD 24 | CFG_KD 18 | CFG_KD ≤ 13 |
+|---|---|---|---|---|
+| test de arranque | 2 × 1024 (la ventana a medias y una entera) | 687 s | 30 s (mínimo) | 30 s |
+| siembra | 384 + 2 × 1024 | 816 s | 40 s (mínimo) | 40 s |
+| captura (`crudo`) | 4096 | 1374 s | 21,5 s | 2 s |
+
+100 MHz es un suelo para ro2, no una estimación: el plazo solo se agota
+si algo va mal. Para que un fallo no cueste diez minutos,
+`motor_esperar_arranque` se rinde en cuanto STATUS tiene una alarma (con
+alarma el test no pasa hasta `borrar`). Banco en el PC: paso 8 (con alarma,
+`sembrar` se rinde en < 1 s) y paso 14 (el modelo con el arranque de una
+ventana a 300 MHz y CFG_KD = 24: siembra en 57,3 s, más que los 30 s del
+plazo fijo). El modelo solo hace el arranque lento si el banco lo pide
+(`motor_arranque_lento`), para que el firmware simulado en placa o QEMU no
+tarde un minuto en arrancar.
+
+## 8. Modelo frente a campaña
+
+`analysis/compara_modelo_campana.py` toma el `resumen.csv` de la campaña
+(con `--90b`) y Q_raw (medido de `kd00.bin` o dado) y, por divisor, compara
+la cifra de SP 800-90B **no con H_∞ del modelo, sino con lo que da la
+batería para bits del propio modelo con esa H_∞**: la calibración de
+`results/fuente_simulada_90b.csv` (tres casos IHP × tres semillas, 10⁶
+bits). Hace falta porque la batería no es una cota: se satura en ~0,84,
+con poca entropía sobreestima (H_∞ ≈ 0 → 0,07-0,11) y en medio da algo
+menos que el modelo (0,854 → 0,75-0,78). La banda es el mínimo y máximo de
+la calibración, ensanchada por la incertidumbre de Q_raw (10 % por
+defecto) y una tolerancia de 0,03. Veredictos: compatible, por debajo
+(menos entropía de la que el modelo da con esa Q_raw), por encima, y
+saturada (H_∞ ≥ 0,97: se informa, no se juzga). Escribe
+`compara_modelo.csv` y `compara_modelo.png` en la carpeta de la sesión.
+
+Prueba (`analysis/prueba_compara_modelo.py`, 0 fallos, 40 s): campaña
+simulada con Q_raw = 2,4·10⁻⁷, 245 trozos de 4096 bits con fase
+independiente por divisor (17-21) y `kd00.bin` de 3000 trozos.
+`jitter_estimator` recupera 2,285·10⁻⁷ (−4,8 %). Con ese valor: 17, 18 y
+19 compatibles (batería 0,323 / 0,509 / 0,764 frente a 0,313 / 0,496 /
+0,743 esperados) y 20-21 saturados. Diciendo 4 veces más jitter del real,
+solo el 17 sale "por debajo": los demás ya están saturados. **Por eso la
+campaña necesita divisores bien por debajo de K*.** Diciendo 4 veces
+menos, los cinco salen "por encima". Los trozos de 4096 bits con fase
+independiente dan lo mismo que la secuencia continua de la calibración.
+

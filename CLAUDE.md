@@ -81,14 +81,31 @@ hardware todavía.
   `~/eda/venv/bin/python`.
 - CFG_KD de partida en Artix-7 [ESTIMADO, 2-4 ps / 3-5 ns]: 17-21. ro2
   real probablemente 170-330 MHz, no los 714 del XDC.
-- **Pendiente de Mario:** `T_ARRANQUE_MS`/`T_SIEMBRA_MS` están calculados
-  para ~700 MHz; con ro2 a 300 MHz y CFG_KD 24 el test de arranque tarda
-  ~1 min. Los trozos de `crudo` no son contiguos (SP 800-90B pide 10⁶
-  consecutivos): captura continua sería un cambio de RTL.
+- **Plazos según CFG_KD** (`motor_plazo_bits_ms`, `motor_plazo_arranque_ms`,
+  `motor_plazo_siembra_ms` en `motor_i2c`): `bits · 2^CFG_KD / 100 MHz · 2`,
+  con 30/40 s de mínimo; con CFG_KD 24, arranque hasta 687 s.
+  `motor_esperar_arranque` se rinde en cuanto hay alarma. Banco host pasos 8
+  y 14 (`motor_arranque_lento` en el modelo, solo para el banco).
+- `analysis/compara_modelo_campana.py`: cifra SP 800-90B de cada divisor
+  frente a la calibración de `fuente_simulada_90b.csv` (lo que da la
+  batería con bits del modelo de esa H_∞), no frente a H_∞ directamente;
+  veredicto compatible / por debajo / por encima / saturada.
+  `prueba_compara_modelo.py` (Q conocida): 0 fallos; con Q_raw ×4 solo el
+  divisor más bajo lo detecta, así que la campaña necesita divisores bien
+  por debajo de K*.
+- **Pendiente de Mario:** los trozos de `crudo` no son contiguos (SP
+  800-90B pide 10⁶ consecutivos): captura continua sería un cambio de RTL.
+  El commit `21b95b7` (curl con reintentos en `verifica.yml`) lo sube Mario:
+  el token de Claude no tiene ámbito `workflow`.
 - Cap. 8 (EN y ES) en borrador, con [PENDING]/[PENDIENTE] donde van los
   resultados de la placa; PDF regenerados.
-- El detector de cruces del anillo IHP **ya tiene histéresis** (31-10);
-  lo que queda es repetir el chip del peor caso que se descartó.
+- **8 chips más en el peor punto** (ss, −40 °C, 1,08 V, `--mismatch`, con
+  la histéresis; `results/anillo_ihp_mc_ss_m40_v108_hist_*`, 49 min con 4
+  procesos): 0 dobles cruces, cruces en 392,4-393,5 ns, K_D 3,44-4,23 M.
+  Con los 15 anteriores, 23 chips: 4 piden más de 2²², el peor 4,49 M
+  (H_∞ 0,973 con 2²²) y 2²³ cubre todos (≥ 0,9996). El chip 9 excluido no
+  se puede repetir (sin semilla); era un caso aislado. `anillo_ihp.md`
+  §4.3, cap. 7 y cap. 8 (EN y ES).
 
 ## Estado al 31-10-2026: la fuente simulada bajo SP 800-90B
 

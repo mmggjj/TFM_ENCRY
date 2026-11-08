@@ -110,14 +110,18 @@ static void cmd_sembrar(void)
     uint8_t st = 0, diag = 0;
     /* El motor no siembra hasta pasar el test de arranque: 1024 muestras sin
      * alarma desde el reset o el ultimo borrado. */
-    esp_err_t e = motor_esperar_arranque(T_ARRANQUE_MS, &diag);
+    /* Los plazos salen del CFG_KD actual: con el anillo lento de la FPGA y
+     * CFG_KD = 24 el test de arranque puede tardar minutos. */
+    const uint32_t plazo = motor_plazo_arranque_ms();
+    if (plazo > T_ARRANQUE_MS) printf("sembrar: esperando el test de arranque (hasta %" PRIu32 " s)\n", plazo / 1000);
+    esp_err_t e = motor_esperar_arranque(plazo, &diag);
     if (e == ESP_FAIL) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
     if (e != ESP_OK) {
         st = motor_status();
         printf("sembrar: FALLO, el test de arranque no pasa%s\n", motor_texto_alarmas(st));
         return;
     }
-    e = motor_orden(CTL_SEMBRAR, T_SIEMBRA_MS, &st);
+    e = motor_orden(CTL_SEMBRAR, motor_plazo_siembra_ms(), &st);
     printf("sembrar: %s%s\n",
            (e == ESP_OK && (st & ST_SEMBRADO)) ? "ok" : motor_texto_err(e), motor_texto_alarmas(st));
 }
@@ -242,15 +246,6 @@ static void cmd_reto(int n)
     ult_reto.errores = errores;
 }
 
-/* Plazo de una captura de 4096 bits: 4096 * 2^CFG_KD periodos de ro2,
- * con ro2 a 100 MHz como suelo (en la FPGA se espera mas) y margen x4. */
-static uint32_t plazo_captura_ms(uint8_t kd)
-{
-    if (kd > 24) kd = 24;
-    uint64_t ms = (4096ull << kd) * 4ull / 100000ull;
-    return ms < 2000 ? 2000 : (uint32_t)ms;
-}
-
 static void cmd_kd(int v)
 {
     uint8_t leido = 0xff;
@@ -277,7 +272,7 @@ static void cmd_crudo(int n)
      * CRC valido. */
     if (!(motor_status() & ST_MODO_TEST)) { printf("crudo: CAPTURA solo se lee en modo test\n"); return; }
     motor_reg_leer(REG_CFG_KD, &kd, 1);
-    const uint32_t plazo = plazo_captura_ms(kd);
+    const uint32_t plazo = motor_plazo_bits_ms(4096, 2000);
     for (int t = 0; t < n; t++) {
         motor_io_reiniciar();
         motor_reg_escribir1(REG_CONTROL, CTL_CAPTURAR);

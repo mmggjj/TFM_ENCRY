@@ -331,6 +331,42 @@ Lectura:
   sigue excluido (su forma de onda no se guardó y ese sorteo no se puede
   repetir, sin semilla). Un caso así queda ahora contado y guardado.
 
+**Ocho chips más en el peor punto, con histéresis (08-11-2026)**
+[simulado]. Mismo punto (ss, −40 °C, 1,08 V, `--mismatch`, 400 ns),
+`anillo_ihp_repeticiones.py --n 8 --procesos 4 --esquina mos_ss --temp -40
+--vdd 1.08 --mismatch --escalas-primera 1 --prefijo mc_ss_m40_v108_hist_`
+(49 min; `results/anillo_ihp_mc_ss_m40_v108_hist_*`). El chip 9 no se
+puede repetir (ngspice no deja fijar el sorteo); lo que se comprueba es si
+el caso vuelve a darse y si la histéresis lo resuelve.
+
+| Chip | Cruces | T (ps) | σ (fs) | Exp. | Cruces ocupan | K_D | H_∞ con 2²² | con 2²³ |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 660 | 586,41 | 149,83 | 0,94 | 392,9 ns | 3 501 708 | 0,9918 | 1,0000 |
+| 2 | 666 | 582,08 | 145,62 | 0,93 | 393,5 ns | 3 652 541 | 0,9897 | 0,9999 |
+| 3 | 655 | 591,09 | 147,52 | 0,96 | 393,1 ns | 3 670 169 | 0,9895 | 0,9999 |
+| 4 | 690 | 561,85 | 130,65 | 0,83 | 393,3 ns | **4 227 657** | **0,9793** | 0,9998 |
+| 5 | 648 | 596,41 | 139,70 | 0,97 | 392,4 ns | 4 166 448 | 0,9806 | 0,9998 |
+| 6 | 668 | 580,11 | 144,86 | 0,98 | 393,3 ns | 3 666 051 | 0,9895 | 0,9999 |
+| 7 | 663 | 584,16 | 150,54 | 1,05 | 393,1 ns | 3 442 235 | 0,9925 | 1,0000 |
+| 8 | 666 | 581,42 | 147,37 | 1,19 | 393,0 ns | 3 558 238 | 0,9910 | 1,0000 |
+
+"Cruces ocupan" es (cruces + 10) · T, el criterio con el que se excluyó el
+chip 9 (405,3 ns frente a 392,1-394,0 de los otros quince).
+
+- **Ningún doble cruce** en los ocho (0 quitados por la histéresis en el
+  tramo analizado; no se guardó ningún `_diag.npz`) y todos ocupan
+  392,4-393,5 ns. El chip 9 fue un caso aislado.
+- Los ocho: σ = 144,5 ± 2,3 fs, periodo con dispersión 1,74 %, K_D medio
+  3 716 288 (3 620 714 - 3 817 044), por chip 3,44-4,23 M. Compatibles
+  con los quince (3 885 159, 3,50-4,49 M).
+- **Los 23 juntos:** K_D medio 3 824 707 (3 769 526 - 3 881 527), por
+  chip 3,44-4,49 M, mediana 3,76 M; **4 de 23 piden más de 2²²** (el peor,
+  el de la tanda anterior, H_∞ 0,973 con 2²²) y **2²³ cubre todos**
+  (peor H_∞ 0,9996). Se mantiene la recomendación: con ±10 % de
+  alimentación, 2²³.
+- La cifra de cada chip lleva el error de estimación de una sola
+  realización (~650 periodos): el envolvente por chip es pesimista.
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
 Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:

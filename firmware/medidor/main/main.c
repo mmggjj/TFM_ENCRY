@@ -119,14 +119,18 @@ static void cmd_sembrar(void)
 {
     uint8_t st = 0, diag = 0;
     if (motor_reg_escribir1(REG_CFG_KD, CFG_KD_SIEMBRA) != ESP_OK) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
-    esp_err_t e = motor_esperar_arranque(T_ARRANQUE_MS, &diag);
+    /* Los plazos salen del CFG_KD actual: con el anillo lento de la FPGA y
+     * CFG_KD = 24 el test de arranque puede tardar minutos. */
+    const uint32_t plazo = motor_plazo_arranque_ms();
+    if (plazo > T_ARRANQUE_MS) printf("sembrar: esperando el test de arranque (hasta %" PRIu32 " s)\n", plazo / 1000);
+    esp_err_t e = motor_esperar_arranque(plazo, &diag);
     if (e == ESP_FAIL) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
     if (e != ESP_OK) {
         st = motor_status();
         printf("sembrar: FALLO, el test de arranque no pasa%s\n", motor_texto_alarmas(st));
         return;
     }
-    e = motor_orden(CTL_SEMBRAR, T_SIEMBRA_MS, &st);
+    e = motor_orden(CTL_SEMBRAR, motor_plazo_siembra_ms(), &st);
     printf("sembrar: %s%s\n",
            (e == ESP_OK && (st & ST_SEMBRADO)) ? "ok" : motor_texto_err(e), motor_texto_alarmas(st));
 }

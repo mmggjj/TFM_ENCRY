@@ -217,10 +217,11 @@ entre ejecuciones. Una decimosexta ejecución en el peor punto se descartó
 porque su número de cruces no cabe en el tiempo simulado, probablemente
 por dobles cruces de un flanco lento; la detección de cruces tiene ahora
 histéresis y deja constancia de cualquier caso así junto con su forma de
-onda. El peor de los
-15 chips pide $K_D = 4{,}49\times10^6$, por encima de $2^{22}$
-($H_\infty = 0{,}973$), y $2^{23}$ lo sigue cubriendo
-($H_\infty = 0{,}9996$). El registro del divisor arranca en $2^{24}$, así que un maestro que no lo
+onda. Ocho chips más simulados con ella en el mismo punto no tienen
+ningún doble cruce, y sus cruces caben en 392,4--393,5~ns, como los otros
+quince \simu{}. De los 23 chips, cuatro piden más de $2^{22}$; el peor
+pide $K_D = 4{,}49\times10^6$ ($H_\infty = 0{,}973$ con $2^{22}$), y
+$2^{23}$ los cubre a todos ($H_\infty \ge 0{,}9996$). El registro del divisor arranca en $2^{24}$, así que un maestro que no lo
 escriba ya está del lado seguro; un valor menor tiene que salir de la
 esquina más fría y la tensión más baja a las que deba funcionar el
 producto.

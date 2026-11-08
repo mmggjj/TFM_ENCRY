@@ -29,6 +29,7 @@ extern bool motor_colgado;
 extern int  motor_n_tramas;
 extern uint32_t motor_pet_max;
 extern bool motor_capturando;
+extern bool motor_arranque_lento;
 
 static int fallos = 0;
 
@@ -122,7 +123,8 @@ int main(void)
         "generar rechazado: la clave del motor y la provisionada siguen valiendo");
     t0 = motor_ticks();
     cmd_sembrar();
-    chk(motor_ticks() - t0 >= T_ARRANQUE_MS, "sembrar con alarma se rinde tras el plazo");
+    chk(motor_ticks() - t0 < 1000,
+        "sembrar con alarma se rinde enseguida (con alarma el test de arranque no pasa)");
     cmd_borrar();
     cmd_aleatorio(3);
     chk(motor_n_tramas == tramas + 3, "tras borrar, aleatorio vuelve a enviar sus tramas");
@@ -207,6 +209,25 @@ int main(void)
     cmd_crudo(1);
     cmd_sembrar();
     chk((motor_status() & ST_SEMBRADO) != 0, "tras capturar se vuelve a sembrar");
+
+    printf("\n14) Plazos segun CFG_KD: anillo lento y CFG_KD = 24\n");
+    cmd_kd(24);
+    chk(motor_plazo_arranque_ms() == (uint32_t)(((uint64_t)2048 << 24) * 2000 / MOTOR_RO2_MIN_HZ),
+        "plazo de arranque con kd 24 = 2 ventanas a 100 MHz, x2 (687 s)");
+    cmd_kd(6);
+    chk(motor_plazo_arranque_ms() == T_ARRANQUE_MS && motor_plazo_siembra_ms() == T_SIEMBRA_MS,
+        "con kd 6 quedan los minimos de siempre");
+    motor_arranque_lento = true;
+    cmd_kd(24);
+    cmd_borrar();                              /* reinicia la ventana: ~57 s a 300 MHz */
+    t0 = motor_ticks();
+    cmd_sembrar();
+    uint32_t dt = motor_ticks() - t0;
+    chk((motor_status() & ST_SEMBRADO) && dt > T_ARRANQUE_MS,
+        "con kd 24 y ro2 a 300 MHz siembra, aunque el arranque dura mas que el plazo fijo de 30 s");
+    printf("     (arranque y siembra: %u ms)\n", (unsigned)dt);
+    motor_arranque_lento = false;
+    cmd_kd(6);
 
     printf("\ntest_verificador: %d fallos\n", fallos);
     return fallos == 0 ? 0 : 1;

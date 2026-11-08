@@ -98,13 +98,34 @@ esp_err_t motor_orden(uint8_t ctl, uint32_t max_ms, uint8_t *st)
     return (diag & DG_RECHAZADA) ? ESP_ERR_INVALID_STATE : ESP_OK;
 }
 
+uint32_t motor_plazo_bits_ms(uint32_t bits, uint32_t minimo_ms)
+{
+    uint8_t kd = 24;
+    if (motor_reg_leer(REG_CFG_KD, &kd, 1) != ESP_OK || kd > 24) kd = 24;
+    const uint64_t ms = ((uint64_t)bits << kd) * 2000ull / MOTOR_RO2_MIN_HZ;
+    return ms < minimo_ms ? minimo_ms : (ms > UINT32_MAX ? UINT32_MAX : (uint32_t)ms);
+}
+
+uint32_t motor_plazo_arranque_ms(void)
+{
+    return motor_plazo_bits_ms(2 * MOTOR_BITS_APT, T_ARRANQUE_MS);
+}
+
+uint32_t motor_plazo_siembra_ms(void)
+{
+    return motor_plazo_bits_ms(MOTOR_BITS_SEMILLA + 2 * MOTOR_BITS_APT, T_SIEMBRA_MS);
+}
+
 esp_err_t motor_esperar_arranque(uint32_t max_ms, uint8_t *diag)
 {
     const TickType_t t0 = xTaskGetTickCount();
     const TickType_t paso = pdMS_TO_TICKS(10) ? pdMS_TO_TICKS(10) : 1;
     for (;;) {
+        uint8_t st = 0;
         if (motor_reg_leer(REG_DIAG, diag, 1) != ESP_OK) return ESP_FAIL;
         if (*diag & DG_ARRANCADO) return ESP_OK;
+        if (motor_reg_leer(REG_STATUS, &st, 1) != ESP_OK) return ESP_FAIL;
+        if (st & (ST_ALM_RCT | ST_ALM_APT)) return ESP_ERR_INVALID_STATE;
         if (xTaskGetTickCount() - t0 >= pdMS_TO_TICKS(max_ms)) return ESP_ERR_TIMEOUT;
         vTaskDelay(paso);
     }

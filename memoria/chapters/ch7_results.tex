@@ -210,9 +210,11 @@ larger than the run-to-run spread of the noise alone. A sixteenth
 worst-point run was discarded because its crossing count does not fit in
 the simulated time, most likely double crossings of a slow edge; the
 crossing detector has since gained hysteresis and records any such event
-with its waveform. The worst of the 15 dies needs
-$K_D = 4.49\times10^6$, above $2^{22}$ ($H_\infty = 0.973$), and $2^{23}$
-still covers it ($H_\infty = 0.9996$). The divider register resets to
+with its waveform. Eight further dies run with it at the same point show
+no double crossing, and their crossings fit in 392.4--393.5~ns, like the
+other fifteen \simu{}. Over the 23 dies, four need more than $2^{22}$; the
+worst needs $K_D = 4.49\times10^6$ ($H_\infty = 0.973$ at $2^{22}$), and
+$2^{23}$ covers every one ($H_\infty \ge 0.9996$). The divider register resets to
 $2^{24}$, so a master that does not write it is already on the safe
 side; a lower setting has to come from the coldest corner and the lowest
 supply the product must work at.

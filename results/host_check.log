@@ -1,4 +1,4 @@
-Banco en el PC del firmware del motor (run_host.py)
+Banco en el PC del firmware del motor (run_host.py) con ASan+UBSan
 
 mbedtls real: $MBEDTLS
 
@@ -7,7 +7,7 @@ cabeceras simuladas en firmware/host_check/build/stubs (sin mbedtls falso)
 (rc=0)
 
 == test_verificador ==
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/test_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_verificador
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/test_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_verificador
 (rc=0)
 $ firmware/host_check/build/test_verificador
 Banco del verificador contra el motor simulado
@@ -74,7 +74,7 @@ aleatorio: FALLO en el bloque 0, RECHAZADA por el motor ALARMA_RCT
 generar: FALLO, RECHAZADA por el motor ALARMA_RCT
   [ok ] generar rechazado: la clave del motor y la provisionada siguen valiendo
 sembrar: FALLO, el test de arranque no pasa ALARMA_RCT
-  [ok ] sembrar con alarma se rinde tras el plazo
+  [ok ] sembrar con alarma se rinde enseguida (con alarma el test de arranque no pasa)
 borrar: alarmas bajadas; hay que repetir el test de arranque
 FD00203eb992dcd05ce0a5c736f3bfc8d8931441e1dad1325a83e740f0702fe8d558b35e6b4d8c
 FD00209184e34a1203c4cbd75b52ba6417b77f5bc3187c32ce014dd1a434417fa6cc233291d3b2
@@ -141,21 +141,34 @@ FR0200e69a8afe1c0f28bd4f24bc864e5c11b34ffe3ac8eeaea960604b6ec34b88293122b3303ec2
 sembrar: ok
   [ok ] tras capturar se vuelve a sembrar
 
+14) Plazos segun CFG_KD: anillo lento y CFG_KD = 24
+kd 24 leido 24 ok
+  [ok ] plazo de arranque con kd 24 = 2 ventanas a 100 MHz, x2 (687 s)
+kd 6 leido 6 ok
+  [ok ] con kd 6 quedan los minimos de siempre
+kd 24 leido 24 ok
+borrar: alarmas bajadas; hay que repetir el test de arranque
+sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: ok
+  [ok ] con kd 24 y ro2 a 300 MHz siembra, aunque el arranque dura mas que el plazo fijo de 30 s
+     (arranque y siembra: 57290 ms)
+kd 6 leido 6 ok
+
 test_verificador: 0 fallos
 (rc=0)
 
 == campana_motor.py contra la consola del verificador ==
 (main.c del verificador en el PC sobre el modelo; kd 6, 10 y 18, 5 trozos cada uno)
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/consola_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/consola_verificador
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/consola_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/consola_verificador
 (rc=0)
 $ /usr/bin/python3 analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --kd 6 10 18 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_motor
 motor: ID 0xa5, VERSION 0x03, modo test
 
-kd 6: 5/5 trozos, 10 s
+kd 6: 5/5 trozos, 0 s
 
-kd 10: 5/5 trozos, 10 s
+kd 10: 5/5 trozos, 0 s
 
-kd 18: 5/5 trozos, 10 s
+kd 18: 5/5 trozos, 0 s
 kd 6: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 0 ms, unos 0.501025390625
 kd 10: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 13 ms, unos 0.497802734375
 kd 18: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 3580 ms, unos 0.494580078125
@@ -174,7 +187,7 @@ resumen: firmware/host_check/build/campana_motor/corrupto/resumen.csv
   [ok ] una trama alterada: CRC malo contado y rc=1
 
 == test_medidor ==
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I $MBEDTLS/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I $MBEDTLS/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
 (rc=0)
 $ firmware/host_check/build/test_medidor
 Banco del medidor contra el motor simulado
@@ -194,6 +207,7 @@ csr: FALLO (-16000), sin clave
   [ok ] ni CSR
 
 2) Clave del equipo con aleatorio del motor
+sembrar: esperando el test de arranque (hasta 687 s)
 sembrar: ok
   [ok ] el motor queda sembrado
 clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
@@ -230,6 +244,7 @@ FL005f7cdfa10011220000010000060000000400000001000005143045022044ee8e70875239868d
 FL00607cdfa10011220000010000070000000500000001000003e83046022100df1b37a26ed202bb323beb9f138d3071703a9ba50dae1fdecfaf8c513ca28322022100b03d07921f20cddc70e27f4053c50aaaebf5b5a026928e92a0a229d44b9a39d343a84039
   [ok ] las lecturas siguen saliendo con la clave que hay
 borrar: alarmas bajadas; hay que repetir el test de arranque
+sembrar: esperando el test de arranque (hasta 687 s)
 sembrar: ok
   [ok ] tras borrar y repetir el arranque, sembrado
 

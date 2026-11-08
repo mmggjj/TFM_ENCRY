@@ -151,11 +151,17 @@ int  motor_n_aleatorio = 0;       /* ordenes "aleatorio" aceptadas */
 int  motor_fallo_tras_aleatorio = 0; /* >0: falla la transaccion siguiente a la N-esima orden aleatorio aceptada */
 uint32_t motor_pet_max = 0xFFFFFFFFu; /* tope del contador de peticiones (2^32-1 en el RTL; el banco lo baja) */
 bool motor_capturando = false;     /* captura en curso: no se siembra */
+/* El test de arranque dura una ventana de 1024 bits a ro2 / 2^CFG_KD con ro2
+ * a MOTOR_SIM_RO2_KHZ, como en la FPGA (con CFG_KD = 24, ~57 s). Por
+ * defecto dura T_ARRANQUE ticks, para que el firmware simulado en placa o
+ * en QEMU no tarde un minuto en arrancar; el banco lo activa. */
+bool motor_arranque_lento = false;
 static bool iniciado;             /* motor_reset() hecho */
 
 static bool arrancado(void) { return !m.alarma && ahora() >= m.arranque_en; }
 static bool agotado(void) { return m.peticiones >= motor_pet_max; }
 static bool ocupado(void) { return motor_colgado || ahora() < m.libre_en; }
+static uint32_t t_arranque(void);
 
 /* Captura: 4096 bits a ro2 / 2^CFG_KD con ro2 a MOTOR_SIM_RO2_KHZ (estimado
  * para la FPGA; en el integrado es mas rapido). Como el RTL, STATUS baja
@@ -170,6 +176,12 @@ static void resolver_captura(void)
     }
 }
 static bool capturando(void) { resolver_captura(); return motor_capturando || m.cap_pendiente; }
+static uint32_t t_arranque(void)
+{
+    if (!motor_arranque_lento) return T_ARRANQUE;
+    const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
+    return (uint32_t)((1024ull << kd) / MOTOR_SIM_RO2_KHZ);
+}
 
 void motor_alarma(bool a) { m.alarma = a; }
 const uint8_t *motor_clave(void) { return m.clave; }
@@ -239,7 +251,7 @@ static void ejecutar_control(uint8_t v)
 {
     if (v & (1u << 3)) {                       /* borrar alarmas */
         m.alarma = false;
-        m.arranque_en = ahora() + T_ARRANQUE;    /* se repite el test de arranque */
+        m.arranque_en = ahora() + t_arranque();  /* se repite el test de arranque */
     }
     if (!(v & 0xF7)) return;                   /* ninguna orden */
     if (ocupado()) { m.rechazada = true; return; }
@@ -320,7 +332,7 @@ void motor_reset(void)
     iniciado = true;
     memset(&m, 0, sizeof m);
     m.cfg_kd = 24;                             /* G_KD_RESET */
-    m.arranque_en = ahora() + T_ARRANQUE;
+    m.arranque_en = ahora() + t_arranque();
     motor_colgado = false;
 }
 

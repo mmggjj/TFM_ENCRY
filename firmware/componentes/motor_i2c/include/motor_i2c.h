@@ -56,12 +56,17 @@
 #define DG_RECHAZADA     (1u << 1)
 #define DG_AGOTADO       (1u << 2)   /* contador de peticiones al tope: resembrar */
 
-/* Tiempos de espera, en tiempo real. Con CFG_KD = 24 y el anillo a ~700 MHz
- * un bit tarda 24 ms: el test de arranque (1024 bits) ~25 s y una siembra
- * (384 bits mas, como mucho, una ventana de 1024 para validarlos) ~34 s. */
+/* Tiempos de espera, en tiempo real. Los que dependen de los bits del anillo
+ * (arranque, siembra, captura) se calculan con el CFG_KD del motor y ro2 a
+ * MOTOR_RO2_MIN_HZ: con plazos fijos pensados para ~700 MHz, el anillo de
+ * la FPGA (estimado 170-330 MHz) con CFG_KD = 24 no pasaba el test de
+ * arranque a tiempo. T_ARRANQUE_MS y T_SIEMBRA_MS quedan como minimo. */
 #define T_ARRANQUE_MS    30000u
 #define T_SIEMBRA_MS     40000u
 #define T_ORDEN_MS       500u
+#define MOTOR_RO2_MIN_HZ 100000000ull     /* suelo de ro2 para los plazos */
+#define MOTOR_BITS_APT   1024u            /* ventana del test de arranque */
+#define MOTOR_BITS_SEMILLA 384u
 
 /* Lo que devuelve motor_rng() cuando el motor no da aleatorio. Es el valor
  * de MBEDTLS_ERR_ENTROPY_SOURCE_FAILED, para que quien reciba el error de
@@ -94,8 +99,20 @@ esp_err_t motor_esperar_libre(uint32_t max_ms, uint8_t *st);
  *   ESP_FAIL               fallo del bus */
 esp_err_t motor_orden(uint8_t ctl, uint32_t max_ms, uint8_t *st);
 
+/* Plazo para que el ERO entregue `bits` bits con el CFG_KD actual (se lee
+ * del motor; si el bus falla se toma 24): bits * 2^CFG_KD periodos de ro2 a
+ * MOTOR_RO2_MIN_HZ, por dos, y nunca menos de minimo_ms. */
+uint32_t motor_plazo_bits_ms(uint32_t bits, uint32_t minimo_ms);
+
+/* Plazos del test de arranque (hasta dos ventanas: la que este a medias y
+ * una entera) y de la siembra (semilla mas esas dos ventanas). */
+uint32_t motor_plazo_arranque_ms(void);
+uint32_t motor_plazo_siembra_ms(void);
+
 /* Sondea DIAG hasta que pase el test de arranque o venzan max_ms. diag:
- * ultimo DIAG leido. ESP_ERR_TIMEOUT si no arranca, ESP_FAIL si el bus. */
+ * ultimo DIAG leido. ESP_ERR_TIMEOUT si no arranca, ESP_FAIL si el bus,
+ * ESP_ERR_INVALID_STATE en cuanto STATUS tenga una alarma: con alarma el
+ * test no pasa hasta borrar_alarmas, y esperar el plazo entero no sirve. */
 esp_err_t motor_esperar_arranque(uint32_t max_ms, uint8_t *diag);
 
 /* Una orden "aleatorio" y la lectura de sus 32 bytes. Errores como
