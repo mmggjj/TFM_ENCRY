@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/0928rd_condC_rep3_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condC_rep3.bits 1",
+   "dateTimeStamp" : "20261110210432",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condC_rep3.bits",
+   "sha256" : "34f06bbfd69799282372c4ad0618bc6911f7dcec5872437da6cef12edccdc251",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99497400510499279,
+         "mcvEstimateMode" : 500457.0,
+         "mcvEstimatePHat" : 0.50045700000000004,
+         "mcvEstimatePU" : 0.5017449147577725,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.89917786299438796,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99652443729511997,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.82864294343929557,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.94154042862257592,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.98029123998375534,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99591009507304695,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99743308993804258,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99635770938239909,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99423085291641167,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.82864294343929557,
+         "hOriginal" : 0.82864294343929557,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

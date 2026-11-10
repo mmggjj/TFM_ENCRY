@@ -52,6 +52,61 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 10-11-2026: captura continua (motor 0x04), sin placa
+
+La placa se retrasa. Hecho ese día, nada en hardware:
+
+- **Captura continua** (`rtl/trng/flujo_crudo.vhd`, registros FLUJO 0x0F,
+  FLUJO_N 0x60 y FLUJO_DATO 0x61-0x7F; `docs/captura_continua.md` y
+  `docs/mapa_registros.md`): FIFO de bytes en el dominio de sistema con los
+  bits de después de `bit_cdc` (los de la semilla), que el ESP32 vacía por
+  I2C mientras se llena; lectura con crédito (32 bytes desde 0x60: `n` y
+  hasta 31 datos); si se llena, `desbordado` y se para. Mismas reglas que
+  `capturar` (solo modo test, excluyente con siembra y captura, CFG_KD
+  congelado). **VERSION 0x04.** Generic `G_FLUJO_BYTES`: **0 por defecto en
+  `motor_top`** (sin FIFO, el área del integrado no cambia), 256 en
+  `basys3_top`, 64 en el banco. Resuelve el pendiente de los 10⁶ bits
+  consecutivos de SP 800-90B.
+- `tb_motor_top` paso 9 (21 comprobaciones: 400 bytes seguidos iguales a
+  los bits crudos apuntados desde fuera del DUT, crédito, desbordamiento,
+  las tres paradas) y 3 propiedades PSL más: **85/85, PSL 14/14 y 8/8**.
+  Mutante sin crédito cazado (`results/tb_motor_top_mutante_flujo.log`).
+  Los nueve bancos en `results/run_tb_todos.log`.
+- Firmware: `MOTOR_VERSION 0x04`, `MOTOR_VERSION_MIN 0x03` (lo que exigen
+  verificador y medidor); orden **`flujo N`** del verificador (N bytes
+  consecutivos en tramas `C` numeradas, `flujo fin ... ok` o
+  `flujo: <motivo> ... la tira no vale`). `motor_sim.c` con las mismas
+  reglas (byte i = `motor_flujo_byte(i)`); banco host paso 15 y paso de
+  campaña con `--flujo`, 0 fallos. Compila con ESP-IDF 5.3.2 sin avisos.
+- `analysis/campana_motor.py --flujo`: `kdNN_flujo.bin` solo si la tira
+  llega entera (numeración, CRC, longitud y línea de fin); `resumen.csv`
+  con columna `modo`. **El flujo sirve desde CFG_KD 13-14** [ESTIMADO, ro2 a
+  300 MHz]: el cuello es la UART a 115200 (~5 kB/s); por debajo, trozos.
+- Síntesis (Yosys con plugin, Linux): `flujo_crudo` 23,67 kGE,
+  `motor_top` con FIFO 116,63; sin FIFO 93,09 frente a 93,20 del commit
+  anterior con la misma herramienta (sin cambio medible). Las filas
+  antiguas del CSV (92,53; otro camino de herramienta) no se han tocado.
+  Yosys xc7 de `basys3_top`: 5125 LUT, 4292 FF, 36 RAM64M (~25 %).
+- **ESP32, radio en A/B** (`docs/esp32_linea_base_90b.md`, aviso al final):
+  `rng_sampler.c` arrancaba el Wi-Fi sin asociar y sin
+  `sta_disconnected_pm = false` ni `WIFI_PS_NONE`: la radio pudo estar
+  dormida y el "ningún efecto de condición" no dice nada de la radio.
+  Firmware corregido y **repetido el mismo día** en el chip
+  f8:b3:b7:2a:09:28 (12 capturas `0928rd_*`, carpeta
+  `mac_f8b3b72a0928_radio_despierta`, fuera de los ANOVA de la campaña): con
+  la radio despierta sigue sin haber efecto (ANOVA p = 0,41; radio frente a
+  sin radio p = 0,80; frente a A+B de octubre p = 0,91), 3 por condición y
+  un solo chip. Indicio de radio activa: B queda 1,1-2,2 °C sobre C (en
+  octubre, 0,0). Esa placa lleva un firmware de alarma de Mario: copia en
+  `~/esp32_alarma_backup_f8b3b72a0928.bin`, restaurada y verificada por
+  SHA-256. `entropia_90b.py` admite ya ejecuciones en paralelo (cerrojo).
+- **Revisión de la memoria** (`docs/revision_memoria_2026-11-10.md`):
+  aplicados G1-G4, M4, M5, M8 y los recuentos (nueve bancos); pendientes
+  M1-M3, M6, M7, los menores y los ocho puntos frente al objetivo oficial.
+  Memoria con la captura continua (apéndice A, cap. 4 §cruces, cap. 7
+  protocolo, cap. 8), EN y ES, PDF regenerados.
+- Sin Vivado todavía: `build.tcl` sigue sin ejecutarse nunca.
+
 ## Estado al 08-11-2026: el primer día de placa, preparado sin placa
 
 Detalle y checklist en **`docs/puesta_en_marcha_fpga.md`**. Nada probado en
@@ -93,8 +148,8 @@ hardware todavía.
   `prueba_compara_modelo.py` (Q conocida): 0 fallos; con Q_raw ×4 solo el
   divisor más bajo lo detecta, así que la campaña necesita divisores bien
   por debajo de K*.
-- **Pendiente de Mario:** los trozos de `crudo` no son contiguos (SP
-  800-90B pide 10⁶ consecutivos): captura continua sería un cambio de RTL.
+- Los trozos de `crudo` no son contiguos (SP 800-90B pide 10⁶
+  consecutivos): resuelto el 10-11 con la captura continua (arriba).
   El commit `21b95b7` (curl con reintentos en `verifica.yml`) lo sube Mario:
   el token de Claude no tiene ámbito `workflow`.
 - Cap. 8 (EN y ES) en borrador, con [PENDING]/[PENDIENTE] donde van los
@@ -546,7 +601,7 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   400 kHz, 3,3 V. Sin estiramiento de reloj: las órdenes largas
   (sembrar, generar) se lanzan escribiendo `CONTROL` (0x03) y se sondea
   `STATUS` (0x02) hasta que baje el bit `ocupado`.
-- Secuencia: leer `ID` (0x00) = 0xA5 y `VERSION` (0x01) = 0x03 → sondear
+- Secuencia: leer `ID` (0x00) = 0xA5 y `VERSION` (0x01) = 0x04 (vale 0x03 o mayor) → sondear
   `DIAG` (0x0E) hasta `arrancado` → `CONTROL ← sembrar` → sondear →
   comprobar `DIAG.rechazada = 0`, `sembrado` y sin alarmas →
   `CONTROL ← generar` → sondear → `DIAG.rechazada = 0` → hay clave. Reto-respuesta: escribir 16 bytes en `RETO` (0x20),

@@ -1,3 +1,5 @@
+Extracto de results/run_tb_todos.log (10-11-2026, los nueve bancos): solo tb_motor_top.
+
 === analisis ===
 rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
   shared variable cfg : t_cfg;
@@ -5,276 +7,111 @@ rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object befo
 
 === ejecucion ===
 
---- tb_ring_osc ---
-rtl/tb/tb_ring_osc.vhd:86:5:@0ms:(report note): 1) Arranque, parada y frecuencia nominal
-rtl/tb/tb_ring_osc.vhd:78:9:@50ns:(report note):   [ok ] con habilitacion a cero el anillo esta quieto
-rtl/tb/tb_ring_osc.vhd:99:5:@401ns:(report note):   periodo medido 1.5e3 ps, esperado 1.5e3 ps
-rtl/tb/tb_ring_osc.vhd:78:9:@401ns:(report note):   [ok ] la frecuencia coincide con 1/(2*N*tpd) dentro del 2 %
-rtl/tb/tb_ring_osc.vhd:78:9:@401ns:(report note):   [ok ] frecuencia = 6.666666666666666e2 MHz
-rtl/tb/tb_ring_osc.vhd:106:5:@401ns:(report note): 2) Resolucion del banco: jitter con el ruido apagado
-rtl/tb/tb_ring_osc.vhd:108:5:@30402500ps:(report note):   suelo de ruido numerico 0.0 ps
-rtl/tb/tb_ring_osc.vhd:78:9:@30402500ps:(report note):   [ok ] el suelo esta muy por debajo del jitter que hay que medir
-rtl/tb/tb_ring_osc.vhd:112:5:@30402500ps:(report note): 3) Jitter inyectado frente al teorico
-rtl/tb/tb_ring_osc.vhd:117:5:@60502056024fs:(report note):   sigma medido 6.366564018748695 ps, teorico 6.324555320336758 ps
-rtl/tb/tb_ring_osc.vhd:78:9:@60502056024fs:(report note):   [ok ] sigma_periodo = sqrt(2N)*sigma_etapa dentro del 10 %
-rtl/tb/tb_ring_osc.vhd:121:5:@60502056024fs:(report note):   jitter relativo sigma/T = 4.2445063518098064e-3
-rtl/tb/tb_ring_osc.vhd:78:9:@60552056024fs:(report note):   [ok ] el anillo vuelve a pararse
-rtl/tb/tb_ring_osc.vhd:128:7:@60552056024fs:(report note): tb_ring_osc: 0 fallos
-simulation stopped @60552056024fs
-
---- tb_i2c_slave ---
-../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-rtl/tb/tb_i2c_slave.vhd:280:5:@2us:(report note): 1) Direccionamiento
-rtl/tb/tb_i2c_slave.vhd:134:9:@23us:(report note):   [ok ] reconoce su propia direccion en escritura
-rtl/tb/tb_i2c_slave.vhd:285:5:@23us:(report note): 2) Escritura de varios bytes con autoincremento
-rtl/tb/tb_i2c_slave.vhd:134:9:@41us:(report note):   [ok ] reconoce el byte de puntero
-rtl/tb/tb_i2c_slave.vhd:134:9:@59us:(report note):   [ok ] reconoce el primer dato
-rtl/tb/tb_i2c_slave.vhd:134:9:@77us:(report note):   [ok ] reconoce el segundo dato
-rtl/tb/tb_i2c_slave.vhd:134:9:@95us:(report note):   [ok ] reconoce el tercer dato
-rtl/tb/tb_i2c_slave.vhd:134:9:@101us:(report note):   [ok ] el primer dato fue a la direccion 0x10
-rtl/tb/tb_i2c_slave.vhd:134:9:@101us:(report note):   [ok ] el segundo avanzo a 0x11
-rtl/tb/tb_i2c_slave.vhd:134:9:@101us:(report note):   [ok ] el tercero avanzo a 0x12
-rtl/tb/tb_i2c_slave.vhd:300:5:@101us:(report note): 3) Lectura con arranque repetido y autoincremento
-rtl/tb/tb_i2c_slave.vhd:134:9:@122us:(report note):   [ok ] segunda transaccion, direccion reconocida
-rtl/tb/tb_i2c_slave.vhd:134:9:@140us:(report note):   [ok ] puntero colocado en 0x10
-rtl/tb/tb_i2c_slave.vhd:134:9:@161us:(report note):   [ok ] acepta la direccion en modo lectura
-rtl/tb/tb_i2c_slave.vhd:134:9:@179us:(report note):   [ok ] primer byte leido = 0xA1
-rtl/tb/tb_i2c_slave.vhd:134:9:@197us:(report note):   [ok ] segundo byte leido = 0xB2
-rtl/tb/tb_i2c_slave.vhd:134:9:@215us:(report note):   [ok ] tercer byte leido = 0xC3
-rtl/tb/tb_i2c_slave.vhd:317:5:@219us:(report note): 4) No responde a una direccion ajena
-rtl/tb/tb_i2c_slave.vhd:134:9:@240us:(report note):   [ok ] no reconoce una direccion que no es la suya
-rtl/tb/tb_i2c_slave.vhd:324:5:@244us:(report note): 5) Espurios por debajo del filtro
-rtl/tb/tb_i2c_slave.vhd:134:9:@245100ns:(report note):   [ok ] un pulso de 100 ns en SDA en reposo no se toma por START
-rtl/tb/tb_i2c_slave.vhd:134:9:@246200ns:(report note):   [ok ] un pulso de 100 ns en SCL en reposo no hace nada
-rtl/tb/tb_i2c_slave.vhd:134:9:@303200ns:(report note):   [ok ] el byte con dos espurios dentro recibe ACK
-rtl/tb/tb_i2c_slave.vhd:134:9:@308200ns:(report note):   [ok ] el byte con espurios se escribio entero y bien (0x96)
-rtl/tb/tb_i2c_slave.vhd:134:9:@308200ns:(report note):   [ok ] una sola escritura
-rtl/tb/tb_i2c_slave.vhd:346:5:@308200ns:(report note): 6) STOP a mitad de byte
-rtl/tb/tb_i2c_slave.vhd:134:9:@360200ns:(report note):   [ok ] tras el STOP el esclavo esta en reposo y suelta SDA
-rtl/tb/tb_i2c_slave.vhd:134:9:@360200ns:(report note):   [ok ] el medio byte no se escribio
-rtl/tb/tb_i2c_slave.vhd:134:9:@360200ns:(report note):   [ok ] ningun pulso de escritura
-rtl/tb/tb_i2c_slave.vhd:134:9:@422200ns:(report note):   [ok ] la escritura siguiente va bien
-rtl/tb/tb_i2c_slave.vhd:362:5:@422200ns:(report note): 7) START repetido a mitad de byte
-rtl/tb/tb_i2c_slave.vhd:134:9:@492200ns:(report note):   [ok ] acepta la direccion en lectura tras el START repetido
-rtl/tb/tb_i2c_slave.vhd:134:9:@510200ns:(report note):   [ok ] lee del puntero fijado antes del byte abortado (0x32)
-rtl/tb/tb_i2c_slave.vhd:134:9:@515200ns:(report note):   [ok ] el byte abortado no se escribio
-rtl/tb/tb_i2c_slave.vhd:378:5:@515200ns:(report note): 8) Bytes tras una direccion ajena
-rtl/tb/tb_i2c_slave.vhd:134:9:@536200ns:(report note):   [ok ] no reconoce la direccion ajena
-rtl/tb/tb_i2c_slave.vhd:134:9:@554200ns:(report note):   [ok ] no reconoce el puntero que sigue
-rtl/tb/tb_i2c_slave.vhd:134:9:@572200ns:(report note):   [ok ] no reconoce el dato que sigue
-rtl/tb/tb_i2c_slave.vhd:134:9:@577200ns:(report note):   [ok ] nada se escribio
-rtl/tb/tb_i2c_slave.vhd:392:5:@577200ns:(report note): 9) El puntero sobrevive al STOP
-rtl/tb/tb_i2c_slave.vhd:134:9:@659200ns:(report note):   [ok ] acepta una lectura directa
-rtl/tb/tb_i2c_slave.vhd:134:9:@677200ns:(report note):   [ok ] lee del puntero que quedo tras la escritura (0x41)
-rtl/tb/tb_i2c_slave.vhd:402:5:@681200ns:(report note): 10) La lectura da la vuelta en 0xFF
-rtl/tb/tb_i2c_slave.vhd:134:9:@759200ns:(report note):   [ok ] 0xFE
-rtl/tb/tb_i2c_slave.vhd:134:9:@777200ns:(report note):   [ok ] 0xFF
-rtl/tb/tb_i2c_slave.vhd:134:9:@795200ns:(report note):   [ok ] 0x00: el puntero de 8 bits da la vuelta
-rtl/tb/tb_i2c_slave.vhd:417:5:@799200ns:(report note): 11) El maestro desaparece con el esclavo tirando de SDA
-rtl/tb/tb_i2c_slave.vhd:134:9:@819200ns:(report note):   [ok ] el esclavo esta dando el ACK (tira de SDA)
-rtl/tb/tb_i2c_slave.vhd:134:9:@919125ns:(report note):   [ok ] la guarda devuelve el esclavo a reposo y suelta SDA
-rtl/tb/tb_i2c_slave.vhd:435:5:@919125ns:(report note):   la guarda tardo 99925000000 fs (G_GUARDA = 2000 ciclos)
-rtl/tb/tb_i2c_slave.vhd:134:9:@919125ns:(report note):   [ok ] en los ~100 us que fijan G_GUARDA y el reloj
-rtl/tb/tb_i2c_slave.vhd:134:9:@987125ns:(report note):   [ok ] la escritura siguiente va bien
-rtl/tb/tb_i2c_slave.vhd:445:5:@987125ns:(report note): 12) STOP tras un ACK de lectura, en vez de NACK
-rtl/tb/tb_i2c_slave.vhd:134:9:@1065125ns:(report note):   [ok ] primer byte 0xFF
-rtl/tb/tb_i2c_slave.vhd:134:9:@1070125ns:(report note):   [ok ] el siguiente empezaba por 1: STOP aceptado, esclavo en reposo
-rtl/tb/tb_i2c_slave.vhd:134:9:@1148125ns:(report note):   [ok ] primer byte 0x00
-rtl/tb/tb_i2c_slave.vhd:134:9:@1152125ns:(report note):   [ok ] el siguiente empezaba por 0: el esclavo retiene SDA, el STOP no vale
-rtl/tb/tb_i2c_slave.vhd:134:9:@1249575ns:(report note):   [ok ] la guarda suelta SDA
-rtl/tb/tb_i2c_slave.vhd:473:5:@1249575ns:(report note):   la guarda tardo 97450000000 fs
-rtl/tb/tb_i2c_slave.vhd:134:9:@1249576ns:(report note):   [ok ] el bus queda libre
-rtl/tb/tb_i2c_slave.vhd:134:9:@1312576ns:(report note):   [ok ] la escritura siguiente va bien
-rtl/tb/tb_i2c_slave.vhd:482:5:@1312576ns:(report note): 13) Velocidad del bus
-rtl/tb/tb_i2c_slave.vhd:134:9:@1385076ns:(report note):   [ok ] a 1 MHz escribe y lee bien
-rtl/tb/tb_i2c_slave.vhd:134:9:@2101076ns:(report note):   [ok ] a 100 kHz escribe y lee bien
-rtl/tb/tb_i2c_slave.vhd:497:7:@2102076ns:(report note): tb_i2c_slave: 0 fallos
-  PSL: 1 aserciones (0 violadas), 1 coberturas (1 alcanzadas)
-
---- tb_aes_enc ---
-rtl/tb/tb_aes_enc.vhd:149:9:@65ns:(report note): ===== aes_enc: una ronda por ciclo =====
-rtl/tb/tb_aes_enc.vhd:154:7:@65ns:(report note): 1) Vectores de FIPS 197
-rtl/tb/tb_aes_enc.vhd:122:9:@185ns:(report note):   [ok ] Apendice C.1 -> 69c4e0d86a7b0430d8cdb78070b4c55a (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:122:9:@305ns:(report note):   [ok ] Apendice B -> 3925841d02dc09fbdc118597196a0b32 (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:164:7:@305ns:(report note): 2) Vector de SP 800-38A (ECB, primer bloque)
-rtl/tb/tb_aes_enc.vhd:122:9:@425ns:(report note):   [ok ] F.1.1 ECB-AES128 -> 3ad77bb40d7a3660a89ecaf32466ef97 (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:170:7:@425ns:(report note): 3) Bloques encadenados de SP 800-38A
-rtl/tb/tb_aes_enc.vhd:122:9:@545ns:(report note):   [ok ] F.1.1 segundo bloque -> f5d3d58503b9699de785895a96fdbaaf (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:122:9:@665ns:(report note):   [ok ] F.1.1 tercer bloque -> 43b1cd7f598ece23881b00e3ed030688 (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:180:7:@665ns:(report note): 4) Reutilizacion del nucleo: mil cifrados encadenados
-rtl/tb/tb_aes_enc.vhd:194:9:@240665ns:(report note):   [ok ] mil cifrados reproducibles, resultado 032ec90a52baa3f856551d721b7c6932
-rtl/tb/tb_aes_enc.vhd:203:7:@240785ns:(report note):   cifrado del bloque de ceros = 7df76b0c1ab899b33e42f047b91b546f (es la subclave L del CMAC)
-rtl/tb/tb_aes_enc.vhd:206:7:@240785ns:(report note): 5) Zeroizacion a mitad de un cifrado
-rtl/tb/tb_aes_enc.vhd:230:9:@240846ns:(report note):   [ok ] tras borrar la salida es cero y el nucleo esta libre
-rtl/tb/tb_aes_enc.vhd:245:9:@241446ns:(report note):   [ok ] el cifrado abortado no emite listo
-rtl/tb/tb_aes_enc.vhd:122:9:@241565ns:(report note):   [ok ] Apendice C.1 otra vez, tras borrar -> 69c4e0d86a7b0430d8cdb78070b4c55a (11 ciclos)
-rtl/tb/tb_aes_enc.vhd:151:9:@241965ns:(report note): ===== aes_enc_32: ruta de 32 bits, cuatro S-boxes =====
-rtl/tb/tb_aes_enc.vhd:154:7:@241965ns:(report note): 1) Vectores de FIPS 197
-rtl/tb/tb_aes_enc.vhd:122:9:@242485ns:(report note):   [ok ] Apendice C.1 -> 69c4e0d86a7b0430d8cdb78070b4c55a (51 ciclos)
-rtl/tb/tb_aes_enc.vhd:122:9:@243005ns:(report note):   [ok ] Apendice B -> 3925841d02dc09fbdc118597196a0b32 (51 ciclos)
-rtl/tb/tb_aes_enc.vhd:164:7:@243005ns:(report note): 2) Vector de SP 800-38A (ECB, primer bloque)
-rtl/tb/tb_aes_enc.vhd:122:9:@243525ns:(report note):   [ok ] F.1.1 ECB-AES128 -> 3ad77bb40d7a3660a89ecaf32466ef97 (51 ciclos)
-rtl/tb/tb_aes_enc.vhd:170:7:@243525ns:(report note): 3) Bloques encadenados de SP 800-38A
-rtl/tb/tb_aes_enc.vhd:122:9:@244045ns:(report note):   [ok ] F.1.1 segundo bloque -> f5d3d58503b9699de785895a96fdbaaf (51 ciclos)
-rtl/tb/tb_aes_enc.vhd:122:9:@244565ns:(report note):   [ok ] F.1.1 tercer bloque -> 43b1cd7f598ece23881b00e3ed030688 (51 ciclos)
-rtl/tb/tb_aes_enc.vhd:180:7:@244565ns:(report note): 4) Reutilizacion del nucleo: mil cifrados encadenados
-rtl/tb/tb_aes_enc.vhd:194:9:@1284565ns:(report note):   [ok ] mil cifrados reproducibles, resultado 032ec90a52baa3f856551d721b7c6932
-rtl/tb/tb_aes_enc.vhd:203:7:@1285085ns:(report note):   cifrado del bloque de ceros = 7df76b0c1ab899b33e42f047b91b546f (es la subclave L del CMAC)
-rtl/tb/tb_aes_enc.vhd:206:7:@1285085ns:(report note): 5) Zeroizacion a mitad de un cifrado
-rtl/tb/tb_aes_enc.vhd:230:9:@1285146ns:(report note):   [ok ] tras borrar la salida es cero y el nucleo esta libre
-rtl/tb/tb_aes_enc.vhd:245:9:@1285746ns:(report note):   [ok ] el cifrado abortado no emite listo
-rtl/tb/tb_aes_enc.vhd:122:9:@1286265ns:(report note):   [ok ] Apendice C.1 otra vez, tras borrar -> 69c4e0d86a7b0430d8cdb78070b4c55a (51 ciclos)
-rtl/tb/tb_aes_enc.vhd:254:7:@1286265ns:(report note): tb_aes_enc: 0 fallos
-
---- tb_aes_cmac ---
-rtl/tb/tb_aes_cmac.vhd:136:5:@55ns:(report note): 1) Carga de clave y subclaves
-rtl/tb/tb_aes_cmac.vhd:85:9:@205ns:(report note):   [ok ] K1 = fbeed618357133667c85e08f7236a8de
-rtl/tb/tb_aes_cmac.vhd:85:9:@205ns:(report note):   [ok ] K2 = f7ddac306ae266ccf90bc11ee46d513b
-rtl/tb/tb_aes_cmac.vhd:144:5:@205ns:(report note): 2) Vectores de RFC 4493
-rtl/tb/tb_aes_cmac.vhd:122:9:@365ns:(report note):   [ok ] Mlen = 0 -> bb1d6929e95937287fa37d129b756746
-rtl/tb/tb_aes_cmac.vhd:122:9:@525ns:(report note):   [ok ] Mlen = 16 -> 070a16b46b4d4144f79bdd9dd04a287c
-rtl/tb/tb_aes_cmac.vhd:122:9:@965ns:(report note):   [ok ] Mlen = 40 -> dfa66747de9ae63030ca32611497c827
-rtl/tb/tb_aes_cmac.vhd:122:9:@1545ns:(report note):   [ok ] Mlen = 64 -> 51f0bebf7e3b9d92fc49741779363cfe
-rtl/tb/tb_aes_cmac.vhd:175:5:@1545ns:(report note): 3) Repeticion: el mismo mensaje debe dar la misma etiqueta
-rtl/tb/tb_aes_cmac.vhd:122:9:@1705ns:(report note):   [ok ] Mlen = 16 repetido -> 070a16b46b4d4144f79bdd9dd04a287c
-rtl/tb/tb_aes_cmac.vhd:182:7:@1705ns:(report note): tb_aes_cmac: 0 fallos
-
---- tb_ctr_drbg ---
-rtl/tb/tb_ctr_drbg.vhd:109:5:@55ns:(report note): 1) Instanciar con entropia y nonce
-rtl/tb/tb_ctr_drbg.vhd:96:9:@55ns:(report note):   [ok ] sin sembrar al arrancar
-rtl/tb/tb_ctr_drbg.vhd:96:9:@1895ns:(report note):   [ok ] sembrado tras instanciar (183 ciclos)
-rtl/tb/tb_ctr_drbg.vhd:96:9:@1895ns:(report note):   [ok ] contador de peticiones = 1
-rtl/tb/tb_ctr_drbg.vhd:118:5:@1895ns:(report note): 2) Generar dos veces
-rtl/tb/tb_ctr_drbg.vhd:96:9:@2435ns:(report note):   [ok ] primera salida = referencia (53 ciclos)
-rtl/tb/tb_ctr_drbg.vhd:96:9:@2975ns:(report note):   [ok ] segunda salida = referencia
-rtl/tb/tb_ctr_drbg.vhd:96:9:@2975ns:(report note):   [ok ] las dos salidas son distintas
-rtl/tb/tb_ctr_drbg.vhd:96:9:@2975ns:(report note):   [ok ] contador = 3
-rtl/tb/tb_ctr_drbg.vhd:128:5:@2975ns:(report note): 3) Resembrar y generar
-rtl/tb/tb_ctr_drbg.vhd:96:9:@4815ns:(report note):   [ok ] el contador vuelve a 1 tras resembrar
-rtl/tb/tb_ctr_drbg.vhd:96:9:@5355ns:(report note):   [ok ] salida tras resembrar = referencia
-rtl/tb/tb_ctr_drbg.vhd:96:9:@5355ns:(report note):   [ok ] contador tras generar
-rtl/tb/tb_ctr_drbg.vhd:137:5:@5355ns:(report note): 4) Instanciar de nuevo borra el estado
-rtl/tb/tb_ctr_drbg.vhd:96:9:@7735ns:(report note):   [ok ] vuelve a dar la primera salida
-rtl/tb/tb_ctr_drbg.vhd:144:5:@7735ns:(report note): 5) Generar sin sembrar no hace nada
-rtl/tb/tb_ctr_drbg.vhd:96:9:@7835ns:(report note):   [ok ] la orden se ignora sin estado valido
-rtl/tb/tb_ctr_drbg.vhd:157:5:@7835ns:(report note): 6) Borrar deja el DRBG sin estado y a cero, en reposo o a mitad
-rtl/tb/tb_ctr_drbg.vhd:96:9:@10235ns:(report note):   [ok ] tras borrar: sin estado, salida y contador a cero
-rtl/tb/tb_ctr_drbg.vhd:96:9:@10295ns:(report note):   [ok ] generar tras borrar se ignora
-rtl/tb/tb_ctr_drbg.vhd:96:9:@12175ns:(report note):   [ok ] generacion en curso
-rtl/tb/tb_ctr_drbg.vhd:96:9:@12195ns:(report note):   [ok ] borrar a mitad de una generacion la aborta y limpia
-rtl/tb/tb_ctr_drbg.vhd:179:5:@12195ns:(report note): 7) El contador satura (instancia con G_PET_BITS = 2: tope 3)
-rtl/tb/tb_ctr_drbg.vhd:96:9:@15095ns:(report note):   [ok ] tras dos generaciones el contador esta en 3 y agotado
-rtl/tb/tb_ctr_drbg.vhd:96:9:@18105ns:(report note):   [ok ] agotado: generar se ignora y el contador no da la vuelta
-rtl/tb/tb_ctr_drbg.vhd:199:7:@18105ns:(report note): tb_ctr_drbg: 0 fallos
-
---- tb_health_tests ---
-rtl/tb/tb_health_tests.vhd:123:5:@35ns:(report note): 1) Fuente sana: 20 ventanas sin alarma
-rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] sin alarmas tras 20480 muestras
-rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] racha maxima vista 13 < 22
-rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] proporcion maxima vista 540 < 596
-rtl/tb/tb_health_tests.vhd:134:5:@409635ns:(report note): 2) Fuente pegada: el RCT salta en la muestra C
-rtl/tb/tb_health_tests.vhd:76:9:@410215ns:(report note):   [ok ] RCT dispara en la muestra 22 (esperado 22)
-rtl/tb/tb_health_tests.vhd:146:5:@410215ns:(report note): 3) Fuente sesgada al 70 %: salta el APT, no el RCT
-rtl/tb/tb_health_tests.vhd:76:9:@430735ns:(report note):   [ok ] APT dispara con proporcion 713 >= 596
-rtl/tb/tb_health_tests.vhd:76:9:@430735ns:(report note):   [ok ] RCT no dispara con racha maxima 15
-rtl/tb/tb_health_tests.vhd:157:5:@430735ns:(report note): 4) Pegada al valor opuesto al de referencia: detecta el complemento
-rtl/tb/tb_health_tests.vhd:76:9:@451255ns:(report note):   [ok ] APT dispara aunque la cuenta directa sea 1
-rtl/tb/tb_health_tests.vhd:165:5:@451255ns:(report note): 5) Las alarmas son pegajosas y se borran a proposito
-rtl/tb/tb_health_tests.vhd:76:9:@452255ns:(report note):   [ok ] sigue en alarma con fuente ya sana
-rtl/tb/tb_health_tests.vhd:76:9:@452275ns:(report note):   [ok ] borrar baja las alarmas
-rtl/tb/tb_health_tests.vhd:176:5:@452275ns:(report note): 6) ventana_fin: una por ventana, con el veredicto, y borrar la reinicia
-rtl/tb/tb_health_tests.vhd:76:9:@472786ns:(report note):   [ok ] sin cierre con W-1 muestras
-rtl/tb/tb_health_tests.vhd:76:9:@472816ns:(report note):   [ok ] un cierre en la muestra W, sin alarma
-rtl/tb/tb_health_tests.vhd:76:9:@513786ns:(report note):   [ok ] tres cierres en 3W muestras: 3
-rtl/tb/tb_health_tests.vhd:76:9:@534276ns:(report note):   [ok ] el cierre de una ventana mala llega con alarma_apt = 1
-rtl/tb/tb_health_tests.vhd:76:9:@565006ns:(report note):   [ok ] tras borrar, W-1 muestras no cierran ventana
-rtl/tb/tb_health_tests.vhd:76:9:@565036ns:(report note):   [ok ] tras borrar, la ventana se cierra en la muestra W y limpia
-rtl/tb/tb_health_tests.vhd:218:7:@565036ns:(report note): tb_health_tests: 0 fallos
-
 --- tb_motor_top ---
 ../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
 ../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-rtl/tb/tb_motor_top.vhd:315:5:@2200ns:(report note): 1) Identificacion
-rtl/tb/tb_motor_top.vhd:153:9:@43200ns:(report note):   [ok ] ID = 0xA5
-rtl/tb/tb_motor_top.vhd:153:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
-rtl/tb/tb_motor_top.vhd:153:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
-rtl/tb/tb_motor_top.vhd:153:9:@125200ns:(report note):   [ok ] VERSION = 0x03
-rtl/tb/tb_motor_top.vhd:153:9:@166200ns:(report note):   [ok ] test de arranque aun sin pasar
-rtl/tb/tb_motor_top.vhd:153:9:@207200ns:(report note):   [ok ] CFG_KD arranca en el maximo (24), no en un valor bajo
-rtl/tb/tb_motor_top.vhd:328:5:@207200ns:(report note): 2) Sembrar
-rtl/tb/tb_motor_top.vhd:153:9:@355200ns:(report note):   [ok ] sembrar antes del test de arranque se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@667200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@708200ns:(report note):   [ok ] sigue sin sembrar
-rtl/tb/tb_motor_top.vhd:153:9:@840700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
-rtl/tb/tb_motor_top.vhd:153:9:@922700ns:(report note):   [ok ] sembrado
-rtl/tb/tb_motor_top.vhd:153:9:@922700ns:(report note):   [ok ] sin alarmas de salud
-rtl/tb/tb_motor_top.vhd:153:9:@963700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
-rtl/tb/tb_motor_top.vhd:355:5:@963700ns:(report note): 3) Generar clave
-rtl/tb/tb_motor_top.vhd:153:9:@1035200ns:(report note):   [ok ] clave valida
-rtl/tb/tb_motor_top.vhd:153:9:@1211200ns:(report note):   [ok ] clave no nula: 93e7150db324d945597d6925e1f1bfa6
-rtl/tb/tb_motor_top.vhd:362:5:@1211200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
-rtl/tb/tb_motor_top.vhd:153:9:@1602700ns:(report note):   [ok ] ALEATORIO no nulo
-rtl/tb/tb_motor_top.vhd:153:9:@1602700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
-rtl/tb/tb_motor_top.vhd:372:5:@1602700ns:(report note): 4) Reto-respuesta
-rtl/tb/tb_motor_top.vhd:153:9:@2162200ns:(report note):   [ok ] etiqueta lista
-rtl/tb/tb_motor_top.vhd:153:9:@2338200ns:(report note):   [ok ] etiqueta: 49b331880db5d0194ccd7922edbbbf64
-rtl/tb/tb_motor_top.vhd:153:9:@2616200ns:(report note):   [ok ] la etiqueta cambia con el reto
-rtl/tb/tb_motor_top.vhd:391:5:@2616200ns:(report note): 5) Segunda clave distinta
-rtl/tb/tb_motor_top.vhd:153:9:@2863700ns:(report note):   [ok ] dos generaciones dan claves distintas
-rtl/tb/tb_motor_top.vhd:397:5:@2863700ns:(report note): 5b) Con alarma no sale nada del motor
-rtl/tb/tb_motor_top.vhd:153:9:@2905700ns:(report note):   [ok ] alarma RCT visible en STATUS
-rtl/tb/tb_motor_top.vhd:153:9:@3023200ns:(report note):   [ok ] generar con alarma se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@3199200ns:(report note):   [ok ] la clave no cambia
-rtl/tb/tb_motor_top.vhd:153:9:@3316700ns:(report note):   [ok ] aleatorio con alarma se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@3434200ns:(report note):   [ok ] resembrar con alarma se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@3505700ns:(report note):   [ok ] borrar baja las alarmas
-rtl/tb/tb_motor_top.vhd:153:9:@3546700ns:(report note):   [ok ] borrar obliga a repetir el test de arranque
-rtl/tb/tb_motor_top.vhd:153:9:@3664200ns:(report note):   [ok ] resembrar antes de repetir el test se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@3858700ns:(report note):   [ok ] pasado el test, aleatorio se acepta otra vez
-rtl/tb/tb_motor_top.vhd:422:5:@3858700ns:(report note): 5c) Alarma a mitad de un resembrado: se aborta
-rtl/tb/tb_motor_top.vhd:153:9:@4041200ns:(report note):   [ok ] DIAG.rechazada marca la siembra abortada
-rtl/tb/tb_motor_top.vhd:153:9:@4109200ns:(report note):   [ok ] PETICIONES no se reinicia: no hubo resembrado
-rtl/tb/tb_motor_top.vhd:436:5:@4426700ns:(report note): 5d) El contador de peticiones se agota y obliga a resembrar
-rtl/tb/tb_motor_top.vhd:153:9:@4494700ns:(report note):   [ok ] PETICIONES = 5 antes de agotar (byte bajo primero): 05000000
-rtl/tb/tb_motor_top.vhd:153:9:@5732200ns:(report note):   [ok ] se aceptan 10 generaciones mas (hasta 15) y la siguiente no
-rtl/tb/tb_motor_top.vhd:153:9:@5773200ns:(report note):   [ok ] DIAG.agotado a 1
-rtl/tb/tb_motor_top.vhd:153:9:@5841200ns:(report note):   [ok ] PETICIONES se queda en 15, no da la vuelta
-rtl/tb/tb_motor_top.vhd:153:9:@5958700ns:(report note):   [ok ] generar con el contador agotado se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@6194200ns:(report note):   [ok ] resembrar se acepta y baja DIAG.agotado
-rtl/tb/tb_motor_top.vhd:153:9:@6262200ns:(report note):   [ok ] PETICIONES vuelve a 1 tras resembrar
-rtl/tb/tb_motor_top.vhd:462:5:@6262200ns:(report note): 6) Captura de bits crudos
-rtl/tb/tb_motor_top.vhd:153:9:@6380700ns:(report note):   [ok ] capturar sin modo test se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@6529700ns:(report note):   [ok ] capturar durante una siembra se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@6693700ns:(report note):   [ok ] y no deja captura hecha
-rtl/tb/tb_motor_top.vhd:153:9:@6841700ns:(report note):   [ok ] resembrar durante una captura se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@7743700ns:(report note):   [ok ] buffer de captura lleno
-rtl/tb/tb_motor_top.vhd:153:9:@7950200ns:(report note):   [ok ] bits crudos con contenido variado: 2a52a56a952b56a952a552a552b56ad5
-rtl/tb/tb_motor_top.vhd:499:5:@7950200ns:(report note): 6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra
-rtl/tb/tb_motor_top.vhd:153:9:@7981700ns:(report note):   [ok ] cap_en_curso sigue a 1 con la segunda captura en marcha
-rtl/tb/tb_motor_top.vhd:153:9:@8099200ns:(report note):   [ok ] resembrar durante la segunda captura se rechaza
-rtl/tb/tb_motor_top.vhd:153:9:@9001200ns:(report note):   [ok ] segunda captura llena
-rtl/tb/tb_motor_top.vhd:153:9:@9318700ns:(report note):   [ok ] resembrado tras la segunda captura
-rtl/tb/tb_motor_top.vhd:153:9:@14176700ns:(report note):   [ok ] la semilla no aparece en el buffer de captura
-rtl/tb/tb_motor_top.vhd:530:5:@14176700ns:(report note): 7) Sin modo test la clave no se lee
-rtl/tb/tb_motor_top.vhd:153:9:@14353700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
-rtl/tb/tb_motor_top.vhd:538:5:@14354700ns:(report note): 8) Borrar todo (zeroizacion)
-rtl/tb/tb_motor_top.vhd:153:9:@14530700ns:(report note):   [ok ] antes de borrar, la clave sigue ahi
-rtl/tb/tb_motor_top.vhd:153:9:@14602200ns:(report note):   [ok ] sin clave valida y sin sembrar
-rtl/tb/tb_motor_top.vhd:153:9:@14778200ns:(report note):   [ok ] ETIQUETA a ceros tras borrar
-rtl/tb/tb_motor_top.vhd:153:9:@14778200ns:(report note):   [ok ] sin residuos de la clave en los registros intermedios del DRBG
-rtl/tb/tb_motor_top.vhd:153:9:@14778200ns:(report note):   [ok ] sin residuo en el encadenamiento del CMAC
-rtl/tb/tb_motor_top.vhd:153:9:@14895700ns:(report note):   [ok ] resembrar tras borrar se rechaza: no hay estado
-rtl/tb/tb_motor_top.vhd:153:9:@15071700ns:(report note):   [ok ] CLAVE a ceros (en modo test, que si se lee)
-rtl/tb/tb_motor_top.vhd:153:9:@15391700ns:(report note):   [ok ] ALEATORIO a ceros
-rtl/tb/tb_motor_top.vhd:153:9:@15459700ns:(report note):   [ok ] PETICIONES a 0
-rtl/tb/tb_motor_top.vhd:153:9:@15577200ns:(report note):   [ok ] generar tras borrar se rechaza: no hay estado
-rtl/tb/tb_motor_top.vhd:153:9:@15694700ns:(report note):   [ok ] autenticar tras borrar se rechaza: no hay clave
-rtl/tb/tb_motor_top.vhd:153:9:@15971200ns:(report note):   [ok ] tras borrar se puede sembrar de nuevo
-rtl/tb/tb_motor_top.vhd:153:9:@16218700ns:(report note):   [ok ] y la clave nueva no es nula ni la de antes
-rtl/tb/tb_motor_top.vhd:579:5:@16218700ns:(report note):   volcado en results/tb_motor_top.txt
-rtl/tb/tb_motor_top.vhd:582:7:@16218700ns:(report note): tb_motor_top: 0 fallos
-simulation stopped @16218700ns
-  PSL: 11 aserciones (0 violadas), 6 coberturas (6 alcanzadas)
+rtl/tb/tb_motor_top.vhd:380:5:@2200ns:(report note): 1) Identificacion
+rtl/tb/tb_motor_top.vhd:188:9:@43200ns:(report note):   [ok ] ID = 0xA5
+rtl/tb/tb_motor_top.vhd:188:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
+rtl/tb/tb_motor_top.vhd:188:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
+rtl/tb/tb_motor_top.vhd:188:9:@125200ns:(report note):   [ok ] VERSION = 0x04
+rtl/tb/tb_motor_top.vhd:188:9:@166200ns:(report note):   [ok ] test de arranque aun sin pasar
+rtl/tb/tb_motor_top.vhd:188:9:@207200ns:(report note):   [ok ] CFG_KD arranca en el maximo (24), no en un valor bajo
+rtl/tb/tb_motor_top.vhd:393:5:@207200ns:(report note): 2) Sembrar
+rtl/tb/tb_motor_top.vhd:188:9:@355200ns:(report note):   [ok ] sembrar antes del test de arranque se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@667200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@708200ns:(report note):   [ok ] sigue sin sembrar
+rtl/tb/tb_motor_top.vhd:188:9:@840700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
+rtl/tb/tb_motor_top.vhd:188:9:@922700ns:(report note):   [ok ] sembrado
+rtl/tb/tb_motor_top.vhd:188:9:@922700ns:(report note):   [ok ] sin alarmas de salud
+rtl/tb/tb_motor_top.vhd:188:9:@963700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
+rtl/tb/tb_motor_top.vhd:420:5:@963700ns:(report note): 3) Generar clave
+rtl/tb/tb_motor_top.vhd:188:9:@1035200ns:(report note):   [ok ] clave valida
+rtl/tb/tb_motor_top.vhd:188:9:@1211200ns:(report note):   [ok ] clave no nula: 93e7150db324d945597d6925e1f1bfa6
+rtl/tb/tb_motor_top.vhd:427:5:@1211200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
+rtl/tb/tb_motor_top.vhd:188:9:@1602700ns:(report note):   [ok ] ALEATORIO no nulo
+rtl/tb/tb_motor_top.vhd:188:9:@1602700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
+rtl/tb/tb_motor_top.vhd:437:5:@1602700ns:(report note): 4) Reto-respuesta
+rtl/tb/tb_motor_top.vhd:188:9:@2162200ns:(report note):   [ok ] etiqueta lista
+rtl/tb/tb_motor_top.vhd:188:9:@2338200ns:(report note):   [ok ] etiqueta: 49b331880db5d0194ccd7922edbbbf64
+rtl/tb/tb_motor_top.vhd:188:9:@2616200ns:(report note):   [ok ] la etiqueta cambia con el reto
+rtl/tb/tb_motor_top.vhd:456:5:@2616200ns:(report note): 5) Segunda clave distinta
+rtl/tb/tb_motor_top.vhd:188:9:@2863700ns:(report note):   [ok ] dos generaciones dan claves distintas
+rtl/tb/tb_motor_top.vhd:462:5:@2863700ns:(report note): 5b) Con alarma no sale nada del motor
+rtl/tb/tb_motor_top.vhd:188:9:@2905700ns:(report note):   [ok ] alarma RCT visible en STATUS
+rtl/tb/tb_motor_top.vhd:188:9:@3023200ns:(report note):   [ok ] generar con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@3199200ns:(report note):   [ok ] la clave no cambia
+rtl/tb/tb_motor_top.vhd:188:9:@3316700ns:(report note):   [ok ] aleatorio con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@3434200ns:(report note):   [ok ] resembrar con alarma se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@3505700ns:(report note):   [ok ] borrar baja las alarmas
+rtl/tb/tb_motor_top.vhd:188:9:@3546700ns:(report note):   [ok ] borrar obliga a repetir el test de arranque
+rtl/tb/tb_motor_top.vhd:188:9:@3664200ns:(report note):   [ok ] resembrar antes de repetir el test se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@3858700ns:(report note):   [ok ] pasado el test, aleatorio se acepta otra vez
+rtl/tb/tb_motor_top.vhd:487:5:@3858700ns:(report note): 5c) Alarma a mitad de un resembrado: se aborta
+rtl/tb/tb_motor_top.vhd:188:9:@4041200ns:(report note):   [ok ] DIAG.rechazada marca la siembra abortada
+rtl/tb/tb_motor_top.vhd:188:9:@4109200ns:(report note):   [ok ] PETICIONES no se reinicia: no hubo resembrado
+rtl/tb/tb_motor_top.vhd:501:5:@4426700ns:(report note): 5d) El contador de peticiones se agota y obliga a resembrar
+rtl/tb/tb_motor_top.vhd:188:9:@4494700ns:(report note):   [ok ] PETICIONES = 5 antes de agotar (byte bajo primero): 05000000
+rtl/tb/tb_motor_top.vhd:188:9:@5732200ns:(report note):   [ok ] se aceptan 10 generaciones mas (hasta 15) y la siguiente no
+rtl/tb/tb_motor_top.vhd:188:9:@5773200ns:(report note):   [ok ] DIAG.agotado a 1
+rtl/tb/tb_motor_top.vhd:188:9:@5841200ns:(report note):   [ok ] PETICIONES se queda en 15, no da la vuelta
+rtl/tb/tb_motor_top.vhd:188:9:@5958700ns:(report note):   [ok ] generar con el contador agotado se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@6194200ns:(report note):   [ok ] resembrar se acepta y baja DIAG.agotado
+rtl/tb/tb_motor_top.vhd:188:9:@6262200ns:(report note):   [ok ] PETICIONES vuelve a 1 tras resembrar
+rtl/tb/tb_motor_top.vhd:527:5:@6262200ns:(report note): 6) Captura de bits crudos
+rtl/tb/tb_motor_top.vhd:188:9:@6380700ns:(report note):   [ok ] capturar sin modo test se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@6529700ns:(report note):   [ok ] capturar durante una siembra se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@6693700ns:(report note):   [ok ] y no deja captura hecha
+rtl/tb/tb_motor_top.vhd:188:9:@6841700ns:(report note):   [ok ] resembrar durante una captura se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@7743700ns:(report note):   [ok ] buffer de captura lleno
+rtl/tb/tb_motor_top.vhd:188:9:@7950200ns:(report note):   [ok ] bits crudos con contenido variado: 2a52a56a952b56a952a552a552b56ad5
+rtl/tb/tb_motor_top.vhd:564:5:@7950200ns:(report note): 6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra
+rtl/tb/tb_motor_top.vhd:188:9:@7981700ns:(report note):   [ok ] cap_en_curso sigue a 1 con la segunda captura en marcha
+rtl/tb/tb_motor_top.vhd:188:9:@8099200ns:(report note):   [ok ] resembrar durante la segunda captura se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@9001200ns:(report note):   [ok ] segunda captura llena
+rtl/tb/tb_motor_top.vhd:188:9:@9318700ns:(report note):   [ok ] resembrado tras la segunda captura
+rtl/tb/tb_motor_top.vhd:188:9:@14176700ns:(report note):   [ok ] la semilla no aparece en el buffer de captura
+rtl/tb/tb_motor_top.vhd:595:5:@14176700ns:(report note): 7) Sin modo test la clave no se lee
+rtl/tb/tb_motor_top.vhd:188:9:@14353700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
+rtl/tb/tb_motor_top.vhd:603:5:@14354700ns:(report note): 8) Borrar todo (zeroizacion)
+rtl/tb/tb_motor_top.vhd:188:9:@14530700ns:(report note):   [ok ] antes de borrar, la clave sigue ahi
+rtl/tb/tb_motor_top.vhd:188:9:@14602200ns:(report note):   [ok ] sin clave valida y sin sembrar
+rtl/tb/tb_motor_top.vhd:188:9:@14778200ns:(report note):   [ok ] ETIQUETA a ceros tras borrar
+rtl/tb/tb_motor_top.vhd:188:9:@14778200ns:(report note):   [ok ] sin residuos de la clave en los registros intermedios del DRBG
+rtl/tb/tb_motor_top.vhd:188:9:@14778200ns:(report note):   [ok ] sin residuo en el encadenamiento del CMAC
+rtl/tb/tb_motor_top.vhd:188:9:@14895700ns:(report note):   [ok ] resembrar tras borrar se rechaza: no hay estado
+rtl/tb/tb_motor_top.vhd:188:9:@15071700ns:(report note):   [ok ] CLAVE a ceros (en modo test, que si se lee)
+rtl/tb/tb_motor_top.vhd:188:9:@15391700ns:(report note):   [ok ] ALEATORIO a ceros
+rtl/tb/tb_motor_top.vhd:188:9:@15459700ns:(report note):   [ok ] PETICIONES a 0
+rtl/tb/tb_motor_top.vhd:188:9:@15577200ns:(report note):   [ok ] generar tras borrar se rechaza: no hay estado
+rtl/tb/tb_motor_top.vhd:188:9:@15694700ns:(report note):   [ok ] autenticar tras borrar se rechaza: no hay clave
+rtl/tb/tb_motor_top.vhd:188:9:@15971200ns:(report note):   [ok ] tras borrar se puede sembrar de nuevo
+rtl/tb/tb_motor_top.vhd:188:9:@16218700ns:(report note):   [ok ] y la clave nueva no es nula ni la de antes
+rtl/tb/tb_motor_top.vhd:634:5:@16218700ns:(report note): 9) Captura continua (FLUJO)
+rtl/tb/tb_motor_top.vhd:188:9:@16259700ns:(report note):   [ok ] FLUJO a cero sin arrancarlo
+rtl/tb/tb_motor_top.vhd:188:9:@16373200ns:(report note):   [ok ] arrancar el flujo sin modo test se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@16517200ns:(report note):   [ok ] con CFG_KD por debajo del minimo se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@16690700ns:(report note):   [ok ] durante una siembra se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@18197200ns:(report note):   [ok ] flujo activo
+rtl/tb/tb_motor_top.vhd:188:9:@18314700ns:(report note):   [ok ] resembrar con el flujo activo se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@18432200ns:(report note):   [ok ] capturar con el flujo activo se rechaza
+rtl/tb/tb_motor_top.vhd:188:9:@18503700ns:(report note):   [ok ] CFG_KD se ignora con el flujo activo
+rtl/tb/tb_motor_top.vhd:188:9:@24583700ns:(report note):   [ok ] 400 bytes consecutivos iguales a los bits crudos, sin huecos
+rtl/tb/tb_motor_top.vhd:188:9:@24583700ns:(report note):   [ok ] y con contenido: 402 de 402 bytes no son 0x00 ni 0xFF
+rtl/tb/tb_motor_top.vhd:188:9:@24583700ns:(report note):   [ok ] sin credito se leen ceros
+rtl/tb/tb_motor_top.vhd:188:9:@24583700ns:(report note):   [ok ] FLUJO_N con tope 31 (maximo visto 27)
+rtl/tb/tb_motor_top.vhd:188:9:@24624700ns:(report note):   [ok ] sin desbordar mientras se lee a tiempo
+rtl/tb/tb_motor_top.vhd:188:9:@26165700ns:(report note):   [ok ] desbordado y parado al no leer
+rtl/tb/tb_motor_top.vhd:188:9:@27959200ns:(report note):   [ok ] parado el flujo, resembrar se acepta
+rtl/tb/tb_motor_top.vhd:188:9:@28030700ns:(report note):   [ok ] rearrancar baja desbordado
+rtl/tb/tb_motor_top.vhd:188:9:@28550700ns:(report note):   [ok ] la tira nueva empieza en su primer bit
+rtl/tb/tb_motor_top.vhd:188:9:@28622200ns:(report note):   [ok ] escribir 0 lo para
+rtl/tb/tb_motor_top.vhd:188:9:@28942200ns:(report note):   [ok ] y vacia la FIFO
+rtl/tb/tb_motor_top.vhd:188:9:@29435700ns:(report note):   [ok ] quitar modo test lo para y vacia la FIFO
+rtl/tb/tb_motor_top.vhd:188:9:@29998700ns:(report note):   [ok ] borrar_todo lo para y vacia la FIFO
+rtl/tb/tb_motor_top.vhd:732:5:@29998700ns:(report note):   volcado en results/tb_motor_top.txt
+rtl/tb/tb_motor_top.vhd:735:7:@29998700ns:(report note): tb_motor_top: 0 fallos
+simulation stopped @29998700ns
+  PSL: 14 aserciones (0 violadas), 8 coberturas (8 alcanzadas)
 
-=== resumen ===
-todos los bancos pasan

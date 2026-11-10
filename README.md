@@ -42,8 +42,10 @@ reinicios) y es la justificación del diseño de caja blanca.
 - RTL: anillo, ERO, captura, salud, I2C, AES (dos núcleos: una ronda por
   ciclo y ruta de 32 bits), CMAC, CTR_DRBG y nivel superior escritos y
   verificados en GHDL contra vectores oficiales (FIPS 197, SP 800-38A,
-  RFC 4493, CAVP DRBG). Siete bancos, todos pasan (`tb_motor_top` 64/64
-  con 11 propiedades PSL; el esclavo I2C 49/49 incluido el bus bajo abuso).
+  RFC 4493, CAVP DRBG). Nueve bancos, todos pasan (`tb_motor_top` 85/85
+  con 14 propiedades PSL; el esclavo I2C 49/49 incluido el bus bajo abuso).
+  Motor versión 0x04: captura continua de bits crudos para la campaña de
+  SP 800-90B (`docs/captura_continua.md`).
 - Firmware del ESP32: el verificador (esp32) y el medidor con lecturas
   firmadas (esp32c3) compilan con ESP-IDF 5.3.5, pasan su banco en el PC
   contra el motor simulado (`results/host_check.log`) y el medidor ha

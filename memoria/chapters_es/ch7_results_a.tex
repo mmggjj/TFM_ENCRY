@@ -32,7 +32,7 @@ O2 & cumplido  & Jitter extraído de las formas de onda; térmico y $1/f$
               estimador validado sobre datos sintéticos con $Q$ conocido \\
 O3 & cumplido  & Modelo estocástico cerrado: cálculo exacto con la gaussiana envuelta,
               punto de diseño $Q \ge 0{,}2286$ (Sección~\ref{sec:opoint}) \\
-O4 & cumplido  & Motor escrito en VHDL-2008 portable; siete bancos de pruebas pasan
+O4 & cumplido  & Motor escrito en VHDL-2008 portable; nueve bancos de pruebas pasan
               con los vectores de FIPS-197, SP 800-38B, RFC 4493 y \ac{CAVP} \\
 O5 & parcial   & El firmware del verificador compila y el protocolo está cerrado;
               falta la ejecución en placa \\
@@ -327,10 +327,11 @@ obtuvo ejecutando la batería de pruebas, no leyendo un registro anterior.
 Batería & Qué comprueba & Resultado \\
 \midrule
 Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO}, captura, tests de salud,
-  \ac{I2C}, \ac{AES}, \ac{CMAC}, \ac{CTRDRBG}, nivel superior & 7/7 pasan \\
+  \ac{I2C}, \ac{AES}, \ac{CMAC}, \ac{CTRDRBG}, nivel superior, envoltorio
+  de placa y su frecuencímetro & 9/9 pasan \\
 \texttt{ctr\_drbg\_ref.py} & vectores \ac{CAVP}, con y sin
   función de derivación & 960/960 \\
-\texttt{ero\_model.py} & modelo estocástico, exactitud y cotas & 24/24 \\
+\texttt{ero\_model.py} & modelo estocástico, exactitud y cotas & 26/26 \\
 \texttt{jitter\_estimator.py} & recuperación del jitter sobre datos
   sintéticos de $Q$ conocido & 20/20 \\
 \texttt{cortes\_salud.py} & umbrales de los tests de salud frente a las
@@ -380,7 +381,7 @@ infineon_optiga_trustm_ds}.}
 Bus            & \ac{I2C} & \ac{I2C} & \ac{I2C} & \ac{I2C} \\
 Certificación  & JIL High; NIST ESV \#E46 para la fuente de entropía & CC EAL6+ (hasta el SO) & CC EAL6+ (hardware) & ninguna \\
 Fuente de entropía & osciladores en anillo, según el registro ESV & ``TRNG, SP~800-90B'' en la hoja de datos & no indicada & \ac{ERO}, publicada \\
-Entropía declarada & 0,5071~bit/muestra, validada por el NIST & no publicada & no publicada & cota obtenida del jitter medido \\
+Entropía declarada & 0,5071~bit/muestra, validada por el NIST & no publicada & no publicada & cota obtenida del jitter (aquí simulado, medible en el dispositivo) \\
 Modelo estocástico & no publicado & no publicado & no publicado & publicado \\
 Exportación de claves & no es posible & no es posible & no es posible & solo en modo de prueba \\
 Inspeccionable & no & no & no & sí, \ac{RTL} publicado \\
@@ -411,7 +412,7 @@ validación y la del otro no menciona SP~800-90 en absoluto. Se confía en
 su aleatoriedad porque se confía en el fabricante y en el esquema de
 evaluación. El motor descrito aquí hace el intercambio contrario: no tiene
 certificado, y puede mostrar de dónde viene cada bit de entropía, qué
-medida física lo acota y en qué se convierte la cota cuando cambian la
+magnitud física lo acota y en qué se convierte la cota cuando cambian la
 temperatura o el divisor. Es la misma distinción con la que tropieza,
 desde el otro lado, el estudio de caja negra del generador del ESP32 de
 este trabajo (Sección~\ref{sec:esp32_90b}) --- una caja negra se puede

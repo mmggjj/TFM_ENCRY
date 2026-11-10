@@ -26,6 +26,13 @@ Es una estimación de otra herramienta, no la de Vivado; sirve para saber
 que cabe y que el VHDL elabora para Xilinx. Log en
 `results/basys3_yosys_xc7.log` y receta en `synth/basys3/yosys_xc7.sh`.
 
+**10-11, con la FIFO de la captura continua** (`G_FLUJO_BYTES = 256`):
+5125 LUT (suma de LUT1-LUT6 del informe), 4292 biestables, 144 CARRY4 y
+36 RAM64M: la FIFO se infiere como RAM distribuida (12 RAM64M más) y
+añade 248 LUT y 58 biestables. ≈ 25 % y 10 % del XC7A35T. Ojo: con ese
+mismo criterio el log anterior daba 4877 LUT, no los 4769 de arriba; no he
+encontrado de dónde salía esa cifra.
+
 ## 2. Qué se espera de los anillos [ESTIMADO]
 
 - **Frecuencia.** El XDC supone 1,4 ns para ro2 (714 MHz), que pide
@@ -82,7 +89,7 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
 5. **ESP32 en el bus.** JA1 = SCL (GPIO22 del ESP32 clásico), JA2 = SDA
    (GPIO21), masa común, pull-ups de 2,2-4,7 kΩ a 3,3 V; el ESP32 no
    alimenta la placa ni al revés. Verificador normal (sin
-   `MOTOR_SIMULADO`). `id` debe dar `id 0xa5 version 0x03`; sw0 arriba,
+   `MOTOR_SIMULADO`). `id` debe dar `id 0xa5 version 0x04`; sw0 arriba,
    `test=1`.
    **Test de arranque:** tras el reset CFG_KD = 24. Con ro2 a 300 MHz un
    bit tarda 56 ms y la ventana de 1024 bits ~57 s. Desde el 08-11 los
@@ -100,10 +107,14 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
    §6). Las medias por distancia M van en la salida: guardarla entera.
    Repetir con kd 2 para ver que Q escala con 2^kd.
 7. **Campaña de entropía.** Con el CFG_KD del paso 6 (K*), barrer
-   K* − 6, K* − 4, K* − 2, K* y K* + 2, 10⁶ bits cada uno, con `--90b`.
-   Tiempo por divisor, con ro2 a 300 MHz [ESTIMADO] y ~0,1 s de serie por
-   trozo: kd 12 ≈ 40 s, 14 ≈ 1,3 min, 16 ≈ 4 min, 18 ≈ 15 min,
-   20 ≈ 1 h, 22 ≈ 4 h. **Lo informativo son los divisores bajos**: a 10⁶
+   K* − 6, K* − 4, K* − 2, K* y K* + 2, 10⁶ bits cada uno, con `--90b`
+   **y `--flujo`** (desde el 10-11: 10⁶ bits consecutivos, como pide SP
+   800-90B; `captura_continua.md`). El flujo sirve desde CFG_KD 13-14; si
+   K* − 6 queda por debajo, ese divisor va por trozos (sin `--flujo`) y se
+   dice. Antes de la campaña, una tira corta (`--bits 100000`) para ver que
+   no desborda ni hay errores de bus. Tiempo por divisor con ro2 a 300 MHz
+   [ESTIMADO]: kd 14 ≈ 1 min, 16 ≈ 4 min, 18 ≈ 15 min, 20 ≈ 1 h,
+   22 ≈ 4 h, 23 ≈ 8 h. **Lo informativo son los divisores bajos**: a 10⁶
    bits la batería se satura en 0,839 ± 0,021 y no distingue nada con
    H_∞ ≥ 0,97 (`fuente_simulada_90b.md`); donde el modelo predice
    H_∞ < 0,8 la batería sí puede contradecirlo. La comparación la hace
@@ -120,7 +131,9 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
 
 ## 4. Limitaciones que hay que decir al escribirlo
 
-- **Los trozos no son contiguos.** Cada `crudo` da 4096 bits seguidos;
+- **Los trozos no son contiguos** (resuelto el 10-11 con la captura
+  continua, `captura_continua.md`; lo que sigue vale para las capturas por
+  trozos, que siguen siendo las del jitter). Cada `crudo` da 4096 bits seguidos;
   entre trozos se pierden los bits que llegan mientras el ESP32 lee el
   buffer y los manda al PC (~0,1 s). SP 800-90B §3.1.1 pide 10⁶ muestras
   **consecutivas**: aquí son 245 bloques de 4096. Las dependencias dentro
@@ -129,7 +142,8 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
   trozos independientes son lo que pide (`trng_capture.vhd`). Si hiciera
   falta una tira continua, el buffer tendría que vaciarse más rápido de
   lo que se llena (posible a CFG_KD ≥ ~10 con I2C a 400 kHz) con un modo
-  de captura continua en el RTL: es un cambio de diseño, no está hecho.
+  de captura continua en el RTL: hecho el 10-11 (registro FLUJO, motor
+  0x04), sin probar en placa.
 - La frecuencia que `campana_motor.py` deduce del tiempo de llenado
   (`f_ro2_MHz`) tiene la resolución del tick del ESP32 (1 ms) más el
   sondeo; solo se calcula con capturas de ≥ 100 ms. La buena es la del

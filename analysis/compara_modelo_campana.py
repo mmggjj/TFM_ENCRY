@@ -99,7 +99,7 @@ def comparar(filas, q_raw, u_q, tol, cal):
                 veredicto = "por encima"
             else:
                 veredicto = "compatible"
-        salida.append({"kd": kd, "Q": q, "h_modelo": h, "h_modelo_baja": h_baja,
+        salida.append({"kd": kd, "modo": f.get("modo", "trozos"), "Q": q, "h_modelo": h, "h_modelo_baja": h_baja,
                        "h_modelo_alta": h_alta, "h90b_esperada": esperado,
                        "banda_baja": b_lo, "banda_alta": b_hi, "h90b": h90,
                        "bits": f.get("bits", ""), "veredicto": veredicto})

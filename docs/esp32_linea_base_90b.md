@@ -509,3 +509,66 @@ chip a la resolución de estos estimadores.**
 - Cuando exista la placa: la misma batería sobre los bits crudos del ERO
   (registro CAPTURA, modo test) a K_D de diseño, y sobre la salida del
   DRBG; contrastar con la cota del modelo (`analysis/ero_model.py`).
+
+## Aviso del 10-11-2026: las condiciones A y B pueden haberse capturado con la radio dormida
+
+Leído en el código, **sin medir**: en A y B `rng_sampler.c` arrancaba el
+Wi-Fi en modo estación y no se asociaba nunca, sin
+`sta_disconnected_pm = false` ni `esp_wifi_set_ps(WIFI_PS_NONE)`. Con la
+configuración de serie de ESP-IDF (ahorro de energía MIN_MODEM y
+`STA_DISCONNECTED_PM` activado) una estación sin asociar puede apagar la
+RF mientras no escanea ni conecta, así que la radio pudo estar dormida la
+mayor parte de cada captura. No se ha medido cuánto. `firmware/reinicios_fuentes` sí lo fijaba (por eso allí se ve que
+la radio mete ruido); el firmware de la línea base, no.
+
+Qué cambia y qué no:
+
+- El "ningún efecto de condición" de los ANOVA **no dice nada sobre la
+  radio** mientras no se repita: A pudo ser casi C, y B casi D.
+- No cambia la conclusión sobre la batería (no separa fuentes cerca de la
+  entropía plena), ni las capturas C y D, ni la prueba de reinicios.
+- El firmware está corregido desde el 10-11 (las dos líneas de arriba) y
+  compila con ESP-IDF 5.3.2.
+
+### Repetición con la radio despierta (10-11-2026, chip f8:b3:b7:2a:09:28)
+
+Tres ciclos D→C→B→A con el firmware corregido, doce capturas de 10⁶ bits,
+todas con CRC bueno (`results/esp32_campana_rng/mac_f8b3b72a0928_radio_despierta`,
+nombres `0928rd_*` en `results/entropia_90b.csv`). Quedan fuera de los ANOVA
+de la campaña (12 + 12 + 12) y se comparan aparte.
+
+**¿Estaba despierta la radio esta vez?** No se ha medido la RF. El único
+indicio es el sensor de temperatura del chip (resolución 0,56 °C): en
+octubre, B salía a la misma temperatura que C en los tres ciclos
+(diferencias de 0,0 °C); ahora B sale 2,2, 1,1 y 1,2 °C por encima de C, y
+A otros 2,8 °C por encima de B. El primer ciclo incluye además el
+calentamiento desde frío. Es compatible con que la radio disipe ahora y no
+antes; no lo demuestra.
+
+**Resultado** (min-entropía no-IID en bits, la cifra que se lleva):
+
+| Condición | n | media | desv. | mín-máx |
+|---|---|---|---|---|
+| A (Wi-Fi + ADC) | 3 | 0,862 | 0,022 | 0,839-0,892 |
+| B (Wi-Fi) | 3 | 0,834 | 0,012 | 0,818-0,849 |
+| C (ADC) | 3 | 0,845 | 0,020 | 0,829-0,873 |
+| D (nada) | 3 | 0,858 | 0,014 | 0,843-0,877 |
+| A+B de octubre, mismo chip | 12 | 0,846 | 0,034 | 0,809-0,913 |
+
+- ANOVA entre las cuatro condiciones nuevas: F(3, 8) = 1,09, p = 0,41.
+- Con radio (A+B) frente a sin radio (C+D), nuevas: p = 0,80 (Welch).
+- A+B nuevas frente a A+B de octubre en el mismo chip: p = 0,91.
+- La vía IID pasa en las doce, en bits y en bytes. En bytes,
+  `0928rd_condB_rep3` baja a 0,736 por bit (un estimador sobre bytes; las
+  otras once dan lo mismo en los dos modos).
+
+**Lectura.** Con la radio despierta la batería sigue sin separar las
+condiciones, y las cifras caen en el techo que da la propia batería con
+bits ideales a esta longitud (0,839 ± 0,021, `fuente_simulada_90b.md`).
+La conclusión de la campaña se mantiene, ahora apoyada en capturas donde
+la radio no puede dormir. **Lo que estas doce capturas pueden ver:** con
+tres por condición y una dispersión de 0,01-0,03, una diferencia entre
+condiciones menor que ~0,04 pasaría inadvertida. Es un solo chip. Las 36
+capturas de la campaña no se han repetido: para ellas el aviso sigue en
+pie, y lo correcto al citarlas es decir que la comparación de radio se
+apoya en esta repetición.

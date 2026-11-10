@@ -40,6 +40,11 @@ architecture sim of tb_motor_top is
   signal led_alarma : std_logic;
   signal fin        : boolean := false;
 
+  -- Referencia de la captura continua: los bits que cruzan con el flujo
+  -- activo, apuntados desde fuera del DUT.
+  signal ref_bits   : std_logic_vector(0 to 16383) := (others => '0');
+  signal ref_n      : natural := 0;
+
   function hex(v_in : std_logic_vector) return string is
     constant digitos : string := "0123456789abcdef";
     -- Se normaliza a indices descendentes: una concatenacion como
@@ -69,8 +74,11 @@ begin
   -- 15 y se puede probar que el motor deja de generar hasta resembrar. En
   -- hardware son 32 bits. G_KD_RESET se deja en su valor (24): el banco
   -- escribe CFG_KD antes de que pase un solo bit a esa tasa.
+  -- G_FLUJO_BYTES = 64 (256 en la placa): la FIFO da varias vueltas en el
+  -- paso 9 y se desborda en 1 ms.
   dut : entity work.motor_top
-    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4)
+    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4,
+                 G_FLUJO_BYTES => 64)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
@@ -100,6 +108,11 @@ begin
     alias dut_modo_test is << signal .tb_motor_top.dut.modo_test : std_logic >>;
     alias cmac_aes_arranca is << signal .tb_motor_top.dut.cmac_aes_arranca : std_logic >>;
     alias drbg_aes_arranca is << signal .tb_motor_top.dut.drbg_aes_arranca : std_logic >>;
+    alias flujo_activo  is << signal .tb_motor_top.dut.flujo_activo : std_logic >>;
+    alias flujo_arranca is << signal .tb_motor_top.dut.flujo_arranca : std_logic >>;
+    alias flujo_desb    is << signal .tb_motor_top.dut.flujo_desb : std_logic >>;
+    alias bit_s         is << signal .tb_motor_top.dut.bit_s : std_logic >>;
+    alias stb_s         is << signal .tb_motor_top.dut.stb_s : std_logic >>;
   begin
     default clock is rising_edge(clk);
     -- Con alarma no sale nada: ni generacion ni siembra.
@@ -140,6 +153,28 @@ begin
     c_borrar     : cover {drbg_borrar = '1'};
     c_captura    : cover {cap_arranca = '1'};
     c_agotado    : cover {drbg_agotado = '1'};
+    -- El flujo continuo saca los mismos bits crudos que la semilla: nunca
+    -- a la vez que una recogida, y solo se arranca en modo test.
+    p_siemb_flujo : assert never (flujo_activo = '1' and recogiendo = '1')
+      report "recogida de semilla con el flujo continuo activo";
+    p_flujo_ocup : assert never {ocupado = '1'; flujo_arranca = '1'}
+      report "flujo arrancado con el motor ocupado";
+    p_flujo_test : assert never {dut_modo_test = '0'; flujo_arranca = '1'}
+      report "flujo arrancado sin modo test";
+    c_flujo      : cover {flujo_arranca = '1'};
+    c_flujo_desb : cover {flujo_desb = '1'};
+
+    p_ref : process (clk)
+    begin
+      if rising_edge(clk) then
+        if flujo_arranca = '1' then
+          ref_n <= 0;
+        elsif flujo_activo = '1' and stb_s = '1' and ref_n < ref_bits'length then
+          ref_bits(ref_n) <= bit_s;
+          ref_n <= ref_n + 1;
+        end if;
+      end if;
+    end process p_ref;
   end block propiedades;
 
   principal : process
@@ -300,6 +335,36 @@ begin
     variable buffer_cap : std_logic_vector(4095 downto 0);
     variable pag : std_logic_vector(1023 downto 0);
     variable hallada : boolean;
+    variable bloque : std_logic_vector(255 downto 0);
+    variable n_flujo, total, n_max : natural;
+    variable iguales, resto_cero : boolean;
+
+    -- Lee una transaccion del flujo (FLUJO_N + 31 datos) y la compara con
+    -- la referencia a partir del byte `total`.
+    procedure leer_flujo is
+      variable byte_ref : std_logic_vector(7 downto 0);
+    begin
+      leer_bloque(x"60", 32, bloque);
+      n_flujo := to_integer(unsigned(bloque(255 downto 248)));
+      if n_flujo > n_max then
+        n_max := n_flujo;
+      end if;
+      for i in 1 to 31 loop
+        b := bloque(255 - 8 * i downto 248 - 8 * i);
+        if i <= n_flujo then
+          byte_ref := ref_bits(8 * total to 8 * total + 7);
+          if b /= byte_ref then
+            iguales := false;
+          end if;
+          if b /= x"00" and b /= x"FF" then
+            distintos := distintos + 1;
+          end if;
+          total := total + 1;
+        elsif b /= x"00" then
+          resto_cero := false;
+        end if;
+      end loop;
+    end procedure;
   begin
     -- Anillos con jitter. El retardo por etapa se pone diez veces mayor
     -- que el fisico (1,5 ns en vez de 150 ps) SOLO en este banco: con la
@@ -319,7 +384,7 @@ begin
     comprobar(status(7) = '1', "STATUS refleja modo test");
     comprobar(status(0) = '0', "sin sembrar al arrancar");
     leer_reg(x"01", b);
-    comprobar(b = x"03", "VERSION = 0x03");
+    comprobar(b = x"04", "VERSION = 0x04");
     leer_reg(x"0E", b);
     comprobar(b(0) = '0', "test de arranque aun sin pasar");
     leer_reg(x"04", b);
@@ -565,6 +630,94 @@ begin
     leer_bloque(x"10", 16, captura);
     comprobar(status(4) = '1' and captura /= (127 downto 0 => '0') and captura /= clave2,
               "y la clave nueva no es nula ni la de antes");
+
+    report "9) Captura continua (FLUJO)";
+    -- 9a) Las mismas reglas que capturar, mas el divisor minimo.
+    leer_reg(x"0F", b);
+    comprobar(b = x"00", "FLUJO a cero sin arrancarlo");
+    modo_test <= '0';
+    wait for 1 us;
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b(0) = '0' and status(1) = '1', "arrancar el flujo sin modo test se rechaza");
+    modo_test <= '1';
+    wait for 1 us;
+    escribir_reg(x"04", x"02");                 -- K_D = 4 < minimo
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b(0) = '0' and status(1) = '1', "con CFG_KD por debajo del minimo se rechaza");
+    -- K_D = 128: un byte cada 15 us, que el bus a 1 MHz vacia con holgura.
+    escribir_reg(x"04", x"07");
+    escribir_reg(x"03", x"20");                 -- resembrar
+    escribir_reg(x"0F", x"01");                 -- flujo, con la siembra en curso
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b(0) = '0' and status(1) = '1', "durante una siembra se rechaza");
+    esperar_libre(status);
+    -- 9b) Arranca. Con el flujo activo no se siembra, no se captura y
+    --     CFG_KD no cambia.
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b = x"01" and status(1) = '0', "flujo activo");
+    orden_rechazada(x"20", "resembrar con el flujo activo se rechaza");
+    orden_rechazada(x"10", "capturar con el flujo activo se rechaza");
+    escribir_reg(x"04", x"09");
+    leer_reg(x"04", b);
+    comprobar(b = x"07", "CFG_KD se ignora con el flujo activo");
+    -- 9c) Continuidad: 400 bytes seguidos, mas de seis vueltas de la FIFO,
+    --     iguales bit a bit a los que cruzaron bit_cdc.
+    total := 0; n_max := 0; iguales := true; resto_cero := true; distintos := 0;
+    while total < 400 loop
+      leer_flujo;
+    end loop;
+    comprobar(iguales, "400 bytes consecutivos iguales a los bits crudos, sin huecos");
+    comprobar(distintos > 300, "y con contenido: " & integer'image(distintos) & " de " &
+              integer'image(total) & " bytes no son 0x00 ni 0xFF");
+    comprobar(resto_cero, "sin credito se leen ceros");
+    comprobar(n_max > 0 and n_max <= 31, "FLUJO_N con tope 31 (maximo visto " & integer'image(n_max) & ")");
+    leer_reg(x"0F", b);
+    comprobar(b = x"01", "sin desbordar mientras se lee a tiempo");
+    -- 9d) Sin leer, la FIFO se llena: desbordado, y el flujo se para solo.
+    wait for 1500 us;
+    leer_reg(x"0F", b);
+    comprobar(b = x"02", "desbordado y parado al no leer");
+    escribir_reg(x"03", x"20");                 -- resembrar: ya no hay flujo
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0', "parado el flujo, resembrar se acepta");
+    -- 9e) Rearrancar baja desbordado y la tira empieza de nuevo.
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    comprobar(b = x"01", "rearrancar baja desbordado");
+    wait for 200 us;
+    total := 0; iguales := true;
+    leer_flujo;
+    comprobar(n_flujo > 0 and iguales, "la tira nueva empieza en su primer bit");
+    -- 9f) Tres formas de pararlo: escribir 0, quitar modo test, borrar_todo.
+    escribir_reg(x"0F", x"00");
+    leer_reg(x"0F", b);
+    comprobar(b = x"00", "escribir 0 lo para");
+    leer_flujo;
+    comprobar(n_flujo = 0, "y vacia la FIFO");
+    escribir_reg(x"0F", x"01");
+    wait for 100 us;
+    modo_test <= '0';
+    wait for 1 us;
+    modo_test <= '1';
+    wait for 1 us;
+    leer_reg(x"0F", b);
+    leer_flujo;
+    comprobar(b = x"00" and n_flujo = 0, "quitar modo test lo para y vacia la FIFO");
+    escribir_reg(x"0F", x"01");
+    wait for 100 us;
+    escribir_reg(x"03", x"80");                 -- borrar_todo
+    esperar_libre(status);
+    leer_reg(x"0F", b);
+    leer_flujo;
+    comprobar(b = x"00" and n_flujo = 0, "borrar_todo lo para y vacia la FIFO");
 
     -- Volcado para la verificacion cruzada en Python.
     file_open(f, "results/tb_motor_top.txt", write_mode);

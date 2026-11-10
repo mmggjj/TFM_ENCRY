@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/0928rd_condC_rep2_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condC_rep2.bits 1",
+   "dateTimeStamp" : "20261110210423",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condC_rep2.bits",
+   "sha256" : "d376984b05f0a8053d3dc52f1db8fcc4a0a7d6c731642d522a29afa519172457",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99596634253093197,
+         "mcvEstimateMode" : 500112.0,
+         "mcvEstimatePHat" : 0.500112,
+         "mcvEstimatePU" : 0.50139991526342109,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.89980678481100451,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99935648477388839,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.87300303310953165,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93978015269195192,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.99626897892074173,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.9950960208554368,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99703566761832296,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.98271737626896272,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99709612110185153,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.87300303310953165,
+         "hOriginal" : 0.87300303310953165,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

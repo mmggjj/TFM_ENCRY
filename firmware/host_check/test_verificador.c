@@ -30,6 +30,7 @@ extern int  motor_n_tramas;
 extern uint32_t motor_pet_max;
 extern bool motor_capturando;
 extern bool motor_arranque_lento;
+extern uint8_t motor_flujo_byte(uint32_t i);
 
 static int fallos = 0;
 
@@ -228,6 +229,66 @@ int main(void)
     printf("     (arranque y siembra: %u ms)\n", (unsigned)dt);
     motor_arranque_lento = false;
     cmd_kd(6);
+
+    printf("\n15) Captura continua (FLUJO)\n");
+    /* El protocolo, a mano: credito, continuidad y exclusion con la siembra. */
+    cmd_kd(14);
+    uint8_t fl = 0, blq[32];
+    motor_reg_escribir1(REG_FLUJO, FL_ACTIVO);
+    motor_reg_leer(REG_FLUJO, &fl, 1);
+    chk(fl == FL_ACTIVO, "FLUJO.activo tras arrancarlo en modo test");
+    chk(motor_orden(CTL_RESEMBRAR, T_ORDEN_MS, &st) == ESP_ERR_INVALID_STATE,
+        "con el flujo activo, resembrar se rechaza");
+    motor_reg_escribir1(REG_CFG_KD, 9);
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    chk(kd == 14, "y CFG_KD no cambia");
+    uint32_t leidos = 0;
+    bool continuo = true, resto_cero = true;
+    for (int v = 0; v < 40; v++) {
+        vTaskDelay(5);                         /* 5 ms a kd 14: 11 bytes */
+        motor_reg_leer(REG_FLUJO_N, blq, 32);
+        for (int i = 1; i < 32; i++) {
+            if (i <= blq[0]) { if (blq[i] != motor_flujo_byte(leidos++)) continuo = false; }
+            else if (blq[i]) resto_cero = false;
+        }
+    }
+    chk(leidos > 400 && continuo, "mas de 400 bytes leidos a trozos y todos consecutivos");
+    chk(resto_cero, "sin credito se leen ceros");
+    vTaskDelay(200);                           /* sin leer: 256 bytes en ~112 ms */
+    motor_reg_leer(REG_FLUJO, &fl, 1);
+    chk(fl == FL_DESBORDADO, "sin vaciarla la FIFO se desborda y el flujo se para");
+    chk(motor_orden(CTL_RESEMBRAR, motor_plazo_siembra_ms(), &st) == ESP_OK,
+        "parado el flujo, resembrar se acepta");
+    /* El comando del verificador. */
+    tramas = motor_n_tramas;
+    t0 = motor_ticks();
+    cmd_flujo(1000);
+    chk(ult_flujo.ok && ult_flujo.bytes == 1000 && motor_n_tramas == tramas + 8,
+        "flujo 1000: 8 tramas (7 de 128 bytes y una de 104) y fin ok");
+    chk(motor_ticks() - t0 >= (1000u * 8u << 14) / 300000u,
+        "y tarda lo que tardan 8000 bits a 2^14 periodos de ro2");
+    motor_reg_leer(REG_FLUJO, &fl, 1);
+    chk(fl == 0, "al acabar deja el flujo parado");
+    cmd_kd(6);                                 /* 586 kB/s: imposible de vaciar */
+    cmd_flujo(100000);
+    chk(!ult_flujo.ok && ult_flujo.bytes < 100000, "con kd 6 se desborda y el comando lo dice");
+    cmd_kd(14);
+    motor_modo_test = false;
+    tramas = motor_n_tramas;
+    cmd_flujo(100);
+    chk(!ult_flujo.ok && motor_n_tramas == tramas, "sin modo test no sale ninguna trama");
+    motor_modo_test = true;
+    motor_fallo_bus = 3;
+    cmd_flujo(100);
+    motor_fallo_bus = 0;
+    chk(!ult_flujo.ok && motor_n_tramas == tramas, "con el bus caido tampoco");
+    motor_reg_escribir1(REG_FLUJO, 0);
+    cmd_kd(2);
+    cmd_flujo(100);
+    chk(!ult_flujo.ok && motor_n_tramas == tramas, "con CFG_KD bajo el motor lo rechaza");
+    cmd_kd(6);
+    cmd_sembrar();
+    chk((motor_status() & ST_SEMBRADO) != 0, "tras el flujo se vuelve a sembrar");
 
     printf("\ntest_verificador: %d fallos\n", fallos);
     return fallos == 0 ? 0 : 1;

@@ -192,6 +192,39 @@ def main() -> int:
         decir(f"  [{'ok ' if ok else 'FALLO'}] una trama alterada: CRC malo contado y rc=1")
         fallos += not ok
 
+        decir("\n== campana_motor.py --flujo: captura continua ==")
+        decir("(kd 14 y 17, 20000 bits consecutivos cada uno; el byte i del modelo es motor_flujo_byte(i))")
+        carpeta = BUILD / "campana_flujo"
+        shutil.rmtree(carpeta, ignore_errors=True)
+        r = correr([sys.executable, "analysis/campana_motor.py", "--simulador", str(exe), "--flujo",
+                    "--kd", "14", "17", "--bits", "20000", "--arranque", "2",
+                    "--carpeta", str(carpeta)], mascara, timeout=600)
+        fallos += r.returncode != 0
+
+        def flujo_byte(i: int) -> int:           # motor_flujo_byte de motor_sim.c
+            x = (i * 2654435761 + 0x9e3779b9) & 0xFFFFFFFF
+            x ^= x >> 15
+            x = (x * 2246822519) & 0xFFFFFFFF
+            x ^= x >> 13
+            return x & 0xFF
+        esperado_fl = bytes(flujo_byte(i) for i in range(2500))
+        ok = all((carpeta / f"kd{k}_flujo.bin").is_file()
+                 and (carpeta / f"kd{k}_flujo.bin").read_bytes() == esperado_fl for k in (14, 17))
+        decir(f"  [{'ok ' if ok else 'FALLO'}] kd14/17_flujo.bin: 2500 bytes, los del modelo en orden y sin huecos")
+        fallos += not ok
+        # Una trama quitada del log: la tira entera se descarta
+        log = (carpeta / "serie.log").read_text(encoding="utf-8")
+        lineas = log.split("\n")
+        quitar = [i for i, ln in enumerate(lineas) if ln.startswith("FC")][3]
+        malo = carpeta / "hueco" / "serie.log"
+        malo.parent.mkdir()
+        malo.write_text("\n".join(lineas[:quitar] + lineas[quitar + 1:]), encoding="utf-8")
+        r = correr([sys.executable, "analysis/campana_motor.py", "--reparsear", str(malo)], mascara)
+        ok = r.returncode == 1 and "salto de numeracion" in r.stdout \
+            and not (malo.parent / "kd14_flujo.bin").exists() and (malo.parent / "kd17_flujo.bin").exists()
+        decir(f"  [{'ok ' if ok else 'FALLO'}] una trama perdida: salto de numeracion, tira descartada y rc=1")
+        fallos += not ok
+
     if mbed is not None:
         decir("\n== test_medidor ==")
         exe = BUILD / "test_medidor"

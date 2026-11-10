@@ -18,8 +18,8 @@ evidence, \meas{}, \simu{} or \est{}.
 \paragraph{The entropy source can be dimensioned from the transistor
 (O1--O3).} The five-stage ring on the open IHP SG13G2 process oscillates
 at 2.73~GHz with a period jitter of $176.7 \pm 2.0$~fs \simu{} in the
-typical corner at 27~\textdegree C, taken from the noise of the device
-models themselves rather than injected. The simulator cannot fix the
+typical corner at 27~\textdegree C, with the injected noise taken from
+the device models themselves rather than assumed. The simulator cannot fix the
 realization of its noise source, so the uncertainty comes from repeating
 the simulation, and the bench resolution was stated before any figure was
 read. The exact wrapped-Gaussian computation, not the truncated series
@@ -68,9 +68,9 @@ reached, and the path to about 42~kGE is identified.
 (O8, ESP32 side).} Thirty-eight captures from three chips under four radio
 and \ac{ADC} conditions show no measurable effect of condition or chip
 under SP~800-90B \meas{}. The restart test shows what the statistics
-hide: without the noise that the bootloader injects, the generator
-produces the same sequence after every reset, and two different chips
-produce the same one \meas{}. Its output is as good as its seeding, which
+hide: without the noise that the bootloader injects, what the generator
+produces after every reset is a window of one fixed sequence, and two
+different chips produce the same one \meas{}. Its output is as good as its seeding, which
 depends on the radio, the \ac{ADC} or the bootloader being active.
 
 \paragraph{Integration on the FPGA (O5, O6).} [PENDING: bring-up on the
@@ -115,9 +115,11 @@ shuttle and measure the jitter that this work simulated; the \ac{FPGA}
 measures a different ring.
 \item \emph{Foundry models.} Repeat the corner and mismatch study with the
 noise models of a commercial \ac{PDK}.
-\item \emph{Continuous capture.} The capture buffer delivers independent
-4096-bit blocks; a continuous mode would give the consecutive samples that
-SP~800-90B asks for.
+\item \emph{Continuous capture on the board.} The continuous stream that
+gives the consecutive samples SP~800-90B asks for is written and
+simulated, not yet run; its rate is limited by the serial link of the
+ESP32, and storing the string before sending it would extend it to lower
+dividers.
 \item \emph{Online jitter test.} Move the pair estimator into the RTL as an
 online test that detects cooling and locking, as its authors propose.
 \item \emph{Area.} Apply the third optimization to approach 42~kGE, and

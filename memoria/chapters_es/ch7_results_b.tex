@@ -29,7 +29,7 @@ de reinicios muestra hasta dónde puede llegar eso, un flujo de salida
 pseudoaleatoria que todos los estimadores puntúan como ruido. Lo que el
 ESP32 no puede aportar, devuelvan lo que devuelvan los estimadores, es la
 cota que la Sección~\ref{sec:opoint} deriva para el motor a partir de una
-medida física. Esa asimetría es la comparación.
+magnitud física, el jitter de sus anillos. Esa asimetría es la comparación.
 
 \section{La fuente simulada bajo la misma batería}
 \label{sec:sim_90b}
@@ -192,14 +192,17 @@ han enganchado entre sí, serían de otro modo indistinguibles de una fuente
 que funciona.
 \item \textbf{Medir el jitter} con $K_D = 1$ por el método de Fischer
 y Lubicz~\cite{fischer_2014_embedded}, barriendo la distancia entre pares
-$M$ y ajustando la región lineal, con al menos tres anillos para que la
-componente global se separe de la local~\cite{lubicz_2024_jitter}.
-Ajustar $\sigma^2(t) = at + bt^2$ y quedarse solo con el término térmico.
+$M$ y ajustando la región lineal. Separar la componente global de la
+local como en~\cite{lubicz_2024_jitter} pide tres anillos y el motor
+tiene dos, así que aquí es el ajuste $\sigma^2(t) = at + bt^2$ el que
+quita lo que no es térmico: solo se conserva el término lineal.
 \item \textbf{Fijar $K_D$} a partir del jitter medido para
 $Q \ge 0{,}2286$ con margen, y recalcular los umbrales de corte de los
 tests de salud para la $H_\infty$ medida en lugar del 0,98 supuesto, con
 \texttt{cortes\_salud.py}.
-\item \textbf{Recoger bits en bruto} en ese punto de funcionamiento y
+\item \textbf{Recoger bits en bruto} en ese punto de funcionamiento,
+$10^6$ consecutivos por el flujo continuo de la
+Sección~\ref{sec:cdc}, y
 ejecutar los estimadores de \ac{NIST} SP 800-90B, contrastando la
 estimación empírica con la cota del modelo. El acuerdo respalda el modelo;
 el desacuerdo es un resultado sobre las hipótesis del modelo, y en ambos

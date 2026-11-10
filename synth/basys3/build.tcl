@@ -21,6 +21,7 @@ read_vhdl -vhdl2008 [list \
     $raiz/rtl/trng/reset_sync.vhd \
     $raiz/rtl/trng/ero_core.vhd \
     $raiz/rtl/trng/trng_capture.vhd \
+    $raiz/rtl/trng/flujo_crudo.vhd \
     $raiz/rtl/trng/health_tests.vhd \
     $raiz/rtl/trng/bit_cdc.vhd \
     $raiz/rtl/io/i2c_slave.vhd \

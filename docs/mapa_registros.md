@@ -10,10 +10,10 @@ ESP32; si cambia uno, cambian los tres.
 | Dir | Nombre | Acceso | Contenido |
 |---|---|---|---|
 | 0x00 | ID | R | 0xA5, para saber que hay alguien al otro lado |
-| 0x01 | VERSION | R | 0x03 (0x02: DIAG y test de arranque; 0x01 hasta el 27-10-2026). 0x03 anade `borrar_todo`, `DIAG.agotado`, las reglas de `capturar` y CFG_KD de reset 24 |
+| 0x01 | VERSION | R | 0x04 (0x02: DIAG y test de arranque; 0x01 hasta el 27-10-2026). 0x03 anade `borrar_todo`, `DIAG.agotado`, las reglas de `capturar` y CFG_KD de reset 24. 0x04 (10-11-2026) añade la captura continua (FLUJO); lo demás no cambia, y un maestro escrito para la 0x03 funciona igual |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
-| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). Con el anillo de IHP en ss/tt/ff de −40 a 125 °C a 1,2 V, el valor fijo que cubre todo el rango es 22 (peor caso ss a −40 °C); **con V_DD ± 10 % es 23** (peor caso ss, −40 °C, 1,08 V, donde 22 deja un 10 % de margen y no cubre el peor de quince chips con desapareamiento; `anillo_ihp.md` §4.2-4.3). **Tras el reset vale 24** (generico `G_KD_RESET`; hasta la version 0x02 era 7): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). Con el anillo de IHP en ss/tt/ff de −40 a 125 °C a 1,2 V, el valor fijo que cubre todo el rango es 22 (peor caso ss a −40 °C); **con V_DD ± 10 % es 23** (peor caso ss, −40 °C, 1,08 V, donde 22 deja un 10 % de margen y no cubre el peor de quince chips con desapareamiento; `anillo_ihp.md` §4.2-4.3). **Tras el reset vale 24** (generico `G_KD_RESET`; hasta la version 0x02 era 7): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre y sin flujo activo |
 | 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
 | 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
 | 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |
@@ -21,10 +21,13 @@ ESP32; si cambia uno, cambian los tres.
 | 0x09 | APT_MAX_H | R | proporción máxima vista, byte alto |
 | 0x0A–0x0D | PETICIONES | R | contador de peticiones del DRBG (`reseed_counter`), 32 bits, byte bajo primero. **No da la vuelta**: en 2^32−1 el motor rechaza `generar` y `aleatorio` hasta resembrar (`DIAG.agotado`) |
 | 0x0E | DIAG | R | ver bits abajo |
+| 0x0F | FLUJO | R/W | captura continua de bits crudos, ver abajo. Bit 0 `activo`, bit 1 `desbordado` (solo lectura) |
 | 0x10–0x1F | CLAVE | R | clave actual, 16 bytes. **Solo legible en modo test** |
 | 0x20–0x2F | RETO | W | nonce de 16 bytes para el reto-respuesta |
 | 0x30–0x3F | ETIQUETA | R | CMAC(RETO) con la clave actual, 16 bytes. Se lee como ceros mientras `etiqueta_lista` = 0 (reto nuevo a medias, tras `generar` o tras `borrar_todo`) |
 | 0x40–0x5F | ALEATORIO | R | 32 bytes de la última orden `aleatorio`: una generación del DRBG **independiente de la clave**. Nunca contiene la clave |
+| 0x60 | FLUJO_N | R | bytes disponibles en la FIFO del flujo, con tope 31. Leerlo fija el crédito de la transacción. **Solo en modo test** |
+| 0x61–0x7F | FLUJO_DATO | R | cada lectura con crédito saca un byte de la FIFO; sin crédito devuelve 0x00 y no saca nada. **Solo en modo test** |
 | 0x80–0xFF | CAPTURA | R | 128 bytes de la página CFG_PAG del buffer de bits crudos. **Solo en modo test** |
 
 Lecturas de direcciones no definidas devuelven 0x00; escrituras a
@@ -54,7 +57,7 @@ puesta seguían saliendo clave y ALEATORIO.
 | Bit | Nombre | Significado |
 |---|---|---|
 | 0 | arrancado | el test de arranque ha pasado: una ventana completa del APT (1024 muestras) sin alarma desde el reset o desde el último `borrar_alarmas` |
-| 1 | rechazada | la última orden escrita en CONTROL se ignoró (motor ocupado, alarma, sin arrancar, CFG_KD bajo, sin sembrar, sin clave, contador agotado, captura en curso o sin modo test) o, si era una siembra, se abortó. Se baja con la siguiente orden aceptada. `borrar_alarmas` no la toca |
+| 1 | rechazada | la última orden escrita en CONTROL se ignoró (motor ocupado, alarma, sin arrancar, CFG_KD bajo, sin sembrar, sin clave, contador agotado, captura o flujo en curso o sin modo test) o, si era una siembra, se abortó. Se baja con la siguiente orden aceptada. `borrar_alarmas` no la toca. Arrancar el flujo (escribir 1 en FLUJO) cuenta como una orden: la sube si se rechaza y la baja si se acepta |
 | 2 | agotado | el contador de peticiones está en su tope (2^32−1): `generar` y `aleatorio` se rechazan hasta `resembrar` o `sembrar` (SP 800-90A, `reseed_interval`) |
 
 ## Tests de salud y siembra
@@ -86,7 +89,7 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
 | 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE, los otros 128 se descartan; recarga el autenticador. **No deja nada legible** |
 | 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
 | 3 | borrar_alarmas | baja las alarmas de salud |
-| 4 | capturar | llena el buffer de captura con un trozo de bits crudos. **Solo en modo test** (sin él el buffer no se lee), con el motor libre y sin otra captura en marcha. Mientras hay una captura en curso se rechazan `sembrar` y `resembrar`, y al revés: el buffer recoge los mismos bits crudos que la semilla, y hasta la versión 0x02 una captura lanzada durante una siembra dejaba la semilla legible en modo test |
+| 4 | capturar | llena el buffer de captura con un trozo de bits crudos. **Solo en modo test** (sin él el buffer no se lee), con el motor libre, sin otra captura en marcha y sin flujo activo. Mientras hay una captura en curso se rechazan `sembrar` y `resembrar`, y al revés: el buffer recoge los mismos bits crudos que la semilla, y hasta la versión 0x02 una captura lanzada durante una siembra dejaba la semilla legible en modo test |
 | 5 | resembrar | como sembrar pero **sobre** el estado actual, sin borrarlo |
 | 6 | aleatorio | pide otros 256 bits al DRBG y los deja en ALEATORIO. Generación independiente: el DRBG ya actualizó su estado tras `generar`, así que no hay relación calculable con la clave |
 | 7 | borrar_todo | zeroización: CLAVE, el estado del DRBG (clave, V, contador y todos sus registros intermedios, incluido el núcleo AES), RETO, ALEATORIO, ETIQUETA y la semilla recogida a cero, y la clave nula cargada en el autenticador (que también borra su encadenamiento). Se atiende siempre que el motor esté libre, también con alarma. Después hay que `sembrar` (no `resembrar`: no hay estado) y `generar`. El buffer de captura no se borra: por la regla de `capturar`, nunca contiene bits de una semilla |
@@ -103,9 +106,44 @@ Las órdenes largas (sembrar, generar) no estiran el reloj I2C: el maestro
 las lanza, sondea `ocupado` en STATUS y recoge el resultado después. Es
 como trabajan los elementos seguros comerciales.
 
+## Captura continua: FLUJO (0x0F), FLUJO_N (0x60) y FLUJO_DATO (0x61–0x7F)
+
+Desde la versión 0x04. `capturar` da trozos de 4096 bits sin relación entre
+sí; SP 800-90B pide 10⁶ bits **consecutivos**. El flujo es una FIFO de bytes
+en el dominio de sistema (`rtl/trng/flujo_crudo.vhd`), alimentada por los
+mismos bits que ven los tests de salud y la recogida de semilla (después de
+`bit_cdc`), que el maestro vacía por I2C mientras se llena. El primer bit
+que llega va al bit alto del primer byte. Razonamiento, tasas y cómo se usa
+en `docs/captura_continua.md`.
+
+| Bit de FLUJO | Nombre | Significado |
+|---|---|---|
+| 0 | activo | escribir 1 vacía la FIFO, baja `desbordado` y arranca; escribir 0 para y vacía. Se lee el estado |
+| 1 | desbordado | llegó un byte con la FIFO llena. El flujo **se para solo**; lo que quedaba dentro sigue siendo consecutivo, pero la tira acaba ahí. Solo lectura |
+
+- **Arrancar** exige modo test, motor libre, ninguna captura en curso y
+  `CFG_KD ≥ G_KD_MIN` (los bits pasan por `bit_cdc`). Si no, la escritura se
+  ignora y sube `DIAG.rechazada`.
+- **Con el flujo activo** se rechazan `sembrar`, `resembrar` y `capturar`, y
+  se ignoran las escrituras a `CFG_KD`: el flujo saca los mismos bits crudos
+  que la semilla, y una tira con dos divisores no sirve. `generar`,
+  `aleatorio` y `autenticar` se atienden.
+- **Se para** al escribir 0, al desbordarse, al quitar modo test y con
+  `borrar_todo`; en los tres últimos casos sin que el maestro lo pida, así
+  que el maestro mira `activo` y `desbordado` cuando la FIFO le llega vacía.
+- **Lectura, en una transacción:** puntero a 0x60 y 32 bytes. El primero es
+  `n` (0 a 31) y fija el crédito; los `n` siguientes son datos y el resto
+  ceros. El crédito evita perder un byte que entre en la FIFO a mitad de la
+  lectura. Una lectura de FLUJO_DATO sin haber leído antes FLUJO_N en la
+  misma transacción no saca nada.
+- La FIFO tiene `G_FLUJO_BYTES` bytes (genérico de `motor_top`): **256 en la
+  FPGA y 0 por defecto**, que la quita. Es instrumentación de
+  caracterización, como `ro_mon`, y no entra en el área del integrado. Sin
+  ella FLUJO se lee 0 y arrancar se rechaza: así lo detecta el maestro.
+
 ## Secuencia típica del ESP32
 
-1. Leer ID, comprobar 0xA5. Leer VERSION, comprobar 0x03.
+1. Leer ID, comprobar 0xA5. Leer VERSION, comprobar que es 0x03 o mayor.
 2. Escribir CFG_KD con el divisor decidido en la caracterización.
 3. Sondear DIAG hasta `arrancado = 1`. CONTROL ← sembrar. Sondear STATUS
    hasta `ocupado = 0`. Comprobar `DIAG.rechazada = 0`, `sembrado = 1` y
@@ -122,7 +160,7 @@ como trabajan los elementos seguros comerciales.
 
 ## Modo test
 
-El pin `modo_test` habilita la lectura de CLAVE y de CAPTURA. En la FPGA
+El pin `modo_test` habilita la lectura de CLAVE, de CAPTURA y del flujo. En la FPGA
 es un interruptor de la placa. En un circuito integrado sería un fusible
 que se quema en producción, porque exponer la clave o la entropía cruda
 es un agujero. En la memoria se describe así.

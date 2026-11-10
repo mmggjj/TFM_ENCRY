@@ -100,7 +100,7 @@ static void cmd_id(void)
     if (motor_reg_leer(REG_ID, &id, 1) != ESP_OK) { ESP_LOGE(TAG, "sin respuesta I2C"); return; }
     if (id != MOTOR_ID) ESP_LOGE(TAG, "ID inesperado 0x%02x, se esperaba 0x%02x", id, MOTOR_ID);
     motor_reg_leer(REG_VERSION, &ver, 1);
-    if (ver < MOTOR_VERSION) ESP_LOGE(TAG, "VERSION 0x%02x: motor sin DIAG ni test de arranque", ver);
+    if (ver < MOTOR_VERSION_MIN) ESP_LOGE(TAG, "VERSION 0x%02x: motor sin DIAG ni test de arranque", ver);
     motor_reg_leer(REG_DIAG, &diag, 1);
     st = motor_status();
     /* pila_libre: minimo de pila que le ha quedado a esta tarea desde el

@@ -80,6 +80,7 @@ BLOQUES = {
     "bit_cdc":      ["rtl/trng/bit_cdc.vhd"],
     "reset_sync":   ["rtl/trng/reset_sync.vhd"],
     "trng_capture": ["rtl/trng/trng_capture.vhd"],
+    "flujo_crudo":  ["rtl/trng/flujo_crudo.vhd"],
     "i2c_slave":    ["rtl/io/i2c_slave.vhd"],
     # Nivel superior: la cifra que va en la memoria. Los anillos entran
     # con el sustituto de rtl/synth/, porque el real usa primitivas de
@@ -92,7 +93,8 @@ BLOQUES = {
                      "rtl/synth/ring_osc_stub.vhd", "rtl/trng/reset_sync.vhd",
                      "rtl/trng/ero_core.vhd",
                      "rtl/trng/bit_cdc.vhd", "rtl/trng/health_tests.vhd",
-                     "rtl/trng/trng_capture.vhd", "rtl/io/i2c_slave.vhd",
+                     "rtl/trng/trng_capture.vhd", "rtl/trng/flujo_crudo.vhd",
+                     "rtl/io/i2c_slave.vhd",
                      "rtl/top/motor_top.vhd"],
 }
 # Variantes de un bloque con otros genericos: nombre de fila -> (entidad,
@@ -101,8 +103,11 @@ BLOQUES = {
 VARIANTES = {
     # El motor con el AES de una ronda por ciclo en vez del compacto.
     "motor_top_aes11": ("motor_top", ["-gG_AES_COMPACTO=false"]),
+    # El motor con la FIFO de captura continua de la FPGA (256 bytes).
+    "motor_top_flujo": ("motor_top", ["-gG_FLUJO_BYTES=256"]),
 }
 BLOQUES["motor_top_aes11"] = BLOQUES["motor_top"]
+BLOQUES["motor_top_flujo"] = BLOQUES["motor_top"]
 
 
 def wsl(p: Path) -> str:

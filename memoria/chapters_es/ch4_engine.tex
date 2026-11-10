@@ -226,6 +226,26 @@ que no hace falta una FIFO asíncrona, y el tamaño del búfer se deduce de
 la Sección~\ref{sec:estimator}: un fragmento de $N + M_{\max}$ bits es
 todo lo que necesita el estimador.
 
+La evaluación de la entropía pide lo contrario: SP~800-90B quiere $10^6$
+muestras \emph{consecutivas}, y los fragmentos pierden los bits que llegan
+mientras se lee uno. Las da una segunda vía de caracterización. Es una
+cola de bytes en el dominio de sistema, alimentada después del
+sincronizador de conmutación por los mismos bits que juzgan los tests de
+salud y que toma la recogida de semilla, que el anfitrión vacía por
+\ac{I2C} mientras se llena; la tira que pasa por la batería es así la que
+consume el generador, no una toma paralela. Una lectura fija primero
+cuántos bytes puede llevarse, de modo que un byte que llega durante la
+lectura no se pierde, y un byte que encuentra la cola llena para el flujo
+con una bandera de desbordamiento en lugar de pisar: un hueco no puede
+pasar inadvertido. El flujo sigue las reglas del búfer de captura ---
+solo en modo de prueba, nunca mientras se recoge una semilla, y sin
+siembra mientras corre --- y congela el divisor. Sirve donde el bus da
+abasto, con divisores de unos $2^{13}$ en adelante \est{}, que cubre los
+puntos de trabajo; por debajo quedan los fragmentos. La cola es
+instrumentación para la \ac{FPGA}: un genérico la quita, y no forma parte
+del área del Capítulo~\ref{ch:ch6_asic}, donde sus 256 bytes en
+biestables sumarían 23,5~kGE \simu{}.
+
 \section{Interfaz de registros I2C y secuenciador de órdenes}
 \label{sec:i2c}
 
@@ -270,10 +290,12 @@ El motor completo se ejercitó tal como lo hará el ESP32: un maestro
 \ac{I2C} funcional de bus lee la identificación, configura el divisor,
 carga la semilla, genera, lee la clave en modo de prueba, escribe dos
 retos y lee sus etiquetas, vuelve a generar, captura bits en bruto y
-verifica que la clave no puede leerse sin el pin de prueba --- dieciséis
-comprobaciones. Lo que un banco VHDL no puede saber es si las etiquetas
+verifica que la clave no puede leerse sin el pin de prueba, junto con los
+rechazos, el borrado total y el flujo continuo descritos arriba
+(Tabla~\ref{tab:tb}). Lo que un banco VHDL no puede saber es si las etiquetas
 son \emph{correctas}, porque la clave procede del ruido de los
 osciladores en anillo; el banco vuelca la clave, los retos y las
 etiquetas a un fichero y un script de Python recalcula los CMAC con el
 AES independiente. Coinciden. Es la misma comprobación cruzada que el
-ESP32 realiza en hardware con mbedtls.
+ESP32 hará en hardware con mbedtls, y que ya hace frente al modelo del
+motor en el PC (Capítulo~\ref{ch:ch5_verification}).

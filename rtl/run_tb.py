@@ -33,6 +33,7 @@ FUENTES = [
     "trng/reset_sync.vhd",
     "trng/ero_core.vhd",
     "trng/trng_capture.vhd",
+    "trng/flujo_crudo.vhd",
     "trng/health_tests.vhd",
     "trng/bit_cdc.vhd",
     "io/i2c_slave.vhd",

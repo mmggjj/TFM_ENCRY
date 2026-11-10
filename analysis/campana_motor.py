@@ -14,8 +14,15 @@ en kd<K>.bin y, con --90b, se pasan por la bateria SP 800-90B del NIST
 
 Los trozos NO son contiguos entre si: entre dos capturas se pierden los
 bits que llegan mientras el ESP32 lee el buffer. SP 800-90B pide 10^6
-muestras consecutivas; aqui son 245 bloques de 4096 consecutivas. Lo que
-supone para la lectura, en docs/puesta_en_marcha_fpga.md.
+muestras consecutivas; aqui son 245 bloques de 4096 consecutivas. Para eso
+esta --flujo (motor 0x04, docs/captura_continua.md): `flujo N` vuelca N
+bytes consecutivos en tramas C numeradas y el resultado va a
+kd<K>_flujo.bin solo si la tira llega entera (numeracion sin saltos, CRC
+buenos y "flujo fin ... ok"). Los trozos siguen siendo lo que quiere el
+estimador de jitter, con divisores bajos; el flujo sirve desde CFG_KD ~13
+(la UART del ESP32 a 115200 no da mas).
+
+    python analysis/campana_motor.py --puerto /dev/ttyUSB0 --flujo --kd 17 20 23 --bits 1000000 --90b
 
 El log serie se guarda entero y el analisis se hace sobre el log, nunca
 durante la captura. La frecuencia de ro2 que se infiere del tiempo de
@@ -43,6 +50,8 @@ LOTE = 8                     # capturas por orden "crudo"
 RE_TRAMA = re.compile(r"^F([A-Z])([0-9a-f]{4})([0-9a-f]*)([0-9a-f]{8})\s*$")
 RE_KD = re.compile(r"^kd (\d+) leido (\d+) (ok|IGNORADO)")
 RE_CRUDO = re.compile(r"^crudo (\d+) kd (\d+) ms (\d+)")
+RE_FLUJO_INI = re.compile(r"^flujo inicio kd (\d+) bytes (\d+)")
+RE_FLUJO_FIN = re.compile(r"^flujo fin bytes (\d+) kd (\d+) ms (\d+) ok")
 RE_ID = re.compile(r"^id 0x([0-9a-f]{2}) version 0x([0-9a-f]{2}) .* test=(\d)")
 
 
@@ -100,7 +109,7 @@ class Simulador:
 
 # ------------------------------------------------------------------ captura
 def capturar(t, log: Path, kds: list[int], trozos: int, arranque: float,
-             plazo_lote: float) -> None:
+             plazo_lote: float, flujo_bytes: int = 0, plazo_flujo: float = 0.0) -> None:
     with log.open("w", encoding="utf-8") as f:
         pendiente = ""
 
@@ -149,6 +158,15 @@ def capturar(t, log: Path, kds: list[int], trozos: int, arranque: float,
                 raise SystemExit(f"kd {kd} no se escribio ({ln!r})")
             hechos = 0
             t0 = time.time()
+            if flujo_bytes:
+                orden(f"flujo {flujo_bytes}")
+                seg = plazo_flujo or max(30.0, 4 * flujo_bytes * 8 * 2 ** kd / 50e6)
+                ln = escuchar(lambda ln: RE_FLUJO_FIN.match(ln) is not None
+                              or ln.startswith("flujo:"), seg)
+                if ln is None or ln.startswith("flujo:"):
+                    raise SystemExit(f"kd {kd}: el flujo fallo ({ln!r}); log: {log}")
+                print(f"kd {kd}: {ln} ({time.time() - t0:.0f} s)")
+                continue
             while hechos < trozos:
                 n = min(LOTE, trozos - hechos)
                 orden(f"crudo {n}")
@@ -171,13 +189,61 @@ def parsear(texto: str) -> dict[int, dict]:
     por_kd: dict[int, dict] = {}
     kd = None
     espera_trama = False
+    tira = None                  # captura continua en curso
     for linea in texto.splitlines():
         linea = linea.strip()
         if m := RE_KD.match(linea):
             if m.group(3) == "ok":
                 kd = int(m.group(2))
                 por_kd.setdefault(kd, {"datos": bytearray(), "ms": [], "crc_malo": 0,
-                                       "huerfanas": 0, "errores": []})
+                                       "huerfanas": 0, "errores": [], "flujos": []})
+            continue
+        # ---- captura continua: una tira vale entera o no vale
+        if m := RE_FLUJO_INI.match(linea):
+            if kd is None or int(m.group(1)) != kd:
+                raise ValueError(f"flujo con kd {m.group(1)} sin 'kd' previo: {linea}")
+            if tira is not None:
+                por_kd[kd]["errores"].append("flujo sin cerrar antes de: " + linea)
+            tira = {"pedidos": int(m.group(2)), "datos": bytearray(), "seq": 0, "mal": ""}
+            continue
+        if m := RE_FLUJO_FIN.match(linea):
+            if tira is None:
+                if kd is not None:
+                    por_kd[kd]["errores"].append("fin de flujo sin inicio: " + linea)
+                continue
+            if not tira["mal"] and not (int(m.group(1)) == tira["pedidos"] == len(tira["datos"])):
+                tira["mal"] = (f"llegaron {len(tira['datos'])} bytes, pedidos {tira['pedidos']}, "
+                               f"el verificador dice {m.group(1)}")
+            if tira["mal"]:
+                por_kd[kd]["errores"].append("flujo descartado: " + tira["mal"])
+            else:
+                por_kd[kd]["flujos"].append({"datos": tira["datos"], "ms": int(m.group(3))})
+            tira = None
+            continue
+        if linea.startswith("flujo:") and kd is not None:
+            por_kd[kd]["errores"].append(linea)
+            tira = None
+            continue
+        if (m := RE_TRAMA.match(linea)) and m.group(1) == "C":
+            if tira is None:
+                if kd is not None:
+                    por_kd[kd]["huerfanas"] += 1
+                continue
+            n = int(m.group(2), 16)
+            if len(m.group(3)) != 2 * n or n < 5:
+                tira["mal"] = tira["mal"] or f"trama {tira['seq']} con longitud mala"
+                por_kd[kd]["crc_malo"] += 1
+                continue
+            carga = bytes.fromhex(m.group(3))
+            if zlib.crc32(carga) & 0xFFFFFFFF != int(m.group(4), 16):
+                tira["mal"] = tira["mal"] or f"CRC malo en la trama {tira['seq']}"
+                por_kd[kd]["crc_malo"] += 1
+                continue
+            seq = int.from_bytes(carga[:4], "little")
+            if seq != tira["seq"]:
+                tira["mal"] = tira["mal"] or f"salto de numeracion: esperada {tira['seq']}, llega {seq}"
+            tira["seq"] = seq + 1
+            tira["datos"].extend(carga[4:])
             continue
         if m := RE_CRUDO.match(linea):
             if kd is None or int(m.group(2)) != kd:
@@ -206,12 +272,58 @@ def parsear(texto: str) -> dict[int, dict]:
             por_kd[kd]["crc_malo"] += 1
             continue
         por_kd[kd]["datos"].extend(carga)
+    if tira is not None and kd is not None:
+        por_kd[kd]["errores"].append("el log acaba con un flujo sin cerrar")
     return por_kd
+
+
+def bateria_90b(fila: dict, nombre: str, fich: Path, carpeta: Path) -> None:
+    sys.path.insert(0, str(RAIZ / "analysis"))
+    import entropia_90b as e90
+    e90.DIR90B = carpeta / "entropia90b"
+    e90.BITS = e90.DIR90B / "bits"
+    e90.BITS.mkdir(parents=True, exist_ok=True)
+    if fila["bits"] < 1_000_000:
+        print(f"   AVISO: {fila['bits']} bits < 10^6 que pide SP 800-90B")
+    r = e90.ejecutar(nombre, e90.desempaquetar(nombre, fich), "noniid", "b1")
+    fila["exit_90b"] = r["exit"]
+    # el JSON lleva hAssessed dentro del ultimo caso de testCases
+    fila["h_min_90b"] = next((v for k, v in r.items() if k.endswith("hAssessed")), "")
 
 
 def resumir(por_kd: dict[int, dict], carpeta: Path, con_90b: bool) -> list[dict]:
     filas = []
     for kd, d in sorted(por_kd.items()):
+        # Captura continua: una fila por tira completa. Los errores y los CRC
+        # malos del divisor van en la primera fila que salga de el.
+        for i, fl in enumerate(d["flujos"]):
+            nombre = f"kd{kd:02d}_flujo" + (f"_{i + 1}" if i else "")
+            fich = carpeta / f"{nombre}.bin"
+            fich.write_bytes(bytes(fl["datos"]))
+            bits = len(fl["datos"]) * 8
+            unos = sum(bin(b).count("1") for b in fl["datos"])
+            solo_flujo = not d["datos"] and not d["ms"] and i == 0
+            fila = {
+                "kd": kd, "modo": "flujo", "trozos": "", "bits": bits,
+                "crc_malo": d["crc_malo"] if solo_flujo else 0,
+                "tramas_huerfanas": d["huerfanas"] if solo_flujo else 0,
+                "errores": len(d["errores"]) if solo_flujo else 0,
+                "ms_mediana": fl["ms"], "ms_min": "", "ms_max": "",
+                # f_ro2 = bits * 2^kd / t, sobre toda la tira
+                "f_ro2_MHz": (bits * 2 ** kd / (fl["ms"] / 1000) / 1e6) if fl["ms"] >= 100 else "",
+                "fraccion_unos": unos / bits, "fichero": fich.name,
+            }
+            print(f"kd {kd} flujo: {bits} bits consecutivos en {fl['ms']} ms, "
+                  f"ro2 {fila['f_ro2_MHz']} MHz, unos {fila['fraccion_unos']}")
+            if con_90b:
+                bateria_90b(fila, nombre, fich, carpeta)
+            filas.append(fila)
+        if d["flujos"] and not d["datos"] and not d["ms"]:
+            for e in d["errores"]:
+                print(f"   {e}")
+            continue
+        if not d["datos"] and not d["ms"] and not d["errores"] and not d["crc_malo"]:
+            continue                 # divisor escrito y nada capturado
         nombre = f"kd{kd:02d}"
         fich = carpeta / f"{nombre}.bin"
         fich.write_bytes(bytes(d["datos"]))
@@ -220,7 +332,7 @@ def resumir(por_kd: dict[int, dict], carpeta: Path, con_90b: bool) -> list[dict]
         med = ms[len(ms) // 2] if ms else float("nan")
         unos = sum(bin(b).count("1") for b in d["datos"])
         fila = {
-            "kd": kd, "trozos": trozos, "bits": len(d["datos"]) * 8,
+            "kd": kd, "modo": "trozos", "trozos": trozos, "bits": len(d["datos"]) * 8,
             "crc_malo": d["crc_malo"], "tramas_huerfanas": d["huerfanas"],
             "errores": len(d["errores"]),
             "ms_mediana": med, "ms_min": ms[0] if ms else "", "ms_max": ms[-1] if ms else "",
@@ -235,17 +347,7 @@ def resumir(por_kd: dict[int, dict], carpeta: Path, con_90b: bool) -> list[dict]
         for e in d["errores"]:
             print(f"   {e}")
         if con_90b:
-            sys.path.insert(0, str(RAIZ / "analysis"))
-            import entropia_90b as e90
-            e90.DIR90B = carpeta / "entropia90b"
-            e90.BITS = e90.DIR90B / "bits"
-            e90.BITS.mkdir(parents=True, exist_ok=True)
-            if fila["bits"] < 1_000_000:
-                print(f"   AVISO: {fila['bits']} bits < 10^6 que pide SP 800-90B")
-            r = e90.ejecutar(nombre, e90.desempaquetar(nombre, fich), "noniid", "b1")
-            fila["exit_90b"] = r["exit"]
-            # el JSON lleva hAssessed dentro del ultimo caso de testCases
-            fila["h_min_90b"] = next((v for k, v in r.items() if k.endswith("hAssessed")), "")
+            bateria_90b(fila, nombre, fich, carpeta)
         filas.append(fila)
     return filas
 
@@ -259,6 +361,10 @@ def main() -> int:
     fuente.add_argument("--reparsear", type=Path, help="log serie de una sesion anterior")
     ap.add_argument("--kd", type=int, nargs="+", default=[10])
     ap.add_argument("--bits", type=int, default=1_000_000, help="bits por divisor")
+    ap.add_argument("--flujo", action="store_true",
+                    help="captura continua: --bits consecutivos por divisor (motor 0x04)")
+    ap.add_argument("--plazo-flujo", type=float, default=0.0,
+                    help="s por tira (0: bits*2^kd a 50 MHz, x4, minimo 30 s)")
     ap.add_argument("--sin-reset", action="store_true")
     ap.add_argument("--arranque", type=float, default=5.0, help="s de espera al arrancar")
     ap.add_argument("--plazo", type=float, default=0.0,
@@ -283,7 +389,8 @@ def main() -> int:
         plazo = args.plazo or max(5.0, 4 * BITS_TROZO * 2 ** max(args.kd) / 50e6)
         t = Simulador(args.simulador) if args.simulador else Serie(args.puerto, not args.sin_reset)
         try:
-            capturar(t, log, args.kd, trozos, args.arranque, plazo)
+            capturar(t, log, args.kd, trozos, args.arranque, plazo,
+                     math.ceil(args.bits / 8) if args.flujo else 0, args.plazo_flujo)
         finally:
             t.cerrar()
 

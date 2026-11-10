@@ -208,6 +208,25 @@ never overlap, so no asynchronous FIFO is needed, and the buffer size
 follows from Section~\ref{sec:estimator}: one chunk of $N + M_{\max}$
 bits is all the estimator needs.
 
+The entropy assessment asks for the opposite: SP~800-90B wants $10^6$
+\emph{consecutive} samples, and chunks lose the bits that arrive while a
+chunk is read out. A second characterization path gives them. It is a
+byte queue in the system domain, fed after the toggle synchronizer by the
+very bits the health tests judge and the seed collector takes, which the
+host empties over \ac{I2C} while it fills; the string that goes through
+the battery is therefore the one the generator consumes, not a parallel
+tap. A read first latches how many bytes it may take, so a byte that
+arrives during the read is not lost, and a byte that finds the queue full
+stops the stream with an overflow flag instead of overwriting: a gap
+cannot go unnoticed. The stream obeys the rules of the capture buffer ---
+test mode only, never while a seed is collected, and no seeding while it
+runs --- and freezes the divider. It is usable where the bus keeps up, at
+dividers of about $2^{13}$ and above \est{}, which covers the operating
+points; below that the chunks remain. The queue is instrumentation for
+the \ac{FPGA}: a generic removes it, and it is not part of the area of
+Chapter~\ref{ch:ch6_asic}, where its 256 bytes in flip-flops would add
+23.5~kGE \simu{}.
+
 \section{I2C register interface and command sequencer}
 \label{sec:i2c}
 
@@ -248,9 +267,12 @@ The whole engine was exercised as the ESP32 will exercise it: a
 bus-functional \ac{I2C} master reads the identification, configures the
 divider, seeds, generates, reads the key in test mode, writes two
 challenges and reads their tags, generates again, captures raw bits and
-verifies that the key is unreadable without the test pin --- sixteen
-checks. What a VHDL bench cannot know is whether the tags are
+verifies that the key is unreadable without the test pin, together with
+the refusals, the zeroization and the continuous stream described above
+(Table~\ref{tab:tb}). What a VHDL bench cannot know is whether the tags are
 \emph{correct}, because the key came from ring-oscillator noise; the
 bench dumps key, challenges and tags to a file and a Python script
 recomputes the CMACs with the independent AES. They match. That is the
-same cross-check the ESP32 performs on hardware with mbedtls.
+same cross-check the ESP32 will perform on hardware with mbedtls, and
+already performs against the host model of the engine
+(Chapter~\ref{ch:ch5_verification}).

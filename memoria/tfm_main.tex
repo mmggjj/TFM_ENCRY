@@ -127,9 +127,11 @@ sampler. Around it, a fully portable digital core --- SP~800-90B health
 tests, an AES-based conditioning and \acs{CTRDRBG} with derivation
 function, AES-CMAC authentication and an \acs{I2C} register interface ---
 is written once and verified three ways: against the official test
-vectors, in simulation on a Basys~3 FPGA acting as the verification
-vehicle, and against an ESP32 that recomputes every result with an
-independent implementation (mbedtls). The same VHDL is finally
+vectors, in simulation with the security rules of the sequencer checked
+as properties, and against the firmware of an ESP32 that recomputes the
+authentication tags with an independent implementation (mbedtls), so far
+on a model of the engine; a Basys~3 FPGA is the vehicle prepared for the
+run on hardware. The same VHDL is finally
 synthesized on an open 130~nm standard-cell library to give the area in
 gate equivalents and the path to a dedicated integrated circuit. All
 code, models, vectors and data are released.
@@ -163,9 +165,12 @@ n\'ucleo digital totalmente portable --- tests de salud SP~800-90B,
 acondicionado y \acs{CTRDRBG} con funci\'on de derivaci\'on basados en
 AES, autenticaci\'on AES-CMAC e interfaz de registros \acs{I2C} --- se
 escribe una sola vez y se verifica de tres maneras: contra los vectores
-oficiales, en simulaci\'on sobre una FPGA Basys~3 que hace de veh\'iculo
-de verificaci\'on, y frente a un ESP32 que recalcula cada resultado con
-una implementaci\'on independiente (mbedtls). El mismo VHDL se sintetiza
+oficiales, en simulaci\'on con las reglas de seguridad del secuenciador
+comprobadas como propiedades, y frente al firmware de un ESP32 que
+recalcula las etiquetas de autenticaci\'on con una implementaci\'on
+independiente (mbedtls), por ahora sobre un modelo del motor; una FPGA
+Basys~3 es el veh\'iculo preparado para la prueba en hardware. El mismo
+VHDL se sintetiza
 por \'ultimo sobre una biblioteca abierta de celdas est\'andar de 130~nm
 para dar el \'area en puertas equivalentes y el camino hacia un circuito
 integrado dedicado. Todo el c\'odigo, modelos, vectores y datos se
@@ -184,6 +189,7 @@ Microelectr\'onica at IMSE-CNM, for their support during this work.
 \chapter*{List of Acronyms}
 \addcontentsline{toc}{chapter}{List of Acronyms}
 \begin{acronym}[CTR\_DRBG]
+\acro{ADC}{Analog-to-Digital Converter}
 \acro{AES}{Advanced Encryption Standard}
 \acro{AIS}{Anwendungshinweise und Interpretationen zum Schema (BSI)}
 \acro{APT}{Adaptive Proportion Test}

@@ -1,13 +1,13 @@
-Banco en el PC del firmware del motor (run_host.py) con ASan+UBSan
+Banco en el PC del firmware del motor (run_host.py)
 
 mbedtls real: $MBEDTLS
 
-$ /usr/bin/python3 firmware/host_check/mk_stubs.py firmware/host_check/build/stubs --sin-mbedtls
+$ $HOME/eda/venv/bin/python firmware/host_check/mk_stubs.py firmware/host_check/build/stubs --sin-mbedtls
 cabeceras simuladas en firmware/host_check/build/stubs (sin mbedtls falso)
 (rc=0)
 
 == test_verificador ==
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/test_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_verificador
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/test_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_verificador
 (rc=0)
 $ firmware/host_check/build/test_verificador
 Banco del verificador contra el motor simulado
@@ -154,15 +154,55 @@ sembrar: ok
      (arranque y siembra: 57290 ms)
 kd 6 leido 6 ok
 
+15) Captura continua (FLUJO)
+kd 14 leido 14 ok
+  [ok ] FLUJO.activo tras arrancarlo en modo test
+  [ok ] con el flujo activo, resembrar se rechaza
+  [ok ] y CFG_KD no cambia
+  [ok ] mas de 400 bytes leidos a trozos y todos consecutivos
+  [ok ] sin credito se leen ceros
+  [ok ] sin vaciarla la FIFO se desborda y el flujo se para
+  [ok ] parado el flujo, resembrar se acepta
+flujo inicio kd 14 bytes 1000
+FC00840000000069e3c867d94512b99e1df745fb9268ed09b101c5b87e3f5c7e496189f62ac98113cef6e810fe66ddf2b34a372a014d2fa998deaf304c61a10b2795efd4bd4476d9e2aa774e5c748ef6b670aa6b9880f7fbbcd31480013c51080b9963959b388f749052484f4dc0a8194a69ee12a9328fe05355feff91e66b011e7b8592dd401297c66c81
+FC008401000000c21ec3347b44f135c12b7fc65afd8c32c5986877bb6fa8095bb8cbdac34b67b907c60ed1730be9bda89267238e0dfaf7c5927551e6b06412b2f1824df53fa1de425904232734f03ec1aa81d342a323d6bc913082be198be900b977bbcf8f349e6880a4168e2b13d7caaa56f51311913dc73c54d7afd8eafba301ee9d6b569ccc9d3de013
+FC008402000000ac7d32150e2df9af584ab845a01f2ad1fa82c69161c5a643f2889634b7c44bb42c57da68e4783070f95cdc75fb83b406d0fc6a7febbd455f445de3cbcd1521f2ee3e89cde1c737cc0e9ecbd138fdc21456d27972625560107251d0ffd929817c672becb5b35be8e44b86bcdadb35c03e915f0aad7e49f7c93119aa25d0fb09fc4c22ced3
+FC008403000000ce54f4b3af4e7f1d63b5a936eefc353bad274842f6af1a0e34db4ea4a5b7e0342650ef05d737926bda33196830fc07c352ba0ff24eb21ba31f3812c5d48e6f6b658227222e3b4667178ae507fa5045158724bd8f8e5524d038f9892e4f55817a206bbebec9e735dfcc1f6232750606c51d941f8d119ea6883117116b2177b97268c403d0
+FC008404000000f6a2530c95eed54602ca2811eab9c99ff6be14d1efa435135cfeb78f0a6f081010af56c1bfe7dcf5a00d464e8e02ef8d553ee194be3c5d42760c5eae7e39342e769cc98f2c06720dc76a315736bd85947a531d395ddf59111daa6333f7323fc9a6360c7503e1c37ff24dece9b0d8d98dcd415c342b26a971cad0094f82f87bca6499a3f1
+FC008405000000ca7741c78bc54d352f5d63395299a4c06fe9c547c9d1a50c6fccb7a221590137a81b9690f1c98abed30e6effd62a5a3f4de4f900e433a3c49f7250207fab56ee9faff167a010e1d1dc7c5d6cffaa422970fc57fd300688823f2c710b181226f9c1004a7b6abd9b9d7632709081ff287b2cc381b2b8be7a27e9fdcf0d51a6e58f5811dba4
+FC00840600000061636b506490ef2dc79869a13fe80d4ed0ae55f9ecd43a71cd80b7c2a9ae3fb1f5c9670d0120deda43905c2fda86e92775f793d9b1cb315d422b3f5f03a5290848bd5cb33409abe680f5d8a48460367b828064ab14d1512550fef1ed7b74c87bc7f308a58e5a968275f749af3d5c027e7554fe82a08fefbede644a57c4e1d673502a2d81
+FC006c0700000084d6c37ca7aad0e6cc690de8ad531776370cb738325a8452423b466adbf45c3ac1ae43690ec6505f7136af085b7afdf84ef643a65144f0e2a6d54b7fe8d88c75cc3091176eedafd791d94d04a9a41b2cfeb0608f2a260db3bc4253d8894b402e890e4b59783e3ccc04072dcd
+flujo fin bytes 1000 kd 14 ms 437 ok
+  [ok ] flujo 1000: 8 tramas (7 de 128 bytes y una de 104) y fin ok
+  [ok ] y tarda lo que tardan 8000 bits a 2^14 periodos de ro2
+  [ok ] al acabar deja el flujo parado
+kd 6 leido 6 ok
+flujo inicio kd 6 bytes 100000
+FC00840000000069e3c867d94512b99e1df745fb9268ed09b101c5b87e3f5c7e496189f62ac98113cef6e810fe66ddf2b34a372a014d2fa998deaf304c61a10b2795efd4bd4476d9e2aa774e5c748ef6b670aa6b9880f7fbbcd31480013c51080b9963959b388f749052484f4dc0a8194a69ee12a9328fe05355feff91e66b011e7b8592dd401297c66c81
+FC008401000000c21ec3347b44f135c12b7fc65afd8c32c5986877bb6fa8095bb8cbdac34b67b907c60ed1730be9bda89267238e0dfaf7c5927551e6b06412b2f1824df53fa1de425904232734f03ec1aa81d342a323d6bc913082be198be900b977bbcf8f349e6880a4168e2b13d7caaa56f51311913dc73c54d7afd8eafba301ee9d6b569ccc9d3de013
+flujo: DESBORDADO (el maestro no vacia a tiempo: subir CFG_KD) tras 256 bytes (kd 6), la tira no vale
+  [ok ] con kd 6 se desborda y el comando lo dice
+kd 14 leido 14 ok
+flujo: solo en modo test
+  [ok ] sin modo test no sale ninguna trama
+flujo: ERROR I2C al arrancar
+  [ok ] con el bus caido tampoco
+kd 2 leido 2 ok
+flujo: rechazado (motor ocupado, captura en curso, CFG_KD bajo o motor sin FLUJO)
+  [ok ] con CFG_KD bajo el motor lo rechaza
+kd 6 leido 6 ok
+sembrar: ok
+  [ok ] tras el flujo se vuelve a sembrar
+
 test_verificador: 0 fallos
 (rc=0)
 
 == campana_motor.py contra la consola del verificador ==
 (main.c del verificador en el PC sobre el modelo; kd 6, 10 y 18, 5 trozos cada uno)
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/consola_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/consola_verificador
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/consola_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/consola_verificador
 (rc=0)
-$ /usr/bin/python3 analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --kd 6 10 18 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_motor
-motor: ID 0xa5, VERSION 0x03, modo test
+$ $HOME/eda/venv/bin/python analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --kd 6 10 18 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_motor
+motor: ID 0xa5, VERSION 0x04, modo test
 
 kd 6: 5/5 trozos, 0 s
 
@@ -177,7 +217,7 @@ resumen: firmware/host_check/build/campana_motor/resumen.csv
 (rc=0)
   [ok ] tres divisores, 5 trozos cada uno, 0 CRC malos
   [ok ] kd06/10/18.bin de 2560 bytes
-$ /usr/bin/python3 analysis/campana_motor.py --reparsear firmware/host_check/build/campana_motor/corrupto/serie.log
+$ $HOME/eda/venv/bin/python analysis/campana_motor.py --reparsear firmware/host_check/build/campana_motor/corrupto/serie.log
 kd 6: 4 trozos (16384 bits), CRC malos 1, huerfanas 0, errores 0, llenado mediana 0 ms, unos 0.50091552734375
 kd 10: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 13 ms, unos 0.497802734375
 kd 18: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 3580 ms, unos 0.494580078125
@@ -186,8 +226,29 @@ resumen: firmware/host_check/build/campana_motor/corrupto/resumen.csv
 (rc=1)
   [ok ] una trama alterada: CRC malo contado y rc=1
 
+== campana_motor.py --flujo: captura continua ==
+(kd 14 y 17, 20000 bits consecutivos cada uno; el byte i del modelo es motor_flujo_byte(i))
+$ $HOME/eda/venv/bin/python analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --flujo --kd 14 17 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_flujo
+motor: ID 0xa5, VERSION 0x04, modo test
+kd 14: flujo fin bytes 2500 kd 14 ms 1093 ok (0 s)
+kd 17: flujo fin bytes 2500 kd 17 ms 8739 ok (0 s)
+kd 14 flujo: 20000 bits consecutivos en 1093 ms, ro2 299.7987191216834 MHz, unos 0.50025
+kd 17 flujo: 20000 bits consecutivos en 8739 ms, ro2 299.97024831216385 MHz, unos 0.50025
+log integro: firmware/host_check/build/campana_flujo/serie.log
+resumen: firmware/host_check/build/campana_flujo/resumen.csv
+(rc=0)
+  [ok ] kd14/17_flujo.bin: 2500 bytes, los del modelo en orden y sin huecos
+$ $HOME/eda/venv/bin/python analysis/campana_motor.py --reparsear firmware/host_check/build/campana_flujo/hueco/serie.log
+kd 14: 0 trozos (0 bits), CRC malos 0, huerfanas 0, errores 1, llenado mediana nan ms, unos 
+   flujo descartado: salto de numeracion: esperada 3, llega 4
+kd 17 flujo: 20000 bits consecutivos en 8739 ms, ro2 299.97024831216385 MHz, unos 0.50025
+log integro: firmware/host_check/build/campana_flujo/hueco/serie.log
+resumen: firmware/host_check/build/campana_flujo/hueco/resumen.csv
+(rc=1)
+  [ok ] una trama perdida: salto de numeracion, tira descartada y rc=1
+
 == test_medidor ==
-$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I $MBEDTLS/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
+$ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I $MBEDTLS/include -I firmware/medidor/main firmware/host_check/test_medidor.c firmware/medidor/main/lectura.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/test_medidor
 (rc=0)
 $ firmware/host_check/build/test_medidor
 Banco del medidor contra el motor simulado
@@ -310,7 +371,7 @@ test_medidor: 0 fallos
 
 == verifica_lecturas.py sobre la salida del medidor ==
 (el banco planta a proposito una lectura manipulada y una repetida: el script debe devolver rc=1 y contarlas)
-$ /usr/bin/python3 analysis/verifica_lecturas.py firmware/host_check/build/medidor_consola.log --permitir-cambio
+$ $HOME/eda/venv/bin/python analysis/verifica_lecturas.py firmware/host_check/build/medidor_consola.log --permitir-cambio
 publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea69
 lectura 1: equipo 7cdfa10011220000 seq 16777217 t 0 s energia 0 Wh potencia 1050 W: ok
 lectura 2: equipo 7cdfa10011220000 seq 16777218 t 1 s energia 0 Wh potencia 1100 W: ok

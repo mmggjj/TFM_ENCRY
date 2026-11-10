@@ -5,7 +5,7 @@
 \label{app:regs}
 
 This appendix is the interface contract between the engine and its host,
-version 0x03 of the \ac{RTL}. The same text, with the history of each
+version 0x04 of the \ac{RTL}. The same text, with the history of each
 rule, is kept in the repository as \nolinkurl{docs/mapa_registros.md}; the
 \ac{RTL} (\nolinkurl{rtl/top/motor_top.vhd}), the host model
 (\nolinkurl{firmware/host_check/motor_sim.c}) and the access layer of the
@@ -24,29 +24,38 @@ translated here; the repository uses the Spanish ones
 \centering\small
 \caption{Registers. R: read, W: write.}
 \label{tab:app_regs}
-\begin{tabular}{@{}llc>{\raggedright\arraybackslash}p{0.56\linewidth}@{}}
+\begin{tabular}{@{}llc>{\raggedright\arraybackslash}p{0.53\linewidth}@{}}
 \toprule
 Address & Name & Access & Content \\
 \midrule
 0x00 & ID & R & 0xA5 \\
-0x01 & VERSION & R & 0x03 \\
+0x01 & VERSION & R & 0x04 \\
 0x02 & STATUS & R & Table~\ref{tab:app_status} \\
 0x03 & CONTROL & W & commands, Table~\ref{tab:app_control}; self-clearing \\
 0x04 & CFG\_KD & R/W & divider exponent, $K_D = 2^{\text{value}}$, effective
   range 0--24 (larger values act as 24). Resets to 24. Written only while
-  the engine is idle; a write during a command is ignored \\
+  the engine is idle and the stream is stopped; otherwise the write is
+  ignored \\
 0x05 & CFG\_PAG & R/W & page of the capture buffer, 0--3 \\
 0x06--0x07 & RCT\_MAX & R & longest run seen by the \ac{RCT}, low byte first \\
 0x08--0x09 & APT\_MAX & R & largest count seen by the \ac{APT}, low byte first \\
 0x0A--0x0D & REQUESTS & R & reseed counter of the \ac{DRBG}, 32 bits, low byte
   first. Saturates at $2^{32}-1$ \\
 0x0E & DIAG & R & Table~\ref{tab:app_diag} \\
+0x0F & STREAM & R/W & continuous raw-bit capture. Bit 0 \texttt{active}:
+  writing 1 empties the queue and starts, writing 0 stops. Bit 1
+  \texttt{overflow}, read-only \\
 0x10--0x1F & KEY & R & current key, 16 bytes. \textbf{Test mode only} \\
 0x20--0x2F & CHALLENGE & W & 16-byte nonce for challenge-response \\
 0x30--0x3F & TAG & R & $\mathrm{CMAC}_{\text{KEY}}(\text{CHALLENGE})$, 16 bytes;
   reads as zeros while \texttt{tag\_ready} is 0 \\
 0x40--0x5F & RANDOM & R & 32 bytes from the last \texttt{random} command, a
   \ac{DRBG} generation independent of the key \\
+0x60 & STREAM\_N & R & bytes waiting in the stream queue, at most 31;
+  reading it sets the credit of the transaction. \textbf{Test mode only} \\
+0x61--0x7F & STREAM\_DATA & R & each read with credit pops one byte of the
+  queue; without credit it returns 0x00 and pops nothing.
+  \textbf{Test mode only} \\
 0x80--0xFF & CAPTURE & R & 128 bytes of raw bits, page CFG\_PAG.
   \textbf{Test mode only} \\
 \bottomrule
@@ -139,7 +148,11 @@ raise \texttt{busy} and sets \texttt{DIAG.rejected}.
   default), below which the bit-level clock-domain crossing loses bits
   silently and the health tests cannot tell.
 \item A capture and a seeding exclude each other, so the capture buffer
-  never holds bits of a seed.
+  never holds bits of a seed. The same holds for the continuous stream:
+  it starts only in test mode, with the engine idle, no capture in
+  progress and \texttt{CFG\_KD} at or above the minimum, and while it is
+  active \texttt{seed}, \texttt{reseed} and \texttt{capture} are refused.
+  Starting the stream counts as a command for \texttt{DIAG.rejected}.
 \item The request counter does not wrap: at $2^{32}-1$ the engine
   refuses to generate until reseeded (\texttt{DIAG.exhausted}). The
   reseeding policy below that ceiling is the host's.
@@ -155,7 +168,7 @@ seeding is accepted and aborted on the next cycle.
 
 \paragraph{Typical host sequence.}
 \begin{enumerate}
-\item Read ID (0xA5) and VERSION (0x03).
+\item Read ID (0xA5) and VERSION (0x03 or later).
 \item Write \texttt{CFG\_KD} with the divider of the characterization, or
   leave the reset value.
 \item Poll DIAG until \texttt{started}; write \texttt{seed}; poll STATUS
@@ -170,9 +183,25 @@ seeding is accepted and aborted on the next cycle.
 \end{enumerate}
 
 \paragraph{Test mode.} The \texttt{test\_mode} pin, synchronized by two
-flip-flops, enables reading KEY and CAPTURE and the \texttt{capture}
-command. On the \ac{FPGA} it is a board switch; on an integrated circuit
-it would be a fuse blown at production.
+flip-flops, enables reading KEY and CAPTURE, the \texttt{capture}
+command and the stream. On the \ac{FPGA} it is a board switch; on an
+integrated circuit it would be a fuse blown at production.
+
+\paragraph{Continuous capture.} \texttt{capture} delivers 4096-bit chunks
+unrelated to each other, which is what the jitter estimator wants;
+SP~800-90B asks for $10^6$ consecutive samples. The stream is a byte
+queue in the system domain, fed by the same bits the health tests and the
+seed collector see, that the host empties over \ac{I2C} while it fills.
+The first bit received is the most significant bit of the first byte. One
+transaction reads 32 bytes from 0x60: the count $n$ (0 to 31), $n$ data
+bytes and zeros. If a byte arrives with the queue full, nothing is
+overwritten: \texttt{overflow} is set and the stream stops, so a gap can
+never go unnoticed. Removing test mode or \texttt{clear\_all} also stop
+it. The queue holds 256 bytes on the \ac{FPGA} and is absent by default
+(generic \texttt{G\_FLUJO\_BYTES} $= 0$): it is characterization
+instrumentation and is not part of the area reported in
+Chapter~\ref{ch:ch6_asic}; without it STREAM reads 0 and starting it is
+refused.
 
 \chapter{Official Test Vectors Used}
 \label{app:vectors}
@@ -187,8 +216,9 @@ vectors first, and written independently of the \ac{VHDL}.
 \begin{table}[htbp]
 \centering\small
 \caption{Reference values and their origin. Counts are checks passed in
-the last run (\nolinkurl{results/tb_motor_top.log}, 177 in total, with
-11 of 11 \acs{PSL} assertions and 6 of 6 cover points).}
+the last run (\nolinkurl{results/run_tb_todos.log}, 212 in total over
+nine benches, with 14 of 14 \acs{PSL} assertions and 8 of 8 cover
+points).}
 \label{tab:app_vectors}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
@@ -260,7 +290,7 @@ Model and estimators & \texttt{python} \nolinkurl{analysis/ero_model.py},
   \texttt{verifica\_lecturas.py} on the board log & self-checks, 960
   \ac{CAVP} cases, board readings valid \\
 \ac{VHDL} benches & \texttt{python} \nolinkurl{rtl/run_tb.py}, then
-  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 7 benches, \acs{PSL}
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 9 benches, \acs{PSL}
   report as artefact \\
 Synthesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} &
   area per block in kGE (Chapter~\ref{ch:ch6_asic}) \\

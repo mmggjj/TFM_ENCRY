@@ -25,6 +25,9 @@
  *   kd [N]    escribe CFG_KD (K_D = 2^N) y lo relee; sin N solo lo lee
  *   crudo N   vuelca N trozos del buffer de captura al PC (4096 bits cada uno,
  *             no contiguos entre si) con su tiempo de llenado
+ *   flujo N   vuelca N bytes CONSECUTIVOS de bits crudos (captura continua,
+ *             registro FLUJO) en tramas C numeradas; si la FIFO del motor se
+ *             desborda o falla el bus, lo dice y la tira no vale
  *   esp N     vuelca N bloques de esp_random() al PC (comparacion)
  *   cero      zeroiza el motor (clave, DRBG, RETO, ALEATORIO)
  */
@@ -82,7 +85,7 @@ static void cmd_id(void)
     if (motor_reg_leer(REG_ID, &id, 1) != ESP_OK) { ESP_LOGE(TAG, "sin respuesta I2C"); return; }
     if (id != MOTOR_ID) ESP_LOGE(TAG, "ID inesperado 0x%02x, se esperaba 0x%02x", id, MOTOR_ID);
     motor_reg_leer(REG_VERSION, &ver, 1);
-    if (ver < MOTOR_VERSION) ESP_LOGE(TAG, "VERSION 0x%02x: motor sin DIAG ni test de arranque", ver);
+    if (ver < MOTOR_VERSION_MIN) ESP_LOGE(TAG, "VERSION 0x%02x: motor sin DIAG ni test de arranque", ver);
     motor_reg_leer(REG_DIAG, &diag, 1);
     st = motor_status();
     printf("id 0x%02x version 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d "
@@ -300,6 +303,81 @@ static void cmd_crudo(int n)
     }
 }
 
+/* Captura continua (docs/captura_continua.md): el motor mete los bits
+ * crudos en una FIFO y aqui se vacia mientras se llena. Cada trama C lleva
+ * su numero (4 bytes, bajo primero) y hasta 128 bytes de la tira. La tira
+ * solo vale si acaba con "flujo fin ... ok": el PC no da por buena una
+ * captura cortada. El cuello es esta UART: a 115200 salen unos 5 kB/s. */
+#define FLUJO_TRAMA 128
+static struct { uint32_t bytes; bool ok; } ult_flujo;
+
+static void cmd_flujo(int n_bytes)
+{
+    uint8_t buf[1 + MOTOR_FLUJO_MAX], trama[4 + FLUJO_TRAMA];
+    uint8_t kd = 24, fl = 0, diag = 0;
+    ult_flujo.bytes = 0;
+    ult_flujo.ok = false;
+    if (n_bytes < 1) { printf("flujo: N bytes, N >= 1\n"); return; }
+    motor_io_reiniciar();
+    const uint8_t st = motor_status();
+    if (!motor_io_ok()) { printf("flujo: ERROR I2C al arrancar\n"); return; }
+    if (!(st & ST_MODO_TEST)) { printf("flujo: solo en modo test\n"); return; }
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    motor_reg_escribir1(REG_FLUJO, FL_ACTIVO);
+    motor_reg_leer(REG_DIAG, &diag, 1);
+    motor_reg_leer(REG_FLUJO, &fl, 1);
+    if (!motor_io_ok()) { printf("flujo: ERROR I2C al arrancar\n"); return; }
+    if ((diag & DG_RECHAZADA) || !(fl & FL_ACTIVO)) {
+        printf("flujo: rechazado (motor ocupado, captura en curso, CFG_KD bajo o motor sin FLUJO)\n");
+        return;
+    }
+    const uint32_t plazo = motor_plazo_bits_ms(8 * 32, 2000);
+    printf("flujo inicio kd %u bytes %d\n", kd, n_bytes);
+    const uint32_t pedidos = (uint32_t)n_bytes;
+    uint32_t total = 0, seq = 0;
+    size_t en_trama = 0;
+    const char *error = NULL;
+    const TickType_t t0 = xTaskGetTickCount();
+    TickType_t t_ult = t0;
+    while (total < pedidos) {
+        motor_reg_leer(REG_FLUJO_N, buf, sizeof buf);
+        if (!motor_io_ok()) { error = "ERROR I2C"; break; }
+        const uint8_t n = buf[0];
+        if (n > MOTOR_FLUJO_MAX) { error = "FLUJO_N fuera de rango"; break; }
+        for (uint8_t i = 0; i < n && total < pedidos; i++) {
+            trama[4 + en_trama++] = buf[1 + i];
+            total++;
+            if (en_trama == FLUJO_TRAMA || total == pedidos) {
+                trama[0] = (uint8_t)seq; trama[1] = (uint8_t)(seq >> 8);
+                trama[2] = (uint8_t)(seq >> 16); trama[3] = (uint8_t)(seq >> 24);
+                trama_pc('C', trama, 4 + en_trama);
+                seq++;
+                en_trama = 0;
+            }
+        }
+        if (n) t_ult = xTaskGetTickCount();
+        if (n < MOTOR_FLUJO_MAX && total < pedidos) {      /* FIFO vacia: mirar como va y ceder */
+            motor_reg_leer(REG_FLUJO, &fl, 1);
+            if (!motor_io_ok()) { error = "ERROR I2C"; break; }
+            if (fl & FL_DESBORDADO) { error = "DESBORDADO (el maestro no vacia a tiempo: subir CFG_KD)"; break; }
+            if (!(fl & FL_ACTIVO)) { error = "el motor paro el flujo (modo test?)"; break; }
+            if (xTaskGetTickCount() - t_ult >= pdMS_TO_TICKS(plazo)) { error = "sin datos"; break; }
+            vTaskDelay(1);
+        }
+    }
+    const uint32_t ms = (uint32_t)((xTaskGetTickCount() - t0) * portTICK_PERIOD_MS);
+    motor_reg_escribir1(REG_FLUJO, 0);
+    ult_flujo.bytes = total;
+    if (error) {
+        printf("flujo: %s tras %" PRIu32 " bytes (kd %u), la tira no vale\n", error, total, kd);
+        return;
+    }
+    ult_flujo.ok = true;
+    /* bytes * 8 * 2^kd / ms da la frecuencia de ro2, con la resolucion del
+     * tick sobre toda la captura. */
+    printf("flujo fin bytes %" PRIu32 " kd %u ms %" PRIu32 " ok\n", total, kd, ms);
+}
+
 static void cmd_esp(int n)
 {
     uint8_t b[32];
@@ -333,7 +411,7 @@ static bool leer_linea(char *linea, size_t n)
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N kd N crudo N esp N cero\n");
+    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N kd N crudo N flujo N esp N cero\n");
     for (;;) {
         if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
@@ -346,6 +424,7 @@ static void bucle_consola(void)
         else if (!strcmp(cmd, "aleatorio")) cmd_aleatorio(arg);
         else if (!strcmp(cmd, "kd"))      cmd_kd(campos >= 2 ? arg : -1);
         else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg);
+        else if (!strcmp(cmd, "flujo"))   cmd_flujo(arg);
         else if (!strcmp(cmd, "esp"))     cmd_esp(arg);
         else if (!strcmp(cmd, "cero"))    cmd_cero();
         else if (cmd[0])                  printf("comando desconocido: %s\n", cmd);

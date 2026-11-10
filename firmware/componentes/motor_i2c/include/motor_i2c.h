@@ -25,14 +25,17 @@
 #define REG_CFG_PAG      0x05
 #define REG_PETICIONES   0x0A
 #define REG_DIAG         0x0E
+#define REG_FLUJO        0x0F
 #define REG_CLAVE        0x10
 #define REG_RETO         0x20
 #define REG_ETIQUETA     0x30
 #define REG_ALEATORIO    0x40
+#define REG_FLUJO_N      0x60   /* y 31 bytes de FLUJO_DATO detras */
 #define REG_CAPTURA      0x80
 
 #define MOTOR_ID         0xA5
-#define MOTOR_VERSION    0x03
+#define MOTOR_VERSION    0x04   /* 0x04: captura continua (FLUJO) */
+#define MOTOR_VERSION_MIN 0x03  /* lo que necesitan el verificador y el medidor */
 
 #define ST_SEMBRADO      (1u << 0)
 #define ST_OCUPADO       (1u << 1)
@@ -51,6 +54,10 @@
 #define CTL_RESEMBRAR    (1u << 5)
 #define CTL_ALEATORIO    (1u << 6)
 #define CTL_BORRAR_TODO  (1u << 7)   /* zeroizacion: clave, DRBG, RETO, ALEATORIO */
+
+#define FL_ACTIVO        (1u << 0)
+#define FL_DESBORDADO    (1u << 1)
+#define MOTOR_FLUJO_MAX  31u     /* bytes de flujo por transaccion */
 
 #define DG_ARRANCADO     (1u << 0)
 #define DG_RECHAZADA     (1u << 1)

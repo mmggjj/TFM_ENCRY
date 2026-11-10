@@ -139,6 +139,11 @@ static struct {
     uint32_t arranque_en, libre_en;
     uint32_t cap_fin;                          /* tick en que se llena la captura en curso */
     bool cap_pendiente;
+    /* Captura continua (flujo_crudo.vhd) */
+    bool fl_activo, fl_desb;
+    uint32_t fl_t0;                            /* tick de arranque */
+    uint32_t fl_metidos, fl_leidos;            /* bytes que han entrado y salido de la FIFO */
+    uint8_t fl_credito;
 } m;
 
 static uint32_t ahora(void) { return (uint32_t)xTaskGetTickCount(); }
@@ -176,6 +181,40 @@ static void resolver_captura(void)
     }
 }
 static bool capturando(void) { resolver_captura(); return motor_capturando || m.cap_pendiente; }
+/* Captura continua: los bytes entran a ro2 / 2^CFG_KD / 8 desde el tick
+ * de arranque. Como en el RTL, si la FIFO (MOTOR_SIM_FIFO bytes) esta
+ * llena cuando llega uno, el flujo se para con desbordado; lo que ya habia
+ * dentro sigue siendo consecutivo. El byte i de la tira es
+ * motor_flujo_byte(i), para que el banco compruebe la continuidad. */
+#define MOTOR_SIM_FIFO 256u
+uint8_t motor_flujo_byte(uint32_t i)
+{
+    uint32_t x = i * 2654435761u + 0x9e3779b9u;
+    x ^= x >> 15; x *= 2246822519u; x ^= x >> 13;
+    return (uint8_t)x;
+}
+static void flujo_parar(void)
+{
+    m.fl_activo = false;
+    m.fl_metidos = m.fl_leidos = 0;
+    m.fl_credito = 0;
+}
+static void resolver_flujo(void)
+{
+    if (!motor_modo_test) flujo_parar();
+    if (!m.fl_activo) return;
+    const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
+    const uint64_t producidos = (((uint64_t)(ahora() - m.fl_t0) * MOTOR_SIM_RO2_KHZ) >> kd) / 8;
+    if (producidos - m.fl_leidos > MOTOR_SIM_FIFO) {
+        m.fl_metidos = m.fl_leidos + MOTOR_SIM_FIFO;
+        m.fl_desb = true;
+        m.fl_activo = false;
+    } else {
+        m.fl_metidos = (uint32_t)producidos;
+    }
+}
+static bool fluyendo(void) { resolver_flujo(); return m.fl_activo; }
+
 static uint32_t t_arranque(void)
 {
     if (!motor_arranque_lento) return T_ARRANQUE;
@@ -240,6 +279,7 @@ static void borrar_todo(void)
     m.peticiones = 0;
     m.sembrado = false;
     m.siembra_en_curso = false;
+    flujo_parar();
     m.status &= (uint8_t)~(ST_SEMBRADO | ST_CLAVE_VALIDA | ST_ETIQ_LISTA);
 }
 
@@ -260,7 +300,7 @@ static void ejecutar_control(uint8_t v)
         borrar_todo();
         m.libre_en = ahora() + T_ORDEN;
     } else if (v & ((1u << 0) | (1u << 5))) {  /* sembrar / resembrar */
-        if (!arrancado() || m.cfg_kd < KD_MIN || capturando()) { m.rechazada = true; return; }
+        if (!arrancado() || m.cfg_kd < KD_MIN || capturando() || fluyendo()) { m.rechazada = true; return; }
         if ((v & (1u << 5)) && !m.sembrado) { m.rechazada = true; return; }  /* resembrar actua sobre un estado */
         m.siembra_en_curso = true;
         m.siembra_nueva = (v & (1u << 0)) != 0;
@@ -286,7 +326,7 @@ static void ejecutar_control(uint8_t v)
         m.status |= ST_ETIQ_LISTA;
         m.libre_en = ahora() + T_ORDEN;
     } else {                                   /* capturar: solo en modo test, una a la vez */
-        if (!motor_modo_test || capturando()) { m.rechazada = true; return; }
+        if (!motor_modo_test || capturando() || fluyendo()) { m.rechazada = true; return; }
         /* motor_capturando lo pone el banco cuando quiere una captura que
          * no acabe nunca. */
         const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
@@ -303,7 +343,8 @@ static uint8_t leer_reg(uint8_t d)
     resolver_siembra();
     resolver_captura();
     if (d == 0x00) return 0xA5;
-    if (d == 0x01) return 0x03;
+    resolver_flujo();
+    if (d == 0x01) return 0x04;
     if (d == 0x02) return (uint8_t)(m.status | (ocupado() ? ST_OCUPADO : 0) |
                                     (m.alarma ? ST_ALM_RCT : 0) |
                                     (motor_modo_test ? ST_MODO_TEST : 0));
@@ -311,9 +352,21 @@ static uint8_t leer_reg(uint8_t d)
     if (d == 0x05) return m.cfg_pag;
     if (d >= 0x0A && d <= 0x0D) return (uint8_t)(m.peticiones >> (8 * (d - 0x0A)));
     if (d == 0x0E) return (uint8_t)((agotado() ? 4 : 0) | (m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
+    if (d == 0x0F) return (uint8_t)((m.fl_desb ? 2 : 0) | (m.fl_activo ? 1 : 0));
     if (d >= 0x10 && d <= 0x1F) return motor_modo_test ? m.clave[d - 0x10] : 0x00;
     if (d >= 0x30 && d <= 0x3F) return (m.status & ST_ETIQ_LISTA) ? m.etiqueta[d - 0x30] : 0x00;  /* solo la del reto actual */
     if (d >= 0x40 && d <= 0x5F) return m.aleatorio[d - 0x40];
+    if (d == 0x60) {                           /* FLUJO_N: fija el credito de la transaccion */
+        if (!motor_modo_test) return 0x00;
+        const uint32_t hay = m.fl_metidos - m.fl_leidos;
+        m.fl_credito = (uint8_t)(hay > 31 ? 31 : hay);
+        return m.fl_credito;
+    }
+    if (d >= 0x61 && d <= 0x7F) {              /* FLUJO_DATO: saca un byte si hay credito */
+        if (!motor_modo_test || !m.fl_credito) return 0x00;
+        m.fl_credito--;
+        return motor_flujo_byte(m.fl_leidos++);
+    }
     if (d >= 0x80) return motor_modo_test ? m.captura[m.cfg_pag * 128 + (d - 0x80)] : 0x00;
     return 0x00;
 }
@@ -322,7 +375,18 @@ static void escribir_reg(uint8_t d, uint8_t v)
 {
     resolver_siembra();
     if (d == 0x03) ejecutar_control(v);
-    else if (d == 0x04) { if (!ocupado()) m.cfg_kd = v; }
+    else if (d == 0x04) { if (!ocupado() && !fluyendo()) m.cfg_kd = v; }
+    else if (d == 0x0F) {                      /* FLUJO: arrancar cuenta como una orden */
+        resolver_flujo();
+        if (!(v & 1)) flujo_parar();
+        else if (motor_modo_test && !ocupado() && !capturando() && m.cfg_kd >= KD_MIN) {
+            flujo_parar();
+            m.fl_activo = true;
+            m.fl_desb = false;
+            m.fl_t0 = ahora();
+            m.rechazada = false;
+        } else m.rechazada = true;
+    }
     else if (d == 0x05) m.cfg_pag = (uint8_t)(v & 3);
     else if (d >= 0x20 && d <= 0x2F) { m.reto[d - 0x20] = v; m.status &= (uint8_t)~ST_ETIQ_LISTA; }
 }

@@ -22,7 +22,7 @@ VHD
 ghdl -a --std=08 --work=unisim --workdir="$W" "$W/vcomponents.vhd"
 ghdl -a --std=08 --workdir="$W" -P"$W" \
   rtl/trng/ring_osc.vhd rtl/trng/reset_sync.vhd rtl/trng/ero_core.vhd \
-  rtl/trng/trng_capture.vhd rtl/trng/health_tests.vhd rtl/trng/bit_cdc.vhd \
+  rtl/trng/trng_capture.vhd rtl/trng/flujo_crudo.vhd rtl/trng/health_tests.vhd rtl/trng/bit_cdc.vhd \
   rtl/io/i2c_slave.vhd rtl/aes/aes_pkg.vhd rtl/aes/aes_enc.vhd \
   rtl/aes/aes_enc_32.vhd rtl/aes/aes_cmac.vhd rtl/drbg/ctr_drbg.vhd \
   rtl/top/motor_top.vhd rtl/fpga/medidor_frec.vhd rtl/fpga/siete_seg.vhd \

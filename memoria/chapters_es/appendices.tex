@@ -5,7 +5,7 @@
 \label{app:regs}
 
 Este apéndice es el contrato de interfaz entre el motor y su maestro, en
-la versión 0x03 del \ac{RTL}. El mismo texto, con la historia de cada
+la versión 0x04 del \ac{RTL}. El mismo texto, con la historia de cada
 regla, está en el repositorio como \nolinkurl{docs/mapa_registros.md}; lo
 siguen el \ac{RTL} (\nolinkurl{rtl/top/motor_top.vhd}), el modelo del PC
 (\nolinkurl{firmware/host_check/motor_sim.c}) y la capa de acceso del
@@ -27,12 +27,12 @@ hasta que baja \texttt{ocupado}. Las direcciones no definidas se leen como
 Dirección & Nombre & Acceso & Contenido \\
 \midrule
 0x00 & ID & R & 0xA5 \\
-0x01 & VERSION & R & 0x03 \\
+0x01 & VERSION & R & 0x04 \\
 0x02 & STATUS & R & Tabla~\ref{tab:app_status} \\
 0x03 & CONTROL & W & órdenes, Tabla~\ref{tab:app_control}; se autolimpian \\
 0x04 & CFG\_KD & R/W & exponente del divisor, $K_D = 2^{\text{valor}}$, rango
   efectivo 0--24 (los valores mayores equivalen a 24). Tras el reset vale
-  24. Solo con el motor libre: una escritura con una orden en curso se
+  24. Solo con el motor libre y el flujo parado: si no, la escritura se
   ignora \\
 0x05 & CFG\_PAG & R/W & página del búfer de captura, 0--3 \\
 0x06--0x07 & RCT\_MAX & R & racha más larga vista por el \ac{RCT}, byte bajo
@@ -42,12 +42,21 @@ Dirección & Nombre & Acceso & Contenido \\
 0x0A--0x0D & PETICIONES & R & contador de resembrado del \ac{DRBG}, 32 bits,
   byte bajo primero. Se satura en $2^{32}-1$ \\
 0x0E & DIAG & R & Tabla~\ref{tab:app_diag} \\
+0x0F & FLUJO & R/W & captura continua de bits crudos. Bit 0
+  \texttt{activo}: escribir 1 vacía la cola y arranca, escribir 0 para.
+  Bit 1 \texttt{desbordado}, solo lectura \\
 0x10--0x1F & CLAVE & R & clave actual, 16 bytes. \textbf{Solo en modo test} \\
 0x20--0x2F & RETO & W & nonce de 16 bytes para el reto-respuesta \\
 0x30--0x3F & ETIQUETA & R & $\mathrm{CMAC}_{\text{CLAVE}}(\text{RETO})$, 16
   bytes; se lee como ceros mientras \texttt{etiqueta\_lista} vale 0 \\
 0x40--0x5F & ALEATORIO & R & 32 bytes de la última orden \texttt{aleatorio},
   una generación del \ac{DRBG} independiente de la clave \\
+0x60 & FLUJO\_N & R & bytes que esperan en la cola del flujo, 31 como
+  mucho; leerlo fija el crédito de la transacción. \textbf{Solo en modo
+  test} \\
+0x61--0x7F & FLUJO\_DATO & R & cada lectura con crédito saca un byte de la
+  cola; sin crédito devuelve 0x00 y no saca nada. \textbf{Solo en modo
+  test} \\
 0x80--0xFF & CAPTURA & R & 128 bytes de bits crudos, página CFG\_PAG.
   \textbf{Solo en modo test} \\
 \bottomrule
@@ -140,7 +149,12 @@ subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
   por defecto), por debajo del cual el cruce de dominio de reloj del bit
   pierde bits en silencio sin que los tests de salud puedan notarlo.
 \item Una captura y una siembra se excluyen, así que el búfer de captura
-  nunca contiene bits de una semilla.
+  nunca contiene bits de una semilla. Lo mismo vale para el flujo
+  continuo: solo arranca en modo test, con el motor libre, sin captura en
+  curso y con \texttt{CFG\_KD} en el mínimo o por encima, y mientras está
+  activo se rechazan \texttt{sembrar}, \texttt{resembrar} y
+  \texttt{capturar}. Arrancar el flujo cuenta como una orden para
+  \texttt{DIAG.rechazada}.
 \item El contador de peticiones no da la vuelta: en $2^{32}-1$ el motor se
   niega a generar hasta resembrar (\texttt{DIAG.agotado}). La política de
   resembrado por debajo de ese tope es del maestro.
@@ -157,7 +171,7 @@ en el ciclo siguiente.
 
 \paragraph{Secuencia típica del maestro.}
 \begin{enumerate}
-\item Leer ID (0xA5) y VERSION (0x03).
+\item Leer ID (0xA5) y VERSION (0x03 o posterior).
 \item Escribir \texttt{CFG\_KD} con el divisor de la caracterización, o
   dejar el valor de reset.
 \item Sondear DIAG hasta \texttt{arrancado}; escribir \texttt{sembrar};
@@ -173,9 +187,26 @@ en el ciclo siguiente.
 \end{enumerate}
 
 \paragraph{Modo test.} El pin \texttt{modo\_test}, sincronizado con dos
-biestables, habilita la lectura de CLAVE y CAPTURA y la orden
-\texttt{capturar}. En la \ac{FPGA} es un interruptor de la placa; en un
-circuito integrado sería un fusible que se quema en producción.
+biestables, habilita la lectura de CLAVE y CAPTURA, la orden
+\texttt{capturar} y el flujo. En la \ac{FPGA} es un interruptor de la
+placa; en un circuito integrado sería un fusible que se quema en
+producción.
+
+\paragraph{Captura continua.} \texttt{capturar} entrega trozos de 4096
+bits sin relación entre sí, que es lo que quiere el estimador de jitter;
+SP~800-90B pide $10^6$ muestras consecutivas. El flujo es una cola de
+bytes en el dominio de sistema, alimentada por los mismos bits que ven
+los tests de salud y la recogida de semilla, que el maestro vacía por
+\ac{I2C} mientras se llena. El primer bit recibido es el más
+significativo del primer byte. Una transacción lee 32 bytes desde 0x60:
+la cuenta $n$ (0 a 31), $n$ bytes de datos y ceros. Si llega un byte con
+la cola llena no se pisa nada: sube \texttt{desbordado} y el flujo se
+para, de modo que un hueco nunca pasa inadvertido. Quitar el modo test o
+\texttt{borrar\_todo} también lo paran. La cola tiene 256 bytes en la
+\ac{FPGA} y por defecto no existe (genérico \texttt{G\_FLUJO\_BYTES}
+$= 0$): es instrumentación de caracterización y no forma parte del área
+del Capítulo~\ref{ch:ch6_asic}; sin ella FLUJO se lee 0 y arrancarlo se
+rechaza.
 
 \chapter{Vectores de prueba oficiales utilizados}
 \label{app:vectors}
@@ -192,8 +223,8 @@ independiente del \ac{VHDL}.
 \centering\small
 \caption{Valores de referencia y su origen. Las cuentas son las
 comprobaciones superadas en la última ejecución
-(\nolinkurl{results/tb_motor_top.log}, 177 en total, con 11 de 11
-aserciones \acs{PSL} y 6 de 6 coberturas).}
+(\nolinkurl{results/run_tb_todos.log}, 212 en total en nueve bancos, con
+14 de 14 aserciones \acs{PSL} y 8 de 8 coberturas).}
 \label{tab:app_vectors}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
@@ -267,7 +298,7 @@ Modelo y estimadores & \texttt{python} \nolinkurl{analysis/ero_model.py},
   \texttt{verifica\_lecturas.py} sobre el log de la placa & autopruebas, 960
   casos del \ac{CAVP}, lecturas de la placa válidas \\
 Bancos \ac{VHDL} & \texttt{python} \nolinkurl{rtl/run_tb.py} y después
-  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 7 bancos, informe \acs{PSL}
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 9 bancos, informe \acs{PSL}
   como artefacto \\
 Síntesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} & área por bloque en
   kGE (Capítulo~\ref{ch:ch6_asic}) \\

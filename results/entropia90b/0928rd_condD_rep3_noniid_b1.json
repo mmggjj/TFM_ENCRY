@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/0928rd_condD_rep3_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condD_rep3.bits 1",
+   "dateTimeStamp" : "20261110210529",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condD_rep3.bits",
+   "sha256" : "a0d58899ab9207a1283ffe005fa714f1c23516a3b5864435e5a6918f400f6675",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99514653637640615,
+         "mcvEstimateMode" : 500397.0,
+         "mcvEstimatePHat" : 0.50039699999999998,
+         "mcvEstimatePU" : 0.50168491488975808,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.89520299519972968,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.9969277900609218,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.8530047607421124,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93978015269195192,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.98863715496275728,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99483147398436234,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99746189292234955,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99509189313960378,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99589581143994899,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.8530047607421124,
+         "hOriginal" : 0.8530047607421124,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

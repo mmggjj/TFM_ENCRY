@@ -48,7 +48,11 @@ entity motor_top is
     -- (aes_enc, 11 ciclos). La segunda optimizacion del capitulo de
     -- integrado; la velocidad sobra en los dos casos. Solo cuenta con
     -- G_AES_COMPARTIDO: los nucleos propios de cada bloque son aes_enc.
-    G_AES_COMPACTO   : boolean := true
+    G_AES_COMPACTO   : boolean := true;
+    -- Bytes de la FIFO de captura continua (flujo_crudo), potencia de dos.
+    -- 0 la quita: es instrumentacion de caracterizacion, como ro_mon, y en
+    -- el integrado no va. El envoltorio de la FPGA y los bancos la ponen.
+    G_FLUJO_BYTES    : natural := 0
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -100,6 +104,14 @@ architecture rtl of motor_top is
   signal cap_dir     : std_logic_vector(15 downto 0);
   signal cap_dato    : std_logic_vector(7 downto 0);
   signal pagina      : unsigned(1 downto 0) := (others => '0');
+
+  -- Captura continua (docs/captura_continua.md). Mismas reglas que la
+  -- captura por trozos: solo en modo test y nunca a la vez que una siembra.
+  signal flujo_arranca, flujo_parar : std_logic := '0';
+  signal flujo_activo, flujo_desb   : std_logic := '0';
+  signal flujo_ocup                 : std_logic;
+  signal flujo_lee_n, flujo_lee_dato : std_logic;
+  signal flujo_n, flujo_dato        : std_logic_vector(7 downto 0) := (others => '0');
 
   -- Recogida de semilla: 256 entropia + 128 nonce = 384 bits
   signal recogiendo  : std_logic := '0';
@@ -220,6 +232,21 @@ begin
               clk => clk, rst_n => rst_n_s, arranca => cap_arranca,
               lleno => cap_lleno, rd_dir => cap_dir, rd_dato => cap_dato);
 
+  flujo_ocup     <= flujo_activo or flujo_arranca;
+  flujo_lee_n    <= reg_re when reg_dir = x"60" and modo_test_s(1) = '1' else '0';
+  flujo_lee_dato <= reg_re when unsigned(reg_dir) >= 16#61# and unsigned(reg_dir) <= 16#7F#
+                               and modo_test_s(1) = '1' else '0';
+
+  g_flujo : if G_FLUJO_BYTES > 0 generate
+    u_flujo : entity work.flujo_crudo
+      generic map (G_BYTES => G_FLUJO_BYTES)
+      port map (clk => clk, rst_n => rst_n_s, bit_i => bit_s, bit_stb => stb_s,
+                arrancar => flujo_arranca, parar => flujo_parar,
+                activo => flujo_activo, desbordado => flujo_desb,
+                leer_n => flujo_lee_n, leer_dato => flujo_lee_dato,
+                n => flujo_n, dato => flujo_dato);
+  end generate g_flujo;
+
   -- ------------------------------------------------------------------
   -- Criptografia
   -- ------------------------------------------------------------------
@@ -295,7 +322,7 @@ begin
     reg_rdato <= x"00";
     case d is
       when 16#00# => reg_rdato <= x"A5";
-      when 16#01# => reg_rdato <= x"03";
+      when 16#01# => reg_rdato <= x"04";
       when 16#02# => reg_rdato <= status;
       when 16#04# => reg_rdato <= "000" & std_logic_vector(kd_sel);
       when 16#05# => reg_rdato <= "000000" & std_logic_vector(pagina);
@@ -308,6 +335,7 @@ begin
       when 16#0C# => reg_rdato <= std_logic_vector(drbg_pet(23 downto 16));
       when 16#0D# => reg_rdato <= std_logic_vector(drbg_pet(31 downto 24));
       when 16#0E# => reg_rdato <= "00000" & drbg_agotado & rechazada & arrancado;
+      when 16#0F# => reg_rdato <= "000000" & flujo_desb & flujo_activo;
       when 16#10# to 16#1F# =>
         if modo_test_s(1) = '1' then
           reg_rdato <= byte_de(clave, d - 16#10#);
@@ -319,6 +347,14 @@ begin
           reg_rdato <= byte_de(etiqueta, d - 16#30#);
         end if;
       when 16#40# to 16#5F# => reg_rdato <= byte_de(aleatorio, d - 16#40#);
+      when 16#60# =>
+        if modo_test_s(1) = '1' then
+          reg_rdato <= flujo_n;
+        end if;
+      when 16#61# to 16#7F# =>
+        if modo_test_s(1) = '1' then
+          reg_rdato <= flujo_dato;
+        end if;
       when 16#80# to 16#FF# =>
         if modo_test_s(1) = '1' then
           reg_rdato <= cap_dato;
@@ -338,6 +374,7 @@ begin
       kd_sel <= to_unsigned(G_KD_RESET, 5);
       pagina <= (others => '0');
       borrar_alm <= '0'; cap_arranca <= '0'; cap_en_curso <= '0';
+      flujo_arranca <= '0'; flujo_parar <= '0';
       recogiendo <= '0'; n_recogidos <= (others => '0');
       semilla <= (others => '0'); siembra_es_reseed <= '0';
       drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0'; drbg_borrar <= '0';
@@ -351,11 +388,14 @@ begin
 
     elsif rising_edge(clk) then
       -- Pulsos de un ciclo
-      borrar_alm <= '0'; cap_arranca <= '0';
+      borrar_alm <= '0'; cap_arranca <= '0'; flujo_arranca <= '0';
       drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0'; drbg_borrar <= '0';
       cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
 
       en_anillos <= '1';    -- los anillos corren siempre tras el reset
+
+      -- Sin modo test el flujo se para y la FIFO se vacia.
+      flujo_parar <= not modo_test_s(1);
 
       -- cap_lleno sigue a 1 un ciclo despues de lanzar la captura siguiente
       -- (trng_capture lo baja al ver arranca): sin la segunda condicion toda
@@ -395,11 +435,13 @@ begin
                 aleatorio <= (others => '0'); reto <= (others => '0');
                 semilla <= (others => '0'); etiqueta_lista <= '0';
                 drbg_borrar <= '1';
+                flujo_parar <= '1';
                 cmac_carga <= '1';               -- clave nula al autenticador
                 rechazada <= '0';
                 orden <= ZEROIZANDO;
               elsif reg_wdato(0) = '1' or reg_wdato(5) = '1' then
                 if alm = '0' and arrancado = '1' and cap_en_curso = '0'
+                   and flujo_ocup = '0'
                    and to_integer(kd_sel) >= G_KD_MIN
                    and (reg_wdato(0) = '1' or drbg_sembrado = '1') then   -- resembrar necesita estado
                   siembra_es_reseed <= reg_wdato(5);
@@ -440,7 +482,7 @@ begin
                 -- Capturar: solo en modo test (sin el, el buffer no se puede
                 -- leer y una captura solo serviria para guardar bits), con
                 -- el motor libre y sin otra captura en marcha.
-                if modo_test_s(1) = '1' and cap_en_curso = '0' then
+                if modo_test_s(1) = '1' and cap_en_curso = '0' and flujo_ocup = '0' then
                   cap_arranca <= '1';
                   cap_en_curso <= '1';
                   rechazada <= '0';
@@ -455,11 +497,25 @@ begin
           when 16#04# =>
             -- Solo con el motor libre: cambiar la tasa de muestreo a mitad
             -- de un sembrado invalidaria el modelo estocastico de esa
-            -- semilla. Con una orden en curso la escritura se ignora.
-            if orden = LIBRE then
+            -- semilla. Con una orden en curso la escritura se ignora. Tampoco
+            -- con el flujo activo: la tira mezclaria dos divisores.
+            if orden = LIBRE and flujo_ocup = '0' then
               kd_sel <= unsigned(reg_wdato(4 downto 0));
             end if;
           when 16#05# => pagina <= unsigned(reg_wdato(1 downto 0));
+          when 16#0F# =>                              -- FLUJO
+            -- Arrancar cuenta como una orden: mismas condiciones que
+            -- capturar, mas el divisor minimo (los bits pasan por bit_cdc).
+            -- Parar se atiende siempre.
+            if reg_wdato(0) = '0' then
+              flujo_parar <= '1';
+            elsif G_FLUJO_BYTES > 0 and modo_test_s(1) = '1' and orden = LIBRE
+                  and cap_en_curso = '0' and to_integer(kd_sel) >= G_KD_MIN then
+              flujo_arranca <= '1';
+              rechazada <= '0';
+            else
+              rechazada <= '1';
+            end if;
           when 16#20# to 16#2F# =>
             reto(127 - 8 * (d - 16#20#) downto 120 - 8 * (d - 16#20#)) <= reg_wdato;
             etiqueta_lista <= '0';

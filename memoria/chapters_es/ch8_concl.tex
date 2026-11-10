@@ -18,8 +18,8 @@ con qué evidencia, \meas{}, \simu{} o \est{}.
 \paragraph{La fuente de entropía se puede dimensionar desde el transistor
 (O1--O3).} El anillo de cinco etapas en el proceso abierto IHP SG13G2
 oscila a 2,73~GHz con un jitter de periodo de $176{,}7 \pm 2{,}0$~fs
-\simu{} en la esquina típica a 27~\textdegree C, sacado del ruido de los
-propios modelos de los dispositivos y no inyectado. El simulador no deja
+\simu{} en la esquina típica a 27~\textdegree C, con el ruido inyectado
+sacado de los propios modelos de los dispositivos y no supuesto. El simulador no deja
 fijar la realización de su fuente de ruido, así que la incertidumbre sale
 de repetir la simulación, y la resolución del banco se declaró antes de
 leer ninguna cifra. El cálculo exacto con la gaussiana envuelta, y no la
@@ -73,8 +73,9 @@ a ciegas (O8, lado del ESP32).} Treinta y ocho capturas de tres chips en
 cuatro condiciones de radio y \ac{ADC} no muestran efecto medible de la
 condición ni del chip bajo SP~800-90B \meas{}. La prueba de reinicios
 enseña lo que la estadística esconde: sin el ruido que mete el cargador de
-arranque, el generador produce la misma secuencia tras cada reinicio, y
-dos chips distintos producen la misma \meas{}. Su salida es tan buena como
+arranque, lo que el generador produce tras cada reinicio es una ventana
+de una misma secuencia fija, y dos chips distintos producen la misma
+\meas{}. Su salida es tan buena como
 su siembra, que depende de que la radio, el \ac{ADC} o el cargador de
 arranque estén activos.
 
@@ -122,9 +123,10 @@ académico y medir el jitter que este trabajo ha simulado; la \ac{FPGA}
 mide otro anillo.
 \item \emph{Modelos de fundición.} Repetir el estudio de esquinas y
 desapareamiento con los modelos de ruido de un \ac{PDK} comercial.
-\item \emph{Captura continua.} El buffer de captura entrega bloques
-independientes de 4096 bits; un modo continuo daría las muestras
-consecutivas que pide SP~800-90B.
+\item \emph{Captura continua en la placa.} El flujo continuo que da las
+muestras consecutivas que pide SP~800-90B está escrito y simulado, aún
+sin ejecutar; su tasa la limita el enlace serie del ESP32, y guardar la
+tira antes de enviarla lo extendería a divisores más bajos.
 \item \emph{Test de jitter en línea.} Llevar el estimador de pares al RTL
 como test en línea que detecte enfriamiento y enganche, como proponen sus
 autores.

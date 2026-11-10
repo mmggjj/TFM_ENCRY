@@ -66,6 +66,7 @@ begin
   sda <= '0' when sda_oe = '1' else 'Z';
 
   u_motor : entity work.motor_top
+    generic map (G_FLUJO_BYTES => 256)
     port map (clk => clk, rst_n => rst_n,
               scl_in => scl, sda_in => sda, sda_oe => sda_oe,
               modo_test => sw_test, led_alarma => led_alarma,
