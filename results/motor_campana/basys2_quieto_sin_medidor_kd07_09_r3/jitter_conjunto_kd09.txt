@@ -1,0 +1,2 @@
+kd09_trozos.npz: 326 trozos, 1001472 bits, CFG_KD 9, fraccion de unos 0.4970
+ajuste conjunto (nu por trozo, M = 1..30): Q por muestra 2.4887e-02; por periodo de ro2 4.8607e-05; residuo medio 2.191e-04 frente a ruido binomial 8.140e-05 (2.7 veces)

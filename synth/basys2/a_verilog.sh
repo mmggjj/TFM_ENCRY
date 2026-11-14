@@ -30,6 +30,8 @@ FUENTES="rtl/trng/ring_osc.vhd rtl/trng/reset_sync.vhd rtl/trng/ero_core.vhd
   rtl/drbg/ctr_drbg.vhd rtl/top/motor_top.vhd rtl/fpga/medidor_frec.vhd
   rtl/fpga/siete_seg.vhd rtl/fpga/basys2_top.vhd"
 "$GHDL" -a --std=08 --workdir="$W" -P"$W" $FUENTES
-"$GHDL" --synth --std=08 --workdir="$W" -P"$W" --out=verilog basys2_top \
+# GENERICOS: genericos de basys2_top para variantes (-gG_QUIETO=true).
+# shellcheck disable=SC2086
+"$GHDL" --synth --std=08 --workdir="$W" -P"$W" --out=verilog ${GENERICOS:-} basys2_top \
   > "$OUT/basys2_top.v" 2> "$OUT/ghdl_synth.log"
 echo "netlist: $OUT/basys2_top.v ($(wc -l < "$OUT/basys2_top.v") lineas); log de GHDL: $OUT/ghdl_synth.log"

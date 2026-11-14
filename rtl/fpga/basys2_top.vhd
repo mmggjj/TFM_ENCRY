@@ -23,7 +23,10 @@ entity basys2_top is
     G_MEDIDOR : boolean := true;
     -- Medio periodo del LED de latido en ciclos; 0 = medio segundo a
     -- G_CLK_MHZ. Solo el banco lo cambia.
-    G_LATIDO  : natural := 0
+    G_LATIDO  : natural := 0;
+    -- Display apagado y LED de latido fijo: para medir si su consumo, que
+    -- cambia con el digito encendido, modula los anillos (docs/basys2.md).
+    G_QUIETO  : boolean := false
   );
   port (
     clk        : in    std_logic;   -- B8
@@ -52,10 +55,10 @@ architecture rtl of basys2_top is
   signal sda_oe  : std_logic;
   signal rst_n_s : std_logic;
   signal ro_mon  : std_logic_vector(1 downto 0);
-  signal presc   : std_logic_vector(1 downto 0) := (others => '0');
+  signal presc   : std_logic_vector(1 downto 0);
   type t_bcd is array (0 to 1) of std_logic_vector(15 downto 0);
-  signal bcd     : t_bcd := (others => (others => '0'));
-  signal desb    : std_logic_vector(1 downto 0) := (others => '0');
+  signal bcd     : t_bcd;
+  signal desb    : std_logic_vector(1 downto 0);
   signal sel_s   : std_logic_vector(1 downto 0) := (others => '0');
   signal test_s  : std_logic_vector(1 downto 0) := (others => '0');
   signal sel     : natural range 0 to 1;
@@ -97,6 +100,13 @@ begin
                   nueva => open);
     end generate g_ro;
   end generate g_con_medidor;
+  -- Sin medidor, valores fijos. Sin valor inicial en la declaracion: con
+  -- el, GHDL --synth saca la constante como un always @* que XST rechaza.
+  g_sin_medidor : if not G_MEDIDOR generate
+    presc <= (others => '0');
+    bcd   <= (others => (others => '0'));
+    desb  <= (others => '0');
+  end generate g_sin_medidor;
 
   p_sw : process (clk)
   begin
@@ -110,10 +120,15 @@ begin
   raya <= '1' when not G_MEDIDOR else desb(sel);
   bcd_sel <= bcd(sel);
   -- 2**16 ciclos por digito: ~190 Hz de refresco completo a 50 MHz.
-  u_display : entity work.siete_seg
-    generic map (G_DIV => 16)
-    port map (clk => clk, bcd => bcd_sel, punto => "0010", raya => raya,
-              seg => seg, dp => dp, an => an);
+  g_display : if not G_QUIETO generate
+    u_display : entity work.siete_seg
+      generic map (G_DIV => 16)
+      port map (clk => clk, bcd => bcd_sel, punto => "0010", raya => raya,
+                seg => seg, dp => dp, an => an);
+  end generate g_display;
+  g_sin_display : if G_QUIETO generate
+    seg <= (others => '1'); dp <= '1'; an <= (others => '1');
+  end generate g_sin_display;
 
   ro_div <= presc(sel) when test_s(1) = '1' else '0';
 
@@ -128,6 +143,6 @@ begin
       end if;
     end if;
   end process p_latido;
-  led_vivo <= vivo;
+  led_vivo <= '0' when G_QUIETO else vivo;
 
 end architecture rtl;

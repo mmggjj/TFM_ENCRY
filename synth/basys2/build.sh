@@ -54,7 +54,9 @@ mkdir -p xst_tmp xst
 
 paso() { echo "== $1"; shift; "$@"; }
 paso xst      xst -ifn basys2_top.xst -ofn basys2_top.syr
-paso ngdbuild ngdbuild -dd _ngo -nt timestamp -uc ../basys2.ucf -p "$PARTE" \
+# UCF: otro fichero para variantes en las que XST da otros nombres de red
+# (sin medidor la salida del anillo es u_motor/ro_mon<i>, no u_motor_ro_mon<i>).
+paso ngdbuild ngdbuild -dd _ngo -nt timestamp -uc "${UCF:-../basys2.ucf}" -p "$PARTE" \
                        basys2_top.ngc basys2_top.ngd
 paso map      map -p "$PARTE" -o basys2_top_map.ncd basys2_top.ngd basys2_top.pcf
 paso par      par -w -ol high basys2_top_map.ncd basys2_top.ncd basys2_top.pcf
@@ -71,6 +73,8 @@ if [ "${1:-}" = "programar" ]; then
   # La placa se elige por numero de serie: el nombre de usuario guardado en
   # la de Mario esta corrupto y "-d Basys2" no la encuentra. ADEPT_DEV lo
   # cambia. Cadena JTAG: 0 = XC3S100E, 1 = XCF02S (Platform Flash).
-  ADEPT_DEV=${ADEPT_DEV:-$(djtgcfg enum | awk '/Serial Number/ {print "SN:" $3; exit}')}
-  paso djtgcfg djtgcfg prog -d "$ADEPT_DEV" -i 0 -f basys2_top.bit
+  # Sin el LD_LIBRARY_PATH de ISE: su libstdc++ es mas vieja que la que
+  # pide Adept y djtgcfg no arranca.
+  ADEPT_DEV=${ADEPT_DEV:-$(env -u LD_LIBRARY_PATH djtgcfg enum | awk '/Serial Number/ {print "SN:" $3; exit}')}
+  paso djtgcfg env -u LD_LIBRARY_PATH djtgcfg prog -d "$ADEPT_DEV" -i 0 -f basys2_top.bit
 fi

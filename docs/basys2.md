@@ -307,11 +307,53 @@ Lectura:
    cuenta como entropía, aunque a `kd 13` los bits ya parezcan aleatorios.
    Es justo el caso que los tests estadísticos no distinguen y el modelo sí.
 
+### El display modula los anillos (14-11-2026, medido)
+
+Espectro medio de los trozos a `kd 7` frente al de bits simulados con el
+modelo ajustado: el modelo da un pico en ν ≈ 0,39-0,41 y los datos **dos**
+(0,37 y 0,43) con un valle donde el modelo tiene el máximo. El ν de cada
+trozo es bimodal y el estado alterna casi en cada trozo (autocorrelación
+−0,25 a desfase 1, +0,31 a 2): una modulación periódica rápida vista con
+aliasing. Candidato: el display multiplexado (cada trozo dura 1,8 ms y cada
+dígito 1,3 ms; cada dígito enciende distinto número de segmentos). Las tiras
+de `kd 13` y `kd 14` no tienen líneas (máximo 1,28 veces la mediana, lo
+esperable por azar con 4 097 frecuencias).
+
+Variantes de `basys2_top` (genérico `G_QUIETO`: display apagado y LED fijo;
+`G_MEDIDOR = false`: sin frecuencímetro, con `build/basys2_sin_medidor.ucf`
+porque la salida del anillo cambia de nombre), mismos CLB para los anillos,
+10⁶ bits por divisor (`results/motor_campana/basys2_quieto*`):
+
+| Variante | Q por periodo de ro2 (kd 7 / 8 / 9) | residuo / ruido | fracción de unos |
+|---|---|---|---|
+| Normal | 3,9 / 5,0 / 5,3 ·10⁻⁵ | 45 / 31 / 13 | 0,519 |
+| `G_QUIETO` | 1,6 / 2,0 / 2,1 ·10⁻⁵ | 7,1 / 7,0 / 4,3 | 0,517 |
+| `G_QUIETO`, sin medidor | 4,1 / 4,4 / 4,7 ·10⁻⁵ | 10,8 / 6,6 / 3,3 | 0,498 |
+
+- El display modula los anillos: apagarlo baja el residuo en todos los
+  divisores. En la campaña de entropía, display apagado.
+- Quitar el medidor no baja Q (vuelve a subir) y cambia la forma de onda de
+  ro1 (fracción de unos): la carga de sus prescalers forma parte del anillo.
+- **Repetibilidad** (misma variante, `G_QUIETO` sin medidor, tres capturas
+  seguidas, `_r2` y `_r3`): Q por periodo de ro2 a `kd 7` 4,08 / 4,45 /
+  4,54 ·10⁻⁵ (±5 %), a `kd 8` 4,38 / 4,54 / 4,65 (±3 %), a `kd 9` 4,69 /
+  4,93 / 4,86 (±3 %); residuo/ruido 8-11, 5-7 y 2,6-3,3. ro2 en esta
+  variante 143,09 MHz (flujo a `kd 13`). El ×2,5 entre variantes es real:
+  lo que cuelga de las redes de los anillos cambia su ruido de fase
+  relativo (hipótesis: acoplamiento entre anillos a través de esa lógica,
+  que haría parecer menor el jitter relativo; sin demostrar).
+- Q por periodo casi constante de `kd 7` a `kd 9` (+10 % al cuadruplicar
+  K_D): se acumula casi como jitter térmico. El residuo baja con K_D.
+- **K\* provisional**: con Q ≈ 4,5·10⁻⁵ por periodo, K\* ≈ 5 100 (`CFG_KD`
+  13); según la variante, 13-14. No se da por bueno mientras quede residuo
+  sin explicar.
+
 ## Pendiente
 
-1. Entender el ruido de fase: espectro de los bits por trozo (líneas
-   discretas = modulación determinista), medida con el ESP32 parado entre
-   lecturas, con `G_MEDIDOR = false` y con el reloj de 50 MHz lejos de los
-   anillos; ajustar un modelo con componente común/determinista.
+1. Repetibilidad: la misma variante capturada varias veces (y a distintas
+   horas) para saber la dispersión de Q entre sesiones; frecuencias de los
+   anillos en cada variante (por la duración del flujo a `kd 13`). Después,
+   lo que quede del residuo: el ESP32 parado entre lecturas, el reloj de 50
+   MHz lejos de los anillos, un modelo con componente común/determinista.
 2. Campaña SP 800-90B con `--flujo` a varios divisores (desde `kd 13`) y
    contraste con el modelo cuando haya K\*.
