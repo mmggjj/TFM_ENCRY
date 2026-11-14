@@ -1,0 +1,11 @@
+
+Q_raw = 2.0000e-05, incertidumbre 10 %, tolerancia 0.03
+ kd         Q  H_modelo  90B esp.         banda     90B  veredicto
+ 12    0.0819    0.6749    0.6084  0.535-0.679  0.7604  por encima
+ 13    0.1638    0.9294    0.8015  0.747-0.848  0.8631  por encima
+ 14    0.3277    0.9972    0.8451  0.785-0.906  0.8459  saturada
+ 15    0.6554    1.0000    0.8464  0.785-0.909  0.8212  saturada
+ 16    1.3107    1.0000    0.8460  0.785-0.909  0.8451  saturada
+
+tabla: results/motor_campana/basys2_campana_90b_kd12_16/compara_modelo.csv
+figura: results/motor_campana/basys2_campana_90b_kd12_16/compara_modelo.png

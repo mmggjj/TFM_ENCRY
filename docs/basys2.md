@@ -348,6 +348,38 @@ porque la salida del anillo cambia de nombre), mismos CLB para los anillos,
   13); según la variante, 13-14. No se da por bueno mientras quede residuo
   sin explicar.
 
+## Campaña SP 800-90B (14-11-2026, medido)
+
+Variante `G_QUIETO` sin medidor (la de la repetibilidad), flujo de 10⁶ bits
+consecutivos por divisor, `kd 12` a `16`, batería no-IID en bits
+(`results/motor_campana/basys2_campana_90b_kd12_16/`): 0 CRC malos, ro2
+143,17-143,24 MHz durante toda la captura, fracción de unos 0,497-0,498.
+
+| kd | H SP 800-90B (mínimo, estimador) | H del modelo con Q 4,5·10⁻⁵ | banda esperada de la batería | veredicto |
+|---|---|---|---|---|
+| 12 | **0,760** (compresión; MultiMMC 0,968) | 0,952 | 0,762-0,856 | por debajo (por 0,002) |
+| 13 | 0,863 (compresión) | 0,9987 | 0,787-0,909 | saturada |
+| 14 | 0,846 | 1,0000 | 0,785-0,909 | saturada |
+| 15 | 0,821 | 1,0000 | 0,785-0,909 | saturada |
+| 16 | 0,845 | 1,0000 | 0,785-0,909 | saturada |
+
+(`compara_modelo_campana.py --q-raw 4.5e-5 --u-q 0.10`; la banda es la de la
+calibración con bits del modelo, `fuente_simulada_90b.md`.)
+
+- De `kd 13` en adelante la batería está saturada (0,82-0,86, como con bits
+  ideales a 10⁶): no distingue nada, como se esperaba.
+- A `kd 12` la batería **sí ve menos entropía** (0,760, el estimador de
+  compresión) y cae justo en el borde inferior de lo que predice el modelo
+  con la Q medida: coherente con el modelo, si acaso algo peor, en línea con
+  el residuo que el modelo no explica.
+- Con Q = 2·10⁻⁵ (la de la variante con medidor) el modelo predice menos
+  entropía de la que mide la batería en `kd 12` y `13` ("por encima"): la
+  campaña es coherente con la Q medida para esta variante y no con la otra.
+  Contraste cruzado entre el estimador de jitter y la batería.
+- **Divisor de trabajo propuesto (provisional): `CFG_KD` ≥ 14** (H del
+  modelo 1,0000 con un factor 2 de margen sobre K\* ≈ 2^12,3), mientras el
+  residuo del modelo no esté explicado.
+
 ## Pendiente
 
 1. Repetibilidad: la misma variante capturada varias veces (y a distintas
