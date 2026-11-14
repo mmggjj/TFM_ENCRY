@@ -1,0 +1,100 @@
+# Restricciones de la Basys 2 (XC3S100E-CP132) para rtl/fpga/basys2_top.vhd.
+# Pines del manual de referencia de Digilent (Basys2 Reference Manual,
+# revision del 11-11-2010, tabla de pines y figuras 6 y 18), contrastados
+# con el UCF general publicado para la placa. NO PROBADO EN PLACA.
+
+## Reloj de placa: oscilador LTC6905 en B8 (GCLK). Con JP4 sin soldar se
+## esperan 50 MHz [sin medir]; si el LED de latido no da 60 parpadeos en
+## 60 s, cambiar el periodo aqui y G_CLK_MHZ en basys2_top.
+NET "clk" LOC = "B8" | IOSTANDARD = LVCMOS33;
+NET "clk" TNM_NET = "TN_clk";
+TIMESPEC "TS_clk" = PERIOD "TN_clk" 20 ns HIGH 50%;
+
+## Reset: btn0, activo a nivel alto (pull-down en placa)
+NET "btn_rst" LOC = "G12" | IOSTANDARD = LVCMOS33;
+
+## Interruptores: sw0 modo_test, sw1 anillo del display (0 ro2, 1 ro1)
+NET "sw_test" LOC = "P11" | IOSTANDARD = LVCMOS33;
+NET "sw_ro"   LOC = "L3"  | IOSTANDARD = LVCMOS33;
+
+## I2C por el Pmod JA: JA1 = SCL, JA2 = SDA (colector abierto). Pull-ups
+## del pin (debiles); para 400 kHz con cable, 2,2-4,7 k externos al pin 6
+## del Pmod (3,3 V). Masa comun con el ESP32 (pin 5). Los Pmod de la
+## Basys 2 llevan resistencias serie de proteccion: con pull-ups de 4,7 k
+## el nivel bajo queda de sobra por debajo de V_IL.
+NET "scl" LOC = "B2" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "sda" LOC = "A3" | IOSTANDARD = LVCMOS33 | PULLUP;
+
+## JA3: el anillo elegido / 64, solo con modo test
+NET "ro_div" LOC = "J3" | IOSTANDARD = LVCMOS33;
+
+## LEDs: ld0 alarma de salud, ld7 latido (1 Hz si el reloj es G_CLK_MHZ)
+NET "led_alarma" LOC = "M5" | IOSTANDARD = LVCMOS33;
+NET "led_vivo"   LOC = "G1" | IOSTANDARD = LVCMOS33;
+
+## Display de 7 segmentos (anodo comun; segmentos y anodos activos a 0).
+## seg(0) = a ... seg(6) = g, como en siete_seg.vhd.
+NET "seg<0>" LOC = "L14" | IOSTANDARD = LVCMOS33;
+NET "seg<1>" LOC = "H12" | IOSTANDARD = LVCMOS33;
+NET "seg<2>" LOC = "N14" | IOSTANDARD = LVCMOS33;
+NET "seg<3>" LOC = "N11" | IOSTANDARD = LVCMOS33;
+NET "seg<4>" LOC = "P12" | IOSTANDARD = LVCMOS33;
+NET "seg<5>" LOC = "L13" | IOSTANDARD = LVCMOS33;
+NET "seg<6>" LOC = "M12" | IOSTANDARD = LVCMOS33;
+NET "dp"     LOC = "N13" | IOSTANDARD = LVCMOS33;
+## an(0) es el digito de la derecha (la tabla del manual pone K14 = AN2;
+## la figura 6 y el UCF general, AN3: se sigue la figura).
+NET "an<0>" LOC = "F12" | IOSTANDARD = LVCMOS33;
+NET "an<1>" LOC = "J12" | IOSTANDARD = LVCMOS33;
+NET "an<2>" LOC = "M13" | IOSTANDARD = LVCMOS33;
+NET "an<3>" LOC = "K14" | IOSTANDARD = LVCMOS33;
+
+## Los anillos. Son primitivas LUT1/LUT2 instanciadas y aun asi se pierden
+## sin KEEP: al pasar por Verilog se cae el DONT_TOUCH, XST ve que tras la
+## NAND hay un numero par de inversores y lleva los relojes a la salida de
+## la NAND, y MAP colapsa la cadena de LUT1 como si fuera un cable: la NAND
+## queda realimentada consigo misma y no hay anillo (primer bitstream,
+## 14-11-2026: el display marcaba 000.0; visto en el XDL). KEEP en cada red
+## del lazo lo impide. Sus lazos combinacionales los corta el analisis de
+## tiempos (avisos esperados).
+NET "u_motor/u_ro?/u_nand_O" KEEP = TRUE;
+NET "u_motor/u_ro?/g_inv_n*_u_inv_O" KEEP = TRUE;
+NET "u_motor_ro_mon<*>" KEEP = TRUE;
+##
+## Colocacion: un CLB (4 slices, 8 LUT) para ro2 (7 etapas) y dos para ro1
+## (9 etapas), en los bordes opuestos
+## del chip y cerrado a cualquier otra logica. Dos anillos juntos se acoplan
+## (alimentacion, sustrato) y dejan de ser independientes, y sin fijarlos la
+## colocacion, y con ella la frecuencia, cambia en cada sintesis. Las
+## frecuencias del primer dia (167,8 y 105,8 MHz) son de antes de fijarla.
+INST "u_motor/u_ro2/*" AREA_GROUP = "AG_RO2";
+AREA_GROUP "AG_RO2" RANGE = SLICE_X0Y20:SLICE_X1Y21;
+AREA_GROUP "AG_RO2" GROUP = CLOSED;
+AREA_GROUP "AG_RO2" PLACE = CLOSED;
+INST "u_motor/u_ro1/*" AREA_GROUP = "AG_RO1";
+AREA_GROUP "AG_RO1" RANGE = SLICE_X28Y20:SLICE_X29Y23;
+AREA_GROUP "AG_RO1" GROUP = CLOSED;
+AREA_GROUP "AG_RO1" PLACE = CLOSED;
+## Colocacion: PAR los deja donde quiera en el primer
+## bitstream; tras verlo en FPGA Editor se fija un AREA_GROUP por anillo,
+## separados entre si y de la logica (como los pblocks de la Basys 3).
+##
+## ro2 es reloj de ero_core, bit_cdc (origen) y el reset sincronizado del
+## anillo, y ro1 del prescaler del frecuencimetro. Van por rutado local (sin
+## BUFG: forzarlo podria meter el buffer dentro del lazo). Con los KEEP de
+## arriba las redes de reloj son las salidas de los anillos, ro_mon<1> (ro2)
+## y ro_mon<0> (ro1). Antes de los KEEP, con 4 ns de
+## peticion trce dio como mejor caso 4,44 ns para ro2 (contador de 24 bits
+## de ero_core: ro2 hasta ~225 MHz) y 2,93 ns / pulso bajo 3,19 ns para ro1
+## (prescaler: ~313 MHz) [colocacion de ese bitstream, no medido]. Se deja
+## ro2 en 5 ns (200 MHz) y se compara con lo que marque el display: si el
+## anillo va mas rapido, se alargan (G_ETAPAS_RO1/RO2). Los cruces con clk
+## los resuelven bit_cdc y los sincronizadores: TIG.
+NET "u_motor_ro_mon<1>" TNM_NET = "TN_ro2";
+TIMESPEC "TS_ro2" = PERIOD "TN_ro2" 5 ns HIGH 50%;
+NET "u_motor_ro_mon<0>" TNM_NET = "TN_ro1";
+TIMESPEC "TS_ro1" = PERIOD "TN_ro1" 4 ns HIGH 50%;
+TIMESPEC "TS_clk_ro2" = FROM "TN_clk" TO "TN_ro2" TIG;
+TIMESPEC "TS_ro2_clk" = FROM "TN_ro2" TO "TN_clk" TIG;
+TIMESPEC "TS_clk_ro1" = FROM "TN_clk" TO "TN_ro1" TIG;
+TIMESPEC "TS_ro1_clk" = FROM "TN_ro1" TO "TN_clk" TIG;

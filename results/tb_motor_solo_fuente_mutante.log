@@ -1,0 +1,23 @@
+Mutante de tb_motor_solo_fuente (14-11-2026): sembrar sin mirar G_SOLO_FUENTE
+483c483
+<                 if sin_cripto = '0' and alm = '0' and arrancado = '1' and cap_en_curso = '0'
+---
+>                 if alm = '0' and arrancado = '1' and cap_en_curso = '0'
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+rtl/tb/tb_motor_solo_fuente.vhd:253:5:@2200ns:(report note): 1) Identificacion
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@43200ns:(report note):   [ok ] ID = 0xA5
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@84200ns:(report note):   [ok ] VERSION = 0x04, la misma que el motor entero
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@125200ns:(report note):   [ok ] DIAG.solo_fuente = 1 y el resto a cero
+rtl/tb/tb_motor_solo_fuente.vhd:261:5:@125200ns:(report note): 2) Fuente y tests de salud
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@483700ns:(report note):   [ok ] test de arranque pasado sin alarmas
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@524700ns:(report note):   [ok ] el APT ha visto muestras (APT_MAX_L = 4)
+rtl/tb/tb_motor_solo_fuente.vhd:270:5:@524700ns:(report note): 3) Ordenes sin criptografia ni buffer
+rtl/tb/tb_motor_solo_fuente.vhd:61:5:@552055ns:(psl assertion error): recogida de semilla sin criptografia
+ghdl:error: psl assertion failed
+  instance: /tb_motor_solo_fuente/propiedades
+rtl/tb/tb_motor_solo_fuente.vhd:67:5:@552055ns:(psl assertion error): el motor se queda ocupado
+ghdl:error: psl assertion failed
+  instance: /tb_motor_solo_fuente/propiedades
+exit 1

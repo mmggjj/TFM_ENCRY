@@ -1,6 +1,7 @@
 # Compilados de simulacion y sintesis (se regeneran con rtl/run_tb.py y synth/sintetiza.py)
 rtl/build/
 synth/build/
+synth/basys2/build/
 # Firmware: el build de ESP-IDF se regenera con idf.py build
 firmware/*/build/
 firmware/*/sdkconfig
@@ -31,6 +32,7 @@ results/entropia90b/bits/
 # Logs serie integros de las capturas del ESP32: se guardan en local (evidencia) pero no se versionan;
 # la carga util con CRC comprobado va en results/esp32_tramas_*.bin
 results/esp32_consola_*.log
+results/motor_campana/*/serie.log
 # Copia por consola de esos mismos logs (stdout de consola_esp32.py): tampoco se versiona
 results/esp32_captura_*.txt
 # Build del firmware de la campana del ESP32 (va al scratchpad, no aqui) y copia de consola de su captura
@@ -51,3 +53,5 @@ results/esp32_campana_rng/*/*/serie_*.log
 results/fuente_simulada_90b/secuencias/
 # Log por pasada: el mismo texto va integro en results/fuente_simulada_90b*.log
 results/fuente_simulada_90b/*.log
+# Log de errores que deja Adept (djtgcfg) en la carpeta desde la que se lanza
+DebugErc.log

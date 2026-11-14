@@ -62,6 +62,7 @@
 #define DG_ARRANCADO     (1u << 0)
 #define DG_RECHAZADA     (1u << 1)
 #define DG_AGOTADO       (1u << 2)   /* contador de peticiones al tope: resembrar */
+#define DG_SOLO_FUENTE   (1u << 3)   /* motor sin criptografia (Basys 2): solo bits crudos */
 
 /* Tiempos de espera, en tiempo real. Los que dependen de los bits del anillo
  * (arranque, siembra, captura) se calculan con el CFG_KD del motor y ro2 a

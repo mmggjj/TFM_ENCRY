@@ -156,6 +156,9 @@ int  motor_n_aleatorio = 0;       /* ordenes "aleatorio" aceptadas */
 int  motor_fallo_tras_aleatorio = 0; /* >0: falla la transaccion siguiente a la N-esima orden aleatorio aceptada */
 uint32_t motor_pet_max = 0xFFFFFFFFu; /* tope del contador de peticiones (2^32-1 en el RTL; el banco lo baja) */
 bool motor_capturando = false;     /* captura en curso: no se siembra */
+/* G_SOLO_FUENTE y G_CAPTURA_BYTES = 0 (la variante de la Basys 2): sin
+ * criptografia ni buffer de captura; DIAG.solo_fuente a 1. */
+bool motor_solo_fuente = false;
 /* El test de arranque dura una ventana de 1024 bits a ro2 / 2^CFG_KD con ro2
  * a MOTOR_SIM_RO2_KHZ, como en la FPGA (con CFG_KD = 24, ~57 s). Por
  * defecto dura T_ARRANQUE ticks, para que el firmware simulado en placa o
@@ -300,7 +303,9 @@ static void ejecutar_control(uint8_t v)
         borrar_todo();
         m.libre_en = ahora() + T_ORDEN;
     } else if (v & ((1u << 0) | (1u << 5))) {  /* sembrar / resembrar */
-        if (!arrancado() || m.cfg_kd < KD_MIN || capturando() || fluyendo()) { m.rechazada = true; return; }
+        if (motor_solo_fuente || !arrancado() || m.cfg_kd < KD_MIN || capturando() || fluyendo()) {
+            m.rechazada = true; return;
+        }
         if ((v & (1u << 5)) && !m.sembrado) { m.rechazada = true; return; }  /* resembrar actua sobre un estado */
         m.siembra_en_curso = true;
         m.siembra_nueva = (v & (1u << 0)) != 0;
@@ -326,7 +331,7 @@ static void ejecutar_control(uint8_t v)
         m.status |= ST_ETIQ_LISTA;
         m.libre_en = ahora() + T_ORDEN;
     } else {                                   /* capturar: solo en modo test, una a la vez */
-        if (!motor_modo_test || capturando() || fluyendo()) { m.rechazada = true; return; }
+        if (motor_solo_fuente || !motor_modo_test || capturando() || fluyendo()) { m.rechazada = true; return; }
         /* motor_capturando lo pone el banco cuando quiere una captura que
          * no acabe nunca. */
         const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
@@ -351,7 +356,8 @@ static uint8_t leer_reg(uint8_t d)
     if (d == 0x04) return m.cfg_kd;
     if (d == 0x05) return m.cfg_pag;
     if (d >= 0x0A && d <= 0x0D) return (uint8_t)(m.peticiones >> (8 * (d - 0x0A)));
-    if (d == 0x0E) return (uint8_t)((agotado() ? 4 : 0) | (m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
+    if (d == 0x0E) return (uint8_t)((motor_solo_fuente ? 8 : 0) | (agotado() ? 4 : 0) |
+                                    (m.rechazada ? 2 : 0) | (arrancado() ? 1 : 0));
     if (d == 0x0F) return (uint8_t)((m.fl_desb ? 2 : 0) | (m.fl_activo ? 1 : 0));
     if (d >= 0x10 && d <= 0x1F) return motor_modo_test ? m.clave[d - 0x10] : 0x00;
     if (d >= 0x30 && d <= 0x3F) return (m.status & ST_ETIQ_LISTA) ? m.etiqueta[d - 0x30] : 0x00;  /* solo la del reto actual */

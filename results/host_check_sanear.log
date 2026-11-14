@@ -2,7 +2,7 @@ Banco en el PC del firmware del motor (run_host.py) con ASan+UBSan
 
 mbedtls real: $MBEDTLS
 
-$ $HOME/eda/venv/bin/python firmware/host_check/mk_stubs.py firmware/host_check/build/stubs --sin-mbedtls
+$ /usr/bin/python3 firmware/host_check/mk_stubs.py firmware/host_check/build/stubs --sin-mbedtls
 cabeceras simuladas en firmware/host_check/build/stubs (sin mbedtls falso)
 (rc=0)
 
@@ -194,6 +194,25 @@ kd 6 leido 6 ok
 sembrar: ok
   [ok ] tras el flujo se vuelve a sembrar
 
+16) Motor de solo fuente (DIAG.solo_fuente, la variante de la Basys 2)
+cero: ok, motor borrado; hay que sembrar de nuevo
+  [ok ] DIAG.solo_fuente a 1
+sembrar: el motor no tiene criptografia (DIAG.solo_fuente): solo flujo
+  [ok ] sembrar lo dice y vuelve sin esperar el test de arranque
+  [ok ] y el motor rechaza sembrar si se manda igualmente
+crudo: captura rechazada (motor ocupado?)
+  [ok ] sin buffer de captura, crudo no saca tramas
+kd 14 leido 14 ok
+flujo inicio kd 14 bytes 300
+FC00840000000069e3c867d94512b99e1df745fb9268ed09b101c5b87e3f5c7e496189f62ac98113cef6e810fe66ddf2b34a372a014d2fa998deaf304c61a10b2795efd4bd4476d9e2aa774e5c748ef6b670aa6b9880f7fbbcd31480013c51080b9963959b388f749052484f4dc0a8194a69ee12a9328fe05355feff91e66b011e7b8592dd401297c66c81
+FC008401000000c21ec3347b44f135c12b7fc65afd8c32c5986877bb6fa8095bb8cbdac34b67b907c60ed1730be9bda89267238e0dfaf7c5927551e6b06412b2f1824df53fa1de425904232734f03ec1aa81d342a323d6bc913082be198be900b977bbcf8f349e6880a4168e2b13d7caaa56f51311913dc73c54d7afd8eafba301ee9d6b569ccc9d3de013
+FC003002000000ac7d32150e2df9af584ab845a01f2ad1fa82c69161c5a643f2889634b7c44bb42c57da68e4783070f95cdc75ef6987ab
+flujo fin bytes 300 kd 14 ms 132 ok
+  [ok ] el flujo funciona igual: 300 bytes en 3 tramas
+kd 6 leido 6 ok
+sembrar: ok
+  [ok ] con el motor entero se vuelve a sembrar
+
 test_verificador: 0 fallos
 (rc=0)
 
@@ -201,7 +220,7 @@ test_verificador: 0 fallos
 (main.c del verificador en el PC sobre el modelo; kd 6, 10 y 18, 5 trozos cada uno)
 $ gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -I firmware/host_check/build/stubs -I firmware/componentes/motor_i2c/include -I firmware/verificador/main firmware/host_check/consola_verificador.c firmware/componentes/motor_i2c/motor_i2c.c firmware/host_check/motor_sim.c firmware/host_check/plataforma_sim.c -I $MBEDTLS/include firmware/host_check/build/mbedtls/library/libmbedx509.a firmware/host_check/build/mbedtls/library/libmbedcrypto.a -o firmware/host_check/build/consola_verificador
 (rc=0)
-$ $HOME/eda/venv/bin/python analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --kd 6 10 18 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_motor
+$ /usr/bin/python3 analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --kd 6 10 18 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_motor
 motor: ID 0xa5, VERSION 0x04, modo test
 
 kd 6: 5/5 trozos, 0 s
@@ -217,7 +236,7 @@ resumen: firmware/host_check/build/campana_motor/resumen.csv
 (rc=0)
   [ok ] tres divisores, 5 trozos cada uno, 0 CRC malos
   [ok ] kd06/10/18.bin de 2560 bytes
-$ $HOME/eda/venv/bin/python analysis/campana_motor.py --reparsear firmware/host_check/build/campana_motor/corrupto/serie.log
+$ /usr/bin/python3 analysis/campana_motor.py --reparsear firmware/host_check/build/campana_motor/corrupto/serie.log
 kd 6: 4 trozos (16384 bits), CRC malos 1, huerfanas 0, errores 0, llenado mediana 0 ms, unos 0.50091552734375
 kd 10: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 13 ms, unos 0.497802734375
 kd 18: 5 trozos (20480 bits), CRC malos 0, huerfanas 0, errores 0, llenado mediana 3580 ms, unos 0.494580078125
@@ -228,7 +247,7 @@ resumen: firmware/host_check/build/campana_motor/corrupto/resumen.csv
 
 == campana_motor.py --flujo: captura continua ==
 (kd 14 y 17, 20000 bits consecutivos cada uno; el byte i del modelo es motor_flujo_byte(i))
-$ $HOME/eda/venv/bin/python analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --flujo --kd 14 17 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_flujo
+$ /usr/bin/python3 analysis/campana_motor.py --simulador firmware/host_check/build/consola_verificador --flujo --kd 14 17 --bits 20000 --arranque 2 --carpeta firmware/host_check/build/campana_flujo
 motor: ID 0xa5, VERSION 0x04, modo test
 kd 14: flujo fin bytes 2500 kd 14 ms 1093 ok (0 s)
 kd 17: flujo fin bytes 2500 kd 17 ms 8739 ok (0 s)
@@ -238,7 +257,7 @@ log integro: firmware/host_check/build/campana_flujo/serie.log
 resumen: firmware/host_check/build/campana_flujo/resumen.csv
 (rc=0)
   [ok ] kd14/17_flujo.bin: 2500 bytes, los del modelo en orden y sin huecos
-$ $HOME/eda/venv/bin/python analysis/campana_motor.py --reparsear firmware/host_check/build/campana_flujo/hueco/serie.log
+$ /usr/bin/python3 analysis/campana_motor.py --reparsear firmware/host_check/build/campana_flujo/hueco/serie.log
 kd 14: 0 trozos (0 bits), CRC malos 0, huerfanas 0, errores 1, llenado mediana nan ms, unos 
    flujo descartado: salto de numeracion: esperada 3, llega 4
 kd 17 flujo: 20000 bits consecutivos en 8739 ms, ro2 299.97024831216385 MHz, unos 0.50025
@@ -371,7 +390,7 @@ test_medidor: 0 fallos
 
 == verifica_lecturas.py sobre la salida del medidor ==
 (el banco planta a proposito una lectura manipulada y una repetida: el script debe devolver rc=1 y contarlas)
-$ $HOME/eda/venv/bin/python analysis/verifica_lecturas.py firmware/host_check/build/medidor_consola.log --permitir-cambio
+$ /usr/bin/python3 analysis/verifica_lecturas.py firmware/host_check/build/medidor_consola.log --permitir-cambio
 publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea69
 lectura 1: equipo 7cdfa10011220000 seq 16777217 t 0 s energia 0 Wh potencia 1050 W: ok
 lectura 2: equipo 7cdfa10011220000 seq 16777218 t 1 s energia 0 Wh potencia 1100 W: ok

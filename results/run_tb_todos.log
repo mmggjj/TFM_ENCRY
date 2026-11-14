@@ -299,6 +299,39 @@ rtl/tb/tb_motor_top.vhd:735:7:@29998700ns:(report note): tb_motor_top: 0 fallos
 simulation stopped @29998700ns
   PSL: 14 aserciones (0 violadas), 8 coberturas (8 alcanzadas)
 
+--- tb_motor_solo_fuente ---
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+rtl/tb/tb_motor_solo_fuente.vhd:253:5:@2200ns:(report note): 1) Identificacion
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@43200ns:(report note):   [ok ] ID = 0xA5
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@84200ns:(report note):   [ok ] VERSION = 0x04, la misma que el motor entero
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@125200ns:(report note):   [ok ] DIAG.solo_fuente = 1 y el resto a cero
+rtl/tb/tb_motor_solo_fuente.vhd:261:5:@125200ns:(report note): 2) Fuente y tests de salud
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@483700ns:(report note):   [ok ] test de arranque pasado sin alarmas
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@524700ns:(report note):   [ok ] el APT ha visto muestras (APT_MAX_L = 4)
+rtl/tb/tb_motor_solo_fuente.vhd:270:5:@524700ns:(report note): 3) Ordenes sin criptografia ni buffer
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@642200ns:(report note):   [ok ] sembrar se rechaza
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@759700ns:(report note):   [ok ] resembrar se rechaza
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@877200ns:(report note):   [ok ] generar se rechaza
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@994700ns:(report note):   [ok ] aleatorio se rechaza
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@1112200ns:(report note):   [ok ] autenticar se rechaza
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@1229700ns:(report note):   [ok ] capturar se rechaza (sin buffer)
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@1270700ns:(report note):   [ok ] ni sembrado, ni clave, ni etiqueta
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@1446700ns:(report note):   [ok ] CLAVE se lee como ceros en modo test
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@1766700ns:(report note):   [ok ] ALEATORIO se lee como ceros
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@1879200ns:(report note):   [ok ] borrar_todo se acepta y acaba
+rtl/tb/tb_motor_solo_fuente.vhd:289:5:@1879200ns:(report note): 4) Captura continua
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@2022200ns:(report note):   [ok ] flujo activo
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@5542200ns:(report note):   [ok ] 215 bytes consecutivos iguales a los bits crudos, sin huecos
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@5542200ns:(report note):   [ok ] y con contenido: 215 no son 0x00 ni 0xFF
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@5542200ns:(report note):   [ok ] sin credito se leen ceros
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@5583200ns:(report note):   [ok ] sin desbordar
+rtl/tb/tb_motor_solo_fuente.vhd:91:9:@5654700ns:(report note):   [ok ] escribir 0 lo para
+rtl/tb/tb_motor_solo_fuente.vhd:311:7:@5654700ns:(report note): tb_motor_solo_fuente: 0 fallos
+simulation stopped @5654700ns
+  PSL: 4 aserciones (0 violadas), 2 coberturas (2 alcanzadas)
+
 --- tb_medidor_frec ---
 rtl/tb/tb_medidor_frec.vhd:99:9:@1280115ns:(report note): [ok] periodo 2500 ps: lectura 4000 (x100 kHz), esperado 4.0e3
 rtl/tb/tb_medidor_frec.vhd:99:9:@2560115ns:(report note): [ok] periodo 1400 ps: lectura 7143 (x100 kHz), esperado 7.142857142857143e3
@@ -322,6 +355,20 @@ rtl/tb/tb_basys3_top.vhd:79:9:@5242876ns:(report note): [ok] ro1: periodo medio 
 rtl/tb/tb_basys3_top.vhd:79:9:@5265890731508fs:(report note): [ok] JA3 con modo test: periodo 268816 ps = 64 x ro1 (4.200025489e3 ps)
 rtl/tb/tb_basys3_top.vhd:188:5:@5265890731508fs:(report note): resultado: 4 ok, 0 fallos
 simulation stopped @5265890731508fs
+
+--- tb_basys2_top ---
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+rtl/tb/tb_basys2_top.vhd:97:9:@2621431ns:(report note): [ok] ro2: periodo medio 4.19987795815e3 ps, display 2381 (x100 kHz), esperado 2.381021567685002e3
+rtl/tb/tb_basys2_top.vhd:97:9:@2641431ns:(report note): [ok] JA3 quieto a 0 sin modo test (0 cambios en 20 us)
+rtl/tb/tb_basys2_top.vhd:97:9:@5242871ns:(report note): [ok] ro1: periodo medio 5.400042429249999e3 ps, display 1852 (x100 kHz), esperado 1.8518373014689219e3
+rtl/tb/tb_basys2_top.vhd:97:9:@5272243881712fs:(report note): [ok] JA3 con modo test: periodo 345608 ps = 64 x ro1 (5.400049253499999e3 ps)
+rtl/tb/tb_basys2_top.vhd:97:9:@5299990ns:(report note): [ok] latido: cambia cada 1000 ciclos (esperado 1000)
+rtl/tb/tb_basys2_top.vhd:97:9:@5339490ns:(report note): [ok] I2C por el pin bidireccional: ID = 0xA5 (esperado A5)
+rtl/tb/tb_basys2_top.vhd:97:9:@5378990ns:(report note): [ok] DIAG = 0x08: solo_fuente = 1, es la variante de la Basys 2
+rtl/tb/tb_basys2_top.vhd:269:5:@5378990ns:(report note): resultado: 7 ok, 0 fallos
+simulation stopped @5378990ns
 
 === resumen ===
 todos los bancos pasan

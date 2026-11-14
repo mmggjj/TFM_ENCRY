@@ -47,6 +47,7 @@ FUENTES = [
     "fpga/medidor_frec.vhd",
     "fpga/siete_seg.vhd",
     "fpga/basys3_top.vhd",           # envoltorio de placa
+    "fpga/basys2_top.vhd",
 ]
 BANCOS = [
     ("tb_ring_osc", "tb/tb_ring_osc.vhd", ["-Pbuild/unisim"]),
@@ -56,8 +57,10 @@ BANCOS = [
     ("tb_ctr_drbg", "tb/tb_ctr_drbg.vhd", []),
     ("tb_health_tests", "tb/tb_health_tests.vhd", []),
     ("tb_motor_top", "tb/tb_motor_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_motor_solo_fuente", "tb/tb_motor_solo_fuente.vhd", ["-Pbuild/unisim"]),
     ("tb_medidor_frec", "tb/tb_medidor_frec.vhd", []),
     ("tb_basys3_top", "tb/tb_basys3_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_basys2_top", "tb/tb_basys2_top.vhd", ["-Pbuild/unisim"]),
 ]
 
 

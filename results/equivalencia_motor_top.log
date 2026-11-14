@@ -1,0 +1,7 @@
+equivalencia de motor_top: arbol de trabajo frente a HEAD (33b0b70)
+yosys: Yosys 0.70+16 (git sha1 3bb533450, Release, Clang /usr/bin/clang++ 21.1.8)
+base []: equivalentes por ABC cec, bytes distintos (aig 156533 4173 8168 4 144192; Networks are equivalent after structural hashing.  Time =     0.13 sec)
+flujo256 [-gG_FLUJO_BYTES=256]: identicas (aig 181011 6235 10274 4 164502; sha256 75b5657061fd5eed)
+aes11 [-gG_AES_COMPACTO=false]: identicas (aig 176111 4173 8165 4 163773; sha256 78bb0ef78347ca4e)
+pet4 [-gG_PET_BITS=4]: equivalentes por ABC cec, bytes distintos (aig 156505 4173 8168 4 144164; Networks are equivalent after structural hashing.  Time =     0.13 sec)
+variantes distintas o con fallo: 0

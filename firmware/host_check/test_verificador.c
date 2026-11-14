@@ -31,6 +31,7 @@ extern uint32_t motor_pet_max;
 extern bool motor_capturando;
 extern bool motor_arranque_lento;
 extern uint8_t motor_flujo_byte(uint32_t i);
+extern bool motor_solo_fuente;
 
 static int fallos = 0;
 
@@ -289,6 +290,30 @@ int main(void)
     cmd_kd(6);
     cmd_sembrar();
     chk((motor_status() & ST_SEMBRADO) != 0, "tras el flujo se vuelve a sembrar");
+
+    printf("\n16) Motor de solo fuente (DIAG.solo_fuente, la variante de la Basys 2)\n");
+    cmd_cero();                                /* sin estado, como un motor sin DRBG */
+    motor_solo_fuente = true;
+    motor_reg_leer(REG_DIAG, &diag, 1);
+    chk((diag & DG_SOLO_FUENTE) != 0, "DIAG.solo_fuente a 1");
+    t0 = motor_ticks();
+    cmd_sembrar();
+    chk(!(motor_status() & ST_SEMBRADO) && motor_ticks() - t0 < 100,
+        "sembrar lo dice y vuelve sin esperar el test de arranque");
+    chk(motor_orden(CTL_SEMBRAR, T_ORDEN_MS, &st) == ESP_ERR_INVALID_STATE,
+        "y el motor rechaza sembrar si se manda igualmente");
+    tramas = motor_n_tramas;
+    cmd_crudo(1);
+    chk(motor_n_tramas == tramas, "sin buffer de captura, crudo no saca tramas");
+    cmd_kd(14);
+    tramas = motor_n_tramas;
+    cmd_flujo(300);
+    chk(ult_flujo.ok && ult_flujo.bytes == 300 && motor_n_tramas == tramas + 3,
+        "el flujo funciona igual: 300 bytes en 3 tramas");
+    motor_solo_fuente = false;
+    cmd_kd(6);
+    cmd_sembrar();
+    chk((motor_status() & ST_SEMBRADO) != 0, "con el motor entero se vuelve a sembrar");
 
     printf("\ntest_verificador: %d fallos\n", fallos);
     return fallos == 0 ? 0 : 1;

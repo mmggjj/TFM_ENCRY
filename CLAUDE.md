@@ -52,6 +52,81 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 14-11-2026: la placa es una Basys 2 (XC3S100E)
+
+Lectura y riesgos en **`docs/basys2.md`**. Nada grabado todavía.
+
+- La placa que hay es una **Basys 2 con XC3S100E** (1 920 LUT4; serigrafía
+  leída por Mario), no la Basys 3. El motor entero no cabe (cripto ~6 800
+  LUT4, estimación Yosys `-family xc3se`); la fuente sí. Mario no quiere
+  pedir placa a los tutores. **Lo de la Basys 3 se conserva intacto** (si
+  algún día hay una, se comparan los anillos en 90 y 28 nm). O5 (motor
+  entero en FPGA) habrá que reformularlo en la memoria; el objetivo oficial
+  y O6 se cubren con la fuente.
+- `motor_top`: genéricos **`G_SOLO_FUENTE`** (sin DRBG/CMAC/AES; órdenes
+  criptográficas rechazadas; **`DIAG.solo_fuente` = bit 3**) y
+  **`G_CAPTURA_BYTES`** (0 quita `trng_capture`; `capturar` rechazada). Mismo
+  mapa y VERSION 0x04. Con los valores por defecto la lógica es idéntica a
+  la del commit 33b0b70 en cuatro variantes: **`synth/equivalencia.sh`**
+  (AIG plana de Yosys comparada byte a byte, y ABC `cec` si solo cambia la
+  numeración; control negativo con `G_KD_MIN=5`). Los kGE de abc se mueven
+  un 0,2 % solo por los nombres (92,91 frente a 93,09) y las LUT xc7 de
+  `basys3_top` de 5 125 a 5 057, con los mismos biestables: no son cambios
+  de diseño. Cuidado: con el genérico directo en la condición de sembrar,
+  GHDL `--synth` saca un latch (`siembra_es_reseed`); por eso `sin_cripto`
+  es una señal.
+- **`rtl/fpga/basys2_top.vhd`** + **`synth/basys2/basys2.ucf`** (pines del
+  manual de Digilent): reloj B8 a 50 MHz esperados (JP4 sin soldar),
+  `G_KD_MIN => 7`, latido a 1 Hz para medir el reloj con cronómetro, mismo
+  frecuencímetro y display. Yosys xc3se: ~1 250 LUT4 (65 %), 452 FF.
+- **XST no lee VHDL-2008**: `synth/basys2/a_verilog.sh` pasa el diseño a
+  Verilog con GHDL y `synth/basys2/build.sh` hace xst, ngdbuild, map, par,
+  trce, bitgen (`StartUpClk:JtagClk`) y `programar` con `djtgcfg`. Sin
+  probar: ISE 14.7 (Linux, en `~/Xilinx`) y Adept 2 los está descargando
+  Mario. La placa sale en USB como `1443:0007` (FX2): openFPGALoader no
+  sirve.
+- Bancos nuevos **`tb_motor_solo_fuente`** (21/21, PSL 4/4 y 2/2; mutante
+  que acepta sembrar cazado a 552 µs,
+  `results/tb_motor_solo_fuente_mutante.log`) y **`tb_basys2_top`**
+  (frecuencímetro, JA3, latido e I2C por el pin bidireccional). Firmware:
+  `DG_SOLO_FUENTE`, `id` lo muestra y `sembrar` lo dice sin esperar al
+  arranque; `motor_sim.c` con `motor_solo_fuente`, banco host paso 16;
+  0 fallos también con ASan/UBSan; verificador compilado con ESP-IDF 5.3.2
+  sin avisos.
+- **Herramientas en el Linux:** ISE 14.7 WebPACK en `~/Xilinx` (instalador
+  por lotes; los acuerdos los acepta Mario), `~/eda/ise_compat` con
+  `libncurses.so.5 -> .so.6` (lo usa `build.sh`), licencia **HOSTID=ANY** en
+  `~/.Xilinx/Xilinx.lic` (el FlexLM de ISE ve el host ID `000000000000`
+  porque solo mira `eth0`). Adept 2 (Runtime 2.30.1 + Utilities 2.6.1): la
+  placa es "Basys2-100" con el nombre de usuario corrupto, se elige por
+  `SN:`; cadena JTAG 0 = XC3S100E (0x11C10093), 1 = XCF02S. XST y ngdbuild
+  no piden licencia; map sí.
+- **ISE completo:** 818/960 slices (85 %), 1 516 LUT4 (78 %), 451 FF; todas
+  las restricciones cumplen (`TS_ro2` mejor caso 4,65 ns: el contador de
+  `ero_core` aguanta ro2 hasta ~215 MHz). **El primer bitstream no tenía
+  anillos**: XST llevó los relojes a la salida de la NAND (par de
+  inversores detrás) y map colapsó la cadena de LUT1; se vio en el XDL.
+  Arreglado con `KEEP` en el UCF; comprobar siempre las etapas en la netlist
+  implementada.
+- **Primer día en placa (medido, 14-11-2026):** reloj 50 MHz (60 parpadeos
+  de ld7 en 60 s, ±2 %), **ro2 167,8 MHz y ro1 105,8 MHz** (±0,1 MHz de
+  lectura, ±2 % de escala), ld0 (alarma) apagado.
+- **Tarde:** `AREA_GROUP` por anillo (bordes opuestos). Con 5/7 etapas
+  compactas ro2 subió a 204,8 MHz, por encima de los ~203 MHz del contador
+  de `ero_core`: `basys2_top` usa ahora **7 y 9 etapas** (ro2 143,8 MHz,
+  ro1 108,7 MHz, margen 33 %). **ESP32 a0:dd:6c:0e:fb:4c en el bus**
+  (GPIO22→JA1, GPIO21→JA2, GND→pin 5, pull-ups internos): `id` da
+  `solo_fuente=1`; flujo de 10⁶ bits a `kd 13` y `14` sin errores.
+- **Jitter (PRELIMINAR):** sin buffer no hay `kd 0`; `flujo_desborde.py`
+  junta trozos consecutivos a `kd 7-11` aprovechando el desbordamiento, y
+  `jitter_autocorrelacion.py` ajusta c(M) con el modelo del ERO (el
+  estimador por varianza infraestima un 65-100 % a divisores altos;
+  validado todo con bits simulados). Resultado: Q por periodo de ro2
+  4-7·10⁻⁵ (σ ≈ 60-70 ps, ~10× lo térmico típico), los bits ya salen
+  descorrelados a `kd 13`, **pero el modelo deja residuos 13-45× el ruido**
+  en los divisores bajos: hay ruido no gaussiano (¿modulación, alimentación
+  común?). **No hay K\* todavía**; detalle y lectura en `docs/basys2.md`.
+
 ## Estado al 10-11-2026: captura continua (motor 0x04), sin placa
 
 La placa se retrasa. Hecho ese día, nada en hardware:

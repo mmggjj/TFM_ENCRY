@@ -89,12 +89,14 @@ static void cmd_id(void)
     motor_reg_leer(REG_DIAG, &diag, 1);
     st = motor_status();
     printf("id 0x%02x version 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d "
-           "alm_apt=%d clave=%d captura=%d etiqueta=%d test=%d arrancado=%d rechazada=%d agotado=%d\n",
+           "alm_apt=%d clave=%d captura=%d etiqueta=%d test=%d arrancado=%d rechazada=%d agotado=%d "
+           "solo_fuente=%d\n",
            id, ver, st,
            !!(st & ST_SEMBRADO), !!(st & ST_OCUPADO), !!(st & ST_ALM_RCT),
            !!(st & ST_ALM_APT), !!(st & ST_CLAVE_VALIDA), !!(st & ST_CAPTURA_LLENA),
            !!(st & ST_ETIQ_LISTA), !!(st & ST_MODO_TEST),
-           !!(diag & DG_ARRANCADO), !!(diag & DG_RECHAZADA), !!(diag & DG_AGOTADO));
+           !!(diag & DG_ARRANCADO), !!(diag & DG_RECHAZADA), !!(diag & DG_AGOTADO),
+           !!(diag & DG_SOLO_FUENTE));
 }
 
 /* Zeroizacion del motor: clave, estado del DRBG, RETO y ALEATORIO a cero.
@@ -111,6 +113,13 @@ static void cmd_cero(void)
 static void cmd_sembrar(void)
 {
     uint8_t st = 0, diag = 0;
+    /* La variante de la Basys 2 no tiene criptografia: se dice antes de
+     * esperar el test de arranque, que puede tardar minutos. */
+    if (motor_reg_leer(REG_DIAG, &diag, 1) != ESP_OK) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
+    if (diag & DG_SOLO_FUENTE) {
+        printf("sembrar: el motor no tiene criptografia (DIAG.solo_fuente): solo flujo\n");
+        return;
+    }
     /* El motor no siembra hasta pasar el test de arranque: 1024 muestras sin
      * alarma desde el reset o el ultimo borrado. */
     /* Los plazos salen del CFG_KD actual: con el anillo lento de la FPGA y

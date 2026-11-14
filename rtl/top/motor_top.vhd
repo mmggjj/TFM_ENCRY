@@ -52,7 +52,15 @@ entity motor_top is
     -- Bytes de la FIFO de captura continua (flujo_crudo), potencia de dos.
     -- 0 la quita: es instrumentacion de caracterizacion, como ro_mon, y en
     -- el integrado no va. El envoltorio de la FPGA y los bancos la ponen.
-    G_FLUJO_BYTES    : natural := 0
+    G_FLUJO_BYTES    : natural := 0;
+    -- Bytes del buffer de captura por trozos (trng_capture). 0 lo quita y
+    -- `capturar` se rechaza: en una FPGA pequena el flujo continuo lo cubre.
+    G_CAPTURA_BYTES  : natural := 512;
+    -- Solo la fuente: sin DRBG, CMAC ni AES, con el mismo mapa I2C. Sembrar,
+    -- resembrar, generar, aleatorio y autenticar se rechazan (DIAG.rechazada)
+    -- y DIAG.solo_fuente lo anuncia. Para la Basys 2 (XC3S100E), donde la
+    -- criptografia no cabe (docs/basys2.md).
+    G_SOLO_FUENTE    : boolean := false
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -168,6 +176,10 @@ architecture rtl of motor_top is
   -- modo_test es un interruptor de la placa: dos biestables antes de
   -- usarlo en la maquina de estados.
   signal modo_test_s : std_logic_vector(1 downto 0) := (others => '0');
+  -- G_SOLO_FUENTE como senal y no como constante en la condicion de
+  -- sembrar: si la rama desaparece en la elaboracion, siembra_es_reseed
+  -- solo se asigna en el reset y GHDL --synth lo convierte en un latch.
+  signal sin_cripto : std_logic;
 
   function byte_de(v : std_logic_vector; i : integer) return std_logic_vector is
     -- byte i contando desde la izquierda de un vector (N-1 downto 0)
@@ -175,9 +187,15 @@ architecture rtl of motor_top is
     return v(v'high - 8 * i downto v'high - 8 * i - 7);
   end function;
 
+  function bool_sl(b : boolean) return std_logic is
+  begin
+    if b then return '1'; else return '0'; end if;
+  end function;
+
 begin
 
   led_alarma <= alm;
+  sin_cripto <= '1' when G_SOLO_FUENTE else '0';
   ro_mon <= ro2 & ro1;
   ocupado <= '0' when orden = LIBRE else '1';
 
@@ -226,11 +244,17 @@ begin
               ventana_fin => ventana_fin,
               rct_max => rct_max, apt_max => apt_max);
 
-  u_captura : entity work.trng_capture
-    generic map (G_PALABRAS => 512)
-    port map (ro_clk => ro2, rst_n_ro => rst_n_ro, bit_dato => bit_ro, bit_stb => stb_ro,
-              clk => clk, rst_n => rst_n_s, arranca => cap_arranca,
-              lleno => cap_lleno, rd_dir => cap_dir, rd_dato => cap_dato);
+  g_captura : if G_CAPTURA_BYTES > 0 generate
+    u_captura : entity work.trng_capture
+      generic map (G_PALABRAS => G_CAPTURA_BYTES)
+      port map (ro_clk => ro2, rst_n_ro => rst_n_ro, bit_dato => bit_ro, bit_stb => stb_ro,
+                clk => clk, rst_n => rst_n_s, arranca => cap_arranca,
+                lleno => cap_lleno, rd_dir => cap_dir, rd_dato => cap_dato);
+  end generate g_captura;
+  g_sin_captura : if G_CAPTURA_BYTES = 0 generate
+    cap_lleno <= '0';
+    cap_dato  <= (others => '0');
+  end generate g_sin_captura;
 
   flujo_ocup     <= flujo_activo or flujo_arranca;
   flujo_lee_n    <= reg_re when reg_dir = x"60" and modo_test_s(1) = '1' else '0';
@@ -250,54 +274,69 @@ begin
   -- ------------------------------------------------------------------
   -- Criptografia
   -- ------------------------------------------------------------------
-  u_drbg : entity work.ctr_drbg
-    generic map (G_PET_BITS => G_PET_BITS, G_AES_EXTERNO => G_AES_COMPARTIDO)
-    port map (clk => clk, rst_n => rst_n_s,
-              instanciar => drbg_inst, resembrar => drbg_reseed,
-              borrar => drbg_borrar, agotado => drbg_agotado,
-              aes_arranca_o => drbg_aes_arranca, aes_borrar_o => aes_borrar, aes_clave_o => drbg_aes_clave,
-              aes_dato_o => drbg_aes_dato, aes_salida_i => aes_salida,
-              aes_listo_i => aes_listo,
-              entropia => semilla(383 downto 128),
-              nonce => semilla(127 downto 0),
-              generar => drbg_gen, salida => drbg_salida,
-              listo => drbg_listo, ocupado => drbg_ocupado,
-              sembrado => drbg_sembrado, peticiones => drbg_pet);
+  g_cripto : if not G_SOLO_FUENTE generate
+    u_drbg : entity work.ctr_drbg
+      generic map (G_PET_BITS => G_PET_BITS, G_AES_EXTERNO => G_AES_COMPARTIDO)
+      port map (clk => clk, rst_n => rst_n_s,
+                instanciar => drbg_inst, resembrar => drbg_reseed,
+                borrar => drbg_borrar, agotado => drbg_agotado,
+                aes_arranca_o => drbg_aes_arranca, aes_borrar_o => aes_borrar, aes_clave_o => drbg_aes_clave,
+                aes_dato_o => drbg_aes_dato, aes_salida_i => aes_salida,
+                aes_listo_i => aes_listo,
+                entropia => semilla(383 downto 128),
+                nonce => semilla(127 downto 0),
+                generar => drbg_gen, salida => drbg_salida,
+                listo => drbg_listo, ocupado => drbg_ocupado,
+                sembrado => drbg_sembrado, peticiones => drbg_pet);
 
-  u_cmac : entity work.aes_cmac
-    generic map (G_AES_EXTERNO => G_AES_COMPARTIDO)
-    port map (clk => clk, rst_n => rst_n_s,
-              aes_arranca_o => cmac_aes_arranca, aes_borrar_o => open, aes_clave_o => cmac_aes_clave,
-              aes_dato_o => cmac_aes_dato, aes_salida_i => aes_salida,
-              aes_listo_i => aes_listo,
-              carga_clave => cmac_carga, clave => clave,
-              clave_lista => cmac_clave_lista,
-              inicia => cmac_inicia, bloque => reto,
-              bloque_val => cmac_bloque_val, ultimo => '1',
-              n_bytes => to_unsigned(16, 5),
-              etiqueta => etiqueta, listo => cmac_listo, ocupado => cmac_ocupado);
+    u_cmac : entity work.aes_cmac
+      generic map (G_AES_EXTERNO => G_AES_COMPARTIDO)
+      port map (clk => clk, rst_n => rst_n_s,
+                aes_arranca_o => cmac_aes_arranca, aes_borrar_o => open, aes_clave_o => cmac_aes_clave,
+                aes_dato_o => cmac_aes_dato, aes_salida_i => aes_salida,
+                aes_listo_i => aes_listo,
+                carga_clave => cmac_carga, clave => clave,
+                clave_lista => cmac_clave_lista,
+                inicia => cmac_inicia, bloque => reto,
+                bloque_val => cmac_bloque_val, ultimo => '1',
+                n_bytes => to_unsigned(16, 5),
+                etiqueta => etiqueta, listo => cmac_listo, ocupado => cmac_ocupado);
 
-  -- El nucleo compartido. aes_enc captura clave y dato en el ciclo de
-  -- arranca, asi que basta elegir las entradas por quien arranca; la
-  -- salida y el listo van a los dos, y solo el que lanzo el cifrado esta
-  -- esperandolos.
-  g_nucleo_unico : if G_AES_COMPARTIDO generate
-    aes_arranca <= cmac_aes_arranca or drbg_aes_arranca;
-    aes_clave   <= cmac_aes_clave when cmac_aes_arranca = '1' else drbg_aes_clave;
-    aes_dato    <= cmac_aes_dato  when cmac_aes_arranca = '1' else drbg_aes_dato;
-    g_rapido : if not G_AES_COMPACTO generate
-      u_aes : entity work.aes_enc
-        port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
-                  clave => aes_clave, dato => aes_dato,
-                  salida => aes_salida, listo => aes_listo, ocupado => open);
-    end generate g_rapido;
-    g_compacto : if G_AES_COMPACTO generate
-      u_aes : entity work.aes_enc_32
-        port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
-                  clave => aes_clave, dato => aes_dato,
-                  salida => aes_salida, listo => aes_listo, ocupado => open);
-    end generate g_compacto;
-  end generate g_nucleo_unico;
+    -- El nucleo compartido. aes_enc captura clave y dato en el ciclo de
+    -- arranca, asi que basta elegir las entradas por quien arranca; la
+    -- salida y el listo van a los dos, y solo el que lanzo el cifrado esta
+    -- esperandolos.
+    g_nucleo_unico : if G_AES_COMPARTIDO generate
+      aes_arranca <= cmac_aes_arranca or drbg_aes_arranca;
+      aes_clave   <= cmac_aes_clave when cmac_aes_arranca = '1' else drbg_aes_clave;
+      aes_dato    <= cmac_aes_dato  when cmac_aes_arranca = '1' else drbg_aes_dato;
+      g_rapido : if not G_AES_COMPACTO generate
+        u_aes : entity work.aes_enc
+          port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                    clave => aes_clave, dato => aes_dato,
+                    salida => aes_salida, listo => aes_listo, ocupado => open);
+      end generate g_rapido;
+      g_compacto : if G_AES_COMPACTO generate
+        u_aes : entity work.aes_enc_32
+          port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                    clave => aes_clave, dato => aes_dato,
+                    salida => aes_salida, listo => aes_listo, ocupado => open);
+      end generate g_compacto;
+    end generate g_nucleo_unico;
+  end generate g_cripto;
+
+  -- Sin criptografia: un DRBG que nunca esta sembrado (generar y aleatorio
+  -- se rechazan solos) y un autenticador sin nada que cargar (borrar_todo
+  -- acaba en el ciclo siguiente). Sembrar se rechaza en p_control.
+  g_sin_cripto : if G_SOLO_FUENTE generate
+    drbg_salida <= (others => '0');
+    drbg_listo <= '0'; drbg_ocupado <= '0';
+    drbg_sembrado <= '0'; drbg_agotado <= '0';
+    drbg_pet <= (others => '0');
+    cmac_aes_arranca <= '0'; drbg_aes_arranca <= '0';
+    cmac_clave_lista <= '1'; cmac_listo <= '0'; cmac_ocupado <= '0';
+    etiqueta <= (others => '0');
+  end generate g_sin_cripto;
 
   -- ------------------------------------------------------------------
   -- I2C
@@ -334,7 +373,8 @@ begin
       when 16#0B# => reg_rdato <= std_logic_vector(drbg_pet(15 downto 8));
       when 16#0C# => reg_rdato <= std_logic_vector(drbg_pet(23 downto 16));
       when 16#0D# => reg_rdato <= std_logic_vector(drbg_pet(31 downto 24));
-      when 16#0E# => reg_rdato <= "00000" & drbg_agotado & rechazada & arrancado;
+      when 16#0E# =>
+        reg_rdato <= "0000" & bool_sl(G_SOLO_FUENTE) & drbg_agotado & rechazada & arrancado;
       when 16#0F# => reg_rdato <= "000000" & flujo_desb & flujo_activo;
       when 16#10# to 16#1F# =>
         if modo_test_s(1) = '1' then
@@ -440,7 +480,7 @@ begin
                 rechazada <= '0';
                 orden <= ZEROIZANDO;
               elsif reg_wdato(0) = '1' or reg_wdato(5) = '1' then
-                if alm = '0' and arrancado = '1' and cap_en_curso = '0'
+                if sin_cripto = '0' and alm = '0' and arrancado = '1' and cap_en_curso = '0'
                    and flujo_ocup = '0'
                    and to_integer(kd_sel) >= G_KD_MIN
                    and (reg_wdato(0) = '1' or drbg_sembrado = '1') then   -- resembrar necesita estado
@@ -482,7 +522,8 @@ begin
                 -- Capturar: solo en modo test (sin el, el buffer no se puede
                 -- leer y una captura solo serviria para guardar bits), con
                 -- el motor libre y sin otra captura en marcha.
-                if modo_test_s(1) = '1' and cap_en_curso = '0' and flujo_ocup = '0' then
+                if G_CAPTURA_BYTES > 0 and modo_test_s(1) = '1' and cap_en_curso = '0'
+                   and flujo_ocup = '0' then
                   cap_arranca <= '1';
                   cap_en_curso <= '1';
                   rechazada <= '0';

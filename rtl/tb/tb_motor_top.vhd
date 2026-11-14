@@ -320,10 +320,10 @@ begin
     alias rct_alm is << signal .tb_motor_top.dut.u_salud.rct_alm : std_logic >>;
     alias semilla is << signal .tb_motor_top.dut.semilla : std_logic_vector(383 downto 0) >>;
     alias cap_en_curso_i is << signal .tb_motor_top.dut.cap_en_curso : std_logic >>;
-    alias drbg_temp_hi is << signal .tb_motor_top.dut.u_drbg.temp_hi : std_logic_vector(127 downto 0) >>;
-    alias drbg_kdf is << signal .tb_motor_top.dut.u_drbg.kdf : std_logic_vector(127 downto 0) >>;
-    alias drbg_x_df is << signal .tb_motor_top.dut.u_drbg.x_df : std_logic_vector(127 downto 0) >>;
-    alias cmac_x is << signal .tb_motor_top.dut.u_cmac.x : std_logic_vector(127 downto 0) >>;
+    alias drbg_temp_hi is << signal .tb_motor_top.dut.g_cripto.u_drbg.temp_hi : std_logic_vector(127 downto 0) >>;
+    alias drbg_kdf is << signal .tb_motor_top.dut.g_cripto.u_drbg.kdf : std_logic_vector(127 downto 0) >>;
+    alias drbg_x_df is << signal .tb_motor_top.dut.g_cripto.u_drbg.x_df : std_logic_vector(127 downto 0) >>;
+    alias cmac_x is << signal .tb_motor_top.dut.g_cripto.u_cmac.x : std_logic_vector(127 downto 0) >>;
 
     variable b, status : std_logic_vector(7 downto 0);
     variable pet1, pet2 : std_logic_vector(31 downto 0);

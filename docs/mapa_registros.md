@@ -59,6 +59,7 @@ puesta seguían saliendo clave y ALEATORIO.
 | 0 | arrancado | el test de arranque ha pasado: una ventana completa del APT (1024 muestras) sin alarma desde el reset o desde el último `borrar_alarmas` |
 | 1 | rechazada | la última orden escrita en CONTROL se ignoró (motor ocupado, alarma, sin arrancar, CFG_KD bajo, sin sembrar, sin clave, contador agotado, captura o flujo en curso o sin modo test) o, si era una siembra, se abortó. Se baja con la siguiente orden aceptada. `borrar_alarmas` no la toca. Arrancar el flujo (escribir 1 en FLUJO) cuenta como una orden: la sube si se rechaza y la baja si se acepta |
 | 2 | agotado | el contador de peticiones está en su tope (2^32−1): `generar` y `aleatorio` se rechazan hasta `resembrar` o `sembrar` (SP 800-90A, `reseed_interval`) |
+| 3 | solo_fuente | el motor se sintetizó sin criptografía (genérico `G_SOLO_FUENTE`, la variante de la Basys 2; ver abajo). Constante. Hasta el 14-11-2026 era un bit reservado que se leía 0, y en el motor entero sigue leyéndose 0, así que un maestro de la 0x04 no se confunde |
 
 ## Tests de salud y siembra
 
@@ -140,6 +141,30 @@ en `docs/captura_continua.md`.
   FPGA y 0 por defecto**, que la quita. Es instrumentación de
   caracterización, como `ro_mon`, y no entra en el área del integrado. Sin
   ella FLUJO se lee 0 y arrancar se rechaza: así lo detecta el maestro.
+
+## Variantes sintetizables con el mismo mapa
+
+Dos genéricos de `motor_top` quitan bloques sin cambiar ni el mapa ni
+VERSION (desde el 14-11-2026). Con sus valores por defecto el motor es el
+de siempre: `synth/equivalencia.sh` comprueba que la lógica es idéntica
+bit a bit a la de antes.
+
+- **`G_CAPTURA_BYTES`** (512 por defecto): bytes del buffer de captura por
+  trozos. Con 0 no hay buffer, `capturar` se rechaza (`DIAG.rechazada`),
+  `captura_llena` se queda a 0 y CAPTURA se lee como ceros. El flujo
+  continuo cubre lo mismo con bits consecutivos.
+- **`G_SOLO_FUENTE`** (false por defecto): sin DRBG, CMAC ni AES.
+  `DIAG.solo_fuente` = 1; `sembrar`, `resembrar`, `generar`, `aleatorio` y
+  `autenticar` se rechazan (`DIAG.rechazada`); `sembrado`, `clave_valida` y
+  `etiqueta_lista` se quedan a 0; CLAVE, ETIQUETA, ALEATORIO y PETICIONES se
+  leen como ceros; `borrar_todo` se acepta y acaba en un ciclo. Fuente,
+  tests de salud (con el test de arranque), CFG_KD, FLUJO y el resto del
+  mapa funcionan igual. Es la variante de la Basys 2 (XC3S100E, 1 920 LUT4),
+  donde la criptografía no cabe (`docs/basys2.md`). Banco:
+  `tb_motor_solo_fuente`.
+
+Un maestro que encuentre `DIAG.solo_fuente` = 1 no intenta sembrar: usa el
+motor como fuente de bits crudos (flujo, en modo test) y tests de salud.
 
 ## Secuencia típica del ESP32
 
