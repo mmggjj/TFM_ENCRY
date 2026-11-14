@@ -73,6 +73,14 @@ produces after every reset is a window of one fixed sequence, and two
 different chips produce the same one \meas{}. Its output is as good as its seeding, which
 depends on the radio, the \ac{ADC} or the bootloader being active.
 
+% NOTE (14-11-2026, not printed; Spanish, see docs): hay resultados PROVISIONALES de una
+% Basys 2 (XC3S100E: solo la fuente; reloj 50 MHz, ro2 143,8 MHz y ro1
+% 108,7 MHz con 7 y 9 etapas; ESP32 por I2C con 10^6 bits de flujo sin
+% errores; Q por periodo de ro2 ~4,5e-5 con residuo del modelo; el display
+% modula los anillos; SP 800-90B kd 13-16 saturadas y kd 12 = 0,760
+% coherente con el modelo; CFG_KD provisional >= 14). Mario intenta
+% conseguir una Basys 3: NO cerrar este parrafo con ellos hasta decidirlo.
+% Todo en docs/basys2.md.
 \paragraph{Integration on the FPGA (O5, O6).} [PENDING: bring-up on the
 board, measured ring frequencies, measured $Q_{\mathrm{raw}}$ and
 accumulation exponent, divider for the \ac{FPGA}, SP~800-90B campaign on

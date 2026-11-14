@@ -54,7 +54,13 @@ todo. Léelo entero antes de tocar nada.
 
 ## Estado al 14-11-2026: la placa es una Basys 2 (XC3S100E)
 
-Lectura y riesgos en **`docs/basys2.md`**. Nada grabado todavía.
+Lectura, resultados y riesgos en **`docs/basys2.md`** (resumen arriba del
+todo). **Decisión de Mario (14-11, final del día): intenta conseguir una
+Basys 3; los resultados de la Basys 2 son PROVISIONALES y la memoria no se
+cierra con ellos** (nota no impresa en el cap. 8, EN y ES; los [PENDIENTE]
+siguen). Qué se repite en la Basys 3 y las lecciones: `docs/basys2.md` y
+`docs/puesta_en_marcha_fpga.md` §9. Commits del día f09ed89, 90c32a9,
+3113dfa y el de la documentación (locales, sin push).
 
 - La placa que hay es una **Basys 2 con XC3S100E** (1 920 LUT4; serigrafía
   leída por Mario), no la Basys 3. El motor entero no cabe (cripto ~6 800
@@ -125,7 +131,22 @@ Lectura y riesgos en **`docs/basys2.md`**. Nada grabado todavía.
   4-7·10⁻⁵ (σ ≈ 60-70 ps, ~10× lo térmico típico), los bits ya salen
   descorrelados a `kd 13`, **pero el modelo deja residuos 13-45× el ruido**
   en los divisores bajos: hay ruido no gaussiano (¿modulación, alimentación
-  común?). **No hay K\* todavía**; detalle y lectura en `docs/basys2.md`.
+  común?); detalle y lectura en `docs/basys2.md`.
+- **El display modula los anillos** (ν bimodal por trozo a `kd 7`):
+  variantes de `basys2_top` `G_QUIETO` (display apagado, LED fijo) y
+  `G_MEDIDOR=false` (`GENERICOS` y `UCF` en `build.sh`). Apagado, el residuo
+  baja de 45 a ~7 veces el ruido. La lógica colgada de los anillos cambia Q
+  ×2,5 (con medidor 2·10⁻⁵, sin él 4,5·10⁻⁵); **repetibilidad ±3-5 %** en
+  tres capturas de la misma variante, así que el ×2,5 es real.
+- **Campaña SP 800-90B** (variante sin display ni medidor, flujo de 10⁶ bits,
+  `kd 12-16`): `kd 13-16` saturadas (0,82-0,86), `kd 12` = 0,760, en el borde
+  de lo que predice el modelo con Q 4,5·10⁻⁵ y por encima de lo que daría
+  2·10⁻⁵: batería y estimador de jitter coherentes. **`CFG_KD` provisional
+  ≥ 14** (K\* ≈ 2^12,3 con factor 2).
+- La placa quedó con la variante sin display ni medidor grabada (volátil:
+  al apagarla vuelve la demo de la Platform Flash). El ESP32
+  a0:dd:6c:0e:fb:4c quedó con el verificador; `/dev/ttyUSB0` necesita
+  `chmod` tras reconectarlo.
 
 ## Estado al 10-11-2026: captura continua (motor 0x04), sin placa
 

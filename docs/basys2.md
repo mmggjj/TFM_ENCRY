@@ -10,6 +10,54 @@ el RTL del motor es el mismo, y si algún día hay una Basys 3 el mismo diseño
 queda medido en dos tecnologías de FPGA (90 y 28 nm) además de la simulada
 de IHP (130 nm).
 
+## Estado al 14-11-2026 y qué significa para la memoria
+
+**Decisión de Mario (14-11-2026):** va a intentar conseguir una Basys 3.
+Los resultados de la Basys 2 son **provisionales**: la memoria no se cierra
+con ellos. Si llega la Basys 3, se repite allí lo que haga falta y se decide
+entonces qué va a la memoria (las dos placas, o la Basys 3 con la Basys 2
+como contraste). Si no llega, esto es lo que hay y O5 se reformula.
+
+Resumen de lo conseguido (todo en placa salvo lo marcado):
+
+| | Resultado | Tipo |
+|---|---|---|
+| Fuente en la FPGA | variante de solo fuente, 85 % de slices; reloj 50 MHz; ro2 143,8 MHz y ro1 108,7 MHz (7 y 9 etapas, colocados); tiempos cumplidos con 33 % de margen | medido |
+| Integración con el ESP32 | I2C a 400 kHz; `id` con `solo_fuente=1`; flujo de 10⁶ bits consecutivos sin un error | medido |
+| Ruido de fase entre anillos | Q por periodo de ro2 ≈ 4,5·10⁻⁵ (±3-5 % entre capturas) en la variante sin display ni medidor; depende ×2,5 de la lógica colgada de los anillos; el modelo deja residuo 3-11 veces el ruido en `kd 7-9` | medido, interpretación provisional |
+| Modulación determinista | el display multiplexado modula los anillos (ν bimodal por trozo); apagarlo baja el residuo de 45 a ~7 veces el ruido | medido |
+| SP 800-90B | `kd 13-16` saturadas (0,82-0,86); `kd 12` = 0,760, coherente con el modelo con la Q medida y no con la de otra variante | medido |
+| Divisor de trabajo | `CFG_KD` ≥ 14 (K\* ≈ 2^12,3 con factor 2 de margen) | provisional |
+| Criptografía en la FPGA (O5) | no cabe en el XC3S100E | — |
+
+Lo que queda abierto en esta placa: el origen del residuo del modelo (ESP32
+leyendo durante la captura, reloj de 50 MHz, alimentación), la comparación
+con el ESP32 (O8) con estas cifras, y la redacción.
+
+## Si llega la Basys 3: qué se reutiliza y qué hay que repetir
+
+Se reutiliza sin cambios: el RTL del motor (la Basys 3 lleva el motor entero,
+`G_SOLO_FUENTE` falso), el firmware (el verificador ya distingue
+`solo_fuente`), `flujo_desborde.py`, `jitter_autocorrelacion.py`,
+`campana_motor.py --flujo`, `compara_modelo_campana.py`, la línea base del
+ESP32. Hay que repetir, con lo aprendido aquí (lista detallada en
+`docs/puesta_en_marcha_fpga.md` §9):
+
+1. Comprobar en la netlist implementada que los anillos tienen sus etapas
+   (en ISE desaparecieron; en Vivado el `DONT_TOUCH` sí llega, pero se mira).
+2. Medir frecuencias y cerrar tiempos del contador de `ero_core` con la
+   frecuencia medida.
+3. Apagar el display durante las capturas (añadir a `basys3_top` el
+   equivalente de `G_QUIETO`).
+4. Jitter a `kd 0` con el buffer de captura (en la Basys 3 cabe) y, como
+   contraste, el mismo procedimiento que aquí (trozos por desbordamiento y
+   ajuste de c(M)); repetibilidad con al menos tres capturas.
+5. Campaña SP 800-90B con `--flujo` barriendo por debajo y por encima de K\*.
+6. Motor completo con el ESP32 (O5): `sembrar`, `generar`, `reto`,
+   `aleatorio`.
+7. Comparación entre placas: mismo anillo en Spartan-3E (90 nm) y Artix-7
+   (28 nm) y el de IHP simulado (130 nm).
+
 ## Qué cabe
 
 Estimación con Yosys `synth_xilinx -family xc3se` (14-11-2026). **Es una

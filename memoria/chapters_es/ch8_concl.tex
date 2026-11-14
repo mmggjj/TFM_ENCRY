@@ -79,6 +79,14 @@ de una misma secuencia fija, y dos chips distintos producen la misma
 su siembra, que depende de que la radio, el \ac{ADC} o el cargador de
 arranque estén activos.
 
+% NOTA (14-11-2026, no se imprime): hay resultados PROVISIONALES de una
+% Basys 2 (XC3S100E: solo la fuente; reloj 50 MHz, ro2 143,8 MHz y ro1
+% 108,7 MHz con 7 y 9 etapas; ESP32 por I2C con 10^6 bits de flujo sin
+% errores; Q por periodo de ro2 ~4,5e-5 con residuo del modelo; el display
+% modula los anillos; SP 800-90B kd 13-16 saturadas y kd 12 = 0,760
+% coherente con el modelo; CFG_KD provisional >= 14). Mario intenta
+% conseguir una Basys 3: NO cerrar este parrafo con ellos hasta decidirlo.
+% Todo en docs/basys2.md.
 \paragraph{Integración en la FPGA (O5, O6).} [PENDIENTE: puesta en marcha
 en la placa, frecuencias medidas de los anillos, $Q_{\mathrm{raw}}$ y
 exponente de acumulación medidos, divisor para la \ac{FPGA}, campaña de

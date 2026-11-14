@@ -165,6 +165,10 @@ Cada paso dice qué se mira y cuándo se da por bueno. Los logs, enteros.
 
 ## 6. Si la placa no es una Basys 3
 
+- **Basys 2 (Spartan-3E XC3S100E)**: lo que pasó el 14-11-2026. El motor
+  entero no cabe: variante de solo fuente, ISE 14.7 vía GHDL → Verilog.
+  Todo en `docs/basys2.md`.
+
 - **Otra AMD de la serie 7** (Arty A7, Nexys A7, Cmod A7...): mismo
   flujo; cambian `set part` en `build.tcl`, los pines del XDC, las
   coordenadas de `ro_pblocks.xdc` y el envoltorio si no hay display (el
@@ -225,4 +229,45 @@ solo el 17 sale "por debajo": los demás ya están saturados. **Por eso la
 campaña necesita divisores bien por debajo de K*.** Diciendo 4 veces
 menos, los cinco salen "por encima". Los trozos de 4096 bits con fase
 independiente dan lo mismo que la secuencia continua de la calibración.
+
+## 9. Lecciones de la Basys 2 para la Basys 3 (14-11-2026)
+
+Lo que salió en la placa real con la Basys 2 (`docs/basys2.md`) y cambia
+esta checklist:
+
+1. **Comprobar que los anillos existen en la netlist implementada.** En la
+   Basys 2 XST conservó las LUT1 y map las colapsó (la NAND quedó
+   realimentada consigo misma; el display marcaba 000.0). En Vivado el
+   `DONT_TOUCH` llega a la implementación, pero se comprueba igual: tras
+   `route_design`, `get_cells -hier -filter {NAME =~ *u_ro*}` debe dar
+   N+1 LUT por anillo y el lazo cerrado.
+2. **Los anillos compactos van más deprisa.** Al colocarlos en un CLB, ro2
+   pasó de 167,8 a 204,8 MHz y superó lo que aguantaba el contador de
+   `ero_core`. Las frecuencias se miden después de fijar los pblocks, y el
+   periodo de `ro2_clk` del XDC se ajusta a lo medido (paso 4). Si no
+   cierra, los genéricos `G_ETAPAS_RO1/RO2` alargan los anillos.
+3. **El display modula los anillos.** Con el display multiplexado el ν de
+   cada trozo era bimodal y el modelo dejaba residuos 45 veces el ruido;
+   apagado, ~7. Para las capturas de entropía, display apagado: añadir a
+   `basys3_top` un genérico como `G_QUIETO` de `basys2_top`. Y lo que cuelga
+   de los anillos (el frecuencímetro) cambia su ruido de fase relativo (×2,5
+   en la Basys 2): la campaña se hace con la variante que se va a defender, y
+   se dice cuál.
+4. **El estimador por varianza no vale a divisores altos.**
+   `jitter_estimator.py` necesita M ≫ N y M·Q diminuto (`kd 0`). En la
+   Basys 3 hay buffer de captura y `kd 0` es posible, así que vale; pero
+   como contraste, y para cualquier medida a `kd` > 0, usar
+   `analysis/jitter_autocorrelacion.py` (ajuste de c(M) con el modelo del
+   ERO, `--conjunto` para un ν por trozo) sobre trozos de
+   `analysis/flujo_desborde.py`. Los dos están validados con bits
+   simulados de Q conocida (`results/jitter_autocorrelacion_autotest.log`).
+5. **Repetibilidad antes que conclusiones.** Tres capturas de la misma
+   variante dieron ±3-5 % en Q; sin eso no se puede atribuir una diferencia
+   entre variantes al diseño.
+6. **El flujo a 115 200 baudios sirve desde `kd 12`** con ro2 ~143 MHz (con
+   ro2 más rápido, un divisor más). Por debajo, `flujo_desborde.py`.
+7. **Contraste cruzado.** La batería SP 800-90B solo informa por debajo de
+   K\*; en la Basys 2 `kd 12` cayó donde predecía el modelo con la Q medida y
+   no con la de otra variante. Repetirlo: es la prueba de que el estimador
+   de jitter y la batería cuentan lo mismo.
 
