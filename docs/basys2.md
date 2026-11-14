@@ -492,12 +492,39 @@ los anillos sí arrancan desde cero en cada ciclo.
   cargador de arranque el ESP32 sacaba siempre la misma secuencia; la FPGA
   no tiene ese problema.
 
-## Pendiente
+## Pendiente (lista para el 15-11-2026 en adelante)
 
-1. Repetibilidad: la misma variante capturada varias veces (y a distintas
-   horas) para saber la dispersión de Q entre sesiones; frecuencias de los
-   anillos en cada variante (por la duración del flujo a `kd 13`). Después,
-   lo que quede del residuo: el ESP32 parado entre lecturas, el reloj de 50
-   MHz lejos de los anillos, un modelo con componente común/determinista.
-2. Campaña SP 800-90B con `--flujo` a varios divisores (desde `kd 13`) y
-   contraste con el modelo cuando haya K\*.
+Por orden; lo marcado (M) necesita a Mario delante de la placa.
+
+1. **Decidir el corte del RCT** (Mario): con α = 2⁻²⁰ hay una falsa alarma
+   cada ~8 min a `kd 14`. Opciones: C = 32 (α = 2⁻³⁰; cambia `G_RCT_C` de
+   `health_tests`, el banco, `docs/mapa_registros.md` y la memoria) o rearme
+   automático en el maestro. Afecta también al motor del integrado.
+2. **Residuo del modelo de jitter** (3-11 veces el ruido en `kd 7-9`):
+   - (M) bus I2C más lento o con pausas entre lecturas durante la captura
+     (¿la actividad del ESP32 modula los anillos?);
+   - reloj de 50 MHz y lógica lejos de los anillos (`AREA_GROUP` para el
+     resto del diseño) y repetir `flujo_desborde.py` + `--conjunto`;
+   - modelo con una componente común o determinista además del paseo
+     aleatorio, si lo anterior no lo explica.
+3. (M) **Temperatura**: frecuencias de los anillos y Q en frío y con la
+   placa calentada (secador a distancia); repetir `kd 7-9` y una tira de
+   `kd 14`.
+4. **Comparación con el ESP32 (O8)** con las cifras de hoy: tabla FPGA /
+   ESP32 / ideal a 10⁶ y 8,4·10⁶ bits, y la prueba de reinicios de los dos.
+5. **Memoria**: no cerrar con la Basys 2 hasta saber si llega la Basys 3
+   (nota no impresa en el cap. 8). Sí se puede ir escribiendo como borrador
+   aparte lo que no depende de la placa: el estimador de c(M) y su
+   validación, la modulación del display como ejemplo de ruido determinista
+   que la batería no ve, el hallazgo del RCT.
+6. Si llega la **Basys 3**: `docs/puesta_en_marcha_fpga.md` §3 con las
+   lecciones del §9, y "Si llega la Basys 3" más arriba en este documento.
+
+Estado de las cosas al cerrar el 14-11: la Basys 2 con la variante sin
+display ni medidor grabada (se pierde al desenchufar: volver a grabarla con
+`djtgcfg prog -d SN:<serie> -i 0 -f synth/basys2/build/basys2_top_quieto_sin_medidor.bit`
+o regenerarla con `UCF=basys2_sin_medidor.ucf GENERICOS="-gG_QUIETO=true
+-gG_MEDIDOR=false" bash synth/basys2/build.sh`); el ESP32 a0:dd:6c:0e:fb:4c
+con el verificador y cableado a JA1/JA2/GND; `/dev/ttyUSB0` pide `chmod`
+al reconectar. Todo subido a `feat/lecturas-firmadas` (992ba88 y la nota
+de pendientes).
