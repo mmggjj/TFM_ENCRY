@@ -428,6 +428,70 @@ calibración con bits del modelo, `fuente_simulada_90b.md`.)
   modelo 1,0000 con un factor 2 de margen sobre K\* ≈ 2^12,3), mientras el
   residuo del modelo no esté explicado.
 
+## Captura larga para O8 (14-11-2026, medido)
+
+8 378 368 bits consecutivos a `kd 14` (la longitud de la captura larga del
+ESP32 sin radio, `esp_rf_off_2`), misma variante, 0 errores, ro2 143,2 MHz
+durante 16 min (`results/motor_campana/basys2_larga_kd14_n8378368/`):
+SP 800-90B no-IID **0,890** (colisión). A la misma N: ESP32 0,911; bits
+ideales del modelo 0,912 (0,889-0,935). La FPGA cae dentro de la banda de
+los bits ideales (en su borde bajo): **a esta N la batería tampoco separa
+FPGA, ESP32 y fuente perfecta**, como predecía la simulación.
+
+## Los tests de salud en hardware (14-11-2026, medido)
+
+Al empezar la prueba la alarma ya estaba levantada (RCT y APT), casi seguro
+desde las capturas de jitter a `kd 7-9`; el flujo saca bits con alarma (es
+modo test), así que los datos de las campañas valen, pero la alarma pegajosa
+no dice nada de los divisores de trabajo. Prueba: para cada `kd`, escribir
+CFG_KD, `borrar`, 30 s y `id` (`results/esp32_consola_basys2_alarma_kd*.log`,
+locales):
+
+| kd | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 |
+|---|---|---|---|---|---|---|---|---|---|
+| Alarma | — | — | RCT | RCT | — | — | RCT + APT | — | — |
+
+- Los tests saltan en la placa (hasta ahora solo probados en simulación).
+- El patrón no es monótono: a `kd` bajos manda la fase determinista ν (según
+  el divisor rompe o alarga las rachas), y el RCT tiene falsas alarmas
+  frecuentes a tasas altas.
+- **Falsas alarmas del RCT (hallazgo de diseño).** El corte C = 22 se
+  calculó para α = 2⁻²⁰ por muestra. En los 8,4·10⁶ bits de `kd 14` hay 1
+  racha de ≥ 22 (máximo 23) frente a ~2 esperadas con bits ideales, y el
+  resto de longitudes también cuadra (136 frente a 128 rachas ≥ 16, 30
+  frente a 32 ≥ 18): las rachas son las de una fuente ideal. Con esa α, a
+  `kd 14` (8,7 kbit/s) **cabe esperar una falsa alarma cada ~8 min**, y cada
+  alarma bloquea el motor hasta `borrar_alarmas`. En el integrado
+  (`CFG_KD` 23, 0,2-0,4 kbit/s) sería una cada pocas horas. SP 800-90B
+  admite α de 2⁻²⁰ a 2⁻⁴⁰. **Decisión pendiente de Mario**: subir el corte
+  (con α = 2⁻³⁰, C = 1 + ⌈30/0,98⌉ = 32) o que el maestro borre la alarma y
+  vuelva a sembrar de forma automática. El APT va holgado: máximo 571 en
+  ventanas de 1024 (corte 596).
+
+## Prueba de reinicios, SP 800-90B §3.1.4 (14-11-2026, medido)
+
+`analysis/reinicios_fpga.py`: 1 000 ciclos de reprogramar la FPGA por JTAG
+(solo la FPGA, la Platform Flash no se toca; 0,6 s) y leer por el ESP32 los
+primeros 128 bytes del flujo a `kd 14` (0,4 s), misma variante que la
+campaña. 3 ciclos repetidos porque el ESP32 no respondió a tiempo a `kd 14`
+tras reprogramar. **Matiz para la memoria:** los bits son los primeros del
+flujo, ~0,4 s después de configurar, no los de los primeros nanosegundos;
+los anillos sí arrancan desde cero en cada ciclo.
+(`results/fpga_reinicios/basys2_kd14/`: `bloques.npy`, `resumen.md`,
+`ea_restart_b1.log`.)
+
+- `ea_restart` en modo bit (1000 × 1000), H_I = 0,845 (la de `kd 16` de la
+  campaña): **Restart Sanity Check Passed** (X_max 556, corte 626) y
+  **Validation Test Passed** (H_r 0,855, H_c 0,873).
+- Comprobación directa (la misma que el ESP32): 1000 arranques distintos de
+  1000 (también en los 8 primeros bytes); distancia de Hamming media 512,0
+  (esperada 512) y desviación 16,02 (16,00); ningún arranque es el flujo de
+  otro desplazado; sin sesgo por posición (p corregida 0,45) y primer byte
+  uniforme (p = 0,43).
+- Contraste con el ESP32 (`docs/esp32_reinicios.md`): sin el ruido del
+  cargador de arranque el ESP32 sacaba siempre la misma secuencia; la FPGA
+  no tiene ese problema.
+
 ## Pendiente
 
 1. Repetibilidad: la misma variante capturada varias veces (y a distintas

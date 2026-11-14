@@ -46,6 +46,10 @@ results/esp32_campana_rng/*/serie_*.log
 # Prueba de reinicios: flujo serie integro y matrices derivadas (se regeneran con analysis/reinicios_90b.py)
 results/esp32_reinicios/*/*/serie_*.log
 results/esp32_reinicios/*/*/restart_*.bin
+results/fpga_reinicios/*/restart_*.bin
+results/fpga_reinicios/*/serie.log
+# Bits derivados (un byte por bit) de las campanas del motor: se regeneran desde kdNN_flujo.bin
+results/motor_campana/*/entropia90b/bits/
 firmware/*/build_*/
 # Logs serie de las tandas y capturas apartadas (un nivel mas hondo)
 results/esp32_campana_rng/*/*/serie_*.log

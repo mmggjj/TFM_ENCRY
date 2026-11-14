@@ -143,6 +143,18 @@ siguen). Qué se repite en la Basys 3 y las lecciones: `docs/basys2.md` y
   de lo que predice el modelo con Q 4,5·10⁻⁵ y por encima de lo que daría
   2·10⁻⁵: batería y estimador de jitter coherentes. **`CFG_KD` provisional
   ≥ 14** (K\* ≈ 2^12,3 con factor 2).
+- **Más pruebas en placa (14-11, final):** captura larga de 8 378 368 bits
+  a `kd 14` → SP 800-90B 0,890 (ESP32 0,911, ideal 0,889-0,935: no se
+  separan, dato para O8). **Tests de salud en hardware**: saltan (RCT en
+  `kd 8, 11, 12`; APT en `kd 8`), patrón no monótono por la fase
+  determinista; **hallazgo de diseño: con α = 2⁻²⁰ el RCT da una falsa
+  alarma cada ~8 min a `kd 14`** (rachas ≥ 22 iguales a las de bits ideales)
+  y cada alarma bloquea el motor: decisión pendiente de Mario (subir el
+  corte a 32 con α = 2⁻³⁰, o rearme automático en el maestro). **Prueba de
+  reinicios §3.1.4** (`analysis/reinicios_fpga.py`, 1000 reprogramaciones
+  por JTAG): `ea_restart` pasa (H_r 0,855, H_c 0,873 ≥ H_I 0,845), 1000
+  arranques distintos, Hamming 512,0 ± 16,02; al contrario que el ESP32 sin
+  ruido de arranque. Matiz: bits del flujo ~0,4 s tras configurar.
 - La placa quedó con la variante sin display ni medidor grabada (volátil:
   al apagarla vuelve la demo de la Platform Flash). El ESP32
   a0:dd:6c:0e:fb:4c quedó con el verificador; `/dev/ttyUSB0` necesita
