@@ -7,8 +7,13 @@
 # Si los bytes difieren (puertas numeradas en otro orden), ABC cec compara
 # las dos redes con los biestables emparejados por orden: equivalentes ahi
 # es la misma funcion de salida y de siguiente estado. Si cec no lo prueba
-# no demuestra un fallo: toca mirar el cambio.
+# (p. ej. GHDL renumero las senales y el orden de los biestables cambio),
+# ABC dsec comprueba la equivalencia secuencial sin emparejar biestables.
+# Si tampoco, toca mirar el cambio.
 #   bash synth/equivalencia.sh [ref]     (ref por defecto HEAD; desde la raiz)
+# GEN_ACT: genericos que solo recibe el arbol de trabajo, para comprobar un
+# cambio de valores por defecto devolviendo los antiguos (p. ej.
+# GEN_ACT="-gG_MUESTREO_LIBRE=false -gG_RCT_C=22 -gG_APT_C=596").
 # Log integro en results/equivalencia_motor_top.log.
 set -uo pipefail
 REF=${1:-HEAD}
@@ -38,12 +43,13 @@ delete t:\$scopeinfo; opt_clean; stat; write_aiger -zinit $o.aig" > /dev/null 2>
 
 {
   echo "equivalencia de motor_top: arbol de trabajo frente a $REF ($(git rev-parse --short "$REF"))"
+  echo "genericos solo del arbol de trabajo: ${GEN_ACT:-ninguno}"
   echo "yosys: $(yosys -V)"
   fallos=0
   for v in "${VARIANTES[@]}"; do
     n=${v%%:*}; g=${v#*:}
     aig "$W/ref" "$W/ref_$n" $g; r1=$?
-    aig "$RAIZ" "$W/act_$n" $g; r2=$?
+    aig "$RAIZ" "$W/act_$n" $g ${GEN_ACT:-}; r2=$?
     if [ $r1 -ne 0 ] || [ $r2 -ne 0 ]; then
       echo "$n: Yosys fallo (ref $r1, actual $r2)"; fallos=$((fallos + 1)); continue
     fi
@@ -52,10 +58,13 @@ delete t:\$scopeinfo; opt_clean; stat; write_aiger -zinit $o.aig" > /dev/null 2>
       echo "$n [$g]: identicas ($cab; sha256 $(sha256sum < "$W/act_$n.aig" | cut -c1-16))"
     else
       cec=$(yosys-abc -c "cec $W/ref_$n.aig $W/act_$n.aig" 2>&1 | tail -1)
+      dsec=$(yosys-abc -c "dsec $W/ref_$n.aig $W/act_$n.aig" 2>&1 | tail -1)
       if echo "$cec" | grep -q "Networks are equivalent"; then
         echo "$n [$g]: equivalentes por ABC cec, bytes distintos ($cab; $cec)"
+      elif echo "$dsec" | grep -q "Networks are equivalent"; then
+        echo "$n [$g]: equivalentes por ABC dsec (secuencial), cec no lo prueba ($cab; $dsec)"
       else
-        echo "$n [$g]: DIFIEREN (ref $(head -1 "$W/ref_$n.aig"); actual $cab; cec: $cec)"
+        echo "$n [$g]: DIFIEREN (ref $(head -1 "$W/ref_$n.aig"); actual $cab; cec: $cec; dsec: $dsec)"
         fallos=$((fallos + 1))
       fi
     fi

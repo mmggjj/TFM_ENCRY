@@ -74,6 +74,15 @@ fallida no deja al equipo sin firmar ni con una clave a medias. Es la misma
 regla que se impuso al RTL el 27-10 (con alarma no sale nada), llevada al
 producto.
 
+**Rearme acotado (15-11-2026).** `clave` no rearma el motor por su cuenta:
+con alarma no hay clave nueva hasta que alguien lo decida. La orden
+`rearmar` aplica `motor_rearmar()` del componente: borra las alarmas,
+espera el test de arranque y vuelve a sembrar, como mucho 3 veces en 24 h;
+a la cuarta, fallo permanente hasta reiniciar el ESP32 (y `clave` sigue sin
+dar clave nueva). `borrar` y `sembrar` a mano siguen disponibles para el
+operador. Motivo y números en `docs/mapa_registros.md` ("Rearme") y en
+`docs/basys2.md`. Banco en PC, paso 5b.
+
 **Secuencia contra repetición, también a través de reinicios.** Una firma
 válida no impide reinyectar una lectura vieja. La lectura lleva un número
 de secuencia monótono y el verificador rechaza la que no supere a la última

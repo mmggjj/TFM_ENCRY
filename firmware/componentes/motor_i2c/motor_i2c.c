@@ -131,6 +131,39 @@ esp_err_t motor_esperar_arranque(uint32_t max_ms, uint8_t *diag)
     }
 }
 
+static TickType_t rearmes[MOTOR_REARME_MAX];   /* instantes de los ultimos */
+static uint32_t n_rearmes;
+static bool fallo_permanente;
+
+bool motor_fallo_permanente(void) { return fallo_permanente; }
+
+esp_err_t motor_rearmar(void)
+{
+    if (fallo_permanente) return ESP_ERR_NOT_ALLOWED;
+    const TickType_t ahora = xTaskGetTickCount();
+    uint32_t recientes = 0;
+    for (uint32_t i = 0; i < n_rearmes && i < MOTOR_REARME_MAX; i++)
+        if (ahora - rearmes[i] < pdMS_TO_TICKS(MOTOR_REARME_VENTANA_MS)) recientes++;
+    if (recientes >= MOTOR_REARME_MAX) {
+        fallo_permanente = true;
+        ESP_LOGE(TAG, "%u rearmes en %u h: fallo permanente hasta reiniciar",
+                 (unsigned)MOTOR_REARME_MAX, (unsigned)(MOTOR_REARME_VENTANA_MS / 3600000u));
+        return ESP_ERR_NOT_ALLOWED;
+    }
+    rearmes[n_rearmes++ % MOTOR_REARME_MAX] = ahora;
+
+    uint8_t st = 0, diag = 0;
+    esp_err_t e = motor_esperar_libre(T_ORDEN_MS, &st);
+    if (e != ESP_OK) return e;
+    if (motor_reg_escribir1(REG_CONTROL, CTL_BORRAR_ALM) != ESP_OK) return ESP_FAIL;
+    e = motor_esperar_arranque(motor_plazo_arranque_ms(), &diag);
+    if (e != ESP_OK) return e;
+    st = motor_status();
+    if (!motor_io_ok()) return ESP_FAIL;
+    return motor_orden((st & ST_SEMBRADO) ? CTL_RESEMBRAR : CTL_SEMBRAR,
+                       motor_plazo_siembra_ms(), &st);
+}
+
 esp_err_t motor_aleatorio(uint8_t bloque[32])
 {
     uint8_t st;
@@ -183,6 +216,7 @@ const char *motor_texto_err(esp_err_t e)
     case ESP_OK:                return "ok";
     case ESP_ERR_INVALID_STATE: return "RECHAZADA por el motor";
     case ESP_ERR_TIMEOUT:       return "el motor no se libera";
+    case ESP_ERR_NOT_ALLOWED:   return "FALLO PERMANENTE (demasiados rearmes)";
     default:                    return "ERROR I2C";
     }
 }

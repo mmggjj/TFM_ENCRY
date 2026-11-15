@@ -26,7 +26,11 @@ entity basys2_top is
     G_LATIDO  : natural := 0;
     -- Display apagado y LED de latido fijo: para medir si su consumo, que
     -- cambia con el digito encendido, modula los anillos (docs/basys2.md).
-    G_QUIETO  : boolean := false
+    G_QUIETO  : boolean := false;
+    -- Muestreo de ro1 sin habilitacion (ero_core, docs/basys2.md). false
+    -- aqui, a diferencia de motor_top: la placa sigue siendo comparable con
+    -- las campanas del 14-11.
+    G_MUESTREO_LIBRE : boolean := false
   );
   port (
     clk        : in    std_logic;   -- B8
@@ -80,7 +84,8 @@ begin
   u_motor : entity work.motor_top
     generic map (G_ETAPAS_RO1 => 9, G_ETAPAS_RO2 => 7,
                  G_KD_MIN => 7, G_FLUJO_BYTES => 256,
-                 G_CAPTURA_BYTES => 0, G_SOLO_FUENTE => true)
+                 G_CAPTURA_BYTES => 0, G_SOLO_FUENTE => true,
+                 G_MUESTREO_LIBRE => G_MUESTREO_LIBRE)
     port map (clk => clk, rst_n => rst_n,
               scl_in => scl, sda_in => sda, sda_oe => sda_oe,
               modo_test => sw_test, led_alarma => led_alarma,

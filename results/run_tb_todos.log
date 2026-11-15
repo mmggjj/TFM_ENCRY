@@ -22,6 +22,24 @@ rtl/tb/tb_ring_osc.vhd:78:9:@60552056024fs:(report note):   [ok ] el anillo vuel
 rtl/tb/tb_ring_osc.vhd:128:7:@60552056024fs:(report note): tb_ring_osc: 0 fallos
 simulation stopped @60552056024fs
 
+--- tb_ero_core ---
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+rtl/tb/tb_ero_core.vhd:82:9:@400020ns:(report note): [ok] kd 0: 57142 bits
+rtl/tb/tb_ero_core.vhd:82:9:@400020ns:(report note): [ok] kd 0: bits de los dos valores (28568 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@800040ns:(report note): [ok] kd 1: 28570 bits
+rtl/tb/tb_ero_core.vhd:82:9:@800040ns:(report note): [ok] kd 1: bits de los dos valores (14286 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@1200060ns:(report note): [ok] kd 2: 14285 bits
+rtl/tb/tb_ero_core.vhd:82:9:@1200060ns:(report note): [ok] kd 2: bits de los dos valores (7134 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@1600080ns:(report note): [ok] kd 3: 7142 bits
+rtl/tb/tb_ero_core.vhd:82:9:@1600080ns:(report note): [ok] kd 3: bits de los dos valores (3567 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] kd 4: 3571 bits
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] kd 4: bits de los dos valores (1802 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] mismo bit en las dos variantes (0 distintos de 110710)
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] mismo valido en las dos variantes (0 ciclos distintos)
+rtl/tb/tb_ero_core.vhd:108:7:@2000100ns:(report note): tb_ero_core: todo correcto
+simulation stopped @2000100ns
+
 --- tb_i2c_slave ---
 ../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
 rtl/tb/tb_i2c_slave.vhd:280:5:@2us:(report note): 1) Direccionamiento
@@ -168,28 +186,28 @@ rtl/tb/tb_ctr_drbg.vhd:96:9:@18105ns:(report note):   [ok ] agotado: generar se 
 rtl/tb/tb_ctr_drbg.vhd:199:7:@18105ns:(report note): tb_ctr_drbg: 0 fallos
 
 --- tb_health_tests ---
-rtl/tb/tb_health_tests.vhd:123:5:@35ns:(report note): 1) Fuente sana: 20 ventanas sin alarma
-rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] sin alarmas tras 20480 muestras
-rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] racha maxima vista 13 < 22
-rtl/tb/tb_health_tests.vhd:76:9:@409635ns:(report note):   [ok ] proporcion maxima vista 540 < 596
-rtl/tb/tb_health_tests.vhd:134:5:@409635ns:(report note): 2) Fuente pegada: el RCT salta en la muestra C
-rtl/tb/tb_health_tests.vhd:76:9:@410215ns:(report note):   [ok ] RCT dispara en la muestra 22 (esperado 22)
-rtl/tb/tb_health_tests.vhd:146:5:@410215ns:(report note): 3) Fuente sesgada al 70 %: salta el APT, no el RCT
-rtl/tb/tb_health_tests.vhd:76:9:@430735ns:(report note):   [ok ] APT dispara con proporcion 713 >= 596
-rtl/tb/tb_health_tests.vhd:76:9:@430735ns:(report note):   [ok ] RCT no dispara con racha maxima 15
-rtl/tb/tb_health_tests.vhd:157:5:@430735ns:(report note): 4) Pegada al valor opuesto al de referencia: detecta el complemento
-rtl/tb/tb_health_tests.vhd:76:9:@451255ns:(report note):   [ok ] APT dispara aunque la cuenta directa sea 1
-rtl/tb/tb_health_tests.vhd:165:5:@451255ns:(report note): 5) Las alarmas son pegajosas y se borran a proposito
-rtl/tb/tb_health_tests.vhd:76:9:@452255ns:(report note):   [ok ] sigue en alarma con fuente ya sana
-rtl/tb/tb_health_tests.vhd:76:9:@452275ns:(report note):   [ok ] borrar baja las alarmas
-rtl/tb/tb_health_tests.vhd:176:5:@452275ns:(report note): 6) ventana_fin: una por ventana, con el veredicto, y borrar la reinicia
-rtl/tb/tb_health_tests.vhd:76:9:@472786ns:(report note):   [ok ] sin cierre con W-1 muestras
-rtl/tb/tb_health_tests.vhd:76:9:@472816ns:(report note):   [ok ] un cierre en la muestra W, sin alarma
-rtl/tb/tb_health_tests.vhd:76:9:@513786ns:(report note):   [ok ] tres cierres en 3W muestras: 3
-rtl/tb/tb_health_tests.vhd:76:9:@534276ns:(report note):   [ok ] el cierre de una ventana mala llega con alarma_apt = 1
-rtl/tb/tb_health_tests.vhd:76:9:@565006ns:(report note):   [ok ] tras borrar, W-1 muestras no cierran ventana
-rtl/tb/tb_health_tests.vhd:76:9:@565036ns:(report note):   [ok ] tras borrar, la ventana se cierra en la muestra W y limpia
-rtl/tb/tb_health_tests.vhd:218:7:@565036ns:(report note): tb_health_tests: 0 fallos
+rtl/tb/tb_health_tests.vhd:124:5:@35ns:(report note): 1) Fuente sana: 20 ventanas sin alarma
+rtl/tb/tb_health_tests.vhd:77:9:@409635ns:(report note):   [ok ] sin alarmas tras 20480 muestras
+rtl/tb/tb_health_tests.vhd:77:9:@409635ns:(report note):   [ok ] racha maxima vista 13 < 39
+rtl/tb/tb_health_tests.vhd:77:9:@409635ns:(report note):   [ok ] proporcion maxima vista 540 < 683
+rtl/tb/tb_health_tests.vhd:135:5:@409635ns:(report note): 2) Fuente pegada: el RCT salta en la muestra C
+rtl/tb/tb_health_tests.vhd:77:9:@410555ns:(report note):   [ok ] RCT dispara en la muestra 39 (esperado 39)
+rtl/tb/tb_health_tests.vhd:147:5:@410555ns:(report note): 3) Fuente sesgada al 70 %: salta el APT, no el RCT
+rtl/tb/tb_health_tests.vhd:77:9:@431075ns:(report note):   [ok ] APT dispara con proporcion 713 >= 683
+rtl/tb/tb_health_tests.vhd:77:9:@431075ns:(report note):   [ok ] RCT no dispara con racha maxima 15
+rtl/tb/tb_health_tests.vhd:158:5:@431075ns:(report note): 4) Pegada al valor opuesto al de referencia: detecta el complemento
+rtl/tb/tb_health_tests.vhd:77:9:@451595ns:(report note):   [ok ] APT dispara aunque la cuenta directa sea 1
+rtl/tb/tb_health_tests.vhd:166:5:@451595ns:(report note): 5) Las alarmas son pegajosas y se borran a proposito
+rtl/tb/tb_health_tests.vhd:77:9:@452595ns:(report note):   [ok ] sigue en alarma con fuente ya sana
+rtl/tb/tb_health_tests.vhd:77:9:@452615ns:(report note):   [ok ] borrar baja las alarmas
+rtl/tb/tb_health_tests.vhd:177:5:@452615ns:(report note): 6) ventana_fin: una por ventana, con el veredicto, y borrar la reinicia
+rtl/tb/tb_health_tests.vhd:77:9:@473126ns:(report note):   [ok ] sin cierre con W-1 muestras
+rtl/tb/tb_health_tests.vhd:77:9:@473156ns:(report note):   [ok ] un cierre en la muestra W, sin alarma
+rtl/tb/tb_health_tests.vhd:77:9:@514126ns:(report note):   [ok ] tres cierres en 3W muestras: 3
+rtl/tb/tb_health_tests.vhd:77:9:@534616ns:(report note):   [ok ] el cierre de una ventana mala llega con alarma_apt = 1
+rtl/tb/tb_health_tests.vhd:77:9:@565346ns:(report note):   [ok ] tras borrar, W-1 muestras no cierran ventana
+rtl/tb/tb_health_tests.vhd:77:9:@565376ns:(report note):   [ok ] tras borrar, la ventana se cierra en la muestra W y limpia
+rtl/tb/tb_health_tests.vhd:219:7:@565376ns:(report note): tb_health_tests: 0 fallos
 
 --- tb_motor_top ---
 ../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE

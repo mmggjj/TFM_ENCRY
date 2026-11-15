@@ -260,6 +260,25 @@ duplicaría $K_D$; el contador de 24 bits lo cubre, y la herramienta que lo
 resuelve es un análisis de ruido transitorio cicloestacionario, un uso
 concreto de un simulador comercial.
 
+\paragraph{Ciclo de trabajo.} Una vez que la fase es aleatoria, la
+probabilidad de un uno es la fracción del periodo que RO1 pasa por encima
+del umbral del biestable de muestreo. Sea cual sea el jitter, el ciclo de
+trabajo $D$ acota la min-entropía de un bit muestreado directamente en
+$-\log_2 \max(D, 1-D)$. Simulado sin ruido en el mismo anillo de cinco
+etapas, depende del nudo, con el mismo patrón en todas las esquinas. A
+$V_{DD}/2$, dos nudos quedan en 0,517--0,528 y los otros tres en
+0,486--0,508. El desapareamiento lo abre a 0,483--0,535 en ocho chips en
+el punto típico y otros ocho en el peor. Un umbral a 100~mV de $V_{DD}/2$
+lo mueve unos 0,019, porque los flancos son lentos frente a un periodo de
+270--600~ps \simu{}. La cota baja a 0,90 a $V_{DD}/2$ y a 0,85 con esa
+incertidumbre del umbral; en la FPGA, donde el sesgo medido es del
+0,4\,\%, es 0,989. El cable, el buffer y la apertura del biestable no
+están en la simulación. Por eso los tests de salud se calculan para
+$H = 0{,}80$ (Sección~\ref{sec:health}), algo que la semilla absorbe.
+Dividir RO1 por dos con un biestable T fijaría el ciclo de trabajo en el
+50\,\%, pero dividiría $Q$ por cuatro, así que queda como alternativa por
+validar y no se adopta.
+
 \section{Punto de funcionamiento: divisor y tasa de bits}
 \label{sec:opoint}
 
@@ -335,7 +354,7 @@ Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO}, captura, tests de salud,
 \texttt{jitter\_estimator.py} & recuperación del jitter sobre datos
   sintéticos de $Q$ conocido & 20/20 \\
 \texttt{cortes\_salud.py} & umbrales de los tests de salud frente a las
-  fórmulas de SP 800-90B & 6/6 \\
+  fórmulas de SP 800-90B, y la regla de la semilla & 7/7 \\
 \texttt{verifica\_top.py} & verificación cruzada del banco de nivel
   superior con un \ac{AES} independiente & 5/5 \\
 \bottomrule
@@ -347,15 +366,19 @@ individual más sólida del trabajo: el generador no solo es coherente
 consigo mismo, sino que reproduce las salidas que el \ac{NIST} publica
 para \ac{CTRDRBG} con AES-128, tanto en la configuración con función de
 derivación como en la de entropía en bruto. Y los umbrales de los tests de
-salud, $C_{RCT} = 22$ y $C_{APT} = 596$, se habían calculado a mano a
-partir de la norma y nunca se habían comprobado; volver a obtenerlos con
-las fórmulas de SP 800-90B~\cite{turan_2018_sp80090b} confirma ambos. La
-misma comprobación cuantifica el coste de la prueba del complemento
-añadida al \ac{APT}, que es una aportación de este trabajo y no de la
-norma: eleva la tasa de falsas alarmas por ventana de $2^{-20{,}15}$ a
-$2^{-20{,}14}$, un aumento del 0,8\,\%, porque la cola complementaria está
-a 5,7 desviaciones típicas. Por tanto, el umbral sigue siendo válido tal
-como está y la adición sale gratis en la práctica.
+salud se habían calculado a mano a partir de la norma y nunca se habían
+comprobado; volver a obtenerlos con las fórmulas de SP
+800-90B~\cite{turan_2018_sp80090b} confirmó los originales,
+$C_{RCT} = 22$ y $C_{APT} = 596$, y da ahora los vigentes, 39 y 683, para
+$H = 0{,}80$ y $\alpha = 2^{-30}$ (Sección~\ref{sec:health}). La misma
+comprobación cuantifica el coste de la prueba del complemento añadida al
+\ac{APT}, que es una aportación de este trabajo y no de la norma: con el
+umbral original elevaba la tasa de falsas alarmas por ventana de
+$2^{-20{,}15}$ a $2^{-20{,}14}$, un aumento del 0,8\,\%, porque la cola
+complementaria estaba a 5,7 desviaciones típicas; con el vigente está a
+15,6 y el coste no se aprecia. Comprueba además que los 384 bits de la
+semilla llevan al menos los 192 bits de entropía que necesita el
+generador, incluso con la peor proporción que deja pasar el test.
 
 \section{Comparación con elementos seguros comerciales}
 \label{sec:se_comparison}

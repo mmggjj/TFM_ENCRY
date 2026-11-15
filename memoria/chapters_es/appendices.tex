@@ -257,8 +257,9 @@ Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
   con la biblioteca \texttt{cryptography} & \texttt{run\_host.py}, 0 fallos;
   \texttt{verifica\_lecturas.py} \\
 Cortes de los tests de salud & fórmulas de
-  SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}98$ y
-  $\alpha = 2^{-20}$: \ac{RCT} $C = 22$, \ac{APT} $W = 1024$, $C = 596$ &
+  SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}80$ y
+  $\alpha = 2^{-30}$: \ac{RCT} $C = 39$, \ac{APT} $W = 1024$, $C = 683$;
+  semilla de 384 bits $\ge 192$ bits de entropía en el límite del \ac{APT} &
   \nolinkurl{analysis/cortes_salud.py}; comportamiento en
   \texttt{tb\_health\_tests}, 15 comprobaciones \\
 \bottomrule

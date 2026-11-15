@@ -156,6 +156,32 @@ int main(void)
     cmd_sembrar();
     chk((motor_status() & ST_SEMBRADO) != 0, "tras borrar y repetir el arranque, sembrado");
 
+    printf("\n5b) Rearme acotado: %u por ventana, luego fallo permanente\n",
+           (unsigned)MOTOR_REARME_MAX);
+    uint32_t aceptados = 0;
+    for (uint32_t i = 0; i < MOTOR_REARME_MAX; i++) {
+        motor_alarma(true);
+        cmd_rearmar();
+        uint8_t s = motor_status();
+        if ((s & ST_SEMBRADO) && !(s & (ST_ALM_RCT | ST_ALM_APT)) && !motor_fallo_permanente())
+            aceptados++;
+    }
+    chk(aceptados == MOTOR_REARME_MAX, "cada rearme borra la alarma y deja el motor sembrado");
+    motor_alarma(true);
+    cmd_rearmar();
+    chk(motor_fallo_permanente(), "el rearme siguiente dentro de la ventana es fallo permanente");
+    chk((motor_status() & (ST_ALM_RCT | ST_ALM_APT)) != 0, "y la alarma se queda: no se ha borrado");
+    vTaskDelay(pdMS_TO_TICKS(MOTOR_REARME_VENTANA_MS));
+    cmd_rearmar();
+    chk(motor_fallo_permanente() && (motor_status() & (ST_ALM_RCT | ST_ALM_APT)),
+        "pasada la ventana sigue en fallo: solo un reinicio lo quita");
+    cmd_clave();
+    chk(clave.valida && publica_actual(pub2) == npub1 && memcmp(pub1, pub2, npub1) == 0,
+        "en fallo permanente no hay clave nueva y sigue la anterior");
+    cmd_borrar();                              /* la mano del operador */
+    cmd_sembrar();
+    chk((motor_status() & ST_SEMBRADO) != 0, "borrar y sembrar a mano siguen funcionando");
+
     printf("\n6) Un fallo de bus a mitad de la clave no deja una clave a medias\n");
     /* El primer bloque sale bien y el bus cae antes de leer el segundo. */
     int antes_aleatorio = motor_n_aleatorio;

@@ -16,10 +16,12 @@
 -- binarias: una fuente pegada al valor contrario al primero de la ventana
 -- daria cuenta cero y pasaria el test de la letra pero no el del espiritu.
 --
--- Valores por defecto para H = 0,98 bit/bit y alfa = 2^-20, calculados en
--- docs/estado_del_arte_trng.md seccion 5.1: RCT C = 22, APT C = 596.
--- Son genericos porque H se fija con la min-entropia MEDIDA (objetivo
--- O3), no con una suposicion.
+-- Valores por defecto para H = 0,80 bit/bit y alfa = 2^-30: RCT C = 39,
+-- APT C = 683 (decision del 15-11-2026, docs/basys2.md). Hasta entonces,
+-- H = 0,98 y alfa = 2^-20 (22 y 596, docs/estado_del_arte_trng.md 5.1):
+-- falsas alarmas cada pocos minutos en la FPGA y H por encima de lo que
+-- da el sesgo del muestreo en el integrado [SIMULADO]. Son genericos
+-- porque H se fija con la min-entropia medida, no con una suposicion.
 --
 -- Las alarmas son pegajosas: quedan levantadas hasta que se borran a
 -- proposito, para que ninguna capa superior pueda perderselas. La logica
@@ -37,9 +39,9 @@ use ieee.numeric_std.all;
 
 entity health_tests is
   generic (
-    G_RCT_C   : positive := 22;     -- corte del test de repeticion
+    G_RCT_C   : positive := 39;     -- corte del test de repeticion
     G_APT_W   : positive := 1024;   -- ventana del test de proporcion
-    G_APT_C   : positive := 596     -- corte del test de proporcion
+    G_APT_C   : positive := 683     -- corte del test de proporcion
   );
   port (
     clk      : in  std_logic;

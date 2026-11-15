@@ -146,10 +146,20 @@ $C_{\mathrm{RCT}} = 1 + \lceil -\log_2\alpha / H \rceil$ identical samples
 arrive in a row; the Adaptive Proportion Test counts, in a window of
 $W = 1024$ samples (the binary-source value; 512 is for non-binary
 sources), how many repeat the first one, and fails at
-$C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. For the
-design target $H = 0.98$ and $\alpha = 2^{-20}$ these are $C_{\mathrm{RCT}}
-= 22$ and $C_{\mathrm{APT}} = 596$; both are generics, because $H$ is set
-from the \emph{measured} min-entropy, not assumed. The proportion test
+$C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. The
+design target is $H = 0.80$ and $\alpha = 2^{-30}$, which give
+$C_{\mathrm{RCT}} = 39$ and $C_{\mathrm{APT}} = 683$. Until November 2026
+it was $H = 0.98$ and $\alpha = 2^{-20}$ (22 and 596). It was lowered for
+two reasons. The duty cycle of the IHP ring, simulated at transistor
+level, leaves a first-order bound of 0.85--0.90 on a directly sampled bit
+(Section~\ref{sec:ihp_ring}). And at $2^{-20}$ the FPGA prototype raised a
+repetition false alarm every few minutes, each of which blocks the engine.
+The lower target costs nothing in the seed: even at the worst proportion
+the test lets through ($p \approx 0.667$, $H \approx 0.58$), the 384 seed
+bits carry 224 bits of entropy, more than the 192 that an AES-128
+\ac{CTRDRBG} needs (128 plus a 64-bit nonce). Both cut-offs are generics,
+because $H$ is set from the \emph{measured} min-entropy, not assumed. The
+proportion test
 also checks the complement of the count, which the standard permits for
 binary sources: a source stuck at the value opposite to the window's
 first sample would otherwise score zero and pass. Alarms are sticky until
@@ -180,11 +190,29 @@ divider resets to its maximum rather than to a small value, so a host
 that forgets to configure it seeds at the slowest rate and the most
 entropy per bit, never below the characterized setting.
 
+The engine never re-arms itself after an alarm. Because the rings and the
+tests run continuously, a healthy source will still raise the occasional
+false alarm over the life of a device, so the re-arm policy belongs to the
+host and is bounded: clear the alarms, wait for the start-up test and
+seed again, at most three times in 24~hours, and fail permanently on the
+fourth until the host is restarted. With the cut-offs above, one false
+alarm a year is expected at 8.7~kbit/s, so three in a day are not chance.
+
+The sampling flip-flop no longer uses an enable. It used to capture RO1
+only on the divider's tick, so between samples it held the previous bit.
+On the FPGA the raw bits then came out correlated with the previous one
+($\rho_1 \approx 0.005$, $z$ up to 13), and the correlation vanished when
+the flip-flop was made to sample on every RO2 edge with the tick only
+selecting which sample is kept ($z \le 1$ in two implementations with the
+same placement). The bits are identical in simulation; the mechanism inside
+the flip-flop was not identified.
+
 The testbench injects the failure modes the tests exist for: a healthy
 source passes twenty windows (worst run 13, worst proportion 540); a
-stuck source trips the repetition test at exactly sample~22; a source
-biased to 70\,\% trips the proportion test at 713 without tripping the
-repetition test; and a source stuck at the complement is caught. The
+stuck source trips the repetition test at exactly sample~39; a source
+biased to 70\,\% trips the proportion test at 713 (cut-off 683) without
+tripping the repetition test; and a source stuck at the complement is
+caught. The
 first ``healthy'' source of the bench --- a shift register seeded with a
 single one --- was itself caught by the tests, with a start-up run of 27
 zeros and a first window at 76\,\%. The detector was right and the bench

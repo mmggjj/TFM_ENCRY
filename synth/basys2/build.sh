@@ -59,7 +59,10 @@ paso xst      xst -ifn basys2_top.xst -ofn basys2_top.syr
 paso ngdbuild ngdbuild -dd _ngo -nt timestamp -uc "${UCF:-../basys2.ucf}" -p "$PARTE" \
                        basys2_top.ngc basys2_top.ngd
 paso map      map -p "$PARTE" -o basys2_top_map.ncd basys2_top.ngd basys2_top.pcf
-paso par      par -w -ol high basys2_top_map.ncd basys2_top.ncd basys2_top.pcf
+# PAR_OPC: opciones extra de par (p. ej. "-t 7", otra tabla de costes del
+# colocador: otra implementacion con las mismas restricciones).
+# shellcheck disable=SC2086
+paso par      par -w -ol high ${PAR_OPC:-} basys2_top_map.ncd basys2_top.ncd basys2_top.pcf
 paso trce     trce -v 10 -u 10 basys2_top.ncd basys2_top.pcf -o basys2_top.twr
 # StartUpClk = JtagClk: se graba por JTAG (Adept). Para la Platform Flash
 # haria falta CCLK y un .mcs con promgen.

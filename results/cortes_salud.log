@@ -1,0 +1,24 @@
+SP 800-90B 4.4 — cortes para H = 0.8, alfa = 2^-30, W = 1024
+
+1) Repetition Count Test
+  [ok ] C = 39, el RTL usa 39
+2) Adaptive Proportion Test
+  [ok ] C = 683, el RTL usa 683
+3) Coste del test del complemento (adicion propia, no de la norma)
+      una cola : 7.8140e-10  (2^-30.25)
+      dos colas: 7.8140e-10  (2^-30.25)
+  [ok ] con las dos colas la falsa alarma sigue por debajo de 2^-30 (7.8140e-10 <= 9.3132e-10)
+  [ok ] el complemento apenas encarece la falsa alarma (x1.0000): su cola cae a 15.6 sigma
+4) Los cortes dependen de H: hay que recalcularlos con la H MEDIDA
+      H = 0.99  ->  RCT C =  32   APT C = 612
+      H = 0.98  ->  RCT C =  32   APT C = 616
+      H = 0.90  ->  RCT C =  35   APT C = 645
+      H = 0.75  ->  RCT C =  41   APT C = 703
+      H = 0.50  ->  RCT C =  61   APT C = 810
+  [ok ] menos min-entropia exige un corte mas alto (mas permisivo)
+  [ok ] lo mismo en el RCT
+5) Semilla con lo peor que deja pasar el APT
+      p en el corte = 0.6670 -> H = 0.5843; 384 bits x H = 224
+  [ok ] 224 >= 192 bits que pide el CTR_DRBG AES-128
+
+cortes_salud: 0 fallos

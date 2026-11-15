@@ -5,7 +5,7 @@
 --     escala de la ventana): ninguna alarma en 20 ventanas.
 --  2. Fuente pegada: el RCT debe saltar exactamente en la muestra C.
 --  3. Fuente sesgada al 70 %: el APT debe saltar en la primera ventana
---     completa; el RCT no deberia (rachas de 22 iguales son improbables).
+--     completa; el RCT no deberia (rachas de C iguales son improbables).
 --  4. Fuente pegada al valor opuesto al primero de la ventana: el APT solo
 --     la detecta gracias a mirar el complemento.
 --  5. Las alarmas se quedan hasta borrar, y borrar las baja.
@@ -23,9 +23,10 @@ end entity tb_health_tests;
 architecture sim of tb_health_tests is
 
   constant C_T : time := 10 ns;
-  constant C_RCT : positive := 22;
+  -- Los cortes por defecto de health_tests (H 0,80, alfa 2^-30).
+  constant C_RCT : positive := 39;
   constant C_W   : positive := 1024;
-  constant C_APT : positive := 596;
+  constant C_APT : positive := 683;
 
   signal clk, rst_n : std_logic := '0';
   signal bit_i, bit_stb, borrar : std_logic := '0';

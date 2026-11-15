@@ -368,7 +368,7 @@ de `kd 13` y `kd 14` no tienen líneas (máximo 1,28 veces la mediana, lo
 esperable por azar con 4 097 frecuencias).
 
 Variantes de `basys2_top` (genérico `G_QUIETO`: display apagado y LED fijo;
-`G_MEDIDOR = false`: sin frecuencímetro, con `build/basys2_sin_medidor.ucf`
+`G_MEDIDOR = false`: sin frecuencímetro, con `synth/basys2/basys2_sin_medidor.ucf` (antes solo en `build/`, sin versionar)
 porque la salida del anillo cambia de nombre), mismos CLB para los anillos,
 10⁶ bits por divisor (`results/motor_campana/basys2_quieto*`):
 
@@ -492,6 +492,260 @@ los anillos sí arrancan desde cero en cada ciclo.
   cargador de arranque el ESP32 sacaba siempre la misma secuencia; la FPGA
   no tiene ese problema.
 
+## Tabla O8 y un defecto que la cifra asignada no ve (15-11-2026)
+
+`analysis/tabla_o8.py` → `results/tabla_o8.md`: SP 800-90B no-IID en bits,
+estimador a estimador, FPGA (`kd 13-16` a 10⁶, `kd 14` a 8 378 368) frente
+a ESP32 (36 capturas de los ANOVA y `esp_rf_off_2`), bits ideales y bits
+independientes con el sesgo de la FPGA (`analysis/sesgo_90b.py`).
+`analysis/sesgo_correlacion.py` → `results/sesgo_correlacion.md`. Todo con
+datos medidos ya existentes; nada nuevo en placa.
+
+- **La H asignada (el mínimo) no separa** las tres fuentes: 0,845 / 0,848 /
+  0,847 a 10⁶ (la manda la compresión, saturada) y 0,890 / 0,911 /
+  0,907-0,935 a 8,4·10⁶.
+- **Los estimadores sueltos sí separan la FPGA**, sin solaparse con el ESP32
+  ni con bits ideales: Markov 0,984-0,990 frente a 0,994-1,000 (ESP32) a
+  10⁶, 0,988 frente a 1,000 a 8,4·10⁶; también MCV, MultiMMC, LZ78Y y
+  colisión.
+- **Dos defectos medidos en los bits de la FPGA, ninguno en el ESP32:**
+  sesgo, fracción de unos 0,4979 (z = −12 a 8,4·10⁶), y correlación
+  positiva a retardo 1, ρ₁ = +0,0045 (z = 13); nada a retardos 2-8. En el
+  ESP32 las 36 capturas dan z de sesgo y de ρ₁ como una normal (0,1)
+  (desviaciones 1,06 y 1,16, máximo |z| 2,9).
+- **No dependen del divisor** de `kd 13` a `16` (ρ₁ 0,003-0,006, ±0,001
+  cada uno): no es jitter insuficiente (eso bajaría al subir `kd`), es
+  determinista, en el camino de muestreo. `kd 12` no cuenta como prueba:
+  su ρ₁ por bloques salta de −0,011 a +0,021 y tiene 375 rachas ≥ 12
+  frente a 244 esperadas, jitter insuficiente (revisión independiente,
+  abajo). A `kd 13` aún hay un leve exceso de rachas ≥ 12 (z 2,4-3,9):
+  la comparación limpia es `kd 14`.
+- El sesgo solo explica MCV y los predictores (bits iid con p₁ = 0,4979 los
+  reproducen), **no** Markov ni colisión, que piden la correlación.
+  Probabilidades de transición (8,4·10⁶): P(0|0) = 0,5043, P(0|1) = 0,4998.
+- `bit_cdc` queda descartado: una conmutación por bit, y con `kd ≥ 6` no
+  puede duplicar ni perder bits.
+- Hipótesis de partida: `ero_core` muestrea ro1 directamente, con
+  habilitación (`muestra_cruda <= ro1` solo cuando `tic`; en la netlist,
+  el pin CE del biestable, sin LUT delante). Con la fase ya aleatoria, P(0)
+  es el ciclo de trabajo de ro1 *visto por el biestable*; la correlación
+  encajaría con que ese ciclo efectivo dependa del estado anterior del
+  biestable (~0,45 % del periodo de ro1, unos 40 ps). **Comprobada en placa
+  para la correlación** (sección siguiente); el sesgo no viene de ahí.
+- **Lo que cuesta:** −log₂ max P(b|anterior) da una **cota superior** de
+  primer orden de la min-entropía por bit, no una cifra declarable, y
+  depende de la implementación: 0,9875 la del 14-11, 0,980-0,982 la
+  regenerada (con CE), 0,989 la libre (sin CE). Justo en el 0,98 con el que
+  se calcularon los tests de salud, por debajo del 1,0000 del modelo, que
+  no tiene sesgo de muestreo. Para la memoria: el modelo da la entropía del jitter y no la
+  del muestreador, y la cifra única de SP 800-90B esconde un defecto que
+  dos estadísticos sencillos ven con z > 10.
+
+## Muestreo sin habilitación (15-11-2026, medido)
+
+Genérico **`G_MUESTREO_LIBRE`** (`ero_core`, `motor_top`, `basys2_top`;
+false por defecto): `muestra_cruda` toma ro1 en cada flanco de ro2 y el
+`tic` solo marca qué muestra vale, así que el estado previo del biestable
+deja de ser el bit anterior. Mismos bits en simulación: **`tb_ero_core`**
+(12/12, 110 710 bits iguales entre las dos formas; mutante que adelanta un
+ciclo el bit cazado con 56 518 distintos, `results/tb_ero_core*.log`). Con
+el genérico por defecto el motor es secuencialmente equivalente a HEAD en
+las cuatro variantes de `synth/equivalencia.sh` (`results/equivalencia_motor_top.log`):
+`cec` ya no lo prueba porque `habilita` renumera las señales de GHDL y
+cambia el orden de los biestables, y el script recurre ahora a ABC `dsec`
+(inducción, sin emparejar biestables). Control negativo, `G_KD_MIN=5`
+frente a HEAD: `dsec` no lo da por equivalente (sin veredicto en 20 min;
+`results/equivalencia_motor_top_control_kdmin5.log`). Ojo: la variante
+libre misma no sirve de control, porque es lógicamente equivalente.
+
+Tres implementaciones de la variante sin display ni medidor, con **los dos
+anillos y el biestable de muestreo en los mismos slices, BEL y patas de LUT**
+(`synth/basys2/basys2_sin_medidor_fijo.ucf`, sacado del XDL de la del 14-11;
+comprobado en el XDL de cada una). Lo que `par` decide en cada ejecución,
+el rutado de las redes de los anillos, es distinto en el XDL de las tres
+(aunque ro2 da la misma frecuencia en regenerada y libre, 143,698 y 143,704
+MHz a `kd 13`, frente a 143,2 el 14-11):
+
+- referencia del 14-11 (CE), los datos de la campaña;
+- **referencia regenerada** (CE, `basys2_top_quieto_sin_medidor_fijo.bit`):
+  mide cuánto mueve el resultado una implementación distinta;
+- **libre** (sin CE, `basys2_top_quieto_sin_medidor_libre.bit`; ISE: un FDCE
+  pasa a FDC, todas las restricciones cumplen).
+
+2²² bits consecutivos a `kd 13` y `14` de cada una nueva
+(`results/motor_campana/basys2_{fijo,libre}_kd13_14_n4194304/`, 0 errores,
+ro2 143,7 MHz en las dos). Tabla en `results/muestreo_libre_ce.md`
+(`sesgo_correlacion.py --extra`):
+
+| implementación | kd | fracción de unos | ρ₁ | z ρ₁ |
+|---|---|---|---|---|
+| 14-11 (CE) | 13 / 14 / 14 larga | 0,4981 / 0,4973 / 0,4979 | +0,0032 / +0,0060 / +0,0045 | 3,2 / 6,0 / 13,1 |
+| regenerada (CE) | 13 / 14 | 0,4959 / 0,4957 | +0,0042 / +0,0052 | 8,6 / 10,7 |
+| libre (sin CE) | 13 / 14 | 0,4962 / 0,4962 | +0,0005 / +0,0000 | 1,0 / 0,1 |
+| libre `par -t 7` (sin CE) | 14 | 0,4971 | +0,0002 | 0,4 |
+
+La última fila es una segunda implementación libre (`PAR_OPC="-t 7"` en
+`build.sh`, `basys2_top_quieto_sin_medidor_libre_t7.bit`,
+`results/motor_campana/basys2_libre_t7_kd14_n4194304/`). Sale con la red
+de ro1 rutada **exactamente igual** que la regenerada (mismos pips en el
+XDL; solo cambia la de ro2): sin correlación otra vez, y un sesgo distinto
+(0,4971 frente a 0,4957) con el mismo rutado de ro1. Así que el sesgo no lo
+fija solo el camino de ro1: también ro2 (aquí 143,92 frente a 143,68 MHz)
+o el momento de la captura.
+
+- **La correlación la produce la habilitación del biestable de muestreo.**
+  Con CE, en dos implementaciones independientes, ρ₁ = 0,003-0,006; sin
+  CE desaparece (z ≤ 1; con 2²² bits, un ρ₁ de 0,0045 daría z ≈ 9). A
+  `kd 14`, P(0|0) − P(0|1) = +0,0052 con CE y +0,0000 sin CE (±0,0005).
+  El mecanismo no está identificado: los datos no distinguen un efecto de
+  la historia del biestable de una habilitación que falle ~0,5 % de las
+  veces (las dos dan correlación solo a retardo 1). Para la memoria: "al
+  quitar la habilitación desaparece", sin mecanismo. Una sola
+  implementación libre, una captura por divisor.
+- **El sesgo no.** Regenerada y libre casi iguales (0,4957-0,4962) y las
+  dos distintas de la del 14-11 (0,4979). No viene de la habilitación; si
+  lo mueve el rutado de ro1 o el día no se sabe (se separaría regrabando el
+  `.bit` del 14-11 y capturando). Hipótesis: ciclo de trabajo de ro1 más la
+  asimetría subida/bajada del camino hasta el biestable (ro1 viaja de
+  X29Y21 a X31Y41) y su apertura.
+- SP 800-90B: con la libre, Markov sube de 0,980-0,982 a 0,988-0,989; MCV
+  y los predictores quedan en ~0,987, limitados por el sesgo; la cifra
+  asignada (compresión) sigue saturada, 0,84-0,88 en las dos.
+- **Para el integrado:** el RTL es el mismo y un biestable con
+  habilitación de biblioteca suele ser un mux con Q realimentada delante de
+  un DFF; nada garantiza que no pase lo mismo. Sin CE el coste es un
+  biestable conmutando a la frecuencia de ro2 (despreciable frente al
+  anillo). Además, con CE el `tic` (AND de 24 bits, el camino más lento del
+  dominio ro2) entra en el biestable que fija el bit; sin CE solo va a
+  `stb_d1`. Decisión en la sección siguiente.
+- La placa queda con la referencia regenerada grabada.
+
+## Decisión del 15-11-2026 (dos agentes, a petición de Mario)
+
+Mario pidió que la sesión principal y un revisor independiente (otro
+agente, solo lectura, con su propio script sobre los diez `.bits`, que
+reproduce exactas las cifras de sesgo y ρ₁) decidieran entre los dos. Cortes
+y tasas de falsa alarma comprobados por los dos (binomial exacta):
+
+| α | RCT C | APT C (W 1024) | bits entre falsas alarmas del APT, p₀ 0,5 / 0,5038 |
+|---|---|---|---|
+| 2⁻²⁰ | 22 | 596 (actual) | 2^33,3 / 2^32,3 |
+| 2⁻³⁰ | 32 | 616 | 2^44,2 / 2^42,8 |
+| 2⁻⁴⁰ | 42 | 632 | — |
+
+(con H = 0,98; con 0,988 los cortes apenas cambian, 593/613/630: no se
+recalculan). RCT con bits ideales: ~2^(C−1) bits entre falsas alarmas.
+
+1. **`G_MUESTREO_LIBRE = true` por defecto en `motor_top`: sí.** Quita la
+   correlación (cota de primer orden de 0,980 a 0,989 con la misma
+   colocación), saca el `tic` del biestable que fija el bit y no cambia los
+   bits en simulación. **Antes de cambiar el defecto:** los bancos con true
+   (sobre todo `tb_motor_top` paso 9), la síntesis (kGE) y decidir contra
+   qué compara `synth/equivalencia.sh`. Se cambiaría de opinión si una
+   segunda implementación libre (otro rutado, o tras apagar la placa)
+   devolviera ρ₁ > 0.
+2. **El sesgo se cuenta, no se toca el hardware; H declarada 0,80** (para
+   el integrado y la FPGA). Esta decisión se reabrió al medir el ciclo de
+   trabajo del anillo IHP [SIMULADO] (`analysis/ciclo_trabajo_ihp.py` →
+   `results/ciclo_trabajo_ihp.{csv,log}`; anillo de `anillo_ihp.py` sin
+   ruido, 5 nudos, umbral V_DD/2 ± 100 mV, nueve esquinas y 8 chips con
+   desapareamiento en tt 27 °C y en ss −40 °C 1,08 V):
+   - a V_DD/2 el ciclo depende del nudo, con el mismo patrón en todas las
+     esquinas: n2 y n4 en 0,517-0,528 (sistemático), n1, n3 y n5 en
+     0,486-0,508;
+   - con desapareamiento, 0,483-0,535 (cota de primer orden peor 0,90);
+     con ±100 mV de umbral, 0,464-0,553 (0,854). Sensibilidad: 0,018-0,019
+     de ciclo por 100 mV, porque los flancos son lentos frente a T = 270-600 ps;
+   - sin el cable, el buffer ni la apertura del biestable.
+
+   En el integrado, muestrear ro1 directamente puede dar un sesgo del
+   2-5 %; en la FPGA es del 0,4 %. Opciones discutidas: (a) biestable T y
+   muestrear ro1/2; (b) contarlo; (c) elegir nudo o dimensionar; (d) XOR de
+   pares. La sesión principal se inclinaba por (a); **el revisor convenció
+   de (b)**, y los números se comprobaron por los dos:
+   - el CTR_DRBG AES-128 no necesita 384 bits de entropía. SP 800-90A pide
+     128 de entropía más un nonce de 64, 192 en total (citado de memoria por
+     los dos agentes: **comprobar la cláusula**). La semilla son 384 bits
+     crudos. Regla de diseño: H en el límite de detección del APT × 384 ≥
+     192;
+   - con H declarada 0,80 y α = 2⁻³⁰: **RCT C = 39, APT C = 683**. El APT
+     deja pasar hasta p ≈ 0,667 (H ≈ 0,584), y aun así la semilla lleva 224
+     bits ≥ 192 (con 0,85: 37 y 664, 240 bits). Se declara 0,80 y no 0,85
+     porque 0,854 es el peor de solo 8 chips y falta el biestable real;
+   - coste de (b): cero en caudal y área; cambian dos genéricos y la
+     documentación. Los vectores del DRBG no cambian, porque la semilla
+     sigue siendo de 384 bits;
+   - (a) cuesta **×4 de divisor, no ×2**: Q va con la varianza de fase
+     partida por el periodo muestreado al cuadrado, Q/4. Con
+     `ero_model.min_entropia_analitica` calibrado al peor chip (H_∞ 0,973 a
+     2²²): ro1/2 a 2²⁴ da 0,973 y a 2²⁵ 0,9996, así que hace falta 2²⁵, un
+     contador de 26 bits a 2,7 GHz sin análisis de tiempos. Caudal a la
+     cuarta parte (0,05-0,10 kbit/s; semilla y test de arranque en 14-28 s).
+     Además mete un biestable T sin verificar con flancos lentos y no evita
+     declarar H < 1;
+   - (d) queda dominada por (b): gasta el doble de bits crudos, deja H ≈
+     0,984 con el peor sesgo simulado y los tests de salud deben ver los
+     bits crudos;
+   - de (c), lo gratuito: sacar ro1 de un nudo impar, nunca n2 ni n4.
+     Como mejora, sin contar con ella; la correspondencia entre los nudos
+     del anillo de SPICE (solo inversores) y `ring_osc` (NAND + inversores)
+     está por hacer.
+
+   Se pasaría a (a) si Mario o los tutores quieren una fuente cruda con
+   H ≈ 1 (el objetivo es caracterizar la aleatoriedad), si la simulación con
+   el biestable real da un sesgo por encima del 10 %, o si en la Basys 2 un
+   biestable T confirma la bajada del sesgo y Q/4. **Antes de fijar la H
+   del integrado:** SPICE con el biestable real de sg13g2 (y el buffer, si
+   lo hay) colgado del anillo, barriendo la fase del muestreo; más de 8
+   chips si la cifra se apoya en esa cola.
+3. **Tests de salud: α = 2⁻³⁰, con los cortes de H = 0,80: RCT C = 39 y
+   APT C = 683** (sustituye a los 32 y 616 calculados con H = 0,98). Subir
+   solo el RCT habría dejado al APT (596) como fuente dominante de falsas
+   alarmas con el sesgo medido (~2^32 bits). Con 39 y 683 las falsas
+   alarmas pasan a ser rarísimas (RCT ~2^38 bits con bits ideales, un año
+   a `kd 14`). Aun así, **política de rearme en el maestro, acotada y nada
+   automático en el hardware**: borrar alarmas, esperar el test de
+   arranque, resembrar, y fallo permanente si se repite N veces en una
+   ventana. La propuesta inicial de la sesión principal, C = 32 sin rearme,
+   no aguantaba.
+4. Otros puntos del revisor, recogidos arriba: `kd 12` no prueba nada sobre
+   el divisor; "0,988" era una cota y de una sola implementación; mecanismo
+   del CE sin identificar; falta una segunda implementación libre; el
+   contador de 24 bits y el `tic` a 2,73 GHz en SG13G2 siguen sin análisis
+   de tiempos (`docs/sintesis_resultados.md`). Descartado por el revisor:
+   estructura por posición de bit mod 8 (acoplo con la lectura por bytes)
+   y dependencia de orden 2.
+
+### Aplicado el 15-11-2026
+
+- `motor_top`: **`G_MUESTREO_LIBRE = true`** y los cortes pasan a ser
+  genéricos suyos, **`G_RCT_C = 39`** y **`G_APT_C = 683`** (también por
+  defecto en `health_tests`). `basys2_top` deja `G_MUESTREO_LIBRE = false`
+  para seguir siendo comparable con sus campañas. Con
+  `GEN_ACT="-gG_MUESTREO_LIBRE=false -gG_RCT_C=22 -gG_APT_C=596"`,
+  `synth/equivalencia.sh` da las cuatro variantes equivalentes a HEAD por
+  `dsec` (`results/equivalencia_motor_top.log`): no cambia nada más.
+- Bancos: los doce pasan con el muestreo libre por defecto en una copia
+  (`results/run_tb_muestreo_libre_true*.log`; `tb_motor_top` 85/85, PSL
+  14/14 y 8/8). `tb_health_tests` con 39/683: el RCT salta en la muestra
+  39 y la fuente al 70 % en 713.
+- `analysis/cortes_salud.py` con H 0,80 y α = 2⁻³⁰, y la regla de la
+  semilla (7/7, `results/cortes_salud.log`).
+- Firmware: **`motor_rearmar()`** en `componentes/motor_i2c` (3 rearmes en
+  24 h y luego fallo permanente hasta reiniciar) y la orden `rearmar` del
+  medidor; banco en PC paso 5b (135 comprobaciones, 0 fallos, también con
+  ASan/UBSan). Compilado con ESP-IDF 5.3.2: verificador (esp32) y medidor
+  para esp32 sin avisos; el medidor para esp32c3 no, porque en este PC no
+  está la cadena RISC-V (`install.sh esp32c3`).
+- `docs/mapa_registros.md` (cortes, rearme, `G_MUESTREO_LIBRE`) y memoria
+  EN y ES: cap. 4 §salud (cortes, rearme, muestreo sin habilitación), cap. 7
+  §anillo IHP (párrafo del ciclo de trabajo) y §verificación, apéndice de
+  evidencias. PDF regenerados.
+- Pendiente: confirmar la cláusula de SP 800-90A (192 bits); SPICE con el
+  biestable real de sg13g2 colgado del anillo; síntesis (kGE) con el
+  muestreo libre; probar ro1/2 en la Basys 2 si se quiere validar la
+  alternativa.
+
 ## Pendiente (lista para el 15-11-2026 en adelante)
 
 Por orden; lo marcado (M) necesita a Mario delante de la placa.
@@ -523,7 +777,7 @@ Por orden; lo marcado (M) necesita a Mario delante de la placa.
 Estado de las cosas al cerrar el 14-11: la Basys 2 con la variante sin
 display ni medidor grabada (se pierde al desenchufar: volver a grabarla con
 `djtgcfg prog -d SN:<serie> -i 0 -f synth/basys2/build/basys2_top_quieto_sin_medidor.bit`
-o regenerarla con `UCF=basys2_sin_medidor.ucf GENERICOS="-gG_QUIETO=true
+o regenerarla con `UCF=../basys2_sin_medidor.ucf GENERICOS="-gG_QUIETO=true
 -gG_MEDIDOR=false" bash synth/basys2/build.sh`); el ESP32 a0:dd:6c:0e:fb:4c
 con el verificador y cableado a JA1/JA2/GND; `/dev/ttyUSB0` pide `chmod`
 al reconectar. Todo subido a `feat/lecturas-firmadas` (992ba88 y la nota

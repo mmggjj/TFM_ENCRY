@@ -60,7 +60,14 @@ entity motor_top is
     -- resembrar, generar, aleatorio y autenticar se rechazan (DIAG.rechazada)
     -- y DIAG.solo_fuente lo anuncia. Para la Basys 2 (XC3S100E), donde la
     -- criptografia no cabe (docs/basys2.md).
-    G_SOLO_FUENTE    : boolean := false
+    G_SOLO_FUENTE    : boolean := false;
+    -- Muestreo de ro1 sin habilitacion (ero_core): con ella el bit salia
+    -- correlado con el anterior (rho1 ~0,005, medido en la Basys 2;
+    -- docs/basys2.md). true desde el 15-11-2026.
+    G_MUESTREO_LIBRE : boolean := true;
+    -- Cortes de los tests de salud (health_tests): H = 0,80 y alfa = 2^-30.
+    G_RCT_C          : positive := 39;
+    G_APT_C          : positive := 683
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -230,6 +237,7 @@ begin
     port map (en => en_anillos, osc => ro2);
 
   u_ero : entity work.ero_core
+    generic map (G_MUESTREO_LIBRE => G_MUESTREO_LIBRE)
     port map (ro1 => ro1, ro2 => ro2, rst_n => rst_n_ro, kd_sel => kd_sel,
               bit_o => bit_ro, bit_stb => stb_ro);
 
@@ -238,6 +246,7 @@ begin
               clk_d => clk, rst_n_d => rst_n_s, bit_d => bit_s, stb_d => stb_s);
 
   u_salud : entity work.health_tests
+    generic map (G_RCT_C => G_RCT_C, G_APT_C => G_APT_C)
     port map (clk => clk, rst_n => rst_n_s, bit_i => bit_s, bit_stb => stb_s,
               borrar => borrar_alm, alarma_rct => alm_rct,
               alarma_apt => alm_apt, alarma => alm,

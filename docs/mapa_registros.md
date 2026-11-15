@@ -82,11 +82,32 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
    sube. Una siembra tarda como mucho 384 + 1024 bits.
 3. **Alarma bloquea la salida**, ver STATUS arriba.
 
+**Cortes (desde el 15-11-2026):** RCT C = 39 y APT C = 683 (W = 1024),
+calculados para una min-entropía de diseño H = 0,80 y α = 2⁻³⁰
+(`analysis/cortes_salud.py`). Antes, H = 0,98 y α = 2⁻²⁰ (22 y 596): en la
+Basys 2, una falsa alarma del RCT cada ~8 min a CFG_KD 14, y en el
+integrado el sesgo del muestreo del anillo [SIMULADO] deja H por debajo de
+0,98. Con 683, lo peor que deja pasar el APT (p ≈ 0,667, H ≈ 0,584) aún da
+224 bits de entropía en los 384 de la semilla, por encima de los 192 que
+pide un CTR_DRBG AES-128 (128 + nonce de 64; SP 800-90A, cláusula por
+confirmar). Son genéricos de `motor_top` (`G_RCT_C`, `G_APT_C`).
+Razonamiento en `docs/basys2.md`, "Decisión del 15-11-2026".
+
+**Rearme:** con los anillos y los tests corriendo siempre, una fuente sana
+acaba dando alguna falsa alarma en la vida del equipo, y cada alarma
+bloquea el motor hasta `borrar_alarmas`. El motor no se rearma solo. La
+política va en el maestro (`motor_rearmar()` de
+`firmware/componentes/motor_i2c`): borrar las alarmas, esperar el test de
+arranque y volver a sembrar (resembrar si el DRBG tenía estado), como
+mucho 3 veces en 24 h; a la cuarta, fallo permanente hasta reiniciar el
+ESP32. Con estos cortes cabe esperar una falsa alarma al año a 8,7 kbit/s:
+tres en un día no son azar.
+
 ## CONTROL (0x03)
 
 | Bit | Orden | Qué hace |
 |---|---|---|
-| 0 | sembrar | recoge 384 bits crudos del anillo (256 de entropía + 128 de nonce), espera a que los tests de salud los hayan evaluado enteros y **instancia** el DRBG desde cero |
+| 0 | sembrar | recoge 384 bits crudos del anillo (los campos de entropía, 256, y nonce, 128, de la entrada del DRBG; la entropía que llevan es H × 384, ver "Cortes" arriba), espera a que los tests de salud los hayan evaluado enteros y **instancia** el DRBG desde cero |
 | 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE, los otros 128 se descartan; recarga el autenticador. **No deja nada legible** |
 | 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
 | 3 | borrar_alarmas | baja las alarmas de salud |
@@ -145,7 +166,8 @@ en `docs/captura_continua.md`.
 ## Variantes sintetizables con el mismo mapa
 
 Dos genéricos de `motor_top` quitan bloques sin cambiar ni el mapa ni
-VERSION (desde el 14-11-2026). Con sus valores por defecto el motor es el
+VERSION (desde el 14-11-2026); otro cambia el muestreo de la fuente (desde
+el 15-11-2026). Con sus valores por defecto el motor es el
 de siempre: `synth/equivalencia.sh` comprueba que la lógica es idéntica
 bit a bit a la de antes.
 
@@ -162,6 +184,16 @@ bit a bit a la de antes.
   mapa funcionan igual. Es la variante de la Basys 2 (XC3S100E, 1 920 LUT4),
   donde la criptografía no cabe (`docs/basys2.md`). Banco:
   `tb_motor_solo_fuente`.
+
+- **`G_MUESTREO_LIBRE`** (true por defecto desde el 15-11-2026): el
+  biestable que muestrea ro1 lo toma en cada flanco de ro2 y el divisor
+  solo marca qué muestra vale, en vez de tomarlo con habilitación. Mismos
+  bits en simulación (`tb_ero_core`); en la Basys 2, con habilitación el
+  bit salía correlado con el anterior (ρ₁ ≈ 0,005, z hasta 13) y sin ella
+  no (z ≤ 1, dos implementaciones). `basys2_top` lo deja en false para
+  seguir siendo comparable con sus campañas. Con `G_MUESTREO_LIBRE=false`
+  y los cortes antiguos (`G_RCT_C=22`, `G_APT_C=596`) el motor es
+  equivalente al anterior (`GEN_ACT` de `synth/equivalencia.sh`).
 
 Un maestro que encuentre `DIAG.solo_fuente` = 1 no intenta sembrar: usa el
 motor como fuente de bits crudos (flujo, en modo test) y tests de salud.

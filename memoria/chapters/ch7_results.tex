@@ -252,6 +252,25 @@ double $K_D$; the 24-bit counter covers it, and the tool that settles it
 is a cyclostationary transient-noise analysis, a concrete use of a
 commercial simulator.
 
+\paragraph{Duty cycle.} Once the phase is random, the probability of a
+one is the fraction of the period that RO1 spends above the threshold of
+the sampling flip-flop. Whatever the jitter, the duty cycle $D$ bounds the
+min-entropy of a directly sampled bit at $-\log_2 \max(D, 1-D)$. Simulated
+without noise on the same five-stage ring, it depends on the node, with
+the same pattern at every corner. At $V_{DD}/2$, two nodes sit at
+0.517--0.528 and the other three at 0.486--0.508. Mismatch spreads it to
+0.483--0.535 over eight dies at the typical point and eight at the worst
+point. A threshold 100~mV away from $V_{DD}/2$ moves it by about 0.019,
+because the edges are slow against a 270--600~ps period \simu{}. The bound
+falls to 0.90 at $V_{DD}/2$ and to 0.85 with that threshold uncertainty;
+on the FPGA, where the measured bias is 0.4\,\%, it is 0.989. The wire,
+the buffer and the flip-flop aperture are not in the simulation. The
+health tests are therefore computed for $H = 0.80$
+(Section~\ref{sec:health}), which the seed absorbs. Dividing RO1 by two
+with a toggle flip-flop would fix the duty cycle at 50\,\%, but it would
+cut $Q$ fourfold, so it is kept as an alternative to validate rather than
+adopted.
+
 \section{Operating point: divider and throughput}
 \label{sec:opoint}
 
@@ -325,7 +344,7 @@ VHDL testbenches (GHDL) & rings, \ac{ERO}, capture, health tests,
 \texttt{jitter\_estimator.py} & jitter recovery on synthetic data of
   known $Q$ & 20/20 \\
 \texttt{cortes\_salud.py} & health-test cutoffs against SP 800-90B
-  formulas & 6/6 \\
+  formulas, and the seed rule & 7/7 \\
 \texttt{verifica\_top.py} & cross-check of the top-level bench with an
   independent \ac{AES} & 5/5 \\
 \bottomrule
@@ -336,16 +355,20 @@ Two of these deserve a sentence. The 960 \ac{CAVP} cases are the
 strongest single piece of evidence in the work: the generator is not
 merely self-consistent, it reproduces the outputs that \ac{NIST} publishes
 for \ac{CTRDRBG} with AES-128, in both the derivation-function and the
-raw-entropy configurations. And the health-test cutoffs, $C_{RCT} = 22$
-and $C_{APT} = 596$, had been computed by hand from the standard and were
-never checked; deriving them again from the formulas of SP
-800-90B~\cite{turan_2018_sp80090b} confirms both. The same check
-quantifies the cost of the complement test added to the \ac{APT}, which is
-an addition of this work and not of the standard: it raises the
+raw-entropy configurations. And the health-test cutoffs had been computed
+by hand from the standard and were never checked; deriving them again
+from the formulas of SP 800-90B~\cite{turan_2018_sp80090b} confirmed the
+original $C_{RCT} = 22$ and $C_{APT} = 596$, and now gives the current
+39 and 683 for $H = 0.80$ and $\alpha = 2^{-30}$
+(Section~\ref{sec:health}). The same check quantifies the cost of the
+complement test added to the \ac{APT}, which is an addition of this work
+and not of the standard: with the original cutoff it raised the
 false-alarm rate per window from $2^{-20.15}$ to $2^{-20.14}$, a 0.8\,\%
-increase, because the complementary tail lies 5.7 standard deviations
-away. The cutoff therefore remains valid as it stands and the addition is
-free in practice.
+increase, because the complementary tail lay 5.7 standard deviations
+away; with the current one the tail lies 15.6 standard deviations away
+and the cost cannot be seen. It also checks that the 384 seed bits carry
+at least the 192 bits of entropy the generator needs, even at the worst
+proportion the test lets through.
 
 \section{Comparison with commercial secure elements}
 \label{sec:se_comparison}

@@ -185,6 +185,21 @@ static void nvs_olvidar_clave(void)
     nvs_close(h);
 }
 
+/* Rearme acotado tras una alarma (motor_rearmar). cmd_clave no lo hace
+ * solo: con alarma no hay clave nueva hasta que alguien lo decida. */
+static void cmd_rearmar(void)
+{
+    uint8_t st = motor_status();
+    esp_err_t e = motor_rearmar();
+    if (e == ESP_ERR_NOT_ALLOWED) {
+        printf("rearmar: FALLO PERMANENTE, %u rearmes en %u h; reiniciar el equipo\n",
+               (unsigned)MOTOR_REARME_MAX, (unsigned)(MOTOR_REARME_VENTANA_MS / 3600000u));
+        return;
+    }
+    printf("rearmar: %s (antes%s)\n", e == ESP_OK ? "ok, sembrado" : motor_texto_err(e),
+           (st & (ST_ALM_RCT | ST_ALM_APT)) ? motor_texto_alarmas(st) : ": sin alarma");
+}
+
 static void cmd_clave(void)
 {
     uint32_t antes = motor_rng_bloques();
@@ -286,7 +301,7 @@ static bool leer_linea(char *linea, size_t n)
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar\n");
+    printf("medidor listo. comandos: id sembrar borrar rearmar clave publica csr lectura N olvidar\n");
     for (;;) {
         if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
@@ -294,6 +309,7 @@ static void bucle_consola(void)
         if      (!strcmp(cmd, "id"))      cmd_id();
         else if (!strcmp(cmd, "sembrar")) cmd_sembrar();
         else if (!strcmp(cmd, "borrar"))  cmd_borrar();
+        else if (!strcmp(cmd, "rearmar")) cmd_rearmar();
         else if (!strcmp(cmd, "clave"))   cmd_clave();
         else if (!strcmp(cmd, "publica")) cmd_publica();
         else if (!strcmp(cmd, "csr"))     cmd_csr();

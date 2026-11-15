@@ -328,6 +328,24 @@ sembrar: esperando el test de arranque (hasta 687 s)
 sembrar: ok
   [ok ] tras borrar y repetir el arranque, sembrado
 
+5b) Rearme acotado: 3 por ventana, luego fallo permanente
+rearmar: ok, sembrado (antes ALARMA_RCT)
+rearmar: ok, sembrado (antes ALARMA_RCT)
+rearmar: ok, sembrado (antes ALARMA_RCT)
+  [ok ] cada rearme borra la alarma y deja el motor sembrado
+E motor_i2c: 3 rearmes en 24 h: fallo permanente hasta reiniciar
+rearmar: FALLO PERMANENTE, 3 rearmes en 24 h; reiniciar el equipo
+  [ok ] el rearme siguiente dentro de la ventana es fallo permanente
+  [ok ] y la alarma se queda: no se ha borrado
+rearmar: FALLO PERMANENTE, 3 rearmes en 24 h; reiniciar el equipo
+  [ok ] pasada la ventana sigue en fallo: solo un reinicio lo quita
+clave: FALLO, el motor no da aleatorio (-60) ALARMA_RCT; sigue la clave anterior
+  [ok ] en fallo permanente no hay clave nueva y sigue la anterior
+borrar: alarmas bajadas; hay que repetir el test de arranque
+sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: ok
+  [ok ] borrar y sembrar a mano siguen funcionando
+
 6) Un fallo de bus a mitad de la clave no deja una clave a medias
 clave: FALLO, ERROR I2C (-60); sigue la clave anterior
   [ok ] el motor llego a aceptar el primer bloque
@@ -335,19 +353,19 @@ clave: FALLO, ERROR I2C (-60); sigue la clave anterior
 
 7) Clave nueva y CSR
 clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
-FP005b3059301306072a8648ce3d020106082a8648ce3d030107034200043034adcf3729be86cc64d4cb85f042e219abe32b5b6095ce9222826ddcadec77a459690915c5c9704556daa3e7eb17966015b087d9379df02bf50f6469a99898723e0daf
+FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000433471a4759ce5f02e4be4e03178974d044aff985ba7e917fe4e357d1cd0c8685b1ca8bb38060b3206a9590d892eddd9c03cbf2df6d9311dc0ab2993ebe7413d88d108443
   [ok ] la segunda clave es distinta de la primera
 -----BEGIN CERTIFICATE REQUEST-----
-MIHeMIGFAgEAMCMxITAfBgNVBAMMGG1lZGlkb3ItN2NkZmExMDAxMTIyMDAwMDBZ
-MBMGByqGSM49AgEGCCqGSM49AwEHA0IABDA0rc83Kb6GzGTUy4XwQuIZq+MrW2CV
-zpIigm3crex3pFlpCRXFyXBFVtqj5+sXlmAVsIfZN53wK/UPZGmpmJigADAKBggq
-hkjOPQQDAgNIADBFAiEA3TPAONp163po3vxCcbxCVgYJPWfPEgd/JC/ZwqKMNO4C
-IF9i9TbssUv1CYWrFyUwWYo+/zEVDcWi/TSdg1FIDAU+
+MIHdMIGFAgEAMCMxITAfBgNVBAMMGG1lZGlkb3ItN2NkZmExMDAxMTIyMDAwMDBZ
+MBMGByqGSM49AgEGCCqGSM49AwEHA0IABDNHGkdZzl8C5L5OAxeJdNBEr/mFun6R
+f+TjV9HNDIaFscqLs4BgsyBqlZDYku3dnAPL8t9tkxHcCrKZPr50E9igADAKBggq
+hkjOPQQDAgNHADBEAiA4XCYuPrPf39WkSCOh2g8oNYiyptj9QUdOd+M2a6pYKQIg
+a9ISWwv6MiA6oDi0KkgsoZftb97LxuMDhvtZs4j1QeY=
 -----END CERTIFICATE REQUEST-----
   [ok ] la CSR se genera
   [ok ] la CSR se parsea (PKCS#10)
   [ok ] la CSR lleva la publica del equipo
-FL005f7cdfa100112200000100000800000005000000010000041a30450220324cb5cc8282cf69f32bb6e60d3f5864b625e589cbbcf54597f8af7842291c25022100fe2eb8ed14667d9808e4c25df70d1c081349365027350c55d0585610670ad81c61d8de02
+FL005f7cdfa10011220000010000080001518500005dc10000041a304502203f70cf15bfe13c8b6611def55fb6cfb63d33431e147dcb65a5685548e0ddc41b022100ed0a2481fb2eca3781b558163e8ce442993ad43b5b4f9e61f1f0d3229590060b49f43d4d
   [ok ] y se firma con la clave nueva
 
 8) La privada no aparece en lo que sale
@@ -364,9 +382,9 @@ publica: FALLO, sin clave (-16000)
 10) Tras un reinicio la secuencia sigue creciendo
   [ok ] al reiniciar no hay clave en RAM
 clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
-FP005b3059301306072a8648ce3d020106082a8648ce3d03010703420004be5b1955b023c459784151dd7396c0da9ad4a4bc757f29f9efca8d44c19d7d9777a80442d30595766de08c7791bacf7fe689eb16dce07e07e969828ec31558d25f48a99f
+FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000406f894210e94ad7787bf346250072565c7da4a02b25486146dc430ca28496aa0b0b97c05d01ba1effcea5abe1896ee8a3376544ca27c47d1ae7ed3ce6f2c7b05250febe1
   [ok ] clave nueva tras el reinicio
-FL005e7cdfa100112200000200000100000005000000000000041a304402200ca7e927c1b1ffabb76e4f91e8ab9f93c16000f4a7b5859085f3bad3bef5fd90022046ac2bde22c584d5a49f5c1035475497de41e81e0f3fa9643a64b3c1ea27204c465af975
+FL00607cdfa100112200000200000100015185000000000000041a3046022100c94b20eaaf0a8f2b1b521b743a83613390b86e05d321f961ca1d3e9cbb6b4609022100ff11403a2ca3444526fd39bb584b8732147ccc8ac5a07755d17af54d6956983813b73482
   [ok ] arranque 2: la primera lectura supera a la ultima de antes del reinicio
 E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
   [ok ] sin NVS el contador de arranques es 0 y se avisa
@@ -376,7 +394,7 @@ E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
   [ok ] 'clave' la dejo guardada en la NVS
 clave recuperada de la NVS
   [ok ] al arrancar se recupera la clave de la NVS
-FL005e7cdfa100112200000300000100000005000000000000041a304402206af4f801a23f938b5bfa6dc7993f0296a100e08d29862a036c3395edb0d05506022077f037930c6f47e665a99a35e0747e17ec603454c8927dd358d93af3910cf586fb50e727
+FL005e7cdfa100112200000300000100015185000000000000041a304402206bd73f3f02056606d7356b9cd1667ff5c7d1857bb325c4d192564b1ef929606f022074b1e3b520a1f0786bf9673528defd10cf4ecd89f3de98e9e9f9f29f99c5bd12cc242eda
   [ok ] firma con la misma identidad en el arranque 3
   [ok ] la privada exportada es un ECPrivateKey DER de 121 bytes
 olvidar: clave borrada de la RAM y de la NVS
@@ -402,13 +420,13 @@ lectura 7: equipo 7cdfa10011220000 seq 16777221 t 4 s energia 1 Wh potencia 1250
 lectura 8: equipo 7cdfa10011220000 seq 16777222 t 4 s energia 1 Wh potencia 1300 W: ok
 lectura 9: equipo 7cdfa10011220000 seq 16777223 t 5 s energia 1 Wh potencia 1000 W: ok
 AVISO: la publica anunciada CAMBIA (cambio 1)
-publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d030107034200043034adcf3729be86cc64d4cb85f042e219abe32b5b6095ce9222826ddcadec77a459690915c5c9704556daa3e7eb17966015b087d9379df02bf50f6469a99898
+publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d0301070342000433471a4759ce5f02e4be4e03178974d044aff985ba7e917fe4e357d1cd0c8685b1ca8bb38060b3206a9590d892eddd9c03cbf2df6d9311dc0ab2993ebe7413d8
 CSR CN=medidor-7cdfa10011220000: firma valida, publica del equipo
-lectura 10: equipo 7cdfa10011220000 seq 16777224 t 5 s energia 1 Wh potencia 1050 W: ok
+lectura 10: equipo 7cdfa10011220000 seq 16777224 t 86405 s energia 24001 Wh potencia 1050 W: ok
 AVISO: la publica anunciada CAMBIA (cambio 2)
-publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d03010703420004be5b1955b023c459784151dd7396c0da9ad4a4bc757f29f9efca8d44c19d7d9777a80442d30595766de08c7791bacf7fe689eb16dce07e07e969828ec31558d2
-lectura 11: equipo 7cdfa10011220000 seq 33554433 t 5 s energia 0 Wh potencia 1050 W: ok
-lectura 12: equipo 7cdfa10011220000 seq 50331649 t 5 s energia 0 Wh potencia 1050 W: ok
+publica anunciada (91 bytes): 3059301306072a8648ce3d020106082a8648ce3d0301070342000406f894210e94ad7787bf346250072565c7da4a02b25486146dc430ca28496aa0b0b97c05d01ba1effcea5abe1896ee8a3376544ca27c47d1ae7ed3ce6f2c7b05
+lectura 11: equipo 7cdfa10011220000 seq 33554433 t 86405 s energia 0 Wh potencia 1050 W: ok
+lectura 12: equipo 7cdfa10011220000 seq 50331649 t 86405 s energia 0 Wh potencia 1050 W: ok
 resumen: lecturas=12 validas=10 firma_invalida=1 repetidas=1 sin_clave=0 crc_malo=0 csr=1 csr_mala=0 clave_cambiada=2 publica_mala=0
 (rc=1)
   [ok ] validas: el banco mando 10, el PC encontro 10
@@ -419,3 +437,4 @@ resumen: lecturas=12 validas=10 firma_invalida=1 repetidas=1 sin_clave=0 crc_mal
   [ok ] crc_malo: 0
 
 run_host: 0 fallos
+log integro: results/host_check.log

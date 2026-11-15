@@ -251,8 +251,9 @@ Firmware against the engine model & \ac{CMAC} and ECDSA of the target's
   \texttt{cryptography} library & \texttt{run\_host.py}, 0 failures;
   \texttt{verifica\_lecturas.py} \\
 Health-test cut-offs & SP~800-90B~\S4.4~\cite{turan_2018_sp80090b}
-  formulas for $H = 0.98$ and $\alpha = 2^{-20}$: \ac{RCT} $C = 22$, \ac{APT} $W = 1024$,
-  $C = 596$ & \nolinkurl{analysis/cortes_salud.py}; behaviour in
+  formulas for $H = 0.80$ and $\alpha = 2^{-30}$: \ac{RCT} $C = 39$, \ac{APT} $W = 1024$,
+  $C = 683$; seed of 384 bits $\ge 192$ bits of entropy at the \ac{APT} limit
+  & \nolinkurl{analysis/cortes_salud.py}; behaviour in
   \texttt{tb\_health\_tests}, 15 checks \\
 \bottomrule
 \end{tabular}

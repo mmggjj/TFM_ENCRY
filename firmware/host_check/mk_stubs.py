@@ -43,6 +43,7 @@ typedef int esp_err_t;
 #define ESP_ERR_INVALID_STATE 0x103
 #define ESP_ERR_INVALID_SIZE 0x104
 #define ESP_ERR_TIMEOUT 0x107
+#define ESP_ERR_NOT_ALLOWED 0x10D
 #define ESP_ERROR_CHECK(x) do { (void)(x); } while (0)
 """)
 

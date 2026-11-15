@@ -59,3 +59,4 @@ results/fuente_simulada_90b/secuencias/
 results/fuente_simulada_90b/*.log
 # Log de errores que deja Adept (djtgcfg) en la carpeta desde la que se lanza
 DebugErc.log
+results/sesgo_90b/secuencias/

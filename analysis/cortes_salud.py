@@ -13,6 +13,14 @@ es una adicion propia (la norma solo cuenta las repeticiones del primer
 valor de la ventana) y por tanto hay que justificar.
 
     python analysis/cortes_salud.py
+
+15-11-2026: H de diseno 0,80 y alfa 2^-30 (antes 0,98 y 2^-20, 22 y
+596). Motivo en docs/basys2.md, "Decision del 15-11-2026": el sesgo del
+muestreo del anillo IHP [SIMULADO] deja la cota de primer orden en
+0,85-0,90, y con 2^-20 habia una falsa alarma cada pocos minutos en la
+FPGA. Comprueba tambien la regla de la semilla: con lo peor que deja pasar
+el APT, los 384 bits llevan al menos los 192 de entropia que pide un
+CTR_DRBG AES-128 (128 + nonce de 64; SP 800-90A, por confirmar la clausula).
 """
 from __future__ import annotations
 
@@ -22,12 +30,14 @@ import sys
 from scipy.stats import binom
 
 # Valores vigentes en rtl/trng/health_tests.vhd
-RTL_RCT_C = 22
+RTL_RCT_C = 39
 RTL_APT_W = 1024
-RTL_APT_C = 596
+RTL_APT_C = 683
 
-ALFA = 2.0 ** -20        # tasa de falsa alarma de la norma
-H_OBJ = 0.98             # min-entropia por bit de diseno
+ALFA = 2.0 ** -30        # tasa de falsa alarma por muestra (la norma: 2^-20 a 2^-40)
+H_OBJ = 0.80             # min-entropia por bit de diseno
+BITS_SEMILLA = 384       # entrada fija del CTR_DRBG (256 + 128)
+ENTROPIA_DRBG = 192      # AES-128: 128 de entropia + nonce de 64
 
 
 def corte_rct(h: float, alfa: float = ALFA) -> int:
@@ -58,7 +68,8 @@ def main() -> int:
         print(f"  [{'ok ' if cond else 'FALLO'}] {msg}")
         fallos += 0 if cond else 1
 
-    print(f"SP 800-90B 4.4 — cortes para H = {H_OBJ}, alfa = 2^-20, W = {RTL_APT_W}\n")
+    a = -math.log2(ALFA)
+    print(f"SP 800-90B 4.4 — cortes para H = {H_OBJ}, alfa = 2^-{a:g}, W = {RTL_APT_W}\n")
 
     print("1) Repetition Count Test")
     c = corte_rct(H_OBJ)
@@ -74,7 +85,7 @@ def main() -> int:
     print(f"      una cola : {una:.4e}  (2^{math.log2(una):+.2f})")
     print(f"      dos colas: {dos:.4e}  (2^{math.log2(dos):+.2f})")
     chk(dos <= ALFA,
-        f"con las dos colas la falsa alarma sigue por debajo de 2^-20 "
+        f"con las dos colas la falsa alarma sigue por debajo de 2^-{a:g} "
         f"({dos:.4e} <= {ALFA:.4e})")
     chk(dos / una < 1.05,
         f"el complemento apenas encarece la falsa alarma (x{dos / una:.4f}): "
@@ -87,6 +98,14 @@ def main() -> int:
         "menos min-entropia exige un corte mas alto (mas permisivo)")
     chk(corte_rct(0.50) > corte_rct(0.98),
         "lo mismo en el RCT")
+
+    print("5) Semilla con lo peor que deja pasar el APT")
+    p_lim = RTL_APT_C / RTL_APT_W
+    h_lim = -math.log2(p_lim)
+    print(f"      p en el corte = {p_lim:.4f} -> H = {h_lim:.4f}; "
+          f"{BITS_SEMILLA} bits x H = {BITS_SEMILLA * h_lim:.0f}")
+    chk(BITS_SEMILLA * h_lim >= ENTROPIA_DRBG,
+        f"{BITS_SEMILLA * h_lim:.0f} >= {ENTROPIA_DRBG} bits que pide el CTR_DRBG AES-128")
 
     print(f"\ncortes_salud: {fallos} fallos")
     return 0 if fallos == 0 else 1

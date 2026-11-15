@@ -1,0 +1,35 @@
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys2_libre_kd13_14_n4194304/entropia90b/bits/kd13_flujo.bits' (SHA-256 hash 345a5aeb385a509350a75f555d17709f48ce8098ea897223770a553659791a76)
+Loaded 4194304 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 2113059, p-hat = 0.50379252433776855, p_u = 0.50442137089831318
+	Most Common Value Estimate = 0.987299 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4982634328576014, sigma-hat = 0.49999713323280964, p = 0.53694954992291033
+	Collision Test Estimate = 0.897142 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50379252433776855, P_1 = 0.49620747566223145, P_0,0 = 0.50402851979050278, P_0,1 = 0.49597148020949722, P_1,0 = 0.50355316339650713, P_1,1 = 0.49644683660349287, p_max = 8.2044756681916894e-39
+	Markov Test Estimate = 0.988428 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2168647545067808, sigma-hat = 1.0156403993012699, p = 0.025982354329152524
+	Compression Test Estimate = 0.877721 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 18, p-hat_max = 0.5268338249103871133417, p_u = 0.5274617832751543641096
+Literal LRS Estimate: u = 19, v = 41, p-hat = 0.50079356327299374, p_u = 0.50142242713197569
+	T-Tuple Test Estimate = 0.922862 / 1 bit(s)
+	LRS Test Estimate = 0.995902 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 4194241, Pglobal' = 0.50112872111877349 (C = 2099217) Plocal can't affect result (r = 24)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.996747 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 4194303, Pglobal' = 0.50040463193564955 (C = 2096211) Plocal can't affect result (r = 21)
+	Lag Prediction Test Estimate = 0.998833 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 4194302, Pglobal' = 0.50521434507268637 (C = 2116384) Plocal can't affect result (r = 24)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.985032 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 4194287, Pglobal' = 0.50440124128426944 (C = 2112966) Plocal can't affect result (r = 24)
+	LZ78Y Prediction Test Estimate = 0.987356 / 1 bit(s)
+
+H_original: 0.877721
+tiempo_s=3.06 maxrss_kB=66748

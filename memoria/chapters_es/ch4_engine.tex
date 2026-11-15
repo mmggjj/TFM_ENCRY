@@ -156,11 +156,21 @@ muestras idénticas; el test de proporción adaptativa (\emph{Adaptive
 Proportion Test}) cuenta, en una ventana de $W = 1024$ muestras (el valor
 para fuentes binarias; 512 es para fuentes no binarias), cuántas repiten
 la primera, y falla al llegar a
-$C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. Para el
-objetivo de diseño $H = 0{,}98$ y $\alpha = 2^{-20}$ resultan
-$C_{\mathrm{RCT}} = 22$ y $C_{\mathrm{APT}} = 596$; ambos son parámetros
-genéricos (generics), porque $H$ se fija a partir de la min-entropía
-\emph{medida}, no se supone. El test de proporción comprueba también el
+$C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. El
+objetivo de diseño es $H = 0{,}80$ y $\alpha = 2^{-30}$, que dan
+$C_{\mathrm{RCT}} = 39$ y $C_{\mathrm{APT}} = 683$. Hasta noviembre de 2026
+era $H = 0{,}98$ y $\alpha = 2^{-20}$ (22 y 596). Se bajó por dos motivos.
+El ciclo de trabajo del anillo de IHP, simulado a nivel de transistor,
+deja en 0,85--0,90 la cota de primer orden de un bit muestreado
+directamente (Sección~\ref{sec:ihp_ring}). Y con $2^{-20}$ el prototipo en
+FPGA daba una falsa alarma del test de repeticiones cada pocos minutos, y
+cada una bloquea el motor. El objetivo más bajo no cuesta nada en la
+semilla: incluso con la peor proporción que deja pasar el test
+($p \approx 0{,}667$, $H \approx 0{,}58$), los 384 bits de la semilla
+llevan 224 bits de entropía, más que los 192 que necesita un \ac{CTRDRBG}
+AES-128 (128 más un nonce de 64). Los dos cortes son parámetros genéricos
+(generics), porque $H$ se fija a partir de la min-entropía \emph{medida},
+no se supone. El test de proporción comprueba también el
 complemento de la cuenta, algo que la norma permite para fuentes
 binarias: de lo contrario, una fuente atascada en el valor opuesto a la
 primera muestra de la ventana puntuaría cero y pasaría. Las alarmas
@@ -194,11 +204,30 @@ se reinicia a su máximo y no a un valor pequeño, de modo que un
 anfitrión que olvide configurarlo siembra a la tasa más lenta y con más
 entropía por bit, nunca por debajo del ajuste caracterizado.
 
+El motor nunca se rearma solo tras una alarma. Como los anillos y los
+tests funcionan siempre, una fuente sana acabará dando alguna falsa alarma
+en la vida de un equipo, así que la política de rearme corresponde al
+anfitrión y está acotada: borrar las alarmas, esperar el test de arranque
+y volver a sembrar, como mucho tres veces en 24~horas, y a la cuarta
+fallo permanente hasta reiniciar el anfitrión. Con los cortes de arriba
+cabe esperar una falsa alarma al año a 8,7~kbit/s, así que tres en un día
+no son azar.
+
+El biestable de muestreo ya no usa habilitación. Antes solo capturaba RO1
+en el pulso del divisor, así que entre muestras conservaba el bit
+anterior. En la FPGA los bits en bruto salían entonces correlados con el
+anterior ($\rho_1 \approx 0{,}005$, $z$ hasta 13), y la correlación
+desapareció al hacer que el biestable muestree en cada flanco de RO2 y el
+pulso solo elija qué muestra se queda ($z \le 1$ en dos implementaciones
+con la misma colocación). Los bits son idénticos en simulación; el
+mecanismo dentro del biestable no se ha identificado.
+
 El banco de pruebas inyecta los modos de fallo para los que existen los
 tests: una fuente sana supera veinte ventanas (peor racha 13, peor
 proporción 540); una fuente atascada dispara el test de repeticiones
-exactamente en la muestra~22; una fuente sesgada al 70\,\% dispara el
-test de proporción en 713 sin disparar el test de repeticiones; y una
+exactamente en la muestra~39; una fuente sesgada al 70\,\% dispara el
+test de proporción en 713 (corte 683) sin disparar el test de
+repeticiones; y una
 fuente atascada en el complemento se detecta. La primera fuente
 ``sana'' del banco --- un registro de desplazamiento inicializado con un
 único uno --- fue detectada por los propios tests, con una racha inicial

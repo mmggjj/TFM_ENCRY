@@ -51,6 +51,7 @@ FUENTES = [
 ]
 BANCOS = [
     ("tb_ring_osc", "tb/tb_ring_osc.vhd", ["-Pbuild/unisim"]),
+    ("tb_ero_core", "tb/tb_ero_core.vhd", []),
     ("tb_i2c_slave", "tb/tb_i2c_slave.vhd", []),
     ("tb_aes_enc", "tb/tb_aes_enc.vhd", []),
     ("tb_aes_cmac", "tb/tb_aes_cmac.vhd", []),

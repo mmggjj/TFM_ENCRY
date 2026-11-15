@@ -123,6 +123,24 @@ uint32_t motor_plazo_siembra_ms(void);
  * test no pasa hasta borrar_alarmas, y esperar el plazo entero no sirve. */
 esp_err_t motor_esperar_arranque(uint32_t max_ms, uint8_t *diag);
 
+/* Politica de rearme tras una alarma de salud (docs/basys2.md, decision del
+ * 15-11-2026). Los anillos y los tests corren siempre, asi que una fuente
+ * sana acaba dando alguna falsa alarma en la vida del equipo, y cada alarma
+ * bloquea el motor. motor_rearmar() borra las alarmas, espera el test de
+ * arranque y vuelve a sembrar (resembrar si el DRBG tenia estado). Acotado:
+ * si en los ultimos MOTOR_REARME_VENTANA_MS ya hubo MOTOR_REARME_MAX
+ * rearmes, no lo intenta y queda en fallo permanente hasta reiniciar el
+ * ESP32: una fuente que falla de verdad no se rearma sin fin. Con los cortes
+ * de H 0,80 y alfa 2^-30, una falsa alarma al ano a 8,7 kbit/s; tres en un
+ * dia no son azar. Nada de esto es automatico en el motor.
+ *   ESP_OK                 rearmado y sembrado
+ *   ESP_ERR_NOT_ALLOWED    fallo permanente (ya estaba o se alcanza ahora)
+ *   resto                  como motor_orden() / motor_esperar_arranque() */
+#define MOTOR_REARME_MAX        3u
+#define MOTOR_REARME_VENTANA_MS (24u * 3600u * 1000u)
+esp_err_t motor_rearmar(void);
+bool motor_fallo_permanente(void);
+
 /* Una orden "aleatorio" y la lectura de sus 32 bytes. Errores como
  * motor_orden(); con error el bloque queda a ceros. */
 esp_err_t motor_aleatorio(uint8_t bloque[32]);

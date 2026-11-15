@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/p0.4979_n1000000_s2_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n1000000_s2.bits 1",
+   "dateTimeStamp" : "20261115091213",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n1000000_s2.bits",
+   "sha256" : "abe096fd1d7d5c4e5047d36458a26e36831974f52289f47b32619f91d2695096",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99079930953477857,
+         "mcvEstimateMode" : 501911.0,
+         "mcvEstimatePHat" : 0.501911,
+         "mcvEstimatePU" : 0.5031989058889681,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.90726522665988474,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99465649263247768,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.84106176259362198,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.91908897702838832,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.99561057340976966,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99358128558148506,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99496393824365637,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.99181457973060194,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99152617023251022,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.84106176259362198,
+         "hOriginal" : 0.84106176259362198,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

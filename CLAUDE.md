@@ -52,6 +52,58 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 15-11-2026: tabla O8 y la habilitación del muestreador
+
+Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
+`docs/basys2.md`, secciones "Tabla O8..." y "Muestreo sin habilitación".
+
+- **Tabla O8** (`analysis/tabla_o8.py` → `results/tabla_o8.md`): la cifra
+  asignada de SP 800-90B no separa FPGA, ESP32 e ideal (0,845 / 0,848 /
+  0,847 a 10⁶), pero Markov, MCV, MultiMMC, LZ78Y y colisión sí separan la
+  FPGA. **Dos defectos en los bits de la FPGA, ninguno en el ESP32**
+  (`analysis/sesgo_correlacion.py`): sesgo (unos 0,496-0,498, z −12 a −18)
+  y correlación a retardo 1 (ρ₁ 0,003-0,006, z hasta 13), iguales de
+  `kd 12` a `16`: deterministas, no falta de jitter. `analysis/sesgo_90b.py`:
+  bits iid con el mismo sesgo explican MCV y predictores, no Markov ni
+  colisión.
+- **La correlación la produce el CE del biestable que muestrea ro1**
+  (medido): genérico `G_MUESTREO_LIBRE` (false por defecto; `tb_ero_core`
+  12/12 con mutante; equivalencia secuencial con HEAD por ABC `dsec`, que
+  `synth/equivalencia.sh` usa ahora si `cec` no puede). Tres
+  implementaciones con anillos y biestable fijados en los mismos sitios
+  (`synth/basys2/basys2_sin_medidor_fijo.ucf`): con CE ρ₁ 0,004-0,005 (z 9-11),
+  sin CE 0,0000-0,0005 (z ≤ 1). El sesgo no cambia con el CE (rutado o
+  día, sin separar). Mecanismo sin identificar; una sola implementación libre.
+- **Decisión de dos agentes** (Mario lo pidió así; `docs/basys2.md`
+  "Decisión del 15-11-2026"): (1) `G_MUESTREO_LIBRE = true` por defecto,
+  tras pasar los bancos con true, la síntesis y resolver la referencia de
+  `equivalencia.sh`; (2) **H declarada 0,80** y el sesgo se cuenta: el
+  ciclo de trabajo del anillo IHP [SIMULADO, `analysis/ciclo_trabajo_ihp.py`]
+  va de 0,483 a 0,535 con desapareamiento (0,464-0,553 con ±100 mV de
+  umbral), es decir 2-5 % de sesgo en el integrado; el CTR_DRBG AES-128
+  solo pide 192 bits de entropía (128 + nonce de 64, SP 800-90A citado de
+  memoria: comprobar) y la semilla son 384 crudos; ro1/2 cuesta ×4 de
+  divisor (2²⁵, ×4 menos caudal) y queda como alternativa a validar; (3)
+  α = 2⁻³⁰ con los cortes de H 0,80: **RCT 39, APT 683**, y política de
+  rearme acotada en el maestro.
+- **Aplicado el mismo día** (`docs/basys2.md`, "Aplicado el 15-11-2026"):
+  `motor_top` con `G_MUESTREO_LIBRE = true`, `G_RCT_C = 39` y
+  `G_APT_C = 683` (genéricos nuevos; `basys2_top` sigue con muestreo
+  directo); con los valores antiguos (`GEN_ACT` en `equivalencia.sh`) el
+  motor es equivalente a HEAD. `cortes_salud.py` 7/7; `motor_rearmar()` en
+  `componentes/motor_i2c` (3 en 24 h, luego fallo permanente) y orden
+  `rearmar` en el medidor, banco en PC paso 5b (135 ok, también con ASan);
+  ESP-IDF 5.3.2: verificador esp32 y medidor esp32 sin avisos (en el Linux
+  no hay cadena RISC-V para el esp32c3). `mapa_registros.md`,
+  `lecturas_firmadas.md` y memoria EN/ES (cap. 4, cap. 7 con el párrafo del
+  ciclo de trabajo, apéndice) al día, PDF regenerados. Segunda
+  implementación libre (`par -t 7`): ρ₁ = 0,0002, z 0,4. **Pendiente:**
+  cláusula de SP 800-90A, SPICE con el biestable real de sg13g2, síntesis
+  (kGE) con el muestreo libre. Nada commiteado: Mario decide.
+- `synth/basys2/basys2_sin_medidor.ucf` versionado (antes solo en `build/`).
+  La placa queda con `basys2_top_quieto_sin_medidor_fijo.bit` (lógica igual
+  a la del 14-11).
+
 ## Estado al 14-11-2026: la placa es una Basys 2 (XC3S100E)
 
 Lectura, resultados y riesgos en **`docs/basys2.md`** (resumen arriba del
