@@ -20,7 +20,10 @@ muestreo del anillo IHP [SIMULADO] deja la cota de primer orden en
 0,85-0,90, y con 2^-20 habia una falsa alarma cada pocos minutos en la
 FPGA. Comprueba tambien la regla de la semilla: con lo peor que deja pasar
 el APT, los 384 bits llevan al menos los 192 de entropia que pide un
-CTR_DRBG AES-128 (128 + nonce de 64; SP 800-90A, por confirmar la clausula).
+CTR_DRBG AES-128 (SP 800-90A Rev. 1: 8.6.3 y tabla 3, entropia de entrada
+>= security_strength = 128; 8.6.7, nonce >= security_strength/2 = 64, o
+entrada "extra fuerte" >= 3/2 security_strength = 192 si sale de la misma
+fuente a la vez, que es el caso: los 384 bits van juntos).
 """
 from __future__ import annotations
 

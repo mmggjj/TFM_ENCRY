@@ -60,7 +60,8 @@ warning: tfm_main_es.bbl:839: Underfull \hbox (badness 10000) in paragraph at li
 warning: tfm_main_es.bbl:871: Underfull \hbox (badness 10000) in paragraph at lines 866--871
 warning: chapters_es/appendices:376: Underfull \hbox (badness 10000) in paragraph at lines 365--376
 warning: chapters_es/appendices:376: Underfull \hbox (badness 10000) in paragraph at lines 365--376
-note: Rerunning TeX because "tfm_main_es.lof" changed ...
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+note: Rerunning TeX because "tfm_main_es.bbl" changed ...
 warning: tfm_main_es.lot:19: Underfull \hbox (badness 3861) in paragraph at lines 19--19
 warning: chapters_es/esp32_blackbox:980: Overfull \hbox (5.53423pt too wide) in paragraph at lines 969--980
 warning: chapters_es/ch5_verification:101: Overfull \hbox (5.05194pt too wide) in paragraph at lines 86--101
@@ -100,7 +101,8 @@ warning: tfm_main_es.bbl:839: Underfull \hbox (badness 10000) in paragraph at li
 warning: tfm_main_es.bbl:871: Underfull \hbox (badness 10000) in paragraph at lines 866--871
 warning: chapters_es/appendices:376: Underfull \hbox (badness 10000) in paragraph at lines 365--376
 warning: chapters_es/appendices:376: Underfull \hbox (badness 10000) in paragraph at lines 365--376
-note: Rerunning TeX because "tfm_main_es.aux" changed ...
+warning: internal consistency problem when checking if tfm_main_es.bbl changed
+note: Rerunning TeX because "tfm_main_es.bbl" changed ...
 warning: tfm_main_es.lot:19: Underfull \hbox (badness 3861) in paragraph at lines 19--19
 warning: chapters_es/esp32_blackbox:980: Overfull \hbox (5.53423pt too wide) in paragraph at lines 969--980
 warning: chapters_es/ch5_verification:101: Overfull \hbox (5.05194pt too wide) in paragraph at lines 86--101
@@ -268,5 +270,5 @@ warning: TeX rerun seems needed, but stopping at 6 passes
 warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
 note: Running xdvipdfmx ...
 warning: Object @page.1 already defined.
-note: Writing `tfm_main_es.pdf` (765.94 KiB)
+note: Writing `tfm_main_es.pdf` (766.19 KiB)
 note: Skipped writing 6 intermediate files (use --keep-intermediates to keep them)

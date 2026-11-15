@@ -168,7 +168,10 @@ cada una bloquea el motor. El objetivo más bajo no cuesta nada en la
 semilla: incluso con la peor proporción que deja pasar el test
 ($p \approx 0{,}667$, $H \approx 0{,}58$), los 384 bits de la semilla
 llevan 224 bits de entropía, más que los 192 que necesita un \ac{CTRDRBG}
-AES-128 (128 más un nonce de 64). Los dos cortes son parámetros genéricos
+AES-128 (128 para la entrada de entropía más 64 para el nonce, o 192
+juntos cuando los dos salen de la misma fuente a la vez, como aquí;
+SP~800-90A \S8.6.3 y \S8.6.7~\cite{barker_2015_sp80090ar1}). Los dos
+cortes son parámetros genéricos
 (generics), porque $H$ se fija a partir de la min-entropía \emph{medida},
 no se supone. El test de proporción comprueba también el
 complemento de la cuenta, algo que la norma permite para fuentes

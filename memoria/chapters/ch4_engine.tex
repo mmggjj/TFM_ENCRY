@@ -157,7 +157,10 @@ repetition false alarm every few minutes, each of which blocks the engine.
 The lower target costs nothing in the seed: even at the worst proportion
 the test lets through ($p \approx 0.667$, $H \approx 0.58$), the 384 seed
 bits carry 224 bits of entropy, more than the 192 that an AES-128
-\ac{CTRDRBG} needs (128 plus a 64-bit nonce). Both cut-offs are generics,
+\ac{CTRDRBG} needs (128 for the entropy input plus 64 for the nonce, or 192
+together when both come from the same source at the same time, as here;
+SP~800-90A \S8.6.3 and \S8.6.7~\cite{barker_2015_sp80090ar1}). Both
+cut-offs are generics,
 because $H$ is set from the \emph{measured} min-entropy, not assumed. The
 proportion test
 also checks the complement of the count, which the standard permits for

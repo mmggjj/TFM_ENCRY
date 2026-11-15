@@ -81,8 +81,8 @@ Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
   ciclo de trabajo del anillo IHP [SIMULADO, `analysis/ciclo_trabajo_ihp.py`]
   va de 0,483 a 0,535 con desapareamiento (0,464-0,553 con ±100 mV de
   umbral), es decir 2-5 % de sesgo en el integrado; el CTR_DRBG AES-128
-  solo pide 192 bits de entropía (128 + nonce de 64, SP 800-90A citado de
-  memoria: comprobar) y la semilla son 384 crudos; ro1/2 cuesta ×4 de
+  solo pide 192 bits de entropía (128 + nonce de 64; comprobado en SP
+  800-90A Rev. 1 §8.6.3, tabla 3 y §8.6.7) y la semilla son 384 crudos; ro1/2 cuesta ×4 de
   divisor (2²⁵, ×4 menos caudal) y queda como alternativa a validar; (3)
   α = 2⁻³⁰ con los cortes de H 0,80: **RCT 39, APT 683**, y política de
   rearme acotada en el maestro.
@@ -97,9 +97,23 @@ Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
   no hay cadena RISC-V para el esp32c3). `mapa_registros.md`,
   `lecturas_firmadas.md` y memoria EN/ES (cap. 4, cap. 7 con el párrafo del
   ciclo de trabajo, apéndice) al día, PDF regenerados. Segunda
-  implementación libre (`par -t 7`): ρ₁ = 0,0002, z 0,4. **Pendiente:**
-  cláusula de SP 800-90A, SPICE con el biestable real de sg13g2, síntesis
-  (kGE) con el muestreo libre. Nada commiteado: Mario decide.
+  implementación libre (`par -t 7`): ρ₁ = 0,0002, z 0,4. Commit local
+  8f6e156 (sin push). Síntesis comparada: sin cambio de área medible
+  (93,18 → 92,82 kGE, mismos biestables).
+- **SPICE con el biestable real de sg13g2** (`analysis/biestable_ihp.py`,
+  `docs/basys2.md` "El biestable real..."; SIMULADO, sin ruido): el reloj
+  tira del anillo si el biestable cuelga del nudo (con `sg13g2_buf_1`
+  delante, 0,01 ps); los bits fuera de sitio son la ventana de apertura
+  (±0,01 de P(1)); P(1) ponderada por fase. **El biestable sesga más que el
+  anillo**: tt/ss ±0,01, pero a 125 °C con desapareamiento P(1) 0,372-0,461
+  en ff y 0,399-0,437 en sf: **5 de 8 chips por debajo de H = 0,80 (peor
+  0,672)**; con APT 683 el peor chip daría una falsa alarma cada ~210
+  ventanas. Semilla aún ≥ 192 bits. Mecanismo probable: setup distinto para
+  D subiendo y bajando frente a un periodo de 285-405 ps; **comprobado con
+  9 y 11 etapas**: el retardo equivalente se mantiene en 26-30 ps (sf) y
+  13-15 ps (ff) mientras el periodo se duplica, el sesgo baja como ~1/T. **Decisión pendiente de Mario** (H más baja,
+  corregir el circuito o las dos); el "2-5 %" de arriba y del cap. 7 se
+  queda corto. Nada tocado en RTL, cortes ni memoria.
 - `synth/basys2/basys2_sin_medidor.ucf` versionado (antes solo en `build/`).
   La placa queda con `basys2_top_quieto_sin_medidor_fijo.bit` (lógica igual
   a la del 14-11).

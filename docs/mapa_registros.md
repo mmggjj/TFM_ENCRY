@@ -89,8 +89,7 @@ Basys 2, una falsa alarma del RCT cada ~8 min a CFG_KD 14, y en el
 integrado el sesgo del muestreo del anillo [SIMULADO] deja H por debajo de
 0,98. Con 683, lo peor que deja pasar el APT (p ≈ 0,667, H ≈ 0,584) aún da
 224 bits de entropía en los 384 de la semilla, por encima de los 192 que
-pide un CTR_DRBG AES-128 (128 + nonce de 64; SP 800-90A, cláusula por
-confirmar). Son genéricos de `motor_top` (`G_RCT_C`, `G_APT_C`).
+pide un CTR_DRBG AES-128 (SP 800-90A Rev. 1: §8.6.3 y tabla 3, entropía de entrada ≥ 128; §8.6.7, nonce ≥ 64, o 192 juntos si salen de la misma fuente a la vez, como aquí). Por separado también: el campo de 256 lleva ~150 y el de 128 ~75. Son genéricos de `motor_top` (`G_RCT_C`, `G_APT_C`).
 Razonamiento en `docs/basys2.md`, "Decisión del 15-11-2026".
 
 **Rearme:** con los anillos y los tests corriendo siempre, una fuente sana

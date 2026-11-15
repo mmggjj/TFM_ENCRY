@@ -664,8 +664,13 @@ recalculan). RCT con bits ideales: ~2^(C−1) bits entre falsas alarmas.
    pares. La sesión principal se inclinaba por (a); **el revisor convenció
    de (b)**, y los números se comprobaron por los dos:
    - el CTR_DRBG AES-128 no necesita 384 bits de entropía. SP 800-90A pide
-     128 de entropía más un nonce de 64, 192 en total (citado de memoria por
-     los dos agentes: **comprobar la cláusula**). La semilla son 384 bits
+     128 de entropía más un nonce de 64, 192 en total. **Comprobado** en
+     SP 800-90A Rev. 1: §8.6.3 y tabla 3 (entropía de entrada ≥
+     security_strength, 128 con AES-128) y §8.6.7 (nonce ≥
+     security_strength/2, o una entrada "extra fuerte" ≥ 3/2 ×
+     security_strength si sale de la misma fuente a la vez, que es el caso).
+     Con H 0,584 también por separado: ~150 bits en el campo de 256 y ~75
+     en el de 128. La semilla son 384 bits
      crudos. Regla de diseño: H en el límite de detección del APT × 384 ≥
      192;
    - con H declarada 0,80 y α = 2⁻³⁰: **RCT C = 39, APT C = 683**. El APT
@@ -741,19 +746,135 @@ recalculan). RCT con bits ideales: ~2^(C−1) bits entre falsas alarmas.
   EN y ES: cap. 4 §salud (cortes, rearme, muestreo sin habilitación), cap. 7
   §anillo IHP (párrafo del ciclo de trabajo) y §verificación, apéndice de
   evidencias. PDF regenerados.
-- Pendiente: confirmar la cláusula de SP 800-90A (192 bits); SPICE con el
-  biestable real de sg13g2 colgado del anillo; síntesis (kGE) con el
-  muestreo libre; probar ro1/2 en la Basys 2 si se quiere validar la
-  alternativa.
+- Cláusula de SP 800-90A comprobada (§8.6.3, tabla 3 y §8.6.7; arriba).
+- Síntesis comparada: sin cambio de área medible (`motor_top` 93,18 →
+  92,82 kGE, mismos biestables; `docs/sintesis_resultados.md`).
+- Pendiente: SPICE con el biestable real de sg13g2 colgado del anillo;
+  probar ro1/2 en la Basys 2 si se quiere validar la alternativa.
+
+## El biestable real de sg13g2 sesga más que el anillo (15-11-2026, SIMULADO)
+
+`analysis/biestable_ihp.py`: anillo de 5 etapas de `anillo_ihp.py`, sin
+ruido, con un `sg13g2_dfrbpq_1` de la biblioteca de IHP (netlist del PDK,
+`libs.ref/sg13g2_stdcell/spice`) muestreándolo con un reloj ideal de
+periodo 2,618 veces el del anillo, para que las 400 fases de muestreo
+recorran el ciclo. La P(1) es la fracción de unos **ponderada por el tramo
+de fase que cubre cada muestra** (`p1_ponderada`); con el umbral ideal da
+lo mismo que la distancia entre los dos bordes de captura, que era el
+método primero. Datos crudos en `results/biestable_ihp_crudo/`.
+
+**Montaje.** Primera campaña con un biestable en cada nudo
+(`results/biestable_ihp.{log,csv}`): la captura no salía como un escalón
+limpio frente a la fase. El diagnóstico (`tt27_r0.npz`) lo aclaró:
+
+- la fase estaba bien calculada (con el periodo mediano y con el local
+  salen los mismos cambios, ±0,007);
+- **el reloj tira del anillo** a través de la capacidad de entrada del
+  biestable: el periodo depende de la fase del reloj en que empieza el
+  ciclo, ~8 ps de pico a pico con cinco biestables conmutando a la vez,
+  1,8-2,9 ps con uno solo y **0,01 ps con `sg13g2_buf_1` delante**;
+- **los bits fuera de sitio que quedan son la ventana de apertura**:
+  racimos de 0,01-0,02 de fase (4-8 ps) pegados a los dos bordes, también
+  con buffer. Sin ruido, el biestable decide de forma determinista dentro
+  de la ventana. Acota la P(1) a ±0,01.
+
+Las cifras de esa primera campaña no valen: el montaje exageraba el tirón
+y varias tienen huecos de fase del 6-12 %. Las buenas son las de un solo
+biestable en n5 (`results/biestable_ihp_un_biestable.{log,csv}`) y la
+tanda con desapareamiento a 125 °C (`results/biestable_ihp_sf_ff_mm.{log,csv}`).
+
+**P(1) en n5, biestable con buffer** (umbral ideal entre paréntesis; la H
+declarada de 0,80 se rompe con P(1) < 0,426):
+
+| Caso | P(1) biestable | Cota de H |
+|---|---|---|
+| tt 27 °C | 0,491 (0,496) | 0,973 |
+| ss −40 °C 1,08 V | 0,481 (0,494) | 0,946 |
+| ff 125 °C 1,32 V | 0,452 (0,498) | 0,868 |
+| sf 125 °C | 0,442 (0,507) | 0,843 |
+| fs 125 °C | 0,501 (0,489) | 0,998 |
+| tt 27 °C, 2 chips | 0,485-0,509 (0,49-0,50) | ≥ 0,956 |
+| ss −40 °C 1,08 V, 2 chips | 0,487-0,495 (0,49-0,50) | ≥ 0,962 |
+| **ff 125 °C 1,32 V, 4 chips** | **0,372**, 0,388, 0,445, 0,461 (0,49-0,50) | **0,672**, 0,709, 0,849, 0,895 |
+| **sf 125 °C, 4 chips** | **0,399**, 0,420, 0,420, 0,437 (0,50-0,51) | **0,733**, 0,787, 0,787, 0,830 |
+
+Sin buffer las esquinas nominales dan casi lo mismo (sf 0,442, ff 0,458),
+pero un chip de ss se va a 0,466 (con buffer, −0,003/−0,004): el sesgo es
+del biestable, no del buffer, y el buffer quita el tirón del reloj.
+
+**Lectura.**
+
+- **5 de 8 chips a 125 °C en ff y sf quedan por debajo de H = 0,80**; el
+  peor, 0,672 (P(1) 0,372, 13 % de sesgo). El anillo no tiene la culpa:
+  con umbral ideal sigue en 0,49-0,51. Es la condición que la decisión de
+  esta mañana ponía para reabrirla ("sesgo por encima del 10 %").
+- Mecanismo probable: el biestable no captura igual un flanco de subida
+  que uno de bajada. El liberty típico (`synth/lib/`) da diferencias de
+  setup entre D subiendo y bajando de 0 a ~60 ps según las pendientes, y
+  el anillo tiene un periodo de 285-405 ps: 30 ps son un 10 % del ciclo.
+  Si es así, el sesgo va como el retardo asimétrico partido por el
+  periodo, y un anillo más lento o ro1/2 lo reducen. **Comprobado** con
+  anillos de 9 y 11 etapas, mismas celdas, esquinas nominales
+  (`results/biestable_ihp_etapas.{log,csv}`): el retardo asimétrico
+  equivalente, (P(1) ideal − P(1) biestable) × periodo, se mantiene casi
+  fijo mientras el periodo se duplica:
+
+  | Esquina | 5 etapas | 9 etapas | 11 etapas |
+  |---|---|---|---|
+  | sf 125 °C: periodo, diferencia, retardo | 405 ps, −0,064, 26,0 ps | 686 ps, −0,044, 30,0 ps | 826 ps, −0,035, 29,2 ps |
+  | ff 125 °C 1,32 V | 285 ps, −0,046, 13,1 ps | 481 ps, −0,030, 14,6 ps | 579 ps, −0,026, 15,2 ps |
+
+  El sesgo baja como 1/T, algo menos (el retardo crece un 10-15 %, flancos
+  más lentos en la salida de un anillo más largo). Para el peor chip
+  (≈ 33 ps en ff) H ≥ 0,80 pide T ≳ 450-500 ps en esa esquina, y con
+  margen bastante más. Coste: con la fase del ERO, la varianza acumulada
+  por unidad de tiempo, normalizada al periodo muestreado, va como
+  σ²/T³ ∝ 1/N² con N etapas: 11 etapas piden ~(11/5)² ≈ ×5 de divisor
+  [ESTIMADO, sin simular el jitter del anillo largo], parecido al ×4 de
+  ro1/2.
+- Cortes de salud para otras H declaradas (α = 2⁻³⁰, W 1024; semilla =
+  H en el límite del APT × bits):
+
+  | H declarada | RCT | APT | límite del APT (p; H) | 384 bits | 512 bits | falsa alarma APT, peor chip |
+  |---|---|---|---|---|---|---|
+  | 0,80 | 39 | 683 | 0,667; 0,584 | 224 | 299 | 4,8·10⁻³ |
+  | 0,70 | 44 | 723 | 0,706; 0,502 | 193 | 257 | 7,8·10⁻⁸ |
+  | 0,65 | 48 | 744 | 0,727; 0,461 | 177 | 236 | 1,3·10⁻¹¹ |
+  | 0,60 | 51 | 766 | 0,748; 0,419 | 161 | 214 | 1,6·10⁻¹⁶ |
+
+  Con 0,70 la semilla de 384 bits va justa (193 ≥ 192); por debajo hace
+  falta semilla de 512 bits (y regenerar los vectores del DRBG con
+  `gen_drbg_vectores.py`, cambiar captura y RTL). 0,70 está por encima del
+  peor de los 8 chips (0,672), así que no basta sin tocar el circuito.
+- Para la semilla no es grave: 384 × 0,672 ≈ 258 bits ≥ 192. **Para los
+  tests de salud sí**: con APT C = 683 el peor chip daría una falsa alarma
+  cada ~210 ventanas de 1024 bits (P = 4,8·10⁻³ por ventana; con P(1)
+  0,388, 1,4·10⁻⁴; con 0,420, 6·10⁻⁹), y cada alarma bloquea el motor y
+  gasta rearmes.
+- El "2-5 % de sesgo en el integrado" de la decisión de esta mañana, de
+  CLAUDE.md y del cap. 7 de la memoria se queda corto: con el biestable
+  real llega al 13 % [SIMULADO, 8 chips a 125 °C, sin ruido]. tt a 125 °C
+  no está simulado; con más chips la cola solo puede empeorar.
+
+**Decisión pendiente de Mario** (no se ha tocado nada del RTL, los cortes
+ni la memoria): (1) bajar la H declarada (~0,6 o menos; recalcular RCT y
+APT y la regla de la semilla con `cortes_salud.py`, quizá semilla de 512
+bits); (2) corregir el circuito (anillo más lento, ro1/2, o los dos), a
+costa de caudal; (3) las dos cosas.
 
 ## Pendiente (lista para el 15-11-2026 en adelante)
 
 Por orden; lo marcado (M) necesita a Mario delante de la placa.
 
-1. **Decidir el corte del RCT** (Mario): con α = 2⁻²⁰ hay una falsa alarma
-   cada ~8 min a `kd 14`. Opciones: C = 32 (α = 2⁻³⁰; cambia `G_RCT_C` de
-   `health_tests`, el banco, `docs/mapa_registros.md` y la memoria) o rearme
-   automático en el maestro. Afecta también al motor del integrado.
+1. **Decidir qué hacer con el sesgo del biestable real** (Mario; sección
+   "El biestable real de sg13g2 sesga más que el anillo"): (1) anillo más
+   lento o ro1/2, (2) H declarada 0,60 con semilla de 512 bits (inclinación
+   de Claude), (3) XOR de pares; o pasar los datos a otro agente y decidir
+   entre los dos, como el 15-11. Después: aplicar en RTL, cortes, bancos,
+   `cortes_salud.py`, `mapa_registros.md` y memoria EN/ES (cap. 4 §salud y
+   el párrafo del ciclo de trabajo del cap. 7, que dice 2-5 %). El corte del
+   RCT de α = 2⁻²⁰ ya se resolvió el 15-11 (39/683 con H 0,80), pero esos
+   cortes dependen de esta decisión.
 2. **Residuo del modelo de jitter** (3-11 veces el ruido en `kd 7-9`):
    - (M) bus I2C más lento o con pausas entre lecturas durante la captura
      (¿la actividad del ESP32 modula los anillos?);

@@ -1,0 +1,10 @@
+tt27 rep 0: periodo 442.5 ps, hueco de fase max 0.0160, 2867 s; P(1) biestable / ideal por nudo: 0.4794/0.5006  nan/0.5215  0.4733/0.4911  nan/0.5222  nan/0.4928
+  AVISO nudo 2: bordes ff 4, ideal 2 (deberian ser 2)
+  AVISO nudo 4: bordes ff 8, ideal 2 (deberian ser 2)
+  AVISO nudo 5: bordes ff 4, ideal 2 (deberian ser 2)
+
+CSV: /home/mmggjj/workspace/TFM_ENCRY/results/biestable_ihp_tt27.csv
+
+| caso | n | periodo ps | P(1) biestable n1-n5 (min-max) | ideal VDD/2 (min-max) | biestable - ideal (min-max) | H cota peor (biestable) | nudo n5 (osc) biestable |
+|---|---|---|---|---|---|---|---|
+| tt27 | 1 | 442.6 | 0.4733-0.4794 | 0.4911-0.5222 | -0.0212--0.0177 | 0.9251 | nan-nan |

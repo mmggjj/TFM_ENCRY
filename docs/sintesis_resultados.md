@@ -126,6 +126,20 @@ lógica; en un integrado sería una SRAM compilada (IHP la ofrece) o, más
 razonable, un buffer mucho menor, porque es una vía de test que en
 producción se deshabilita.
 
+## Muestreo sin habilitación y cortes nuevos (15-11-2026)
+
+`motor_top` pasa a `G_MUESTREO_LIBRE = true` y a los cortes 39/683
+(`docs/basys2.md`, "Decisión del 15-11-2026"). Síntesis comparada en una
+copia, en la misma tanda y con la misma herramienta (plugin de GHDL), sin
+tocar `results/sintesis_sg13g2.csv` (`results/sintesis_muestreo_libre.log`):
+`ero_core` 0,336 → 0,332 kGE (139 → 135 celdas: se va el multiplexor de
+la habilitación), `health_tests` 1,273 → 1,278, `motor_top` 93,18 →
+92,82 kGE con los mismos 8 164 biestables. El −0,4 % del motor está en el
+orden de lo que abc mueve solo por los nombres (0,2 %, 14-11): **sin
+cambio de área medible**. Las filas del CSV y del capítulo 6 siguen siendo
+las de antes hasta la próxima síntesis completa (92,53 con el otro camino
+de herramienta).
+
 ## Comprobación de coherencia
 
 Las diferencias entre bloques cuadran con lo que contienen: el

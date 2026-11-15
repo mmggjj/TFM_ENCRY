@@ -1,0 +1,49 @@
+Sintesis comparada del 15-11-2026 (copia de HEAD 8f6e156, variantes *_previo con G_MUESTREO_LIBRE=false y cortes 22/596; ero_core_libre con G_MUESTREO_LIBRE=true). No toca results/sintesis_sg13g2.csv.
+
+== synth/sintetiza.py ero_core
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+ero_core           139     28     2442.1   0.336     0
+ero_core_previo     139     28     2442.1   0.336     0
+ero_core_libre     135     28     2413.1   0.332     0
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
+
+== synth/sintetiza.py health_tests
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+health_tests       598     86     9278.5   1.278     0
+health_tests_previo     596     86     9242.1   1.273     0
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
+
+== synth/sintetiza.py motor_top
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+motor_top        33377   8164   673641.3  92.819    12
+motor_top_previo   33572   8164   676236.6  93.176    12
+motor_top_aes11   40863   8161   742571.4 102.316    15
+motor_top_flujo   39608  10270   847434.9 116.765    15
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
+
+== CSV de la copia
+bloque,celdas,biestables,area_um2,kGE,segundos,ok
+health_tests,598,86,9278.5392,1.278,0.4,True
+ero_core,139,28,2442.1446,0.336,0.3,True
+motor_top,33377,8164,673641.2844,92.819,11.6,True
+motor_top_previo,33572,8164,676236.6324,93.176,11.7,True
+ero_core_previo,139,28,2442.1446,0.336,0.3,True
+ero_core_libre,135,28,2413.0764,0.332,0.2,True
+health_tests_previo,596,86,9242.1378,1.273,0.5,True
+motor_top_aes11,40863,8161,742571.4366,102.316,15.2,True
+motor_top_flujo,39608,10270,847434.9492,116.765,15.0,True
