@@ -45,6 +45,15 @@ def main() -> int:
                 f.update({"p1": p1, "n_bits": n, "semilla": s,
                           "frac_unos": float(bits.mean())})
                 filas.append(f)
+    # Se fusiona con lo que ya hubiera: una ejecucion con otros p1 o n no
+    # borra las filas anteriores (antes el CSV se reescribia entero).
+    previas = {}
+    if (DIR / "sesgo_90b.csv").exists():
+        with open(DIR / "sesgo_90b.csv", newline="") as fh:
+            previas = {r["nombre"]: r for r in csv.DictReader(fh)}
+    for f in filas:
+        previas[f["nombre"]] = f
+    filas = list(previas.values())
     claves = sorted({k for f in filas for k in f})
     with open(DIR / "sesgo_90b.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=claves)

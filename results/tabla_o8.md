@@ -45,3 +45,45 @@ FPGA y nada más (analysis/sesgo_90b.py), tres semillas.
 | z del sesgo | 12.036 | 1.033 | 0.105 (0.039-0.960) | 12.492 (11.008-13.063) |
 | N (bits) | 8378368 | 8378368 | 8378368 | 8378368 |
 
+Con y sin habilitacion (CE) en el biestable que muestrea ro1: mismos
+anillos y biestable colocados; kd 13 y 14, y una segunda implementacion
+libre (par -t 7) a kd 14. iid p1=0,4962: el sesgo de la libre.
+
+### 4 194 304 bits
+
+| Estimador | FPGA con CE (n=2) | FPGA sin CE (n=3) | Ideal (n=3) | iid p1=0,4962 (n=3) |
+|---|---|---|---|---|
+| MCV | 0.986 (0.986-0.986) | 0.987 (0.987-0.990) | 0.998 (0.998-0.998) | 0.987 (0.987-0.988) |
+| Colisión | 0.874 (0.872-0.876) | 0.923 (0.897-0.947) | 0.934 (0.933-0.941) | 0.935 (0.931-0.947) |
+| Markov | 0.981 (0.980-0.982) | 0.989 (0.988-0.991) | 1.000 (1.000-1.000) | 0.990 (0.989-0.990) |
+| Compresión | 0.860 (0.843-0.877) | 0.883 (0.878-0.885) | 0.898 (0.893-0.906) | 0.895 (0.885-0.904) |
+| t-Tuple | 0.924 (0.923-0.925) | 0.929 (0.923-0.931) | 0.929 (0.927-0.931) | 0.931 (0.929-0.933) |
+| LRS | 0.996 (0.995-0.998) | 0.996 (0.994-0.998) | 0.974 (0.932-0.990) | 0.974 (0.932-0.990) |
+| MultiMCW | 0.995 (0.994-0.996) | 0.997 (0.996-0.997) | 0.998 (0.998-0.998) | 0.996 (0.995-0.997) |
+| Lag | 0.992 (0.991-0.993) | 0.998 (0.998-0.999) | 0.998 (0.998-0.998) | 0.998 (0.997-0.998) |
+| MultiMMC | 0.985 (0.984-0.986) | 0.987 (0.985-0.990) | 0.998 (0.998-0.998) | 0.987 (0.987-0.988) |
+| LZ78Y | 0.986 (0.986-0.986) | 0.987 (0.987-0.990) | 0.999 (0.998-0.999) | 0.987 (0.987-0.988) |
+| **Mínimo (H asignada)** | 0.860 (0.843-0.876) | 0.883 (0.878-0.885) | 0.898 (0.893-0.906) | 0.895 (0.885-0.904) |
+| p̂ del MCV | 0.504 (0.504-0.504) | 0.504 (0.503-0.504) | 0.500 (0.500-0.500) | 0.504 (0.504-0.504) |
+| z del sesgo | 17.187 (16.812-17.562) | 15.534 (11.757-15.567) | 0.362 (0.145-0.399) | 15.586 (15.005-16.044) |
+| N (bits) | 4194304 | 4194304 | 4194304 | 4194304 |
+
+### Prueba de reinicios (SP 800-90B 3.1.4, ea_restart en bit, 1000 x 1000)
+
+H_I: la entropia no-IID de la fuente con la que se compara. Pasa si
+min(H_r, H_c) >= H_I/2 y la comprobacion de cordura pasa. ESP32:
+docs/esp32_reinicios.md (sin_ruido = sin el ruido del cargador de arranque).
+
+| Fuente | Variante | H_I | H_r | H_c | Veredicto |
+|---|---|---|---|---|---|
+| FPGA (Basys 2, kd 14) | 1000 reprogramaciones por JTAG | 0.845 | 0.855 | 0.873 | pasa |
+| ESP32 a0:dd:..:4c | normal | 0.838 | 0.898 | 0.854 | pasa |
+| ESP32 a0:dd:..:4c | sin_ruido | 0.838 | 0.024 | 0.813 | falla |
+| ESP32 a0:dd:..:4c | radio_sin_ruido | 0.859 | 0.831 | 0.845 | pasa |
+| ESP32 a0:dd:..:4c | espera_sin_ruido | 0.838 | 0.024 | 0.808 | falla |
+| ESP32 a0:dd:..:4c | radio | 0.859 | 0.844 | 0.807 | pasa |
+| ESP32 f8:b3:..:28 | normal | 0.833 | 0.892 | 0.848 | pasa |
+| ESP32 f8:b3:..:28 | sin_ruido | 0.833 | 0.016 | 0.844 | falla |
+| ESP32 f8:b3:..:28 | fuente_adc_200 | 0.833 | 0.864 | 0.877 | pasa |
+| ESP32 f8:b3:..:28 | fuente_bootrand_200 | 0.833 | 0.840 | 0.842 | pasa |
+

@@ -274,6 +274,10 @@ lo mueve unos 0,019, porque los flancos son lentos frente a un periodo de
 incertidumbre del umbral; en la FPGA, donde el sesgo medido es del
 0,4\,\%, es 0,989.
 
+% PROVISIONAL (16-11-2026): H = 0,60, los cortes 51/766 y la semilla de 512 bits se
+% apoyan en ocho chips SPICE sin ruido (cuatro por esquina). Pendiente del Monte
+% Carlo de docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); no cerrar
+% la memoria con esto. No se imprime.
 El biestable de muestreo sesga el bit más que el anillo. Con el
 \texttt{sg13g2\_\allowbreak dfrbpq\_1} real de la biblioteca en el nudo~5, detrás de
 un \texttt{sg13g2\_\allowbreak buf\_1} (sin él, la capacidad de entrada del biestable
@@ -292,7 +296,7 @@ dos lo curarían a costa de un divisor cuatro o cinco veces mayor. El
 diseño declara en cambio $H = 0{,}60$, con umbrales y una semilla de 512
 bits calculados para ese valor (Sección~\ref{sec:health}), lo que
 conserva el circuito y la tasa de bits y cubre el peor chip simulado. Son
-simulaciones sin ruido de ocho chips por esquina; con más chips la cola
+simulaciones sin ruido de cuatro chips por esquina, ocho en total; con más chips la cola
 solo puede crecer, y por eso el valor declarado queda por debajo del
 peor.
 

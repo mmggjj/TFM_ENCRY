@@ -56,7 +56,10 @@ paso() { echo "== $1"; shift; "$@"; }
 paso xst      xst -ifn basys2_top.xst -ofn basys2_top.syr
 # UCF: otro fichero para variantes en las que XST da otros nombres de red
 # (sin medidor la salida del anillo es u_motor/ro_mon<i>, no u_motor_ro_mon<i>).
-paso ngdbuild ngdbuild -dd _ngo -nt timestamp -uc "${UCF:-../basys2.ucf}" -p "$PARTE" \
+# UCF_EXTRA: un segundo UCF que se suma al primero (p. ej. ../halo_anillos.ucf).
+# shellcheck disable=SC2086
+paso ngdbuild ngdbuild -dd _ngo -nt timestamp -uc "${UCF:-../basys2.ucf}" \
+                       ${UCF_EXTRA:+-uc "$UCF_EXTRA"} -p "$PARTE" \
                        basys2_top.ngc basys2_top.ngd
 paso map      map -p "$PARTE" -o basys2_top_map.ncd basys2_top.ngd basys2_top.pcf
 # PAR_OPC: opciones extra de par (p. ej. "-t 7", otra tabla de costes del

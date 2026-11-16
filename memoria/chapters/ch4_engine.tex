@@ -147,6 +147,10 @@ arrive in a row; the Adaptive Proportion Test counts, in a window of
 $W = 1024$ samples (the binary-source value; 512 is for non-binary
 sources), how many repeat the first one, and fails at
 $C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. The
+% PROVISIONAL (16-11-2026): H = 0.60, cut-offs 51/766 and the 512-bit seed rest on
+% eight noiseless SPICE dies (four per corner). Pending the Monte Carlo of
+% docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); do not close the
+% memoria on this. Not printed.
 design target is $H = 0.60$ and $\alpha = 2^{-30}$, which give
 $C_{\mathrm{RCT}} = 51$ and $C_{\mathrm{APT}} = 766$. Until November 2026
 it was $H = 0.98$ and $\alpha = 2^{-20}$ (22 and 596). It was lowered for
@@ -154,8 +158,8 @@ two reasons. At $2^{-20}$ the FPGA prototype raised a repetition false
 alarm every few minutes, each of which blocks the engine. And the sampled
 bit is biased: the duty cycle of the IHP ring leaves a first-order bound of
 0.85--0.90, and the real sampling flip-flop of the library, simulated at
-transistor level, takes the worst of eight dies at 125~$^\circ$C down to
-0.67 (Section~\ref{sec:ihp_ring}). A first revision to $H = 0.80$, with
+transistor level without noise, takes the worst of eight dies at
+125~$^\circ$C down to 0.67 \simu{} (Section~\ref{sec:ihp_ring}). A first revision to $H = 0.80$, with
 39 and 683, did not cover five of those eight dies. The lower target is
 paid for in the seed, which grew from 384 to 512 bits: even at the worst
 proportion the test lets through ($p \approx 0.748$, $H \approx 0.42$),

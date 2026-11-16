@@ -157,6 +157,10 @@ Proportion Test}) cuenta, en una ventana de $W = 1024$ muestras (el valor
 para fuentes binarias; 512 es para fuentes no binarias), cuántas repiten
 la primera, y falla al llegar a
 $C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. El
+% PROVISIONAL (16-11-2026): H = 0,60, los cortes 51/766 y la semilla de 512 bits se
+% apoyan en ocho chips SPICE sin ruido (cuatro por esquina). Pendiente del Monte
+% Carlo de docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); no cerrar
+% la memoria con esto. No se imprime.
 objetivo de diseño es $H = 0{,}60$ y $\alpha = 2^{-30}$, que dan
 $C_{\mathrm{RCT}} = 51$ y $C_{\mathrm{APT}} = 766$. Hasta noviembre de 2026
 era $H = 0{,}98$ y $\alpha = 2^{-20}$ (22 y 596). Se bajó por dos motivos.
@@ -164,8 +168,8 @@ Con $2^{-20}$ el prototipo en FPGA daba una falsa alarma del test de
 repeticiones cada pocos minutos, y cada una bloquea el motor. Y el bit
 muestreado está sesgado: el ciclo de trabajo del anillo de IHP deja en
 0,85--0,90 la cota de primer orden, y el biestable de muestreo real de la
-biblioteca, simulado a nivel de transistor, lleva el peor de ocho chips a
-125~$^\circ$C a 0,67 (Sección~\ref{sec:ihp_ring}). Una primera revisión a
+biblioteca, simulado a nivel de transistor sin ruido, lleva el peor de ocho
+chips a 125~$^\circ$C a 0,67 \simu{} (Sección~\ref{sec:ihp_ring}). Una primera revisión a
 $H = 0{,}80$, con 39 y 683, no cubría cinco de esos ocho chips. El
 objetivo más bajo se paga en la semilla, que pasó de 384 a 512 bits:
 incluso con la peor proporción que deja pasar el test

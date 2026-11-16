@@ -265,6 +265,10 @@ because the edges are slow against a 270--600~ps period \simu{}. The bound
 falls to 0.90 at $V_{DD}/2$ and to 0.85 with that threshold uncertainty;
 on the FPGA, where the measured bias is 0.4\,\%, it is 0.989.
 
+% PROVISIONAL (16-11-2026): H = 0.60, cut-offs 51/766 and the 512-bit seed rest on
+% eight noiseless SPICE dies (four per corner). Pending the Monte Carlo of
+% docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); do not close the
+% memoria on this. Not printed.
 The sampling flip-flop biases the bit more than the ring does. With the
 real \texttt{sg13g2\_\allowbreak dfrbpq\_1} of the library on node~5, behind a
 \texttt{sg13g2\_\allowbreak buf\_1} (without it the flip-flop's input capacitance
@@ -282,7 +286,7 @@ RO1 divided by two would cure it at the cost of a four- to fivefold larger
 divider. The design instead declares $H = 0.60$, with cut-offs and a
 512-bit seed computed for it (Section~\ref{sec:health}), which keeps the
 circuit and the throughput and covers the worst simulated die. These are
-simulations without noise of eight dies per corner; with more dies the
+simulations without noise of four dies per corner, eight in all; with more dies the
 tail can only grow, which is why the declared value sits below the worst
 one.
 

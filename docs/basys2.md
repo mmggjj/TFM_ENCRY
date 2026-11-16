@@ -903,6 +903,97 @@ chip simulado (H 0,672) queda por encima de lo declarado.
   campañas comparables con las del 14 y el 15-11 se usan esos; regenerar
   si se quieren los cortes nuevos en placa.
 
+## Residuo del jitter: halo, CE e implementación (16-11-2026, medido)
+
+Punto 2 del pendiente. Cuatro implementaciones de la variante sin display
+ni medidor, todas con los anillos y el biestable de muestreo en los mismos
+slices, BEL y patas (`basys2_sin_medidor_fijo.ucf`), más el bitstream del
+14-11 regrabado hoy. 10⁶ bits por divisor con `flujo_desborde.py` (0-1
+ejecuciones descartadas de 326-489) y `jitter_autocorrelacion.py
+--conjunto` (`results/motor_campana/basys2_*_kd07_09*/`):
+
+| Implementación | CE | Q por periodo de ro2, kd 7 / 8 / 9 (·10⁻⁵) | residuo / ruido | unos |
+|---|---|---|---|---|
+| 14-11, capturas del 14-11 (r1-r3) | sí | 4,1-4,5 / 4,4-4,7 / 4,7-4,9 | 8-11 / 5-7 / 2,6-3,3 | 0,498 |
+| **14-11, regrabada hoy (r4)** | sí | **3,44 / 3,85 / 3,91** | 10,5 / 4,8 / 3,0 | 0,497-0,498 |
+| `_fijo` (15-11) | sí | 1,31 / 1,66 / 1,87 | 4,4 / 6,9 / 4,5 | 0,475-0,480 |
+| `_libre` (15-11, cortes 39/683) | no | 1,12 / 1,67 / 1,78 | 4,8 / 11,3 / 7,5 | 0,496 |
+| `_libre_c51` (cortes 51/766) | no | 0,98 / 1,39 / 1,56 | 4,4 / 10,8 / 7,6 | 0,495-0,497 |
+| `_libre_halo` (51/766 + halo) | no | 0,98 / 1,40 / 1,55 | 4,8 / 11,9 / 7,6 | 0,495-0,497 |
+
+`_libre_halo` añade `synth/basys2/halo_anillos.ucf` (`UCF_EXTRA` en
+`build.sh`): dos CLB alrededor de cada anillo prohibidos al colocador. En
+el XDL, 53 slices de lógica caían en esa zona sin halo y 0 con él; mismas
+posiciones fijas; las dos implementaciones cumplen tiempos (TS_ro2 4,48 y
+4,55 ns).
+
+- **El halo no cambia nada** (Q dentro del 0,4 %, mismo residuo): la
+  lógica colocada a menos de dos CLB de los anillos no es el mecanismo.
+- **Quitar el CE no quita el residuo** (sube a `kd 8-9`): la correlación
+  del CE no lo explicaba.
+- **La implementación cambia la Q ×2,5-3,5, no el día.** El `.bit` del
+  14-11 regrabado hoy da 3,4-3,9·10⁻⁵ (un 15 % menos que el 14-11: eso sí
+  puede ser el día), frente a 1,0-1,9·10⁻⁵ de las de colocación fija
+  medidas hoy mismo. En el XDL, las redes internas de los dos anillos son
+  **idénticas pip a pip** entre la del 14-11 y `_libre_c51`; cambian 3
+  pips de la salida de ro1 hacia el biestable y **el rutado entero del
+  reloj ro2** (`ro_mon<1>`, 21 cargas). En las dos, ro2 cruza la matriz de
+  conmutación del CLB de ro1 (X14Y10-11), por cables distintos.
+- Lectura: la Q medida no es una propiedad de los anillos solos; depende
+  de cómo viaja ro2 hasta los biestables, probablemente por acoplamiento
+  entre los anillos a través de ese rutado. Acoplar tiende a reducir el
+  jitter relativo aparente: la Q baja es la real de esa implementación, y
+  es la que manda para el divisor.
+- **`CFG_KD` provisional ≥ 16** (antes ≥ 14). Con la Q más baja medida
+  (9,8·10⁻⁶, `_libre_halo` a `kd 7`), K\* = 0,2286 / Q ≈ 2^14,5 y con
+  margen ×2, 2^15,5. Con 1,6·10⁻⁵ (propuesta del revisor) sale 15. La Q
+  por periodo crece con el divisor (de `kd 7` a `kd 9`, ×1,6), así que la
+  de `kd 7` es la conservadora.
+- Siguiente experimento posible: llevar ro2 por un BUFG (red global de
+  reloj, lejos de la matriz local de ro1) y ver si la Q sube hacia la del
+  14-11; o fijar con `ROUTE` el camino de ro2 del 14-11 en una
+  implementación nueva. Sin hacer.
+
+## Tests de salud 51/766 en placa y en software (16-11-2026, medido)
+
+Punto 4 de la revisión: la configuración final en placa
+(`basys2_top_quieto_sin_medidor_libre_c51.bit`: muestreo libre, cortes
+51/766), con el mismo protocolo que el 14-11 (CFG_KD, `borrar`, 30 s, `id`;
+logs locales `results/esp32_consola_basys2_alarma51_kd*.log`):
+
+| kd | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 |
+|---|---|---|---|---|---|---|---|---|---|
+| 14-11 (22/596, con CE) | — | — | RCT | RCT | — | — | RCT + APT | — | — |
+| 16-11 (51/766, sin CE) | — | — | — | — | **RCT** | — | — | — | — |
+
+La comparación mezcla cortes e implementación. Para aislar los cortes,
+`analysis/salud_offline.py` aplica RCT y APT como el RTL (racha ≥ C;
+ventanas de 1024 sin solapar, cuenta o complemento ≥ C) con 22/596, 39/683
+y 51/766 **a los mismos bits capturados** (`results/salud_offline.md`;
+reproduce la racha máxima de 23 de la tira larga del 14-11):
+
+- **A `kd 7-9` ningún juego de cortes detecta nada**, ni el estricto
+  22/596, en 10⁶ bits por divisor de tres implementaciones: racha máxima
+  4-17, APT máximo 534-576. Según el modelo esos bits tienen muy poca
+  entropía (Q por muestra 10⁻³-10⁻²), pero la fase avanza de forma
+  determinista y casi uniforme (ν) y los bits salen equilibrados y sin
+  rachas. **El RCT y el APT no ven este régimen**; lo que lo evita es el
+  divisor (`G_KD_MIN` en el hardware y `CFG_KD` en el maestro).
+- La única diferencia entre cortes en estos datos son las falsas alarmas
+  de 22/596 en bits buenos (1-3 rachas ≥ 22 por cada 4-8·10⁶ bits, igual
+  que en bits ideales); 39/683 y 51/766 no dan ninguna.
+- Las alarmas en placa salen de episodios raros: a `kd 10`, 30 s son ~4·10⁶
+  bits y una racha ≥ 51 tendría probabilidad ~10⁻⁹ con bits sanos.
+  Probablemente un enganche de la fase (ν pasando cerca de una razón
+  sencilla), que 51/766 sigue detectando. Lo que cuesta bajar H, en lo
+  observado: nada que los cortes antiguos detectaran en estas capturas.
+- **Para Mario (diseño):** `G_KD_MIN` vale 6 en `motor_top` y 7 en la Basys
+  2, muy por debajo del divisor caracterizado (≥ 16 en la FPGA, 2²³ en el
+  integrado). Como los tests no ven el régimen de poco jitter, subir
+  `G_KD_MIN` al valor caracterizado sería la protección real. Sin decidir.
+- Ojo: en el log de `kd 6` la respuesta a `borrar` llegó con bytes basura
+  (el Monte Carlo cargaba el PC con 4 procesos); la orden se ejecutó.
+
 ## H 0,60: provisional hasta el Monte Carlo (criterio fijado el 16-11-2026)
 
 Revisión de otro chat que Mario hizo suya: H 0,60 se apoya en 8 chips SPICE

@@ -1,0 +1,2 @@
+results/motor_campana/basys2_quieto_sin_medidor_kd07_09_r4/kd08_trozos.npz: 326 trozos, 1001472 bits, CFG_KD 8, fraccion de unos 0.4969
+ajuste conjunto (nu por trozo, M = 1..30): Q por muestra 9.8536e-03; por periodo de ro2 3.8491e-05; residuo medio 3.861e-04 frente a ruido binomial 8.007e-05 (4.8 veces)

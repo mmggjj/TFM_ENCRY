@@ -87,6 +87,26 @@ commit todavía.
   `I2C software timeout` y luego NACK; logs locales `results/esp32_consola_conexion_*`, no versionados).
   Grabada `_fijo.bit`.
 
+- **Tarde del 16-11** (revisión de otro chat que Mario hizo suya; regla
+  nueva: la memoria solo se toca con la evidencia cerrada):
+  - **H 0,60 provisional** hasta un Monte Carlo de 24 chips por esquina
+    (ff 1,32 V, sf, tt a 125 °C; 8 de sf a 1,08 V) con el criterio fijado
+    antes de simular (commit 403c860, `docs/basys2.md`): H declarable =
+    μ ± 3σ de P(1), mínimo sobre esquinas; < 0,60 → corregir el circuito.
+    En marcha (`results/biestable_ihp_mc24.log`). Memoria con notas no
+    impresas; corregido "ocho chips por esquina" (son cuatro, ocho en total).
+  - **Residuo del jitter:** el halo (`halo_anillos.ucf`, `UCF_EXTRA`) y el
+    CE no lo cambian; **el rutado del reloj ro2 cambia la Q ×2,5-3,5** con
+    los anillos idénticos pip a pip (el `.bit` del 14-11 regrabado hoy da
+    3,4-3,9·10⁻⁵; los de colocación fija, 1,0-1,9·10⁻⁵). **`CFG_KD`
+    provisional ≥ 16** con la Q más baja medida.
+  - **Salud:** en placa con 51/766 solo salta el RCT a `kd 10`;
+    `salud_offline.py` muestra que a `kd 7-9` ningún juego de cortes (ni
+    22/596) detecta nada sobre los mismos bits: el RCT/APT no ven el
+    régimen de poco jitter; lo protege el divisor (`G_KD_MIN`, sin decidir).
+  - Tabla O8 con 4 194 304 bits (sin CE ≈ bits iid con su sesgo) y cuadro
+    de reinicios FPGA/ESP32 (`tabla_o8.py`); `sesgo_90b.py` ya fusiona el CSV.
+
 ## Estado al 15-11-2026: tabla O8 y la habilitación del muestreador
 
 Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
