@@ -903,6 +903,35 @@ chip simulado (H 0,672) queda por encima de lo declarado.
   campañas comparables con las del 14 y el 15-11 se usan esos; regenerar
   si se quieren los cortes nuevos en placa.
 
+## H 0,60: provisional hasta el Monte Carlo (criterio fijado el 16-11-2026)
+
+Revisión de otro chat que Mario hizo suya: H 0,60 se apoya en 8 chips SPICE
+sin ruido, solo ff y sf a 125 °C, y con más chips el peor solo puede
+empeorar. La propia decisión del 15-11 pedía más de 8 chips antes de fijar
+H. **H 0,60 queda provisional** (RTL y firmware ya en 51/766; la memoria
+lo marca con una nota no impresa). Criterio fijado **antes** de lanzar la
+simulación:
+
+- **Simulación:** `analysis/biestable_ihp.py --montajes uno_buf
+  --mismatch-n 24 --mm-casos ff125_v132,sf125,tt125 --procesos 4
+  --etiqueta mc24`, y 8 chips de `sf125_v108` (sf a 1,08 V: no está
+  comprobado que la tensión baja no empeore el retardo asimétrico). Mismo
+  montaje que la tanda del 15-11 (n5 → `sg13g2_buf_1` → biestable), P(1)
+  ponderada por fase, sin ruido. Los 4 chips de ff y sf del 15-11 se suman
+  (sorteos independientes: ngspice no deja fijar la semilla).
+- **Lectura:** por esquina, media μ y desviación σ de P(1) entre chips; la
+  cola relevante es la que se aleja de 0,5 (μ − 3σ si μ < 0,5). H de la
+  esquina = −log₂ max(p, 1 − p) en μ ± 3σ. **H declarable = mínimo sobre
+  esquinas.** El peor chip se da como dato, no como criterio. Se informa
+  también de la normalidad (Shapiro-Wilk) y de la incertidumbre de σ.
+- **Qué cambia la decisión:** si la H declarable cae **por debajo de
+  0,60**, no se baja más la H: se pasa a corregir el circuito (ro1/2 o
+  anillo más lento, docs arriba). Si queda ≥ 0,60, H 0,60 se da por
+  cerrada y la nota de la memoria se quita. Si sf a 1,08 V sale peor que
+  sf a 1,2 V en media, se amplía a 24 chips antes de decidir.
+- Carga del PC: 4 procesos como máximo mientras se captura por UART;
+  revisar los CRC de las capturas de esos días.
+
 ## Pendiente (lista para el 15-11-2026 en adelante)
 
 Por orden; lo marcado (M) necesita a Mario delante de la placa.

@@ -56,7 +56,18 @@ CASOS = [  # (nombre, esquina, temp, vdd)
     ("ff125_v132", "mos_ff", 125.0, 1.32),
     ("sf125", "mos_sf", 125.0, 1.2),
     ("fs125", "mos_fs", 125.0, 1.2),
+    # 16-11-2026, para el Monte Carlo de la H declarada (docs/basys2.md):
+    ("tt125", "mos_tt", 125.0, 1.2),
+    ("sf125_v108", "mos_sf", 125.0, 1.08),
 ]
+ETIQUETA = ""              # --etiqueta; va tambien en el nombre de los .npz
+
+
+def _fija_etiqueta(e: str) -> None:
+    """Inicializador del pool: con forkserver (Python 3.14) los procesos
+    hijos no heredan las variables globales de main."""
+    global ETIQUETA
+    ETIQUETA = e
 
 
 def celda_spice(mismatch: bool, celda: str = CELDA) -> str:
@@ -198,7 +209,8 @@ def un_caso(arg):
     dcr.mkdir(exist_ok=True)
     sm = ("" if montaje == "cinco" else f"_{montaje}") + \
         ("" if etapas == ETAPAS else f"_e{etapas}")
-    np.savez(dcr / f"{nombre}{sm}_r{rep}.npz", **crudo)
+    # Con etiqueta en el nombre: una tanda nueva no machaca las anteriores.
+    np.savez(dcr / f"{nombre}{sm}{'_' + ETIQUETA if ETIQUETA else ''}_r{rep}.npz", **crudo)
     return filas
 
 
@@ -233,7 +245,8 @@ def main() -> int:
     if a.solo:
         trabajos = [w for w in trabajos if w[0] == a.solo][:1]
     filas = []
-    with ProcessPoolExecutor(a.procesos) as ex:
+    with ProcessPoolExecutor(a.procesos, initializer=_fija_etiqueta,
+                             initargs=(a.etiqueta,)) as ex:
         for fs in ex.map(un_caso, trabajos):
             filas += fs
             print(f"{fs[0]['caso']} {fs[0]['montaje']} {fs[0]['etapas']} etapas rep {fs[0]['rep']}: periodo "
