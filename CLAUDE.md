@@ -93,8 +93,19 @@ commit todavía.
     (ff 1,32 V, sf, tt a 125 °C; 8 de sf a 1,08 V) con el criterio fijado
     antes de simular (commit 403c860, `docs/basys2.md`): H declarable =
     μ ± 3σ de P(1), mínimo sobre esquinas; < 0,60 → corregir el circuito.
-    En marcha (`results/biestable_ihp_mc24.log`). Memoria con notas no
-    impresas; corregido "ocho chips por esquina" (son cuatro, ocho en total).
+    Memoria con notas no impresas; corregido "ocho chips por esquina" (son
+    cuatro, ocho en total).
+  - **Noche: el Monte Carlo tumba H 0,60** (`analysis/biestable_mc.py` →
+    `results/biestable_mc.md`; SIMULADO, sin ruido; 28 chips ff y sf, 24 tt
+    y 24 sf a 1,08 V, ampliado porque su media salió peor): H en μ − 3σ ff
+    0,653, **sf 0,568, sf 1,08 V 0,532**, tt 0,803; H declarable 0,532 <
+    0,60. A 1,08 V hasta el peor chip baja de 0,60 (0,596). Según lo
+    fijado, **no se baja más la H: se corrige el circuito** (ro1/2 o
+    anillo más lento, ×4 de divisor; con ×2 de periodo, H ≈ 0,72-0,74
+    [ESTIMADO, ley 1/T]); **la elección es de Mario** y la corrección se
+    valida con otro Monte Carlo igual. RTL sigue en 51/766 y semilla 512;
+    la nota no impresa de la memoria se queda. Detalle en `docs/basys2.md`,
+    "Resultado del Monte Carlo".
   - **Residuo del jitter:** el halo (`halo_anillos.ucf`, `UCF_EXTRA`) y el
     CE no lo cambian; **el rutado del reloj ro2 cambia la Q ×2,5-3,5** con
     los anillos idénticos pip a pip (el `.bit` del 14-11 regrabado hoy da

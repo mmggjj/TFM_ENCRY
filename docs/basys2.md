@@ -1023,14 +1023,80 @@ simulación:
 - Carga del PC: 4 procesos como máximo mientras se captura por UART;
   revisar los CRC de las capturas de esos días.
 
+## Resultado del Monte Carlo: H 0,60 no se sostiene (16-11-2026, SIMULADO)
+
+`analysis/biestable_mc.py` → `results/biestable_mc.md`, con los CSV
+`results/biestable_ihp_{sf_ff_mm,mc24,mc8_v108,mc16_v108}.csv` (logs
+íntegros al lado, crudos en `results/biestable_ihp_crudo/*_mc*`). Mismo
+montaje que el 15-11 (n5 → `sg13g2_buf_1` → `sg13g2_dfrbpq_1`), P(1)
+ponderada por fase, 125 °C, desapareamiento, **sin ruido**. Criterio el
+fijado arriba, sin cambios:
+
+| Esquina (125 °C) | chips | μ P(1) | σ (IC 95 %) | Shapiro-Wilk p | μ − 3σ | **H** | H con σ alta | peor chip (H) |
+|---|---|---|---|---|---|---|---|---|
+| ff 1,32 V | 28 (4 + 24) | 0,446 | 0,027 (0,022-0,037) | 0,09 | 0,364 | 0,653 | 0,587 | 0,372 (0,672) |
+| sf 1,2 V | 28 (4 + 24) | 0,420 | 0,032 (0,025-0,043) | 0,84 | 0,325 | **0,568** | 0,497 | 0,351 (0,623) |
+| **sf 1,08 V** | 24 (8 + 16) | 0,417 | 0,036 (0,028-0,051) | 0,17 | 0,308 | **0,532** | 0,443 | 0,339 (0,596) |
+| tt 1,2 V | 24 | 0,475 | 0,016 (0,012-0,022) | 0,06 | 0,427 | 0,803 | 0,755 | 0,426 (0,801) |
+
+**H declarable = 0,532** (sf a 1,08 V). Retardo asimétrico equivalente
+medio, (P(1) ideal − P(1) biestable) × periodo: tt 8,8 ps, ff 14,9, sf 35,0
+y sf a 1,08 V 45,7 ps (máx. 78): la tensión baja alarga el periodo (406 →
+496 ps) pero alarga más el retardo asimétrico.
+
+- **H declarable < 0,60.** Con el criterio fijado **ya decide sf a 1,2 V
+  sola** (28 chips: μ − 3σ = 0,325, H 0,568), sin contar 1,08 V. tt a
+  125 °C cumple incluso 0,80; ff queda en 0,65 (0,59 con σ en el extremo
+  alto de su intervalo). **H 0,60 no se cierra**: según lo fijado, no se
+  baja más la H y **se corrige el circuito**. La nota no impresa de la
+  memoria se queda y su texto [SIMULADO] sigue siendo provisional.
+- El peor chip de sf (0,351, H 0,623) aún está sobre 0,60: con el criterio
+  del peor chip se habría dado por buena. Es justo lo que el criterio
+  fijado de antemano evita (la cola con 28 chips llega más lejos).
+- Normalidad: Shapiro-Wilk p ≥ 0,06 en todas las esquinas (ff 0,09, tt
+  0,06: en el borde; el mínimo de cada esquina queda dentro de μ − 3σ,
+  salvo tt, cuyo mínimo 0,426 la roza: 0,427). Las dos tandas de ff (15-11: 0,417, n 4;
+  16-11: 0,451, n 24) no difieren de forma significativa (Welch p 0,21);
+  sf, p 0,90. Se juntan como se fijó.
+- sf a 1,08 V salió con media peor que a 1,2 V (0,417 frente a 0,420; la
+  diferencia no es significativa, pero el criterio decía ampliar) y se
+  amplió a 24 chips: la cola baja más (σ 0,036), y **aquí hasta el peor
+  chip queda por debajo de 0,60** (0,339, H 0,596). Las dos tandas de 8 y
+  16 coinciden (Welch p 0,96).
+- Con los cortes de hoy (51/766) [ESTIMADO, bits iid con ese sesgo, a
+  8,7 kbit/s]: el peor chip de 1,08 V (P(1) 0,339) daría ~100 alarmas del
+  RCT al año y 1,3·10⁻⁹ por ventana del APT; un chip en μ − 3σ (0,308),
+  ~840 al año y 4·10⁻⁵ por ventana. El rearme acotado (3 en 24 h) no lo
+  aguanta en el segundo caso.
+- Carga del PC: las capturas por UART que coincidieron con el arranque del
+  Monte Carlo (r4 de las 19:42-19:46) tienen 0 trozos descartados (las
+  1141 líneas de `DESBORDADO` son 489 + 326 + 326); la consola de `kd 6`
+  (sin tramas) es la única con bytes basura, ya anotada arriba.
+
+**Qué corrige el circuito** [ESTIMADO, con la ley 1/T medida con 9 y 11
+etapas, en la que el retardo asimétrico equivalente crece ~12 % al doblar
+el periodo; sin simular]: la desviación de P(1) en μ − 3σ es 0,175 en sf
+a 1,2 V y 0,192 a 1,08 V. Doblar el periodo visto por el biestable (ro1/2, o un
+anillo de ~11 etapas) la deja en ~0,098 y ~0,107: **H ≈ 0,74 en sf a 1,2 V
+y ≈ 0,72 a 1,08 V** (ff ≈ 0,80). H 0,80 en todas las esquinas pediría
+~×2,9 de periodo. Coste: ×4 de
+divisor, de tiempo de siembra y de caída del caudal (ro1/2 y 11 etapas
+cuestan parecido, ver arriba). Cualquier corrección se valida con un
+Monte Carlo igual (mismas esquinas, mismo criterio) antes de fijar H y
+los cortes. **Elección entre ro1/2 y anillo más lento: de Mario.**
+Mientras, el RTL sigue con 51/766 y la semilla de 512 bits (no estorban:
+si la H sube, los cortes se recalculan y la semilla sobra por arriba).
+
 ## Pendiente (lista para el 15-11-2026 en adelante)
 
 Por orden; lo marcado (M) necesita a Mario delante de la placa.
 
-1. ~~Decidir qué hacer con el sesgo del biestable real~~: **hecho el
-   16-11-2026**, H 0,60 con semilla de 512 bits ("Decisión del 16-11-2026").
-   Queda, si se quiere, regenerar los bitstreams de la Basys 2 con los
-   cortes 51/766.
+1. **Sesgo del biestable real: reabierto el 16-11-2026 por la noche.** H
+   0,60 con semilla de 512 bits ("Decisión del 16-11-2026") no pasa el
+   Monte Carlo de 28 chips ("Resultado del Monte Carlo"): hay que corregir
+   el circuito (ro1/2 o anillo más lento; decide Mario) y repetir el Monte
+   Carlo con la corrección. Los bitstreams de la Basys 2 con 51/766 ya
+   están hechos (`_libre_c51.bit`).
 2. **Residuo del modelo de jitter** (3-11 veces el ruido en `kd 7-9`):
    - (M) bus I2C más lento o con pausas entre lecturas durante la captura
      (¿la actividad del ESP32 modula los anillos?);
