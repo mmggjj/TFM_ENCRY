@@ -52,6 +52,41 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
+
+Decisión de Mario sobre el sesgo del biestable sg13g2 (sección del 15-11,
+abajo): **H declarada 0,60 con semilla de 512 bits**, sin tocar el
+circuito. Detalle en `docs/basys2.md`, "Decisión del 16-11-2026". Sin
+commit todavía.
+
+- RTL: `ctr_drbg` con entropía de 384 bits + nonce de 128 (S de 80 bytes,
+  5 bloques, L = 64; instanciar 16 cifrados, **209 ciclos**, antes 183);
+  `motor_top` recoge 512 bits; cortes **RCT 51 / APT 766** por defecto en
+  `motor_top` y `health_tests`. VERSION sigue en 0x04 (el mapa no cambia).
+  Vectores regenerados (`gen_drbg_vectores.py`); `tb_health_tests` caso 3
+  con sesgo del 80 % (el del 70 % ya no salta con 766: da 821). Doce
+  bancos en verde (`results/run_tb_todos.log`, `tb_motor_top` PSL 14/14 y
+  8/8), `verifica_top` 5/5.
+- `cortes_salud.py` 9/9 (con el peor chip del biestable, H 0,671 ≥ 0,60;
+  falsa alarma del APT ahora con `binom.sf`). Por separado el nonce lleva
+  ~54 bits (< 64): el diseño se apoya en la regla conjunta de 192 de SP
+  800-90A §8.6.7.
+- Falsas alarmas [ESTIMADO, iid] a 8,7 kbit/s: peor chip ~8/año del RCT,
+  chip justo en H 0,60 ~89/año; integrado (≤ 0,41 kbit/s) ≤ 0,4 y ≤ 4,2.
+- Área (`results/sintesis_semilla512.log`, plugin, misma tanda):
+  `motor_top` 92,82 → **95,13 kGE**, +256 FF; CSV y tabla del cap. 6 sin
+  tocar, el cap. 6 lo dice en un párrafo.
+- Firmware: `MOTOR_BITS_SEMILLA 512u`; banco host 0 fallos (mbedtls real);
+  verificador esp32 con ESP-IDF 5.3.2 sin avisos.
+- Memoria EN/ES: cap. 4 (§DRBG, §salud, rearme, banco), cap. 6 (párrafo
+  del área), cap. 7 (párrafo del biestable tras "Duty cycle", 2,6 s de
+  siembra, cortes), apéndices; PDF regenerados sin avisos nuevos.
+- La Basys 2 sigue con bitstreams de cortes 39/683. **I2C con el ESP32
+  a0:dd:6c:0e:fb:4c funcionando** tras recablear (GPIO22 → JA1 SCL,
+  GPIO21 → JA2 SDA, GND → pin 5; mientras el cableado estuvo mal, primero
+  `I2C software timeout` y luego NACK; logs locales `results/esp32_consola_conexion_*`, no versionados).
+  Grabada `_fijo.bit`.
+
 ## Estado al 15-11-2026: tabla O8 y la habilitación del muestreador
 
 Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
@@ -111,9 +146,9 @@ Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
   ventanas. Semilla aún ≥ 192 bits. Mecanismo probable: setup distinto para
   D subiendo y bajando frente a un periodo de 285-405 ps; **comprobado con
   9 y 11 etapas**: el retardo equivalente se mantiene en 26-30 ps (sf) y
-  13-15 ps (ff) mientras el periodo se duplica, el sesgo baja como ~1/T. **Decisión pendiente de Mario** (H más baja,
-  corregir el circuito o las dos); el "2-5 %" de arriba y del cap. 7 se
-  queda corto. Nada tocado en RTL, cortes ni memoria.
+  13-15 ps (ff) mientras el periodo se duplica, el sesgo baja como ~1/T.
+  **Decidido y aplicado el 16-11** (sección de arriba): H 0,60 y semilla
+  de 512 bits.
 - `synth/basys2/basys2_sin_medidor.ucf` versionado (antes solo en `build/`).
   La placa queda con `basys2_top_quieto_sin_medidor_fijo.bit` (lógica igual
   a la del 14-11).
@@ -818,11 +853,13 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   **nunca** se usa como referencia de jitter; el anillo se muestrea con
   otro anillo.
 - El generador determinista es CTR_DRBG **con** función de derivación y
-  entrada fija de 256 bits de entropía + 128 de nonce; si se cambia esa
+  entrada fija de 384 bits de entropía + 128 de nonce (256 + 128 hasta el
+  16-11-2026); si se cambia esa
   disposición hay que regenerar los vectores con
   `analysis/gen_drbg_vectores.py`.
-- Los tests de salud (RCT C=22, APT W=1024 C=596) están calculados para
-  min-entropía 0,98; son genéricos y se fijan con la min-entropía
+- Los tests de salud (RCT C=51, APT W=1024 C=766, α = 2⁻³⁰) están
+  calculados para min-entropía 0,60 desde el 16-11-2026 (antes 0,80 con
+  39/683, y 0,98 con 22/596); son genéricos y se fijan con la min-entropía
   **medida**.
 - Con anillos a velocidad física la simulación del sistema completo no
   termina; `tb_motor_top` usa un modelo de anillo 10× más lento, y lo

@@ -34,7 +34,7 @@ mapa de registros.
 \node[bloque, right=of ro] (ero) {ERO\\muestreador $\div K_D$};
 \node[bloque, right=of ero] (cdc) {CDC de bit};
 \node[bloque, above right=of cdc] (ht) {Tests de salud\\RCT, APT};
-\node[bloque, right=of cdc] (seed) {Colector de semilla\\384 bits};
+\node[bloque, right=of cdc] (seed) {Colector de semilla\\512 bits};
 \node[bloque, below right=of cdc] (cap) {Captura\\4096 bits};
 \node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
 \node[bloque, right=of drbg] (cmac) {AES-CMAC};
@@ -124,13 +124,13 @@ ramas de relleno.
 
 El generador implementa CTR\_DRBG con AES-128 y la función de derivación
 basada en cifrado de bloque de SP~800-90A~\cite{barker_2015_sp80090ar1}.
-Su formato de entrada es fijo a propósito: 256~bits de entropía en bruto
+Su formato de entrada es fijo a propósito: 384~bits de entropía en bruto
 y 128~bits de nonce, de modo que $S = L\,\|\,N\,\|\,E\,\|\,\mathit{nonce}\,\|\,\texttt{0x80}\,\|\,0\ldots$
-ocupa exactamente cuatro bloques y la función de derivación se convierte
-en una secuencia cerrada de catorce cifrados; una entrada de longitud
+ocupa exactamente cinco bloques y la función de derivación se convierte
+en una secuencia cerrada de dieciséis cifrados; una entrada de longitud
 variable costaría una ruta de datos orientada a bytes sin ningún
-beneficio. La instanciación (o el resembrado) cuesta 14~operaciones AES,
-183~ciclos; generar 256~bits cuesta cuatro, 53~ciclos. El estado (Key, V)
+beneficio. La instanciación (o el resembrado) cuesta 16~operaciones AES,
+209~ciclos; generar 256~bits cuesta cuatro, 53~ciclos. El estado (Key, V)
 nunca se expone; el contador de resembrados es legible para que el
 anfitrión pueda imponer una política de resembrado muy por debajo del
 límite de $2^{48}$ de la norma.
@@ -157,20 +157,26 @@ Proportion Test}) cuenta, en una ventana de $W = 1024$ muestras (el valor
 para fuentes binarias; 512 es para fuentes no binarias), cuántas repiten
 la primera, y falla al llegar a
 $C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. El
-objetivo de diseño es $H = 0{,}80$ y $\alpha = 2^{-30}$, que dan
-$C_{\mathrm{RCT}} = 39$ y $C_{\mathrm{APT}} = 683$. Hasta noviembre de 2026
+objetivo de diseño es $H = 0{,}60$ y $\alpha = 2^{-30}$, que dan
+$C_{\mathrm{RCT}} = 51$ y $C_{\mathrm{APT}} = 766$. Hasta noviembre de 2026
 era $H = 0{,}98$ y $\alpha = 2^{-20}$ (22 y 596). Se bajó por dos motivos.
-El ciclo de trabajo del anillo de IHP, simulado a nivel de transistor,
-deja en 0,85--0,90 la cota de primer orden de un bit muestreado
-directamente (Sección~\ref{sec:ihp_ring}). Y con $2^{-20}$ el prototipo en
-FPGA daba una falsa alarma del test de repeticiones cada pocos minutos, y
-cada una bloquea el motor. El objetivo más bajo no cuesta nada en la
-semilla: incluso con la peor proporción que deja pasar el test
-($p \approx 0{,}667$, $H \approx 0{,}58$), los 384 bits de la semilla
-llevan 224 bits de entropía, más que los 192 que necesita un \ac{CTRDRBG}
+Con $2^{-20}$ el prototipo en FPGA daba una falsa alarma del test de
+repeticiones cada pocos minutos, y cada una bloquea el motor. Y el bit
+muestreado está sesgado: el ciclo de trabajo del anillo de IHP deja en
+0,85--0,90 la cota de primer orden, y el biestable de muestreo real de la
+biblioteca, simulado a nivel de transistor, lleva el peor de ocho chips a
+125~$^\circ$C a 0,67 (Sección~\ref{sec:ihp_ring}). Una primera revisión a
+$H = 0{,}80$, con 39 y 683, no cubría cinco de esos ocho chips. El
+objetivo más bajo se paga en la semilla, que pasó de 384 a 512 bits:
+incluso con la peor proporción que deja pasar el test
+($p \approx 0{,}748$, $H \approx 0{,}42$), los 512 bits de la semilla
+llevan 214 bits de entropía, más que los 192 que necesita un \ac{CTRDRBG}
 AES-128 (128 para la entrada de entropía más 64 para el nonce, o 192
 juntos cuando los dos salen de la misma fuente a la vez, como aquí;
-SP~800-90A \S8.6.3 y \S8.6.7~\cite{barker_2015_sp80090ar1}). Los dos
+SP~800-90A \S8.6.3 y \S8.6.7~\cite{barker_2015_sp80090ar1}). Por
+separado, el campo del nonce no llegaría a sus 64, así que el diseño se
+apoya en esa regla conjunta; con 384 bits no habría cumplido ni esa (161).
+Los dos
 cortes son parámetros genéricos
 (generics), porque $H$ se fija a partir de la min-entropía \emph{medida},
 no se supone. El test de proporción comprueba también el
@@ -180,7 +186,7 @@ primera muestra de la ventana puntuaría cero y pasaría. Las alarmas
 quedan enclavadas hasta que se borran explícitamente, y mientras haya
 alguna alarma activa no sale nada del motor: el secuenciador se niega a
 cargar la semilla, a generar clave y a producir salida aleatoria. Dos
-reglas más cierran el hueco entre un test continuo y una semilla de 384
+reglas más cierran el hueco entre un test continuo y una semilla de 512
 bits. Primero tiene que pasar un test de arranque (SP~800-90B \S4.3):
 una ventana completa del test de proporción, 1024 muestras, cerrada sin
 alarma tras el reset o tras borrar las alarmas, y borrarlas reinicia la
@@ -212,9 +218,12 @@ tests funcionan siempre, una fuente sana acabará dando alguna falsa alarma
 en la vida de un equipo, así que la política de rearme corresponde al
 anfitrión y está acotada: borrar las alarmas, esperar el test de arranque
 y volver a sembrar, como mucho tres veces en 24~horas, y a la cuarta
-fallo permanente hasta reiniciar el anfitrión. Con los cortes de arriba
-cabe esperar una falsa alarma al año a 8,7~kbit/s, así que tres en un día
-no son azar.
+fallo permanente hasta reiniciar el anfitrión. Con los cortes de arriba y
+bits independientes a 8,7~kbit/s, la tasa de la FPGA, una fuente sin sesgo
+no daría prácticamente ninguna, el peor chip simulado unas ocho alarmas
+del test de repeticiones al año, y un chip justo en $H = 0{,}60$ unas
+0,24 al día; a los 0,2--0,4~kbit/s del integrado, de veinte a cuarenta
+veces menos \est{}. Tres en un día no son azar.
 
 El biestable de muestreo ya no usa habilitación. Antes solo capturaba RO1
 en el pulso del divisor, así que entre muestras conservaba el bit
@@ -228,8 +237,8 @@ mecanismo dentro del biestable no se ha identificado.
 El banco de pruebas inyecta los modos de fallo para los que existen los
 tests: una fuente sana supera veinte ventanas (peor racha 13, peor
 proporción 540); una fuente atascada dispara el test de repeticiones
-exactamente en la muestra~39; una fuente sesgada al 70\,\% dispara el
-test de proporción en 713 (corte 683) sin disparar el test de
+exactamente en la muestra~51; una fuente sesgada al 80\,\% dispara el
+test de proporción en 821 (corte 766) sin disparar el test de
 repeticiones; y una
 fuente atascada en el complemento se detecta. La primera fuente
 ``sana'' del banco --- un registro de desplazamiento inicializado con un
@@ -311,7 +320,7 @@ lo detectó se describe en el Capítulo~\ref{ch:ch5_verification}. En la FPGA el
 de prueba es un interruptor; en un circuito integrado sería un fusible
 que se funde en producción, porque exponer la clave o la entropía en
 bruto es una vulnerabilidad. Un pequeño secuenciador serializa las
-órdenes: la carga de semilla recoge 384 bits en bruto, espera a que los
+órdenes: la carga de semilla recoge 512 bits en bruto, espera a que los
 tests de salud los hayan evaluado todos, aborta si mientras tanto salta
 una alarma de salud, e instancia o resiembra el generador; la generación toma 256 bits, guarda los 128 primeros como clave, descarta el resto y recarga las subclaves
 de CMAC; una orden aparte llena el registro de salida aleatoria a partir

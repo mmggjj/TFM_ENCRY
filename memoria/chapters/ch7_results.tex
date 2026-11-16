@@ -200,8 +200,8 @@ $-40~^\circ$C (sf, fs) need 1.32 and $1.55\times10^6$, close to tt (1.47)
 and below ss; at 1.08~V, tt, sf and fs need 1.93, 1.57 and
 $1.74\times10^6$, half of ss. At the worst point, $2^{22}$ still gives
 $H_\infty = 0.9873$, but with a 10\,\% margin on $K_D$, close to the
-7\,\% judged too thin for $2^{20}$ at the typical point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 1.9~s for the
-384 bits of a seeding in the worst case. Device mismatch, drawn per
+7\,\% judged too thin for $2^{20}$ at the typical point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 2.6~s for the
+512 bits of a seeding in the worst case. Device mismatch, drawn per
 transistor from the \ac{PDK} statistical models with a new noise
 realization in every run, spreads the period by 1.3\,\% over 48 dies at
 the typical point and by 1.6\,\% over 15 at the worst point, but leaves
@@ -263,13 +263,28 @@ the same pattern at every corner. At $V_{DD}/2$, two nodes sit at
 point. A threshold 100~mV away from $V_{DD}/2$ moves it by about 0.019,
 because the edges are slow against a 270--600~ps period \simu{}. The bound
 falls to 0.90 at $V_{DD}/2$ and to 0.85 with that threshold uncertainty;
-on the FPGA, where the measured bias is 0.4\,\%, it is 0.989. The wire,
-the buffer and the flip-flop aperture are not in the simulation. The
-health tests are therefore computed for $H = 0.80$
-(Section~\ref{sec:health}), which the seed absorbs. Dividing RO1 by two
-with a toggle flip-flop would fix the duty cycle at 50\,\%, but it would
-cut $Q$ fourfold, so it is kept as an alternative to validate rather than
-adopted.
+on the FPGA, where the measured bias is 0.4\,\%, it is 0.989.
+
+The sampling flip-flop biases the bit more than the ring does. With the
+real \texttt{sg13g2\_\allowbreak dfrbpq\_1} of the library on node~5, behind a
+\texttt{sg13g2\_\allowbreak buf\_1} (without it the flip-flop's input capacitance
+pulls the ring, about 2--3~ps of period modulation), and the probability
+of a one weighted over the sampling phase, tt and ss stay within 0.01 of
+the ideal threshold. At 125~$^\circ$C with mismatch they do not: over four
+dies each, $P(1)$ is 0.372--0.461 at ff and 0.399--0.437 at sf, while the
+ideal threshold on the same rings gives 0.49--0.51. Five of the eight dies
+fall below $H = 0.80$; the worst bound is 0.672 \simu{}. The flip-flop
+does not capture a rising and a falling input at the same instant: the
+difference, expressed as an equivalent delay, is 26--30~ps at sf and
+13--15~ps at ff, and it stays there when the ring is lengthened to nine
+and eleven stages, so the bias falls roughly as $1/T$. A slower ring or
+RO1 divided by two would cure it at the cost of a four- to fivefold larger
+divider. The design instead declares $H = 0.60$, with cut-offs and a
+512-bit seed computed for it (Section~\ref{sec:health}), which keeps the
+circuit and the throughput and covers the worst simulated die. These are
+simulations without noise of eight dies per corner; with more dies the
+tail can only grow, which is why the declared value sits below the worst
+one.
 
 \section{Operating point: divider and throughput}
 \label{sec:opoint}
@@ -359,16 +374,17 @@ raw-entropy configurations. And the health-test cutoffs had been computed
 by hand from the standard and were never checked; deriving them again
 from the formulas of SP 800-90B~\cite{turan_2018_sp80090b} confirmed the
 original $C_{RCT} = 22$ and $C_{APT} = 596$, and now gives the current
-39 and 683 for $H = 0.80$ and $\alpha = 2^{-30}$
+51 and 766 for $H = 0.60$ and $\alpha = 2^{-30}$
 (Section~\ref{sec:health}). The same check quantifies the cost of the
 complement test added to the \ac{APT}, which is an addition of this work
 and not of the standard: with the original cutoff it raised the
 false-alarm rate per window from $2^{-20.15}$ to $2^{-20.14}$, a 0.8\,\%
 increase, because the complementary tail lay 5.7 standard deviations
-away; with the current one the tail lies 15.6 standard deviations away
-and the cost cannot be seen. It also checks that the 384 seed bits carry
+away; with the current one the tail lies 27.5 standard deviations away
+and the cost cannot be seen. It also checks that the 512 seed bits carry
 at least the 192 bits of entropy the generator needs, even at the worst
-proportion the test lets through.
+proportion the test lets through, and that the worst simulated die of the
+sampling flip-flop stays above the declared $H$.
 
 \section{Comparison with commercial secure elements}
 \label{sec:se_comparison}

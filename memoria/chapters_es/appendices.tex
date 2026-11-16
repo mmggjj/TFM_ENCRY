@@ -110,7 +110,7 @@ Bit & Nombre & Significado \\
 \toprule
 Bit & Orden & Qué hace \\
 \midrule
-0 & sembrar & recoge 384 bits crudos (256 de entropía y 128 de nonce),
+0 & sembrar & recoge 512 bits crudos (384 de entropía y 128 de nonce),
   espera a que los tests de salud los hayan evaluado enteros e instancia el
   \ac{DRBG} desde cero \\
 1 & generar & pide 256 bits; los 128 primeros pasan a ser la CLAVE y se
@@ -143,7 +143,7 @@ subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
   el \ac{DRBG} cuando se cierra sin alarma la ventana del \ac{APT} que
   contiene su último bit; una alarma o un \texttt{borrar\_alarmas} durante
   la recogida aborta la siembra y deja el estado anterior intacto. Una
-  siembra tarda como mucho $384 + 1024$ bits crudos.
+  siembra tarda como mucho $512 + 1024$ bits crudos.
 \item \texttt{sembrar} y \texttt{resembrar} se rechazan con
   \texttt{CFG\_KD} por debajo del mínimo (genérico \texttt{G\_KD\_MIN}, 6
   por defecto), por debajo del cual el cruce de dominio de reloj del bit
@@ -245,7 +245,7 @@ Bloque & Origen de los valores esperados & Dónde se comprueba \\
   AES-128 con y sin función de derivación: $4 \times 240 = 960$ casos &
   \nolinkurl{analysis/ctr_drbg_ref.py}, 960 de 960 \\
 \ac{CTRDRBG}, \ac{RTL} & el modelo de referencia anterior, con la
-  disposición de entrada del hardware (entropía de 256 bits, nonce de 128,
+  disposición de entrada del hardware (entropía de 384 bits, nonce de 128,
   sin personalización): \nolinkurl{analysis/gen_drbg_vectores.py} escribe
   \texttt{drbg\_vectores\_pkg.vhd} & \texttt{tb\_ctr\_drbg}, 18
   comprobaciones, incluidas la zeroización y la saturación del contador \\
@@ -257,9 +257,9 @@ Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
   con la biblioteca \texttt{cryptography} & \texttt{run\_host.py}, 0 fallos;
   \texttt{verifica\_lecturas.py} \\
 Cortes de los tests de salud & fórmulas de
-  SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}80$ y
-  $\alpha = 2^{-30}$: \ac{RCT} $C = 39$, \ac{APT} $W = 1024$, $C = 683$;
-  semilla de 384 bits $\ge 192$ bits de entropía en el límite del \ac{APT} &
+  SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}60$ y
+  $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$, $C = 766$;
+  semilla de 512 bits $\ge 192$ bits de entropía en el límite del \ac{APT} &
   \nolinkurl{analysis/cortes_salud.py}; comportamiento en
   \texttt{tb\_health\_tests}, 15 comprobaciones \\
 \bottomrule

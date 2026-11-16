@@ -32,7 +32,7 @@ key is loaded into an AES-CMAC block that answers challenges; and an
 \node[bloque, right=of ro] (ero) {ERO\\sampler $\div K_D$};
 \node[bloque, right=of ero] (cdc) {bit CDC};
 \node[bloque, above right=of cdc] (ht) {Health tests\\RCT, APT};
-\node[bloque, right=of cdc] (seed) {Seed collector\\384 bits};
+\node[bloque, right=of cdc] (seed) {Seed collector\\512 bits};
 \node[bloque, below right=of cdc] (cap) {Capture\\4096 bits};
 \node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
 \node[bloque, right=of drbg] (cmac) {AES-CMAC};
@@ -118,12 +118,12 @@ which exercise both padding paths.
 
 The generator implements CTR\_DRBG with AES-128 and the block-cipher
 derivation function of SP~800-90A~\cite{barker_2015_sp80090ar1}. Its
-input format is fixed on purpose: 256~bits of raw entropy and 128~bits of
+input format is fixed on purpose: 384~bits of raw entropy and 128~bits of
 nonce, so that $S = L\,\|\,N\,\|\,E\,\|\,\mathit{nonce}\,\|\,\texttt{0x80}\,\|\,0\ldots$
-is exactly four blocks and the derivation function becomes a closed
-sequence of fourteen encryptions; a variable-length input would cost a
+is exactly five blocks and the derivation function becomes a closed
+sequence of sixteen encryptions; a variable-length input would cost a
 byte-oriented datapath for no benefit. Instantiation (or reseed) costs
-14~AES operations, 183~cycles; generating 256~bits costs four, 53~cycles.
+16~AES operations, 209~cycles; generating 256~bits costs four, 53~cycles.
 The state (Key, V) is never exposed; the reseed counter is readable so
 that the host can enforce a reseed policy far below the $2^{48}$ limit of
 the standard.
@@ -147,19 +147,25 @@ arrive in a row; the Adaptive Proportion Test counts, in a window of
 $W = 1024$ samples (the binary-source value; 512 is for non-binary
 sources), how many repeat the first one, and fails at
 $C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. The
-design target is $H = 0.80$ and $\alpha = 2^{-30}$, which give
-$C_{\mathrm{RCT}} = 39$ and $C_{\mathrm{APT}} = 683$. Until November 2026
+design target is $H = 0.60$ and $\alpha = 2^{-30}$, which give
+$C_{\mathrm{RCT}} = 51$ and $C_{\mathrm{APT}} = 766$. Until November 2026
 it was $H = 0.98$ and $\alpha = 2^{-20}$ (22 and 596). It was lowered for
-two reasons. The duty cycle of the IHP ring, simulated at transistor
-level, leaves a first-order bound of 0.85--0.90 on a directly sampled bit
-(Section~\ref{sec:ihp_ring}). And at $2^{-20}$ the FPGA prototype raised a
-repetition false alarm every few minutes, each of which blocks the engine.
-The lower target costs nothing in the seed: even at the worst proportion
-the test lets through ($p \approx 0.667$, $H \approx 0.58$), the 384 seed
-bits carry 224 bits of entropy, more than the 192 that an AES-128
-\ac{CTRDRBG} needs (128 for the entropy input plus 64 for the nonce, or 192
-together when both come from the same source at the same time, as here;
-SP~800-90A \S8.6.3 and \S8.6.7~\cite{barker_2015_sp80090ar1}). Both
+two reasons. At $2^{-20}$ the FPGA prototype raised a repetition false
+alarm every few minutes, each of which blocks the engine. And the sampled
+bit is biased: the duty cycle of the IHP ring leaves a first-order bound of
+0.85--0.90, and the real sampling flip-flop of the library, simulated at
+transistor level, takes the worst of eight dies at 125~$^\circ$C down to
+0.67 (Section~\ref{sec:ihp_ring}). A first revision to $H = 0.80$, with
+39 and 683, did not cover five of those eight dies. The lower target is
+paid for in the seed, which grew from 384 to 512 bits: even at the worst
+proportion the test lets through ($p \approx 0.748$, $H \approx 0.42$),
+the 512 seed bits carry 214 bits of entropy, more than the 192 that an
+AES-128 \ac{CTRDRBG} needs (128 for the entropy input plus 64 for the
+nonce, or 192 together when both come from the same source at the same
+time, as here; SP~800-90A \S8.6.3 and
+\S8.6.7~\cite{barker_2015_sp80090ar1}). Taken separately the nonce field
+would not reach its 64, so the design relies on that joint rule; with
+384 bits it would not have met even that one (161). Both
 cut-offs are generics,
 because $H$ is set from the \emph{measured} min-entropy, not assumed. The
 proportion test
@@ -169,7 +175,7 @@ first sample would otherwise score zero and pass. Alarms are sticky until
 explicitly cleared, and while any alarm is raised nothing leaves the
 engine: the sequencer refuses to seed, to generate a key and to produce
 random output. Two further rules close the gap between a continuous test
-and a 384-bit seed. A start-up test (SP~800-90B \S4.3) must pass first:
+and a 512-bit seed. A start-up test (SP~800-90B \S4.3) must pass first:
 one complete proportion window, 1024 samples, closed without alarm after
 reset or after the alarms are cleared, and clearing them restarts the
 window. And a seed is accepted only once the window that holds its last
@@ -198,8 +204,12 @@ tests run continuously, a healthy source will still raise the occasional
 false alarm over the life of a device, so the re-arm policy belongs to the
 host and is bounded: clear the alarms, wait for the start-up test and
 seed again, at most three times in 24~hours, and fail permanently on the
-fourth until the host is restarted. With the cut-offs above, one false
-alarm a year is expected at 8.7~kbit/s, so three in a day are not chance.
+fourth until the host is restarted. With the cut-offs above and
+independent bits at 8.7~kbit/s, the FPGA rate, an unbiased source would
+practically never raise one, the worst simulated die about eight
+repetition alarms a year, and a die exactly at $H = 0.60$ about 0.24 a
+day; at the integrated circuit's 0.2--0.4~kbit/s, twenty to forty times
+fewer \est{}. Three in a day are not chance.
 
 The sampling flip-flop no longer uses an enable. It used to capture RO1
 only on the divider's tick, so between samples it held the previous bit.
@@ -212,8 +222,8 @@ the flip-flop was not identified.
 
 The testbench injects the failure modes the tests exist for: a healthy
 source passes twenty windows (worst run 13, worst proportion 540); a
-stuck source trips the repetition test at exactly sample~39; a source
-biased to 70\,\% trips the proportion test at 713 (cut-off 683) without
+stuck source trips the repetition test at exactly sample~51; a source
+biased to 80\,\% trips the proportion test at 821 (cut-off 766) without
 tripping the repetition test; and a source stuck at the complement is
 caught. The
 first ``healthy'' source of the bench --- a shift register seeded with a
@@ -287,7 +297,7 @@ caught it is described in Chapter~\ref{ch:ch5_verification}. In the FPGA the tes
 pin is a switch; in an integrated circuit it would be a fuse blown at
 production, because exposing either the key or the raw entropy is a
 vulnerability. A small sequencer serializes the commands: seeding
-collects 384 raw bits, waits until the health tests have evaluated all
+collects 512 raw bits, waits until the health tests have evaluated all
 of them, aborts if a health alarm rises meanwhile, and instantiates or
 reseeds the generator; generation takes 256 bits, keeps the first 128 as the key, discards the rest and reloads the CMAC
 sub-keys; a separate command fills the random-output register from an

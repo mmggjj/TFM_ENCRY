@@ -29,7 +29,7 @@ architecture sim of tb_ctr_drbg is
   signal instanciar2, generar2 : std_logic := '0';
   signal listo2, ocupado2, agotado2 : std_logic;
   signal peticiones2 : unsigned(31 downto 0);
-  signal entropia : std_logic_vector(255 downto 0) := (others => '0');
+  signal entropia : std_logic_vector(383 downto 0) := (others => '0');
   signal nonce    : std_logic_vector(127 downto 0) := (others => '0');
   signal salida   : std_logic_vector(255 downto 0);
   signal listo, ocupado, sembrado : std_logic;

@@ -318,7 +318,7 @@ begin
     end procedure;
 
     alias rct_alm is << signal .tb_motor_top.dut.u_salud.rct_alm : std_logic >>;
-    alias semilla is << signal .tb_motor_top.dut.semilla : std_logic_vector(383 downto 0) >>;
+    alias semilla is << signal .tb_motor_top.dut.semilla : std_logic_vector(511 downto 0) >>;
     alias cap_en_curso_i is << signal .tb_motor_top.dut.cap_en_curso : std_logic >>;
     alias drbg_temp_hi is << signal .tb_motor_top.dut.g_cripto.u_drbg.temp_hi : std_logic_vector(127 downto 0) >>;
     alias drbg_kdf is << signal .tb_motor_top.dut.g_cripto.u_drbg.kdf : std_logic_vector(127 downto 0) >>;
@@ -533,7 +533,7 @@ begin
     modo_test <= '1';
     wait for 1 us;
     -- 6b) Durante una siembra no se captura: el buffer recogeria la semilla.
-    escribir_reg(x"03", x"20");                 -- resembrar (384 bits + ventana)
+    escribir_reg(x"03", x"20");                 -- resembrar (512 bits + ventana)
     escribir_reg(x"03", x"10");                 -- capturar, con la siembra en curso
     wait for 5 us;
     leer_reg(x"02", status);
@@ -585,8 +585,8 @@ begin
       buffer_cap(4095 - 1024 * p downto 3072 - 1024 * p) := pag;
     end loop;
     hallada := false;
-    for pos in 0 to 4096 - 384 loop
-      if buffer_cap(4095 - pos downto 3712 - pos) = semilla then
+    for pos in 0 to 4096 - 512 loop
+      if buffer_cap(4095 - pos downto 3584 - pos) = semilla then
         hallada := true;
       end if;
     end loop;

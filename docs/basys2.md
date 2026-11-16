@@ -840,7 +840,7 @@ del biestable, no del buffer, y el buffer quita el tirón del reloj.
   | 0,80 | 39 | 683 | 0,667; 0,584 | 224 | 299 | 4,8·10⁻³ |
   | 0,70 | 44 | 723 | 0,706; 0,502 | 193 | 257 | 7,8·10⁻⁸ |
   | 0,65 | 48 | 744 | 0,727; 0,461 | 177 | 236 | 1,3·10⁻¹¹ |
-  | 0,60 | 51 | 766 | 0,748; 0,419 | 161 | 214 | 1,6·10⁻¹⁶ |
+  | 0,60 | 51 | 766 | 0,748; 0,419 | 161 | 214 | 1,9·10⁻¹⁶ |
 
   Con 0,70 la semilla de 384 bits va justa (193 ≥ 192); por debajo hace
   falta semilla de 512 bits (y regenerar los vectores del DRBG con
@@ -856,25 +856,61 @@ del biestable, no del buffer, y el buffer quita el tirón del reloj.
   real llega al 13 % [SIMULADO, 8 chips a 125 °C, sin ruido]. tt a 125 °C
   no está simulado; con más chips la cola solo puede empeorar.
 
-**Decisión pendiente de Mario** (no se ha tocado nada del RTL, los cortes
-ni la memoria): (1) bajar la H declarada (~0,6 o menos; recalcular RCT y
-APT y la regla de la semilla con `cortes_salud.py`, quizá semilla de 512
-bits); (2) corregir el circuito (anillo más lento, ro1/2, o los dos), a
-costa de caudal; (3) las dos cosas.
+**Decidido el 16-11-2026** (Mario): H declarada 0,60 con semilla de 512
+bits, sin tocar el circuito. Sección siguiente.
+
+## Decisión del 16-11-2026: H 0,60 y semilla de 512 bits
+
+Mario eligió la opción (2) de las tres que quedaban: (1) anillo más lento
+o ro1/2, ×4-5 de divisor y de tiempo de siembra; (2) bajar la H declarada;
+(3) XOR de pares, que cambia la fuente evaluada por SP 800-90B y parte el
+caudal. Con (2) no cambia el circuito analógico ni el caudal, y el peor
+chip simulado (H 0,672) queda por encima de lo declarado.
+
+- **Cortes:** RCT 51, APT 766 (α = 2⁻³⁰, W 1024; `cortes_salud.py` 9/9,
+  `results/cortes_salud.log`). Falsa alarma del APT con el peor chip
+  simulado, 1,9·10⁻¹⁶ por ventana (en la tabla de arriba ponía 1,6·10⁻¹⁶:
+  era `1 − cdf`, en el suelo de la coma flotante; ahora `binom.sf`).
+- **Semilla de 512 bits = 384 de entropía + 128 de nonce.** Con H 0,60 y
+  384 bits, en el límite del APT la semilla llevaría 161 < 192. Con 512,
+  214. Por separado, el campo de entropía lleva ~161 (≥ 128) y el nonce ~54
+  (< 64): el diseño se apoya en la regla conjunta de SP 800-90A §8.6.7 (192
+  juntos si salen de la misma fuente a la vez), como antes.
+- **DRBG:** S = L(4) ‖ N(4) ‖ entropía(48) ‖ nonce(16) ‖ 0x80 ‖ ceros =
+  80 bytes, 5 bloques, L = 64. Instanciar o resembrar: 16 cifrados (antes
+  14). Vectores regenerados con `gen_drbg_vectores.py`.
+- **Falsas alarmas esperadas** [ESTIMADO, bits iid con ese sesgo]: a
+  8,7 kbit/s (`kd 14` en la Basys 2), con bits ideales ninguna; con el peor
+  chip simulado (P(1) 0,372) ~8 al año del RCT y ninguna del APT; con un
+  chip justo en H = 0,60, ~89 al año del RCT (0,24 al día) y 0,2 del APT.
+  Al ritmo del integrado con 2²³ (≤ 0,41 kbit/s), ≤ 0,4 y ≤ 4,2 al año. El
+  rearme acotado (3 en 24 h) lo aguanta. Con 39/683 el peor chip habría
+  dado ~2 000 del RCT y 10⁶ del APT al año a 8,7 kbit/s.
+- **Lo que cuesta:** la siembra recoge 128 bits más (×4/3 de tiempo de
+  recogida; el plazo del firmware lo sigue con `MOTOR_BITS_SEMILLA`), dos
+  cifrados más, y 256 biestables más (`semilla` y `ent_r` crecen 128 cada
+  uno). Área: `motor_top` 92,82 → 95,13 kGE (`docs/sintesis_resultados.md`).
+- **Verificado:** doce bancos en verde (`results/run_tb_todos.log`;
+  `tb_ctr_drbg` instancia en 209 ciclos, antes 183; `tb_health_tests` con
+  RCT en la muestra 51 y el caso 3 subido al 80 % de sesgo, proporción 821
+  ≥ 766, porque el 70 % ya no salta; `tb_motor_top` PSL 14/14 y 8/8, la
+  semilla de 512 bits no aparece en el buffer), `verifica_top` 5/5,
+  `cortes_salud.py` 9/9, banco host 0 fallos, verificador compilado con
+  ESP-IDF 5.3.2 sin avisos. VERSION sigue en 0x04: el mapa no cambia, y un
+  maestro con el plazo de 384 bits solo pierde un 5 % del margen ×2.
+- La Basys 2 sigue con los bitstreams del 15-11 (cortes 39/683): sin
+  criptografía la semilla no cuenta allí, pero los cortes sí. Para las
+  campañas comparables con las del 14 y el 15-11 se usan esos; regenerar
+  si se quieren los cortes nuevos en placa.
 
 ## Pendiente (lista para el 15-11-2026 en adelante)
 
 Por orden; lo marcado (M) necesita a Mario delante de la placa.
 
-1. **Decidir qué hacer con el sesgo del biestable real** (Mario; sección
-   "El biestable real de sg13g2 sesga más que el anillo"): (1) anillo más
-   lento o ro1/2, (2) H declarada 0,60 con semilla de 512 bits (inclinación
-   de Claude), (3) XOR de pares; o pasar los datos a otro agente y decidir
-   entre los dos, como el 15-11. Después: aplicar en RTL, cortes, bancos,
-   `cortes_salud.py`, `mapa_registros.md` y memoria EN/ES (cap. 4 §salud y
-   el párrafo del ciclo de trabajo del cap. 7, que dice 2-5 %). El corte del
-   RCT de α = 2⁻²⁰ ya se resolvió el 15-11 (39/683 con H 0,80), pero esos
-   cortes dependen de esta decisión.
+1. ~~Decidir qué hacer con el sesgo del biestable real~~: **hecho el
+   16-11-2026**, H 0,60 con semilla de 512 bits ("Decisión del 16-11-2026").
+   Queda, si se quiere, regenerar los bitstreams de la Basys 2 con los
+   cortes 51/766.
 2. **Residuo del modelo de jitter** (3-11 veces el ruido en `kd 7-9`):
    - (M) bus I2C más lento o con pausas entre lecturas durante la captura
      (¿la actividad del ESP32 modula los anillos?);

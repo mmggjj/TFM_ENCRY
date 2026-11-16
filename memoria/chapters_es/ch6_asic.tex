@@ -103,6 +103,13 @@ GHDL y de la versión de Yosys instalable con \texttt{pip}, en lugar del
 conector de GHDL; en el núcleo AES, que no cambió, los dos caminos
 coinciden dentro del 0,9\,\%.
 
+La tabla es anterior a la semilla de 512 bits (Sección~\ref{sec:health}).
+El colector de semilla y el registro de entropía del generador crecen 128
+flip-flops cada uno; sintetizados uno junto a otro con el conector de
+GHDL, el generador pasa de 38,1 a 39,6~kGE y el motor completo de 92,8 a
+\textbf{95,1~kGE} (de 8\,164 a 8\,420 flip-flops), un 2,5\,\% más. Las
+cifras que siguen son las de la tabla; a todas se suman esos 2,3~kGE.
+
 \section{Optimizaciones y sus ahorros esperados}
 \label{sec:opt}
 
@@ -138,8 +145,9 @@ el núcleo (ahorro de 9,4, frente a los 10 estimados; la diferencia son
 los multiplexores de columna y el registro de fase) y \textbf{92,5 frente
 a 101,8~kGE} en el motor completo, en la misma tanda de síntesis. El
 núcleo de una ronda sigue disponible mediante un genérico.
-\item \textbf{Menos registros en el generador.} De sus 2355 flip-flops, la
-entropía capturada y el nonce (384), el material de semilla (256), la salida
+\item \textbf{Menos registros en el generador.} De sus 2355 flip-flops
+(2483 con la semilla de 512 bits), la entropía capturada y el nonce (384,
+ahora 512), el material de semilla (256), la salida
 (256) y los temporales de la función de derivación pueden reducirse
 consumiendo la semilla como un flujo y compartiendo temporales; unos 800
 flip-flops, cerca de 4~kGE.

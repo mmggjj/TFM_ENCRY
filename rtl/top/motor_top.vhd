@@ -6,7 +6,7 @@
 --
 -- Flujo de una clave:
 --   anillos -> ero_core -> bit_cdc -> health_tests
---                                  -> recogida de 384 bits (semilla)
+--                                  -> recogida de 512 bits (semilla)
 --                                  -> ctr_drbg.instanciar
 --   ctr_drbg.generar (orden generar)   -> CLAVE (128 b) -> aes_cmac.carga
 --   ctr_drbg.generar (orden aleatorio) -> ALEATORIO (256 b), generacion
@@ -65,9 +65,11 @@ entity motor_top is
     -- correlado con el anterior (rho1 ~0,005, medido en la Basys 2;
     -- docs/basys2.md). true desde el 15-11-2026.
     G_MUESTREO_LIBRE : boolean := true;
-    -- Cortes de los tests de salud (health_tests): H = 0,80 y alfa = 2^-30.
-    G_RCT_C          : positive := 39;
-    G_APT_C          : positive := 683
+    -- Cortes de los tests de salud (health_tests): H = 0,60 y alfa = 2^-30
+    -- desde el 16-11-2026 (antes 0,80: 39 y 683). El biestable real de
+    -- sg13g2 sesga el bit hasta P(1) 0,37 a 125 C (docs/basys2.md).
+    G_RCT_C          : positive := 51;
+    G_APT_C          : positive := 766
   );
   port (
     clk       : in  std_logic;         -- 100 MHz de placa
@@ -128,10 +130,10 @@ architecture rtl of motor_top is
   signal flujo_lee_n, flujo_lee_dato : std_logic;
   signal flujo_n, flujo_dato        : std_logic_vector(7 downto 0) := (others => '0');
 
-  -- Recogida de semilla: 256 entropia + 128 nonce = 384 bits
+  -- Recogida de semilla: 384 entropia + 128 nonce = 512 bits
   signal recogiendo  : std_logic := '0';
   signal n_recogidos : unsigned(8 downto 0) := (others => '0');
-  signal semilla     : std_logic_vector(383 downto 0) := (others => '0');
+  signal semilla     : std_logic_vector(511 downto 0) := (others => '0');
   signal siembra_es_reseed : std_logic := '0';
 
   -- DRBG
@@ -292,7 +294,7 @@ begin
                 aes_arranca_o => drbg_aes_arranca, aes_borrar_o => aes_borrar, aes_clave_o => drbg_aes_clave,
                 aes_dato_o => drbg_aes_dato, aes_salida_i => aes_salida,
                 aes_listo_i => aes_listo,
-                entropia => semilla(383 downto 128),
+                entropia => semilla(511 downto 128),
                 nonce => semilla(127 downto 0),
                 generar => drbg_gen, salida => drbg_salida,
                 listo => drbg_listo, ocupado => drbg_ocupado,
@@ -585,8 +587,8 @@ begin
             rechazada <= '1';
             orden <= LIBRE;
           elsif stb_s = '1' and recogiendo = '1' then
-            semilla <= semilla(382 downto 0) & bit_s;
-            if n_recogidos = 383 then
+            semilla <= semilla(510 downto 0) & bit_s;
+            if n_recogidos = 511 then
               recogiendo <= '0';
               orden <= VALIDANDO;
             else

@@ -140,6 +140,25 @@ cambio de área medible**. Las filas del CSV y del capítulo 6 siguen siendo
 las de antes hasta la próxima síntesis completa (92,53 con el otro camino
 de herramienta).
 
+## Semilla de 512 bits y cortes 51/766 (16-11-2026)
+
+H declarada 0,60 y semilla de 384 + 128 bits (`docs/basys2.md`, "Decisión
+del 16-11-2026"). Síntesis comparada con el plugin de GHDL, copia de HEAD
+573d076 frente al árbol de trabajo, en la misma tanda, sin tocar el CSV
+(`results/sintesis_semilla512.log`):
+
+| Bloque | Antes (kGE, FF) | Después (kGE, FF) |
+|---|---|---|
+| `ctr_drbg` | 38,09, 2 355 | 39,62, 2 483 |
+| `motor_top` | 92,82, 8 164 | **95,13**, 8 420 |
+| `motor_top_aes11` | 102,32, 8 161 | 104,73, 8 417 |
+| `motor_top_flujo` | 116,77, 10 270 | 119,01, 10 526 |
+
++256 biestables, los esperados (`semilla` y `ent_r` del DRBG, 128 cada
+uno), y +2,3 kGE en el motor (+2,5 %): este cambio sí es medible. El CSV y
+la tabla del capítulo 6 siguen con la síntesis completa anterior; el
+capítulo lo dice en un párrafo (EN y ES).
+
 ## Comprobación de coherencia
 
 Las diferencias entre bloques cuadran con lo que contienen: el

@@ -3,8 +3,9 @@
 del modelo de referencia (validado contra 960 casos del CAVP).
 
 La disposicion de entrada es la misma que fija el hardware: entropia de
-32 bytes seguida de nonce de 16, sin cadena de personalizacion, con lo que
-la funcion de derivacion ve L = 48. Si el hardware cambia esa disposicion,
+48 bytes seguida de nonce de 16, sin cadena de personalizacion, con lo que
+la funcion de derivacion ve L = 64 (512 bits crudos desde el 16-11-2026;
+antes 32 + 16). Si el hardware cambia esa disposicion,
 hay que cambiarla aqui tambien, y solo aqui.
 
     python gen_drbg_vectores.py  ->  rtl/tb/drbg_vectores_pkg.vhd
@@ -36,8 +37,8 @@ def vhdl_const(nombre: str, datos: bytes) -> str:
 
 
 def main() -> None:
-    e1, n1 = derivar("entropia-1", 32), derivar("nonce-1", 16)
-    e2, n2 = derivar("entropia-2", 32), derivar("nonce-2", 16)
+    e1, n1 = derivar("entropia-1", 48), derivar("nonce-1", 16)
+    e2, n2 = derivar("entropia-2", 48), derivar("nonce-2", 16)
 
     d = CtrDrbg(usar_df=True)
     d.instantiate(e1, n1)

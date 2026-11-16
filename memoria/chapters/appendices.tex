@@ -109,7 +109,7 @@ Bit & Name & Meaning \\
 \toprule
 Bit & Command & Action \\
 \midrule
-0 & seed & collect 384 raw bits (256 of entropy, 128 of nonce), wait until
+0 & seed & collect 512 raw bits (384 of entropy, 128 of nonce), wait until
   the health tests have judged all of them, and instantiate the \ac{DRBG}
   from scratch \\
 1 & generate & draw 256 bits; the first 128 become KEY and are loaded into
@@ -142,7 +142,7 @@ raise \texttt{busy} and sets \texttt{DIAG.rejected}.
   \ac{DRBG} only after the \ac{APT} window that contains its last bit
   closes without alarm; an alarm or a \texttt{clear\_alarms} during
   collection aborts the seeding and leaves the previous state untouched.
-  A seeding takes at most $384 + 1024$ raw bits.
+  A seeding takes at most $512 + 1024$ raw bits.
 \item \texttt{seed} and \texttt{reseed} are refused with
   \texttt{CFG\_KD} below the minimum (generic \texttt{G\_KD\_MIN}, 6 by
   default), below which the bit-level clock-domain crossing loses bits
@@ -239,7 +239,7 @@ Block & Source of the expected values & Where checked \\
   AES-128 with and without derivation function: $4 \times 240 = 960$ cases &
   \nolinkurl{analysis/ctr_drbg_ref.py}, 960 of 960 \\
 \ac{CTRDRBG}, \ac{RTL} & the reference model above, with the hardware's
-  input layout (256-bit entropy, 128-bit nonce, no personalization):
+  input layout (384-bit entropy, 128-bit nonce, no personalization):
   \nolinkurl{analysis/gen_drbg_vectores.py} writes
   \texttt{drbg\_vectores\_pkg.vhd} & \texttt{tb\_ctr\_drbg}, 18 checks,
   including zeroization and counter saturation \\
@@ -251,8 +251,8 @@ Firmware against the engine model & \ac{CMAC} and ECDSA of the target's
   \texttt{cryptography} library & \texttt{run\_host.py}, 0 failures;
   \texttt{verifica\_lecturas.py} \\
 Health-test cut-offs & SP~800-90B~\S4.4~\cite{turan_2018_sp80090b}
-  formulas for $H = 0.80$ and $\alpha = 2^{-30}$: \ac{RCT} $C = 39$, \ac{APT} $W = 1024$,
-  $C = 683$; seed of 384 bits $\ge 192$ bits of entropy at the \ac{APT} limit
+  formulas for $H = 0.60$ and $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$,
+  $C = 766$; seed of 512 bits $\ge 192$ bits of entropy at the \ac{APT} limit
   & \nolinkurl{analysis/cortes_salud.py}; behaviour in
   \texttt{tb\_health\_tests}, 15 checks \\
 \bottomrule

@@ -99,6 +99,13 @@ table. The flow for this run read the
 \texttt{pip}-installable build of Yosys rather than the GHDL plugin;
 on the unchanged AES core the two paths agree within 0.9\,\%.
 
+The table predates the 512-bit seed (Section~\ref{sec:health}). The seed
+collector and the generator's entropy register each grow by 128
+flip-flops; synthesized side by side with the GHDL plugin, the generator
+goes from 38.1 to 39.6~kGE and the whole engine from 92.8 to
+\textbf{95.1~kGE} (8\,164 to 8\,420 flip-flops), 2.5\,\% more. The
+figures below are those of the table; each carries those 2.3~kGE on top.
+
 \section{Optimizations and their expected savings}
 \label{sec:opt}
 
@@ -132,8 +139,9 @@ the 10 estimated, the difference being the column multiplexers and the
 extra phase register), and \textbf{92.5 against 101.8~kGE} for the whole
 engine in the same synthesis run. The one-round core remains available
 through a generic.
-\item \textbf{Fewer registers in the generator.} Of its 2355 flip-flops,
-the captured entropy and nonce (384), the seed material (256), the output
+\item \textbf{Fewer registers in the generator.} Of its 2355 flip-flops
+(2483 with the 512-bit seed), the captured entropy and nonce (384, now
+512), the seed material (256), the output
 (256) and the temporaries of the derivation function can be reduced by
 consuming the seed as a stream and sharing temporaries; roughly 800
 flip-flops, about 4~kGE.

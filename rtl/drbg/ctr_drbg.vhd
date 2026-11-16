@@ -2,7 +2,7 @@
 -- secciones 10.2.1 y 10.3.2).
 --
 -- Es el fabricante de claves del motor. Recibe entropia cruda del anillo
--- (256 bits) mas un nonce (128 bits), la acondiciona con Block_Cipher_df
+-- (384 bits) mas un nonce (128 bits), la acondiciona con Block_Cipher_df
 -- y mantiene el estado (Key, V) del que salen las claves. Todo son
 -- cifrados AES encadenados con un control alrededor: no hay ninguna otra
 -- primitiva. Ver docs/arquitectura.md seccion 9.
@@ -10,9 +10,11 @@
 -- Tamanos fijos, a proposito. La norma admite entradas de cualquier
 -- longitud, pero en hardware una longitud fija convierte la funcion de
 -- derivacion en una secuencia cerrada de cifrados:
---   S = L(4) || N(4) || entropia(32) || nonce(16) || 0x80 || ceros
---     = 64 bytes = 4 bloques, con L = 48 y N = 32.
--- Coste: instanciar o resembrar = 14 cifrados; generar 256 bits = 4.
+--   S = L(4) || N(4) || entropia(48) || nonce(16) || 0x80 || ceros
+--     = 80 bytes = 5 bloques, con L = 64 y N = 32.
+-- Coste: instanciar o resembrar = 16 cifrados; generar 256 bits = 4.
+-- 512 bits crudos desde el 16-11-2026 (antes 256 + 128): con H declarada
+-- 0,60 llevan al menos 214 de entropia (docs/basys2.md).
 --
 -- El modelo de referencia bit a bit es analysis/ctr_drbg_ref.py, validado
 -- contra 960 vectores del CAVP; los vectores de este nucleo salen de el
@@ -36,7 +38,7 @@ entity ctr_drbg is
     instanciar : in  std_logic;                       -- pulso: Key=V=0 y siembra
     resembrar  : in  std_logic;                       -- pulso: siembra sobre el estado
     borrar     : in  std_logic;                       -- pulso: Key=V=0, sin estado, contador a 0
-    entropia   : in  std_logic_vector(255 downto 0);
+    entropia   : in  std_logic_vector(383 downto 0);
     nonce      : in  std_logic_vector(127 downto 0);
 
     generar    : in  std_logic;                       -- pulso: 256 bits nuevos
@@ -66,7 +68,7 @@ architecture rtl of ctr_drbg is
 
   constant C_K0 : std_logic_vector(127 downto 0)
     := x"000102030405060708090a0b0c0d0e0f";
-  constant C_L  : std_logic_vector(31 downto 0) := x"00000030";  -- 48 bytes
+  constant C_L  : std_logic_vector(31 downto 0) := x"00000040";  -- 64 bytes
   constant C_N  : std_logic_vector(31 downto 0) := x"00000020";  -- 32 bytes
 
   type t_fase is (REPOSO, DF_BCC, DF_X, UPDATE, GEN);
@@ -80,11 +82,12 @@ architecture rtl of ctr_drbg is
   signal valido : std_logic := '0';
 
   -- Entrada capturada al recibir la orden
-  signal ent_r   : std_logic_vector(255 downto 0) := (others => '0');
+  signal ent_r   : std_logic_vector(383 downto 0) := (others => '0');
   signal nonce_r : std_logic_vector(127 downto 0) := (others => '0');
 
   -- Funcion de derivacion
-  signal i_bcc, j_bcc : integer range 0 to 4 := 0;
+  signal i_bcc : integer range 0 to 4 := 0;
+  signal j_bcc : integer range 0 to 5 := 0;
   signal cadena  : std_logic_vector(127 downto 0) := (others => '0');
   signal t0      : std_logic_vector(127 downto 0) := (others => '0');
   signal kdf     : std_logic_vector(127 downto 0) := (others => '0');
@@ -104,16 +107,17 @@ architecture rtl of ctr_drbg is
   signal aes_listo   : std_logic;
   signal lanzado     : std_logic := '0';   -- hay un cifrado en curso
 
-  -- Bloque j de S (0..3), a partir de la entrada capturada.
+  -- Bloque j de S (0..4), a partir de la entrada capturada.
   function bloque_s(j : integer;
-                    e : std_logic_vector(255 downto 0);
+                    e : std_logic_vector(383 downto 0);
                     n : std_logic_vector(127 downto 0))
     return std_logic_vector is
   begin
     case j is
-      when 0 => return C_L & C_N & e(255 downto 192);
-      when 1 => return e(191 downto 64);
-      when 2 => return e(63 downto 0) & n(127 downto 64);
+      when 0 => return C_L & C_N & e(383 downto 320);
+      when 1 => return e(319 downto 192);
+      when 2 => return e(191 downto 64);
+      when 3 => return e(63 downto 0) & n(127 downto 64);
       when others => return n(63 downto 0) & x"80" & x"00000000000000";
     end case;
   end function;
@@ -211,7 +215,7 @@ begin
             lanzado <= '0';
           end if;
 
-        -- BCC(K0, IV_i || S): cinco cifrados encadenados por cada i.
+        -- BCC(K0, IV_i || S): seis cifrados encadenados por cada i.
         when DF_BCC =>
           if lanzado = '0' then
             if j_bcc = 0 then
@@ -225,7 +229,7 @@ begin
             lanzado     <= '1';
           elsif aes_listo = '1' then
             lanzado <= '0';
-            if j_bcc = 4 then
+            if j_bcc = 5 then
               -- Fin de una BCC: temp = T0 || T1.
               if i_bcc = 0 then
                 t0     <= aes_salida;

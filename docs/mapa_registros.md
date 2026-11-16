@@ -73,24 +73,32 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
    sondea `DIAG.arrancado` antes de sembrar; con K_D = 2^24 y el anillo a
    ~700 MHz son unos 25 s.
 2. **La semilla se valida entera.** El APT solo da veredicto al cerrar su
-   ventana de 1024 muestras y la semilla son 384 bits, así que antes la
+   ventana de 1024 muestras y la semilla son 512 bits, así que antes la
    primera semilla entraba en el DRBG sin que el APT la hubiera evaluado.
-   Ahora, tras recoger los 384 bits, el motor espera a que se cierre la
+   Ahora, tras recoger los 512 bits, el motor espera a que se cierre la
    ventana que contiene el último y solo instancia el DRBG si se cierra sin
    alarma. Una alarma, o un `borrar_alarmas`, durante la recogida o la
    espera aborta la siembra: el DRBG queda como estaba y `DIAG.rechazada`
-   sube. Una siembra tarda como mucho 384 + 1024 bits.
+   sube. Una siembra tarda como mucho 512 + 1024 bits.
 3. **Alarma bloquea la salida**, ver STATUS arriba.
 
-**Cortes (desde el 15-11-2026):** RCT C = 39 y APT C = 683 (W = 1024),
-calculados para una min-entropía de diseño H = 0,80 y α = 2⁻³⁰
-(`analysis/cortes_salud.py`). Antes, H = 0,98 y α = 2⁻²⁰ (22 y 596): en la
-Basys 2, una falsa alarma del RCT cada ~8 min a CFG_KD 14, y en el
-integrado el sesgo del muestreo del anillo [SIMULADO] deja H por debajo de
-0,98. Con 683, lo peor que deja pasar el APT (p ≈ 0,667, H ≈ 0,584) aún da
-224 bits de entropía en los 384 de la semilla, por encima de los 192 que
-pide un CTR_DRBG AES-128 (SP 800-90A Rev. 1: §8.6.3 y tabla 3, entropía de entrada ≥ 128; §8.6.7, nonce ≥ 64, o 192 juntos si salen de la misma fuente a la vez, como aquí). Por separado también: el campo de 256 lleva ~150 y el de 128 ~75. Son genéricos de `motor_top` (`G_RCT_C`, `G_APT_C`).
-Razonamiento en `docs/basys2.md`, "Decisión del 15-11-2026".
+**Cortes (desde el 16-11-2026):** RCT C = 51 y APT C = 766 (W = 1024),
+calculados para una min-entropía de diseño H = 0,60 y α = 2⁻³⁰
+(`analysis/cortes_salud.py`), y semilla de 512 bits. El biestable real de
+sg13g2 sesga el bit hasta P(1) = 0,372 a 125 °C con desapareamiento
+[SIMULADO, `analysis/biestable_ihp.py`]: con H 0,80, cinco de ocho chips
+quedaban por debajo. Del 15-11 al 16-11, H = 0,80 (39 y 683) con semilla
+de 384 bits; antes, H = 0,98 y α = 2⁻²⁰ (22 y 596), con una falsa alarma
+del RCT cada ~8 min en la Basys 2 a CFG_KD 14. Con 766, lo peor que deja
+pasar el APT (p ≈ 0,748, H ≈ 0,419) aún da 214 bits de entropía en los 512
+de la semilla, por encima de los 192 que pide un CTR_DRBG AES-128 (SP
+800-90A Rev. 1: §8.6.3 y tabla 3, entropía de entrada ≥ 128; §8.6.7, nonce
+≥ 64, o 192 juntos si salen de la misma fuente a la vez, como aquí). Por
+separado no: el campo de 384 lleva ~161 (≥ 128) pero el de 128 solo ~54
+(< 64), así que el diseño se apoya en la regla conjunta de §8.6.7. Con 384
+bits y H 0,60 tampoco se cumplía esa (161 < 192): por eso la semilla crece. Son genéricos
+de `motor_top` (`G_RCT_C`, `G_APT_C`). Razonamiento en `docs/basys2.md`,
+"Decisión del 16-11-2026".
 
 **Rearme:** con los anillos y los tests corriendo siempre, una fuente sana
 acaba dando alguna falsa alarma en la vida del equipo, y cada alarma
@@ -99,14 +107,18 @@ política va en el maestro (`motor_rearmar()` de
 `firmware/componentes/motor_i2c`): borrar las alarmas, esperar el test de
 arranque y volver a sembrar (resembrar si el DRBG tenía estado), como
 mucho 3 veces en 24 h; a la cuarta, fallo permanente hasta reiniciar el
-ESP32. Con estos cortes cabe esperar una falsa alarma al año a 8,7 kbit/s:
-tres en un día no son azar.
+ESP32. Con estos cortes y bits iid [ESTIMADO, `cortes_salud.py` y
+`docs/basys2.md`], a 8,7 kbit/s (Basys 2, `kd 14`): con bits ideales,
+ninguna en la vida del equipo; con el peor chip simulado (P(1) 0,372), ~8
+al año del RCT; con un chip justo en H = 0,60, ~89 al año (0,24 al día). Al
+ritmo del integrado con 2²³ (≤ 0,41 kbit/s), ≤ 0,4 y ≤ 4,2 al año. Tres en
+un día no son azar.
 
 ## CONTROL (0x03)
 
 | Bit | Orden | Qué hace |
 |---|---|---|
-| 0 | sembrar | recoge 384 bits crudos del anillo (los campos de entropía, 256, y nonce, 128, de la entrada del DRBG; la entropía que llevan es H × 384, ver "Cortes" arriba), espera a que los tests de salud los hayan evaluado enteros y **instancia** el DRBG desde cero |
+| 0 | sembrar | recoge 512 bits crudos del anillo (los campos de entropía, 384, y nonce, 128, de la entrada del DRBG; la entropía que llevan es H × 512, ver "Cortes" arriba), espera a que los tests de salud los hayan evaluado enteros y **instancia** el DRBG desde cero |
 | 1 | generar | pide 256 bits al DRBG; los 128 primeros pasan a ser la CLAVE, los otros 128 se descartan; recarga el autenticador. **No deja nada legible** |
 | 2 | autenticar | calcula ETIQUETA = CMAC_CLAVE(RETO) |
 | 3 | borrar_alarmas | baja las alarmas de salud |

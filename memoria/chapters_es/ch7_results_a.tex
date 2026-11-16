@@ -207,7 +207,7 @@ sf y fs piden 1,93, 1,57 y $1{,}74\times10^6$, la mitad que ss. En el
 peor punto, $2^{22}$ todavía da $H_\infty = 0{,}9873$, pero con un
 10\,\% de margen sobre $K_D$, cerca del 7\,\% que se juzgó escaso para
 $2^{20}$ en el punto típico; $2^{23}$ da 0,9999 y de 0,20 a
-0,41~kbit/s, unos 1,9~s para los 384 bits de una siembra en el peor caso.
+0,41~kbit/s, unos 2,6~s para los 512 bits de una siembra en el peor caso.
 El desapareamiento, sorteado por transistor con los modelos estadísticos
 del \ac{PDK} y con una realización de ruido nueva en cada ejecución,
 dispersa el periodo un 1,3\,\% en 48 chips en el punto típico y un
@@ -272,12 +272,29 @@ el punto típico y otros ocho en el peor. Un umbral a 100~mV de $V_{DD}/2$
 lo mueve unos 0,019, porque los flancos son lentos frente a un periodo de
 270--600~ps \simu{}. La cota baja a 0,90 a $V_{DD}/2$ y a 0,85 con esa
 incertidumbre del umbral; en la FPGA, donde el sesgo medido es del
-0,4\,\%, es 0,989. El cable, el buffer y la apertura del biestable no
-están en la simulación. Por eso los tests de salud se calculan para
-$H = 0{,}80$ (Sección~\ref{sec:health}), algo que la semilla absorbe.
-Dividir RO1 por dos con un biestable T fijaría el ciclo de trabajo en el
-50\,\%, pero dividiría $Q$ por cuatro, así que queda como alternativa por
-validar y no se adopta.
+0,4\,\%, es 0,989.
+
+El biestable de muestreo sesga el bit más que el anillo. Con el
+\texttt{sg13g2\_\allowbreak dfrbpq\_1} real de la biblioteca en el nudo~5, detrás de
+un \texttt{sg13g2\_\allowbreak buf\_1} (sin él, la capacidad de entrada del biestable
+tira del anillo, unos 2--3~ps de modulación del periodo), y la
+probabilidad de un uno ponderada por la fase de muestreo, tt y ss quedan a
+menos de 0,01 del umbral ideal. A 125~$^\circ$C con desapareamiento no:
+en cuatro chips por esquina, $P(1)$ va de 0,372 a 0,461 en ff y de 0,399 a
+0,437 en sf, mientras que el umbral ideal sobre los mismos anillos da
+0,49--0,51. Cinco de los ocho chips quedan por debajo de $H = 0{,}80$; la
+peor cota es 0,672 \simu{}. El biestable no captura en el mismo instante
+una entrada que sube y una que baja: la diferencia, expresada como un
+retardo equivalente, es de 26--30~ps en sf y de 13--15~ps en ff, y se
+mantiene al alargar el anillo a nueve y once etapas, así que el sesgo
+baja aproximadamente como $1/T$. Un anillo más lento o RO1 dividido por
+dos lo curarían a costa de un divisor cuatro o cinco veces mayor. El
+diseño declara en cambio $H = 0{,}60$, con umbrales y una semilla de 512
+bits calculados para ese valor (Sección~\ref{sec:health}), lo que
+conserva el circuito y la tasa de bits y cubre el peor chip simulado. Son
+simulaciones sin ruido de ocho chips por esquina; con más chips la cola
+solo puede crecer, y por eso el valor declarado queda por debajo del
+peor.
 
 \section{Punto de funcionamiento: divisor y tasa de bits}
 \label{sec:opoint}
@@ -369,16 +386,18 @@ derivación como en la de entropía en bruto. Y los umbrales de los tests de
 salud se habían calculado a mano a partir de la norma y nunca se habían
 comprobado; volver a obtenerlos con las fórmulas de SP
 800-90B~\cite{turan_2018_sp80090b} confirmó los originales,
-$C_{RCT} = 22$ y $C_{APT} = 596$, y da ahora los vigentes, 39 y 683, para
-$H = 0{,}80$ y $\alpha = 2^{-30}$ (Sección~\ref{sec:health}). La misma
+$C_{RCT} = 22$ y $C_{APT} = 596$, y da ahora los vigentes, 51 y 766, para
+$H = 0{,}60$ y $\alpha = 2^{-30}$ (Sección~\ref{sec:health}). La misma
 comprobación cuantifica el coste de la prueba del complemento añadida al
 \ac{APT}, que es una aportación de este trabajo y no de la norma: con el
 umbral original elevaba la tasa de falsas alarmas por ventana de
 $2^{-20{,}15}$ a $2^{-20{,}14}$, un aumento del 0,8\,\%, porque la cola
 complementaria estaba a 5,7 desviaciones típicas; con el vigente está a
-15,6 y el coste no se aprecia. Comprueba además que los 384 bits de la
+27,5 y el coste no se aprecia. Comprueba además que los 512 bits de la
 semilla llevan al menos los 192 bits de entropía que necesita el
-generador, incluso con la peor proporción que deja pasar el test.
+generador, incluso con la peor proporción que deja pasar el test, y que
+el peor chip simulado del biestable de muestreo queda por encima de la
+$H$ declarada.
 
 \section{Comparación con elementos seguros comerciales}
 \label{sec:se_comparison}

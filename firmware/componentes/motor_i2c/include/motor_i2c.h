@@ -74,7 +74,7 @@
 #define T_ORDEN_MS       500u
 #define MOTOR_RO2_MIN_HZ 100000000ull     /* suelo de ro2 para los plazos */
 #define MOTOR_BITS_APT   1024u            /* ventana del test de arranque */
-#define MOTOR_BITS_SEMILLA 384u
+#define MOTOR_BITS_SEMILLA 512u        /* 384 de entropia + 128 de nonce */
 
 /* Lo que devuelve motor_rng() cuando el motor no da aleatorio. Es el valor
  * de MBEDTLS_ERR_ENTROPY_SOURCE_FAILED, para que quien reciba el error de

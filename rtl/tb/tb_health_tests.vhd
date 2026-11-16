@@ -23,10 +23,10 @@ end entity tb_health_tests;
 architecture sim of tb_health_tests is
 
   constant C_T : time := 10 ns;
-  -- Los cortes por defecto de health_tests (H 0,80, alfa 2^-30).
-  constant C_RCT : positive := 39;
+  -- Los cortes por defecto de health_tests (H 0,60, alfa 2^-30).
+  constant C_RCT : positive := 51;
   constant C_W   : positive := 1024;
-  constant C_APT : positive := 683;
+  constant C_APT : positive := 766;
 
   signal clk, rst_n : std_logic := '0';
   signal bit_i, bit_stb, borrar : std_logic := '0';
@@ -144,11 +144,11 @@ begin
     comprobar(n_disparo = C_RCT, "RCT dispara en la muestra " &
               integer'image(n_disparo) & " (esperado " & integer'image(C_RCT) & ")");
 
-    report "3) Fuente sesgada al 70 %: salta el APT, no el RCT";
+    report "3) Fuente sesgada al 80 %: salta el APT, no el RCT";
     reiniciar;
     for i in 1 to C_W loop
       uniform(s1, s2, u);
-      if u < 0.7 then muestra('1'); else muestra('0'); end if;
+      if u < 0.8 then muestra('1'); else muestra('0'); end if;
     end loop;
     comprobar(alarma_apt = '1', "APT dispara con proporcion " &
               integer'image(to_integer(apt_max)) & " >= " & integer'image(C_APT));

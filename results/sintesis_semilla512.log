@@ -1,0 +1,42 @@
+Sintesis comparada del 16-11-2026: ref = copia de HEAD 573d076 (semilla de 384 bits, cortes 39/683); act = arbol de trabajo (semilla de 512 bits = 384 + 128, cortes 51/766). No toca results/sintesis_sg13g2.csv.
+
+== ref: synth/sintetiza.py ctr_drbg
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+ctr_drbg         19992   2355   276423.2  38.087    16
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
+== ref: synth/sintetiza.py motor_top
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+motor_top        33377   8164   673641.3  92.819    23
+motor_top_aes11   40863   8161   742571.4 102.316    19
+motor_top_flujo   39608  10270   847434.9 116.765    27
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
+== act: synth/sintetiza.py ctr_drbg
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+ctr_drbg         20614   2483   287512.8  39.615    12
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
+== act: synth/sintetiza.py motor_top
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+motor_top        34039   8420   690436.9  95.133    14
+motor_top_aes11   41540   8417   760112.0 104.733    18
+motor_top_flujo   40939  10526   863743.0 119.012    22
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
