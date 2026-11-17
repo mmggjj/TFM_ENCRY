@@ -1,8 +1,11 @@
 # Puesta en marcha en la FPGA: lo que se preparó sin placa y el primer día
 
 Escrito el 08-11-2026, la víspera de tener la placa (se espera una Basys 3,
-XC7A35T-1CPG236C; si es otra, ver §6). Nada de esto se ha ejecutado en
-hardware. Lo que sí está probado, y con qué, se dice en cada punto.
+XC7A35T-1CPG236C; si es otra, ver §6). **Ejecutado en una Basys 3 el
+17-11-2026: lo que pasó, en `docs/basys3.md`** (los anillos no se rutaban con
+`CONTAIN_ROUTING`, ro2 iba más rápido de lo estimado y hubo que alargar los
+anillos a 11/13 etapas, y el APT no cerraba tiempos). Lo de abajo se deja
+como se escribió.
 
 ## 1. Qué se ha añadido y cómo se ha comprobado
 

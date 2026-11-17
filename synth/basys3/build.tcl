@@ -7,13 +7,31 @@
 # Deja en build/: checkpoints, informes de utilizacion, temporizacion, DRC
 # y metodologia, y el bitstream. Programar: build.tcl con "programar" como
 # argumento (-tclargs programar) y la placa por USB.
-# NO PROBADO EN PLACA.
+# Probado en placa el 17-11-2026 (docs/basys3.md).
+
+#
+# Variantes: GENERICOS="G_QUIETO=true G_MEDIDOR=false" en el entorno pasa
+# cada par a synth_design -generic y deja la salida en build/<variante>
+# (booleanos de VHDL como true/false, comprobado). En Linux se graba con
+# openFPGALoader -b basys3 (Vivado necesita los drivers de cable como root).
+# Los relojes de los anillos del XDC estan en g_inv[N-1] de 11/13 etapas: si
+# se cambian G_ETAPAS_RO1/RO2 hay que cambiar el XDC (se comprueba abajo).
 
 set part xc7a35tcpg236-1
 set top  basys3_top
 set raiz [file normalize ../..]
-set out  ./build
+set gen_args {}
+set variante ""
+if {[info exists ::env(GENERICOS)] && [string trim $::env(GENERICOS)] ne ""} {
+    foreach g [split [string trim $::env(GENERICOS)]] {
+        if {$g eq ""} continue
+        lappend gen_args -generic $g
+        append variante "_[string map {= _} $g]"
+    }
+}
+set out  ./build[expr {$variante eq "" ? "" : "/[string range $variante 1 end]"}]
 file mkdir $out
+puts "variante: [expr {$variante eq "" ? "por defecto" : $variante}] -> $out"
 
 # 1) Fuentes (VHDL-2008), en orden de dependencia
 read_vhdl -vhdl2008 [list \
@@ -39,7 +57,14 @@ read_xdc ./ro_pblocks.xdc
 
 # 2) Sintesis. -flatten_hierarchy rebuilt conserva los nombres jerarquicos
 #    que usan los XDC (u_motor/u_ro1/...).
-synth_design -top $top -part $part -flatten_hierarchy rebuilt
+synth_design -top $top -part $part -flatten_hierarchy rebuilt {*}$gen_args
+# Sin estos relojes el dominio del anillo queda sin restringir y Vivado sigue
+# adelante: se para aqui.
+foreach ck {ro1_clk ro2_clk} {
+    if {[llength [get_clocks -quiet $ck]] == 0} {
+        error "$ck sin definir: el pin de basys3.xdc no coincide con G_ETAPAS"
+    }
+}
 write_checkpoint -force $out/post_synth.dcp
 report_utilization -hierarchical -file $out/util_synth_hier.rpt
 
@@ -48,6 +73,16 @@ opt_design
 place_design
 route_design
 write_checkpoint -force $out/post_route.dcp
+
+# Los anillos en la netlist implementada: N LUT por anillo, colocadas y
+# con el lazo rutado (en la Basys 2 la herramienta los colapso).
+foreach r {u_ro1 u_ro2} {
+    set c [lsort [get_cells -hier -filter "NAME =~ u_motor/$r/*"]]
+    puts "ANILLO $r: [llength $c] celdas"
+    foreach x $c { puts "  $x [get_property REF_NAME $x] [get_property LOC $x] [get_property BEL $x]" }
+    foreach n [get_nets u_motor/$r/cadena*] { puts "  red $n [get_property ROUTE_STATUS $n]" }
+}
+report_route_status -file $out/route_status.rpt
 
 # 4) Informes. El lazo combinacional de cada anillo sale como LUTLP-1:
 #    se baja a aviso porque es intencionado (ALLOW_COMBINATORIAL_LOOPS).

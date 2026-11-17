@@ -1,6 +1,6 @@
 # Restricciones de la Basys 3 para rtl/fpga/basys3_top.vhd.
 # Pines del XDC maestro de Digilent (docs/plataforma_y_flujo.md 1.5).
-# NO PROBADO EN PLACA.
+# Probado en placa el 17-11-2026 (docs/basys3.md).
 
 ## Reloj de placa, 100 MHz
 set_property -dict { PACKAGE_PIN W5 IOSTANDARD LVCMOS33 } [get_ports clk]
@@ -43,17 +43,21 @@ set_property -dict { PACKAGE_PIN W4 IOSTANDARD LVCMOS33 } [get_ports {an[3]}]
 set_false_path -from [get_ports {btn_rst sw_test sw_ro scl sda}]
 set_false_path -to [get_ports {led_alarma led_vivo sda ro_div seg[*] dp an[*]}]
 
-## Anillo de muestreo (ro2, 5 etapas): es un reloj. Periodo ESTIMADO para
-## LUT1 + rutado en Artix-7; el primer bitstream lee la frecuencia real y
-## se ajusta. Sus registros (ero_core, trng_capture, bit_cdc origen,
-## reset_sync del anillo) se temporizan contra este reloj.
-create_clock -name ro2_clk -period 1.4 [get_pins {u_motor/u_ro2/g_inv[4].u_inv/O}]
+## Anillo de muestreo (ro2, 11 etapas en esta placa; el pin es g_inv[N-1] y
+## build.tcl se para si no existe): es un reloj. Sus
+## registros (ero_core, trng_capture, bit_cdc origen, reset_sync del anillo)
+## se temporizan contra el. Medido el 17-11-2026: 5 etapas 357,8 MHz
+## (display), 7 etapas 293 MHz (flujo), 11 etapas 130,0 MHz (flujo, 7,69 ns;
+## no sigue la recta de 5 y 7). La restriccion de 4,2 ns es mas dura que lo
+## medido: se deja asi, con margen sobre el camino critico (~4,1 ns).
+create_clock -name ro2_clk -period 4.2 [get_pins {u_motor/u_ro2/g_inv[10].u_inv/O}]
 set_clock_groups -asynchronous -group [get_clocks sys_clk_pin] -group [get_clocks ro2_clk]
 
-## Anillo muestreado (ro1, 7 etapas): es dato en ero_core (la
+## Anillo muestreado (ro1, 13 etapas en esta placa): es dato en ero_core (la
 ## metaestabilidad forma parte de la fuente), pero tambien reloj del
-## prescaler del frecuencimetro. Periodo ESTIMADO, como el de ro2.
-create_clock -name ro1_clk -period 2.0 [get_pins {u_motor/u_ro1/g_inv[6].u_inv/O}]
+## prescaler del frecuencimetro. Medido con 7 etapas: 291,8 MHz (display);
+## con 13, ~5,3 ns [ESTIMADO].
+create_clock -name ro1_clk -period 4.7 [get_pins {u_motor/u_ro1/g_inv[12].u_inv/O}]
 set_clock_groups -asynchronous -group [get_clocks sys_clk_pin] -group [get_clocks ro1_clk]
 set_clock_groups -asynchronous -group [get_clocks ro1_clk] -group [get_clocks ro2_clk]
 

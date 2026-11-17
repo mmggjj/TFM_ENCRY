@@ -13,10 +13,8 @@
 -- quita el medidor, para comprobar que no altera la campana de entropia.
 -- Detalle en docs/puesta_en_marcha_fpga.md.
 --
--- NO PROBADO EN PLACA: esta escrito para que la puesta en marcha sea
--- programar y medir, no empezar de cero. El reloj del anillo de muestreo
--- (ro2) se restringe en el XDC con un periodo estimado; el primer
--- bitstream sirve para leer su frecuencia real y ajustarlo.
+-- Probado en placa el 17-11-2026 (docs/basys3.md): motor entero con el
+-- ESP32, anillos de 11/13 etapas.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -24,7 +22,15 @@ use ieee.numeric_std.all;
 
 entity basys3_top is
   generic (
-    G_MEDIDOR : boolean := true
+    G_MEDIDOR : boolean := true;
+    -- Display apagado y LED de latido fijo, para las capturas: en la
+    -- Basys 2 el display multiplexado modulaba los anillos (docs/basys2.md).
+    G_QUIETO  : boolean := false;
+    -- Etapas de los anillos en esta placa: con 5/7 ro2 iba a 357,8 MHz y con
+    -- 7/9 a 293 MHz, y el dominio de ro2 no cerraba tiempos (camino de
+    -- 3,9 ns). 11/13 (docs/basys3.md). El integrado sigue con 5/7.
+    G_ETAPAS_RO1 : positive := 13;
+    G_ETAPAS_RO2 : positive := 11
   );
   port (
     clk        : in    std_logic;   -- W5, 100 MHz
@@ -66,7 +72,8 @@ begin
   sda <= '0' when sda_oe = '1' else 'Z';
 
   u_motor : entity work.motor_top
-    generic map (G_FLUJO_BYTES => 256)
+    generic map (G_FLUJO_BYTES => 256,
+                 G_ETAPAS_RO1 => G_ETAPAS_RO1, G_ETAPAS_RO2 => G_ETAPAS_RO2)
     port map (clk => clk, rst_n => rst_n,
               scl_in => scl, sda_in => sda, sda_oe => sda_oe,
               modo_test => sw_test, led_alarma => led_alarma,
@@ -96,9 +103,14 @@ begin
 
   raya <= '1' when not G_MEDIDOR else desb(sel);
   bcd_sel <= bcd(sel);
-  u_display : entity work.siete_seg
-    port map (clk => clk, bcd => bcd_sel, punto => "0010", raya => raya,
-              seg => seg, dp => dp, an => an);
+  g_display : if not G_QUIETO generate
+    u_display : entity work.siete_seg
+      port map (clk => clk, bcd => bcd_sel, punto => "0010", raya => raya,
+                seg => seg, dp => dp, an => an);
+  end generate g_display;
+  g_sin_display : if G_QUIETO generate
+    seg <= (others => '1'); dp <= '1'; an <= (others => '1');
+  end generate g_sin_display;
 
   -- Mux combinacional de dos relojes de anillo a un pin: solo observacion.
   ro_div <= presc(sel) when test_s(1) = '1' else '0';
@@ -110,6 +122,6 @@ begin
       latido <= latido + 1;
     end if;
   end process p_latido;
-  led_vivo <= latido(26);
+  led_vivo <= '0' when G_QUIETO else latido(26);
 
 end architecture rtl;

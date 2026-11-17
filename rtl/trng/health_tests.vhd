@@ -77,6 +77,18 @@ architecture rtl of health_tests is
   signal apt_pico  : unsigned(15 downto 0) := (others => '0');
   signal apt_fin   : std_logic := '0';
 
+  function lim_apt return natural is
+  begin
+    if G_APT_W >= G_APT_C then
+      return G_APT_W - G_APT_C;
+    end if;
+    return 0;
+  end function;
+
+  constant C_APT_COMP  : boolean := G_APT_W >= G_APT_C;
+  constant C_APT_LIM   : natural := lim_apt;
+  constant C_APT_MITAD : natural := (G_APT_W + 1) / 2;
+
 begin
 
   alarma_rct <= rct_alm;
@@ -153,11 +165,14 @@ begin
 
           if apt_pos = G_APT_W - 1 then
             -- Ventana completa: se evalua la cuenta y su complemento.
+            -- W - c >= C se compara como c <= W - C, y c >= W - c como
+            -- c >= ceil(W/2): mismas condiciones sin restas en el camino
+            -- (en Artix-7 a 100 MHz no cerraba tiempos, 17-11-2026).
             if coincide >= G_APT_C or
-               (to_unsigned(G_APT_W, 16) - coincide) >= G_APT_C then
+               (C_APT_COMP and coincide <= C_APT_LIM) then
               apt_alm <= '1';
             end if;
-            if coincide >= to_unsigned(G_APT_W, 16) - coincide then
+            if coincide >= C_APT_MITAD then
               peor := coincide;
             else
               peor := to_unsigned(G_APT_W, 16) - coincide;

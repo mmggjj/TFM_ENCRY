@@ -24,7 +24,7 @@ reinicios) y es la justificación del diseño de caja blanca.
 | `analysis/` | modelo estocástico del anillo, estimadores de jitter, banco SPICE, modelo de referencia del DRBG (960 vectores CAVP), verificación cruzada, verificador de lecturas firmadas del PC y sesión con el medidor en placa (`placa_medidor.py`) |
 | `.github/workflows/` | CI: modelo y estimadores, siete bancos GHDL con PSL, síntesis Yosys, banco en host con mbedtls real (y con ASan), compilación ESP-IDF de los dos firmwares y memoria en PDF con tectonic |
 | `rtl/` | VHDL-2008 portable: `trng/`, `io/`, `aes/`, `drbg/`, `top/`; bancos en `tb/`; `run_tb.py` los ejecuta todos con GHDL |
-| `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (sin probar; instalación en Windows en `docs/instalacion_vivado_windows.md`) |
+| `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (probado en Linux con Vivado 2025.2, `docs/basys3.md`) |
 | `rtl/fpga/` | envoltorio del motor para la Basys 3 (reset, SDA en colector abierto, LED de latido) |
 | `firmware/verificador/` | proyecto ESP-IDF: maestro I2C, provisión, reto-respuesta con mbedtls, volcado de bits al PC |
 | `firmware/medidor/` | proyecto ESP-IDF para ESP32-C3: el motor usado por un producto; clave ECDSA P-256 generada con aleatorio del motor, petición de certificado y lecturas de energía firmadas (`docs/lecturas_firmadas.md`) |
@@ -35,28 +35,27 @@ reinicios) y es la justificación del diseño de caja blanca.
 | `results/` | datos de campañas y logs íntegros |
 | `memoria/` | LaTeX de la memoria (`tfm_main.tex`, en inglés) y versión de lectura en español (`tfm_main_es.tex`) |
 
-## Estado (28-10-2026)
+## Estado (18-11-2026)
 
 - Documentación y estados del arte: cerrados.
-- Modelo y métodos de medida: validados sin hardware (64 comprobaciones).
-- RTL: anillo, ERO, captura, salud, I2C, AES (dos núcleos: una ronda por
-  ciclo y ruta de 32 bits), CMAC, CTR_DRBG y nivel superior escritos y
-  verificados en GHDL contra vectores oficiales (FIPS 197, SP 800-38A,
-  RFC 4493, CAVP DRBG). Nueve bancos, todos pasan (`tb_motor_top` 85/85
-  con 14 propiedades PSL; el esclavo I2C 49/49 incluido el bus bajo abuso).
-  Motor versión 0x04: captura continua de bits crudos para la campaña de
-  SP 800-90B (`docs/captura_continua.md`).
-- Firmware del ESP32: el verificador (esp32) y el medidor con lecturas
-  firmadas (esp32c3) compilan con ESP-IDF 5.3.5, pasan su banco en el PC
-  contra el motor simulado (`results/host_check.log`) y el medidor ha
-  corrido en un ESP32-C3 real con ese motor simulado
-  (`results/placa_medidor_esp32c3.log`: clave en NVS que sobrevive a
-  reinicios físicos, lecturas verificadas en el PC).
-- Síntesis: los bloques digitales sobre IHP SG13G2 (motor versión 0x03);
-  motor ≈ 46 kGE sin la captura (92,5 con ella) con un solo AES de 32 bits
-  compartido (dos optimizaciones medidas, una estimada: ≈ 42 kGE).
-- Pendiente: el motor en hardware (Basys 3 en la mesa), campaña de
-  entropía, memoria en PDF (la CI la compila).
+- Modelo y métodos de medida: validados sin hardware.
+- RTL: anillo, ERO, captura, salud, I2C, AES (dos núcleos), CMAC, CTR_DRBG y
+  nivel superior verificados en GHDL contra vectores oficiales (FIPS 197,
+  SP 800-38A, RFC 4493, CAVP DRBG). Doce bancos, todos pasan
+  (`results/run_tb_todos.log`; `tb_motor_top` con 14 propiedades PSL).
+  Motor versión 0x04, semilla de 512 bits.
+- **En FPGA** (`docs/basys3.md`): el motor entero en una **Basys 3**
+  (XC7A35T, Vivado 2025.2) con el ESP32 de oráculo: siembra, clave, 40/40
+  retos AES-CMAC iguales a los de mbedtls, aleatorio y zeroización
+  [MEDIDO, 17-11-2026]. Jitter y campaña SP 800-90B en placa. Antes, la
+  fuente sola en una Basys 2 (`docs/basys2.md`).
+- Línea base del ESP32 bajo SP 800-90B y prueba de reinicios
+  (`docs/esp32_linea_base_90b.md`, `docs/esp32_reinicios.md`).
+- Firmware del ESP32: verificador (esp32) y medidor con lecturas firmadas
+  (esp32c3), banco en el PC con mbedtls real (`results/host_check.log`).
+- Síntesis sobre IHP SG13G2 (`docs/sintesis_resultados.md`).
+- Abierto: el residuo del modelo de jitter en FPGA, la H declarada del
+  integrado (sesgo del biestable sg13g2, `docs/basys2.md`), la memoria.
 
 ## Reproducir
 

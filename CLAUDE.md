@@ -52,6 +52,42 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 17-11-2026: la Basys 3 llegó, el motor entero en placa
+
+Todo en **`docs/basys3.md`**. Sesión nocturna autónoma (Mario fuera, hasta
+las 04:00): campaña en placa, documentación y revisión independiente; la
+memoria NO se ha tocado (decisión de Mario del 14-11: qué va a la memoria se
+decide con la Basys 3 delante).
+
+- **Placa:** Basys 3, XC7A35T (IDCODE 0x0362D093, Adept "Basys3", SN
+  210183BE6DF6). Grabar: `openFPGALoader -b basys3 <bit>` o `djtgcfg -d
+  SN:210183BE6DF6 -i 0`. ESP32 a0:dd:6c:0e:fb:4c en JA1/JA2/GND, `/dev/ttyUSB0`
+  (chmod de Mario); `/dev/ttyUSB1` es la UART de la Basys 3.
+- **Vivado 2025.2** en `~/Xilinx/2025.2` (solo Artix-7; no 2026.x por la
+  licencia anual). En Ubuntu 26.04 hace falta `LOCPATH=~/eda/locale` (locale
+  en_US generado con localedef) y `LD_LIBRARY_PATH=~/eda/ise_compat`. ISE 14.7
+  quedó comprimido en `~/eda/ise_14.7.tar.zst` para hacer sitio.
+  `build.tcl` admite `GENERICOS="G_QUIETO=true G_MEDIDOR=false"` (salida en
+  `build/<variante>`) y lista tras rutar las celdas y redes de los anillos.
+- **Tres arreglos para implementar:** pblocks sin `CONTAIN_ROUTING` (el lazo
+  no se rutaba); anillos de **11/13 etapas** en `basys3_top` (con 5/7 ro2 iba
+  a 357,8 MHz y con 7/9 a 293 MHz, por encima de lo que cierra el dominio de
+  ro2; con 11/13, **130,0 MHz** [MEDIDO, flujo]); **`health_tests`** con las
+  comparaciones del cierre del APT reescritas sin restas (misma lógica, doce
+  bancos en verde; no cerraba a 100 MHz). Todo cumple tiempos. 4 011 LUT
+  (19 %), 4 561 FF.
+- **O5 [MEDIDO]:** sembrar, generar, `reto 20` dos veces con claves
+  distintas: **40/40 etiquetas CMAC iguales a las de mbedtls**; aleatorio y
+  `cero` funcionan.
+- **Jitter [MEDIDO]:** Q por periodo de ro2 1-8·10⁻⁵ según el método; el
+  modelo deja residuos de decenas de veces el ruido (mismo problema que en la
+  Basys 2). **SP 800-90B:** kd 8 0,125, kd 10 0,558, kd 11 0,786, kd 12-16
+  saturada (0,82-0,88); cuadra con Q ≈ 8·10⁻⁵ (K\* ≈ 2^11,5). **`CFG_KD` ≥ 16**
+  se mantiene (conservador). Sin correlación a retardo 1 (muestreo libre),
+  sesgo 0,495-0,496 (z −7 a −10). RCT salta a kd 8 en placa.
+- Pendiente de Mario: leer en el display ro1 con 11/13 etapas; decidir qué va
+  a la memoria; la decisión de H (ro1/2 o anillo más lento) sigue abierta.
+
 ## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
 
 Decisión de Mario sobre el sesgo del biestable sg13g2 (sección del 15-11,
