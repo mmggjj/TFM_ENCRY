@@ -85,8 +85,23 @@ decide con la Basys 3 delante).
   saturada (0,82-0,88); cuadra con Q ≈ 8·10⁻⁵ (K\* ≈ 2^11,5). **`CFG_KD` ≥ 16**
   se mantiene (conservador). Sin correlación a retardo 1 (muestreo libre),
   sesgo 0,495-0,496 (z −7 a −10). RCT salta a kd 8 en placa.
+- **Captura larga** (8 378 368 bits, kd 16): SP 800-90B 0,932 (ESP32 0,911,
+  ideal 0,935): la cifra asignada sigue sin separar. **Reinicios §3.1.4**
+  (1 000 reprogramaciones con djtgcfg): `ea_restart` pasa (H_r 0,843, H_c
+  0,892, H_I 0,819), 1 000 arranques distintos. Tabla O8 con la Basys 3.
+- La placa quedó con la variante silenciosa
+  (`synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/basys3_top.bit`,
+  volátil); el ESP32 con el verificador, cableado a JA1/JA2/GND.
+- **Hallazgo:** el `sdkconfig` local del verificador (29-10) tiene
+  `CONFIG_FREERTOS_HZ=100`; el `=1000` de `sdkconfig.defaults` no se aplicó.
+  Las duraciones van en pasos de 10 ms. Arreglo: borrar `sdkconfig`,
+  recompilar y reflashear (Mario).
+- Dos revisiones independientes (agentes sin las conclusiones de la sesión):
+  APT equivalente (`results/revision_apt_20261117/`) y cifras del documento
+  recalculadas desde los datos; sus correcciones están aplicadas.
 - Pendiente de Mario: leer en el display ro1 con 11/13 etapas; decidir qué va
-  a la memoria; la decisión de H (ro1/2 o anillo más lento) sigue abierta.
+  a la memoria; la decisión de H (ro1/2 o anillo más lento) sigue abierta;
+  fijar LOC/BEL de las etapas (Vivado combina inversores de ro2 en una LUT6).
 
 ## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
 

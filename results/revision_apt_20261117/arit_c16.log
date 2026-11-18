@@ -1,0 +1,15 @@
+DIF peor W=1 C=1 c=2 old=false new=true
+DIF peor W=1 C=1 c=3 old=false new=true
+DIF peor W=1 C=1 c=4 old=false new=true
+DIF peor W=1 C=1 c=5 old=false new=true
+DIF peor W=1 C=1 c=6 old=false new=true
+DIF alarma W=1 C=3 c=2 old=true new=false
+DIF alarma W=1 C=4 c=2 old=true new=false
+DIF alarma W=1 C=4 c=3 old=true new=false
+DIF alarma W=2 C=4 c=3 old=true new=false
+DIF alarma W=2 C=5 c=3 old=true new=false
+tramo4 (c en 0..65535) casos=61603840 dif_alarma=120 dif_peor=30788910
+
+real	11m19,333s
+user	11m6,016s
+sys	0m0,310s
