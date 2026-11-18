@@ -133,6 +133,11 @@ decide con la Basys 3 delante).
   frecuencímetro era la amplitud de la raya. **La raya no es el sondeo I2C**
   (orden nueva `crudoq` del verificador, bus callado: mismo pico). Verificador
   regrabado con FREERTOS_HZ 1000.
+  SP 800-90B a `kd 17-19` (flujos de 10⁶): 0,833-0,864, igual que a
+  `kd 13-16`: la batería no distingue H_∞ 0,47 de 0,9996. Esquemático de
+  bloques de Vivado (`synth/basys3/esquema.tcl`, necesita `-mode gui`) y plano
+  del chip (`synth/basys3/plano.tcl` + `analysis/plano_basys3.py`) en
+  `results/basys3_esquema/` y `results/basys3_plano/`. No hay foto del montaje.
 - **Tareas pendientes: lista numerada en `docs/basys3.md`, "Tareas
   pendientes (18-11-2026)"** (raya de 38 kHz con el bus callado, validar el
   estimador, suelo blanco y `CFG_KD`, 90B a `kd 17-19` y reinicios, reflashear

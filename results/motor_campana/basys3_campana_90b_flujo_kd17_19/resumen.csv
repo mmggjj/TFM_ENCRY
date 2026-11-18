@@ -1,0 +1,4 @@
+kd,modo,trozos,bits,crc_malo,tramas_huerfanas,errores,ms_mediana,ms_min,ms_max,f_ro2_MHz,fraccion_unos,fichero,exit_90b,h_min_90b
+17,flujo,,1000000,0,0,0,639080,,,205.09482380922574,0.505795,kd17_flujo.bin,0,0.8642712243778276
+18,flujo,,1000000,0,0,0,1278086,,,205.10669861026568,0.505999,kd18_flujo.bin,0,0.8326598273179107
+19,flujo,,1000000,0,0,0,2556544,,,205.07685375256597,0.505528,kd19_flujo.bin,0,0.8571120105758018

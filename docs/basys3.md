@@ -572,7 +572,41 @@ divisor no cambia nada (el `CFG_KD` de arriba solo cuenta el suelo blanco);
 para el integrado es otra razón para aislar la alimentación de los anillos
 (tarea 10).
 
-<!-- TAREA4 -->
+### SP 800-90B y reinicios al divisor nuevo (tarea 4) [MEDIDO]
+
+Flujos de 10⁶ bits consecutivos a `kd 17`, `18` y `19`, variante silenciosa
+con colocación fija, firmware nuevo, 0 errores, ro2 205,08-205,11 MHz
+(`basys3_campana_90b_flujo_kd17_19/`, 75 min):
+
+| kd | H_∞ del modelo con Q 0,82·10⁻⁶ | fracción de unos | ρ₁ (z) | H SP 800-90B |
+|---|---|---|---|---|
+| 17 | 0,80 | 0,5058 | 0,0000 (0,0) | 0,864 |
+| 18 | 0,974 | 0,5060 | +0,0007 (0,7) | 0,833 |
+| 19 | 0,9996 | 0,5055 | +0,0008 (0,8) | 0,857 |
+
+La batería da lo mismo que a `kd 13-16` (0,815-0,876): **no distingue un
+divisor con H_∞ 0,47 de uno con 0,9996**. Confirma lo que ya se sabía de la
+fuente simulada (`docs/fuente_simulada_90b.md`): a 10⁶ bits la batería se
+satura y no sirve para fijar el divisor; lo fija el jitter térmico medido.
+El sesgo (0,5055-0,5060) es el mismo a todos los divisores: viene del camino
+de muestreo, no del jitter.
+
+<!-- REINICIOS19 -->
+
+### Imágenes de la implementación (18-11)
+
+- **Esquemático de bloques de Vivado** (`synth/basys3/esquema.tcl`, diseño
+  elaborado de la variante silenciosa, `vivado -mode gui` porque
+  `write_schematic` no escribe nada en batch): `results/basys3_esquema/`,
+  `esquema_motor_top.{pdf,png}` (los bloques del motor y sus conexiones) y
+  `esquema_basys3_top.{pdf,png}` (el envoltorio de la placa). Elaboración con
+  0 avisos críticos y 0 errores (19 avisos: constantes del display y del LED
+  de la variante silenciosa y bits de dirección sin usar).
+- **Plano del chip** (`synth/basys3/plano.tcl` vuelca sitio de cada celda del
+  checkpoint rutado; `analysis/plano_basys3.py` lo dibuja):
+  `results/basys3_plano/plano_basys3.{png,pdf}`. Todo el motor arriba a la
+  izquierda del XC7A35T; ro2 justo debajo y ro1 más abajo, en sus pblocks.
+- No hay foto del montaje (Basys 3 + ESP32): la tiene que hacer Mario.
 
 ## Campaña SP 800-90B [MEDIDO]
 
