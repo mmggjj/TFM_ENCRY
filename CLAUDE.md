@@ -138,12 +138,20 @@ decide con la Basys 3 delante).
   bloques de Vivado (`synth/basys3/esquema.tcl`, necesita `-mode gui`) y plano
   del chip (`synth/basys3/plano.tcl` + `analysis/plano_basys3.py`) en
   `results/basys3_esquema/` y `results/basys3_plano/`. No hay foto del montaje.
+  **Reinicios a `kd 19`** con colocación fija: pasan (H_r 0,854, H_c 0,830,
+  H_I 0,857; 1 000 distintos). **Prueba de carga** (`G_CARGA` en
+  `basys3_top`, 4 000 biestables con sw1): la raya es una línea a ~39,4 kHz,
+  la carga no cambia su amplitud y la mueve un 0,9 %: el regulador en ráfaga
+  encaja mal; origen abierto. Decisiones de Mario resumidas en
+  `docs/decisiones_pendientes.md`.
 - **Tareas pendientes: lista numerada en `docs/basys3.md`, "Tareas
   pendientes (18-11-2026)"** (raya de 38 kHz con el bus callado, validar el
   estimador, suelo blanco y `CFG_KD`, 90B a `kd 17-19` y reinicios, reflashear
   el verificador; decisiones de Mario: biestable del integrado, `G_KD_MIN`,
   restricción de ro2 a ~4,5 ns, tiempos del contador a 2,73 GHz, aislamiento
-  de anillos, memoria).
+  de anillos, memoria; las decisiones, en una página:
+  `docs/decisiones_pendientes.md`; tarea 12: meter en la memoria los
+  esquemáticos de Vivado y el plano del chip al cerrarla).
 
 ## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
 

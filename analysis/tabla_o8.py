@@ -109,6 +109,9 @@ def cargar():
     j3b = CAMP / "basys3_campana_90b_flujo_bel" / "entropia90b"
     g["b3bel_1e6"] = [(f"kd{kd}",) + valores_json(j3b / f"kd{kd}_flujo_noniid_b1.json")
                       for kd in (13, 14, 15, 16) if (j3b / f"kd{kd}_flujo_noniid_b1.json").exists()]
+    j3c = CAMP / "basys3_campana_90b_flujo_kd17_19" / "entropia90b"
+    g["b3k19_1e6"] = [(f"kd{kd}",) + valores_json(j3c / f"kd{kd}_flujo_noniid_b1.json")
+                      for kd in (17, 18, 19) if (j3c / f"kd{kd}_flujo_noniid_b1.json").exists()]
     p3b = CAMP / "basys3_larga_kd16_n8378368_bel" / "entropia90b" / "kd16_flujo_noniid_b1.json"
     g["b3bel_8e6"] = [("kd16",) + valores_json(p3b)] if p3b.exists() else []
     return g
@@ -122,11 +125,14 @@ def reinicios():
     v = {k: float(re.search(rf"^{k}: ([0-9.]+)", t, re.M).group(1)) for k in ("H_I", "H_r", "H_c")}
     filas.append(("FPGA (Basys 2, kd 14)", "1000 reprogramaciones por JTAG", v["H_I"], v["H_r"],
                   v["H_c"], "pasa" if "Validation Test Passed" in t else "falla"))
-    log3 = RES / "fpga_reinicios" / "basys3_kd16" / "ea_restart_b1.log"
-    if log3.exists():
+    for carpeta, nombre in (("basys3_kd16", "FPGA (Basys 3, kd 16)"),
+                            ("basys3_kd19_bel", "FPGA (Basys 3 ro_bel, kd 19)")):
+        log3 = RES / "fpga_reinicios" / carpeta / "ea_restart_b1.log"
+        if not log3.exists():
+            continue
         t = log3.read_text()
         v = {k: float(re.search(rf"^{k}: ([0-9.]+)", t, re.M).group(1)) for k in ("H_I", "H_r", "H_c")}
-        filas.append(("FPGA (Basys 3, kd 16)", "1000 reprogramaciones por JTAG", v["H_I"], v["H_r"],
+        filas.append((nombre, "1000 reprogramaciones por JTAG", v["H_I"], v["H_r"],
                       v["H_c"], "pasa" if "Validation Test Passed" in t else "falla"))
     for mac in ("a0dd6c0efb4c", "f8b3b72a0928"):
         t = (RES / "esp32_reinicios" / f"analisis_mac_{mac}.log").read_text(encoding="utf-8-sig")
@@ -157,6 +163,8 @@ def tabla(g, sufijo, titulo, cols=None):
     b3 = [("FPGA Basys 3", g[f"b3_{sufijo}"])] if g.get(f"b3_{sufijo}") else []
     if g.get(f"b3bel_{sufijo}"):
         b3.append(("Basys 3 ro_bel", g[f"b3bel_{sufijo}"]))
+    if g.get(f"b3k19_{sufijo}"):
+        b3.append(("Basys 3 ro_bel kd 17-19", g[f"b3k19_{sufijo}"]))
     cols = cols or [("FPGA Basys 2", g[f"fpga_{sufijo}"])] + b3 + [("ESP32", g[f"esp_{sufijo}"]),
                     ("Ideal", g[f"ideal_{sufijo}"]), ("iid p1=0,4979 (sesgo Basys 2)", g[f"sesgo_{sufijo}"])]
     out = [f"### {titulo}", "",
@@ -189,7 +197,8 @@ def main():
            "variante silenciosa, muestreo sin habilitacion, los mismos kd 13-16 a",
            "10^6 (con su K* conservador, 13 y 14 quedan por debajo) y kd 16 a",
            "8 378 368 (docs/basys3.md). Basys 3 ro_bel: lo mismo con los anillos",
-           "en LUT6 fijas (ro_bel.xdc, ro2 a 205 MHz, 18-11-2026).", ""]
+           "en LUT6 fijas (ro_bel.xdc, ro2 a 205 MHz, 18-11-2026); kd 17-19: el",
+           "divisor que pide el jitter termico medido (CFG_KD >= 19).", ""]
     lin += tabla(g, "1e6", "10^6 bits")
     lin += tabla(g, "8e6", "8 378 368 bits")
     lin += ["Con y sin habilitacion (CE) en el biestable que muestrea ro1: mismos",

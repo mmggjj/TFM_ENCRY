@@ -30,7 +30,11 @@ entity basys3_top is
     -- 7/9 a 293 MHz, y el dominio de ro2 no cerraba tiempos (camino de
     -- 3,9 ns). 11/13 (docs/basys3.md). El integrado sigue con 5/7.
     G_ETAPAS_RO1 : positive := 13;
-    G_ETAPAS_RO2 : positive := 11
+    G_ETAPAS_RO2 : positive := 11;
+    -- Prueba de la raya de ~38 kHz (docs/basys3.md): G_CARGA biestables que
+    -- conmutan a 100 MHz con sw1 arriba, lejos de los anillos, para cambiar
+    -- el consumo del nucleo. 0 en uso normal: no hay nada.
+    G_CARGA      : natural  := 0
   );
   port (
     clk        : in    std_logic;   -- W5, 100 MHz
@@ -111,6 +115,21 @@ begin
   g_sin_display : if G_QUIETO generate
     seg <= (others => '1'); dp <= '1'; an <= (others => '1');
   end generate g_sin_display;
+
+  gen_carga : if G_CARGA > 0 generate
+    signal carga : std_logic_vector(G_CARGA - 1 downto 0) := (others => '0');
+    attribute dont_touch : string;
+    attribute dont_touch of carga : signal is "true";
+  begin
+    p_carga : process (clk)
+    begin
+      if rising_edge(clk) then
+        if sel_s(1) = '1' then
+          carga <= not carga;
+        end if;
+      end if;
+    end process p_carga;
+  end generate gen_carga;
 
   -- Mux combinacional de dos relojes de anillo a un pin: solo observacion.
   ro_div <= presc(sel) when test_s(1) = '1' else '0';

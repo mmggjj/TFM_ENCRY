@@ -1,0 +1,2 @@
+basys3_carga_sw1arriba_r1/kd02.bin: 2000 trozos, kd 2, bloque 0.312 us, unos 0.5090
+  pico 37.7 kHz 1.289e+00, suelo (100-400 kHz) 8.893e-03, pico/suelo 145.0, rms sincronizada/total 0.021

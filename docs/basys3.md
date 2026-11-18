@@ -441,8 +441,9 @@ Medidas y análisis (sin decisión previa):
 1. **Origen de la raya de ~38 kHz**: captura `kd 2` con el bus callado (que
    el maestro no sondee STATUS durante la captura) o con I2C a 100 kHz; si la
    raya se mueve con el bus, es el I2C. **Hecho el 18-11 por la tarde: no es
-   el sondeo I2C** (sección "Tarde del 18-11"); origen aún sin identificar
-   (¿regulador en modo ráfaga?).
+   el sondeo I2C** (sección "Tarde del 18-11"); origen aún sin identificar:
+   línea estrecha a ~39,4 kHz que una carga de 4 000 biestables no cambia en
+   amplitud y mueve un 0,9 % (el regulador en modo ráfaga encaja mal).
 2. **Validar el estimador de fase y espectro** de la revisión con bits
    simulados del modelo, con y sin una modulación conocida. **Hecho**
    (`analysis/espectro_fase.py --valida`).
@@ -456,7 +457,8 @@ Medidas y análisis (sin decisión previa):
    (`CONFIG_FREERTOS_HZ=100` en vez de 1000). **Hecho el 18-11** (1 kHz, con
    `crudoq`).
 
-Decisiones de Mario:
+Decisiones de Mario (opciones, costes y recomendación en
+`docs/decisiones_pendientes.md`):
 
 6. **Corrección del biestable del integrado** (H declarable 0,532 < 0,60):
    ro1 de 11-13 etapas (recomendado por la revisión) o ro1/2; validar con el
@@ -473,6 +475,12 @@ Decisiones de Mario:
 10. **Aislamiento de los anillos en el integrado** (buffer a la salida,
     alimentación o anillo de guarda propios, `ro_mon` sin carga).
 11. **Qué va a la memoria.**
+12. **Meter en la memoria los esquemáticos de Vivado y el plano del chip**
+    (`results/basys3_esquema/`, `results/basys3_plano/`), EN y ES, cuando se
+    cierre la evidencia (petición de Mario, 18-11).
+13. **Redacción**: en `docs/` se escribe `kd N` por `CFG_KD = N`
+    (`K_D = 2^N`); en la memoria, definirlo una vez y no usar `kd` a secas
+    (Mario preguntó qué era, 18-11).
 
 ## Tarde del 18-11: la raya de ~38 kHz y el suelo térmico
 
@@ -567,7 +575,44 @@ Origen sin identificar. Lo que se sabe: frecuencia fija en tiempo (~38-40 kHz
 con ro2 a 130 y a 205 MHz), sin fase fija respecto al inicio de la captura,
 y 15 veces menor con el frecuencímetro y el display (más consumo).
 Hipótesis compatible, sin comprobar: un regulador conmutado de la placa en
-modo ráfaga, cuya frecuencia y amplitud dependen de la carga. Para el
+modo ráfaga, cuya frecuencia y amplitud dependen de la carga. Según el
+manual de referencia de Digilent (Basys 3 rev. C), el núcleo del FPGA (1,0 V,
+VCCINT) sale de un LTC3633 y los 1,8 V auxiliares de un LTC3621, dos
+reductores síncronos que admiten modo ráfaga a carga ligera; qué modo usa la
+placa lo fija un pin del esquemático, no comprobado. Comprobación posible:
+osciloscopio en la salida de 1,0 V, o alimentar la placa con otra carga en el
+FPGA y ver si la raya se mueve.
+
+**Prueba de carga (18-11, noche) [MEDIDO]**: genérico nuevo `G_CARGA` de
+`basys3_top` (0 por defecto; `tb_basys3_top` 4/4 con él): 4 000 biestables
+lejos de los anillos que conmutan a 100 MHz con sw1 arriba. Variante
+silenciosa con colocación fija y `G_CARGA=4000` (Vivado: 7 885 LUT, 8 394 FF,
+tiempos cumplidos, anillos en las mismas LUT6). Mario movió sw1 entre
+capturas; `basys3_carga_sw1{abajo,arriba}_*/`, 0 CRC malos.
+
+| | ro2 (flujo, `kd 14`) | raya a `kd 4` (bins de 3,14 kHz): frecuencia corregida, potencia | `kd 2`: pico / suelo |
+|---|---|---|---|
+| sin carga | 205,83 MHz | 39,41 kHz, 31,4 | 1,315 y 1,310 / 1,45-1,50·10⁻² |
+| con carga (dos capturas) | 205,02 MHz (−0,39 %) | 39,76-39,77 kHz, 31,8 | 1,289 y 1,288 / 0,89-0,98·10⁻² |
+
+(`basys3_carga_frecuencia_raya.txt`: frecuencia por interpolación entre los
+dos bins de la ventana de Hann, corregida con el periodo de ro2 medido.)
+
+- **La raya es una línea estrecha a ~39,4 kHz** (dos bins de 3,14 kHz).
+- **La carga no cambia su amplitud** (31,4 frente a 31,8) y mueve su
+  frecuencia un 0,9 % (+0,35 kHz, repetible entre las dos capturas con carga
+  a 0,01 kHz). Un regulador en modo ráfaga cambiaría la frecuencia de ráfaga
+  con la corriente de carga mucho más que eso: **la hipótesis del regulador
+  pierde fuerza**; queda una fuente casi fija, débilmente dependiente de la
+  tensión o la temperatura (¿un oscilador RC de otro circuito de la placa?).
+  Origen sin identificar.
+- La carga baja ro2 un 0,39 % (caída de tensión del núcleo).
+- Con la carga instalada pero parada, el suelo a `kd 2` es 1,45-1,50·10⁻² y
+  crece con la frecuencia (de 1,1·10⁻² a 3·10⁻² entre 100 y 400 kHz), el
+  doble que sin la carga en el bitstream; con la carga en marcha baja a
+  0,9-1,0·10⁻². No se ha investigado: no cambia el `CFG_KD` de arriba, que
+  sale del bitstream sin carga.
+- La placa queda otra vez con la variante silenciosa sin carga. Para el
 divisor no cambia nada (el `CFG_KD` de arriba solo cuenta el suelo blanco);
 para el integrado es otra razón para aislar la alimentación de los anillos
 (tarea 10).
@@ -591,7 +636,13 @@ satura y no sirve para fijar el divisor; lo fija el jitter térmico medido.
 El sesgo (0,5055-0,5060) es el mismo a todos los divisores: viene del camino
 de muestreo, no del jitter.
 
-<!-- REINICIOS19 -->
+**Reinicios a `kd 19`** (`results/fpga_reinicios/basys3_kd19_bel/`): 1 000
+reprogramaciones por JTAG, 0 descartadas, ~4 s por ciclo, 128 bytes del
+flujo por arranque. `ea_restart` en bit con H_I = 0,857 (la de `kd 19`):
+**Restart Sanity Check Passed** y **Validation Test Passed** (H_r 0,854,
+H_c 0,830). Los 1 000 arranques son distintos; Hamming media 511,9 (esperada
+512), desviación 16,02 (16,00), mínima 439 (~438). Igual que a `kd 16` sin
+colocación fija.
 
 ### Imágenes de la implementación (18-11)
 
