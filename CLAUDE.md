@@ -125,14 +125,16 @@ decide con la Basys 3 delante).
   **`CFG_KD` ≥ 16 no sería conservador** (≥ 18-19 provisional) [ESTIMADO,
   sin validar]. Ningún valor de diseño cambiado.
 - **Tarde del 18-11** (`docs/basys3.md`, "Tarde del 18-11"):
-  `analysis/espectro_fase.py` (método de Fable) **validado con bits
-  simulados**: el suelo mide el jitter blanco. **Q blanca ≈ 0,8·10⁻⁶ por
-  periodo de ro2** (silenciosa con colocación fija; 1,2·10⁻⁶ la normal;
-  1,2-1,6·10⁻⁶ con colocación libre, escala con T como el térmico) →
-  **`CFG_KD` ≥ 19 en la FPGA** (kd 16 da H_∞ 0,47). El ×4,4 del
-  frecuencímetro era la amplitud de la raya. **La raya no es el sondeo I2C**
-  (orden nueva `crudoq` del verificador, bus callado: mismo pico). Verificador
-  regrabado con FREERTOS_HZ 1000.
+  `analysis/espectro_fase.py` (método de Fable) probado con bits simulados;
+  **la revisión independiente de la noche lo matizó**: el suelo es jitter
+  blanco más componentes del estimador (dispersión de ν, sesgo, armónicos),
+  depende de ν y saca la Q por arriba. **Q blanca de la silenciosa con
+  colocación fija 0,6-1,1·10⁻⁶ por periodo de ro2** (la normal, ν 0,227, no
+  determinable) → al divisor la cota baja: **`CFG_KD` ≥ 19 en la FPGA**
+  (H_∞ ≥ 0,99; ≥ 20 con factor 2 en Q; kd 16 da ~0,47). **La raya no es el
+  tráfico I2C durante la captura** (orden nueva `crudoq`, bus callado: mismo
+  pico; no descarta el ESP32 conectado). Verificador regrabado con
+  FREERTOS_HZ 1000.
   SP 800-90B a `kd 17-19` (flujos de 10⁶): 0,833-0,864, igual que a
   `kd 13-16`: la batería no distingue H_∞ 0,47 de 0,9996. Esquemático de
   bloques de Vivado (`synth/basys3/esquema.tcl`, necesita `-mode gui`) y plano
@@ -141,9 +143,12 @@ decide con la Basys 3 delante).
   **Reinicios a `kd 19`** con colocación fija: pasan (H_r 0,854, H_c 0,830,
   H_I 0,857; 1 000 distintos). **Prueba de carga** (`G_CARGA` en
   `basys3_top`, 4 000 biestables con sw1): la raya es una línea a ~39,4 kHz,
-  la carga no cambia su amplitud y la mueve un 0,9 %: el regulador en ráfaga
-  encaja mal; origen abierto. Decisiones de Mario resumidas en
-  `docs/decisiones_pendientes.md`.
+  la carga no cambia su amplitud y la mueve un 0,9 %; hay además una
+  portadora a ~480 kHz con bandas laterales a ±39,5 kHz: regulador conmutado,
+  hipótesis abierta. Decisiones de Mario en `docs/decisiones_pendientes.md`
+  (revisado: las tres correcciones del biestable llevan a `kd 25`, que el
+  contador de 24 bits no admite; `G_KD_MIN` también bloquea el flujo).
+  **Plan del 19-11 en `docs/basys3.md`, "Plan para el 19-11-2026".**
 - **Tareas pendientes: lista numerada en `docs/basys3.md`, "Tareas
   pendientes (18-11-2026)"** (raya de 38 kHz con el bus callado, validar el
   estimador, suelo blanco y `CFG_KD`, 90B a `kd 17-19` y reinicios, reflashear

@@ -441,16 +441,21 @@ Medidas y análisis (sin decisión previa):
 1. **Origen de la raya de ~38 kHz**: captura `kd 2` con el bus callado (que
    el maestro no sondee STATUS durante la captura) o con I2C a 100 kHz; si la
    raya se mueve con el bus, es el I2C. **Hecho el 18-11 por la tarde: no es
-   el sondeo I2C** (sección "Tarde del 18-11"); origen aún sin identificar:
-   línea estrecha a ~39,4 kHz que una carga de 4 000 biestables no cambia en
-   amplitud y mueve un 0,9 % (el regulador en modo ráfaga encaja mal).
+   el sondeo I2C** (sección "Tarde del 18-11"; no descarta el ESP32 conectado ni fuentes de la
+   placa); origen aún sin identificar: línea estrecha a ~39,4 kHz que una
+   carga de 4 000 biestables no cambia en amplitud y mueve un 0,9 %, y
+   bandas laterales a ±39,5 kHz de una portadora a ~480 kHz (regulador
+   conmutado: hipótesis abierta).
 2. **Validar el estimador de fase y espectro** de la revisión con bits
    simulados del modelo, con y sin una modulación conocida. **Hecho**
-   (`analysis/espectro_fase.py --valida`).
+   (`analysis/espectro_fase.py --valida`), con límites que encontró la
+   revisión: el suelo depende de ν, de su dispersión y del sesgo; falta
+   `--nu`/`--sdnu` en `--calibra` (plan del 19-11).
 3. **Suelo blanco (Q térmica)**: estimarlo en frecuencia con las capturas de
    `kd 0` y fijar con él el `CFG_KD` de la FPGA (provisional ≥ 18-19 según la
-   revisión, frente al ≥ 16 actual). **Hecho**: Q blanca ≈ 0,8·10⁻⁶ por
-   periodo de ro2 (silenciosa, colocación fija); **`CFG_KD` ≥ 19** en la FPGA.
+   revisión, frente al ≥ 16 actual). **Hecho**: Q blanca 0,6-1,1·10⁻⁶ por
+   periodo de ro2 (silenciosa, colocación fija; cota baja al divisor);
+   **`CFG_KD` ≥ 19** en la FPGA (H_∞ ≥ 0,99), ≥ 20 con factor 2 en Q.
 4. **Repetir SP 800-90B a `kd 17-19`** y la **prueba de reinicios** con la
    colocación fija y el divisor que salga del punto 3.
 5. **Reflashear el verificador** tras borrar `firmware/verificador/sdkconfig`
@@ -482,6 +487,43 @@ Decisiones de Mario (opciones, costes y recomendación en
     (`K_D = 2^N`); en la memoria, definirlo una vez y no usar `kd` a secas
     (Mario preguntó qué era, 18-11).
 
+## Plan para el 19-11-2026
+
+Lo de la tarde del 18-11 (abajo) está hecho y subido; una revisión
+independiente de ese trabajo estaba en marcha al escribir esto (sus
+correcciones, aplicadas o pendientes, en "Revisión de la tarde del 18-11").
+Orden propuesto:
+
+1. **Revisión de la tarde**: aplicadas las correcciones de texto (sección
+   "Revisión de la tarde del 18-11"); falta en código: `--nu`, `--sdnu` y el
+   sesgo en `espectro_fase.py --calibra`, y recalibrar con ellos.
+2. **Decisiones de Mario** con `docs/decisiones_pendientes.md` delante:
+   biestable del integrado (ro1 de 11-13 etapas o ro1/2), `G_KD_MIN` (23/25
+   en `motor_top`, 19 en `basys3_top`), restricción de ro2 a ~4,5 ns.
+3. **Tiempos del dominio de ro2 en el integrado** (tarea 9): no hay
+   herramienta de STA instalada (ni OpenSTA ni OpenROAD en `~/eda`); opciones:
+   instalar OpenSTA, o el `sta` de Yosys con la biblioteca sg13g2 sobre el
+   `ero_core` sintetizado. Si el contador de 24 bits no cierra a 2,73 GHz:
+   ÷2 en ro2 y recalcular K_D.
+4. **Aplicar las decisiones al RTL** (si ro1 se alarga, el divisor pasa a
+   `kd 25`: ensanchar `G_CNT_BITS` de `ero_core`, subir `G_KD_RESET`, abrir
+   el rango de `cmd_kd` y revisar los plazos del firmware; con `G_KD_MIN` alto,
+   una variante de caracterización para el flujo): genéricos por defecto, doce bancos
+   (`python rtl/run_tb.py`), `verifica_top`, `synth/equivalencia.sh` donde
+   aplique, síntesis (`synth/sintetiza.py`), CI en verde.
+5. **Validar la corrección del biestable** si ro1 cambia: `analysis/biestable_mc.py`
+   con el anillo nuevo, mismo criterio (μ − 3σ, mínimo sobre esquinas) más la
+   esquina ff a −40 °C y 1,32 V; `analysis/anillo_ihp.py` en la peor esquina
+   para el K_D nuevo. Horas de simulación desatendida.
+6. **FPGA**: restricción de ro2 y comprobación en `build.tcl`, recompilar,
+   captura corta de jitter (`espectro_fase.py`) y O5.
+7. **Fusionar** `feat/lecturas-firmadas` en `main` (PR), con la CI en verde.
+8. **Memoria** (tareas 11-13), con la evidencia cerrada: resultados de la
+   Basys 3, esquemáticos y plano, `CFG_KD` definido.
+
+Opcional: origen de la raya de ~39,4 kHz (osciloscopio en las
+alimentaciones de la placa); medidor (ESP32-C3) con el motor real.
+
 ## Tarde del 18-11: la raya de ~38 kHz y el suelo térmico
 
 Tareas 1-3 de la lista de arriba. Firmware y método nuevos:
@@ -510,8 +552,13 @@ Tareas 1-3 de la lista de arriba. Firmware y método nuevos:
 
 - **Sin modulación no hay raya** (pico/suelo 0,8-1,0) y el suelo crece
   linealmente con Q: 7,6·10⁻³ con Q = 1·10⁻⁶ por periodo de ro2, 8,7·10⁻² con
-  1,42·10⁻⁵. **El ruido propio del estimador es despreciable** (1·10⁻⁴ con
-  Q = 0): el suelo mide el jitter blanco, no es solo una cota.
+  1,42·10⁻⁵ (con ν = 0,384 fija y bits sin sesgo). **Corregido por la
+  revisión de la tarde (abajo)**: el 1·10⁻⁴ con Q = 0 solo vale con ν fija;
+  con la dispersión de ν entre trozos de los datos el suelo del estimador
+  sube a 2·10⁻³ (ν 0,384) y hasta 1,7·10⁻² (ν 0,417), y el sesgo, los
+  armónicos de la raya y el ruido de fase también lo suben. El suelo mide el
+  jitter blanco **más** componentes del estimador y de la fuente: la Q sale
+  por arriba (el lado no conservador) y depende de ν.
 - **Con modulación la raya sale a 37,7 kHz**; amplitud 1·10⁻³ ciclos por
   muestra da un pico de 1,03-1,14. La raya también sube algo el suelo
   (3,8·10⁻³ con Q = 0): hay que calibrar con ella.
@@ -520,35 +567,76 @@ Tareas 1-3 de la lista de arriba. Firmware y método nuevos:
 
 `espectro_fase.py --calibra` (`results/espectro_fase_calibra*.txt`): rejilla de
 Q y amplitud que reproduce pico y suelo de cada captura (1 000 trozos por
-punto; incertidumbre de ±20 % por la rejilla y porque la modulación real no
-es una senoide pura: hay otra raya hacia 477 kHz).
+punto). **Ojo**: `--calibra` usa ν = 0,38388 fija y bits sin sesgo; solo vale
+para las capturas con esa ν (la silenciosa con colocación fija). Columna de
+la derecha: la recalculada por la revisión con la ν, la dispersión de ν, el
+sesgo y las rayas de cada captura, y el rango por banda de 100 a 400 kHz.
 
-| Captura (2 000 trozos, `kd 2`) | ro2 | raya (frecuencia, pico) | suelo | Q blanca por periodo de ro2 |
-|---|---|---|---|---|
-| silenciosa, colocación fija (dos capturas) | 205 MHz | 37,7 kHz, 1,13-1,14 | 7,5-7,6·10⁻³ | **≈ 0,8·10⁻⁶** |
-| normal, colocación fija (dos capturas) | 207 MHz | 38,1 kHz, 0,071-0,074 | 9,1·10⁻³ | ≈ 1,2·10⁻⁶ |
-| silenciosa, libre (dos capturas) | 130 MHz | 39,9 kHz, 2,55 | 1,30-1,52·10⁻² | ≈ 1,2-1,6·10⁻⁶ |
-| normal, libre | 130 MHz | 39,9 kHz, 0,57 | 1,60·10⁻² | ≈ 1,6·10⁻⁶ |
+| Captura (2 000 trozos, `kd 2`) | ro2 | ν | raya (frecuencia, pico) | suelo | Q (`--calibra`) | Q revisada [ESTIMADO] |
+|---|---|---|---|---|---|---|
+| silenciosa, colocación fija (dos) | 205 MHz | 0,384 | 37,7 kHz, 1,13-1,14 | 7,5-7,6·10⁻³ | ≈ 0,8·10⁻⁶ | **0,80-0,88·10⁻⁶; por banda 0,63-1,14·10⁻⁶** |
+| normal, colocación fija (dos) | 207 MHz | 0,227 | 38,1 kHz, 0,071-0,074 | 9,1·10⁻³ | (≈ 1,2·10⁻⁶, no válida: ν distinta) | 0,3-1,3·10⁻⁶: no determinable |
+| silenciosa, libre (dos) | 130 MHz | 0,359-0,361 | 39,9 kHz, 2,55 | 1,30-1,52·10⁻² | ≈ 1,2-1,6·10⁻⁶ | 0,74-1,47·10⁻⁶ |
+| normal, libre | 130 MHz | — | 39,9 kHz, 0,57 | 1,60·10⁻² | ≈ 1,6·10⁻⁶ | 1,06-1,9·10⁻⁶ |
 
 Lectura:
 
-1. **El jitter blanco es del mismo orden en las cuatro**, y escala con el
-   periodo como debe el térmico (σ² ∝ T): de 4,9 a 7,7 ns (×1,57) la Q pasa
-   de ~1·10⁻⁶ a ~1,4·10⁻⁶. σ ≈ 5 ps por periodo de 4,9 ns, dentro de los 2-4
-   ps por 3-5 ns de la bibliografía (`docs/modelo_ero_resultados.md` §5).
-2. **Lo que cambia entre variantes es la raya, no el suelo**: con el
-   frecuencímetro la raya es 15 veces menor (colocación fija). El "×4,4 del
-   frecuencímetro" del ajuste conjunto era la modulación contada como jitter.
+1. **El jitter blanco es del orden de 1·10⁻⁶ por periodo de ro2** en las
+   capturas donde se puede determinar; la mejor determinada, la silenciosa
+   con colocación fija, **0,6-1,1·10⁻⁶** (banda y modelo de calibración),
+   σ ≈ 4-5 ps por periodo de 4,9 ns, del orden de los 2-4 ps por 3-5 ns de la
+   bibliografía (`docs/modelo_ero_resultados.md` §5). Retirado (revisión):
+   "escala con el periodo como el térmico" (Q en ciclos de ro1 va como
+   κ²·T2/T1², ro1 de la variante a 130 MHz está sin medir y el anillo era
+   otro).
+2. **La raya cambia entre variantes**: con el frecuencímetro es 15 veces
+   menor **en potencia** (1,13 frente a 0,074), unas 4 veces en amplitud
+   (1,06·10⁻³ frente a 2,7·10⁻⁴ ciclos por muestra). Que el suelo **no**
+   cambie y que el "×4,4" del ajuste conjunto sea solo la raya **no está
+   establecido** (la Q de la normal no se puede determinar con su ν).
 3. **La raya está a ~38-40 kHz con ro2 a 130 y a 205 MHz**: frecuencia fija
    en tiempo, no ligada al anillo. Fuente externa (¿I2C?): tarea 1, abajo.
 4. **Divisor**: con Q = 0,82·10⁻⁶ (`results/cfg_kd_suelo_blanco.txt`,
    `ero_model.entropias_exactas`, peor fase) H_∞ = 0,47 a `kd 16`, 0,80 a
-   `kd 17`, 0,974 a `kd 18`, 0,9996 a `kd 19`; con la mitad de Q, 0,974 a
-   `kd 19` y 0,9996 a `kd 20`. **`CFG_KD` ≥ 16 no es conservador en la
-   FPGA**: la cifra de la revisión (≥ 18-19) se confirma. Las campañas SP
+   `kd 17`, 0,974 a `kd 18`, 0,9996 a `kd 19`. Como el suelo arrastra
+   componentes no térmicas, se lleva al divisor la **cota baja, 0,6·10⁻⁶**:
+   `kd 19` da 0,996 (H ≥ 0,99 mientras Q ≥ 5,0·10⁻⁷; ≥ 0,60 mientras Q ≥
+   1,3·10⁻⁷). Con la mitad de Q, `kd 19` da 0,974 y hace falta `kd 20` para
+   0,99. **`CFG_KD` ≥ 16 no es conservador en la FPGA**; **≥ 19 con objetivo
+   H_∞ ≥ 0,99 sobre la cota baja medida, ≥ 20 si se quiere además un
+   factor 2 en Q** (decisión de Mario). Las campañas SP
    800-90B a `kd` ≤ 16 midieron bits con H_∞ del modelo ≤ 0,47 que la
    batería puntuó 0,82-0,88: la batería no ve la falta de entropía cuando la
    fase es determinista y está modulada.
+
+### Revisión de la tarde del 18-11
+
+Un agente revisor (otra sesión, sin las conclusiones de esta) recalculó todo
+desde el código y los datos (scripts en el directorio temporal de la sesión,
+no versionados). Correcciones aplicadas arriba, por orden de importancia:
+
+1. El suelo no es solo jitter blanco: con la dispersión de ν entre trozos,
+   el sesgo, los armónicos de la raya o ruido de fase el estimador lo sube,
+   y depende de ν de forma no monótona (×6 entre ν 0,41728 y 0,41982 en
+   simulación). La Q sale por arriba.
+2. La Q de la variante normal (ν 0,227) no se puede determinar; `--calibra`
+   fija ν = 0,38388. Retirado "lo que cambia es la raya, no el suelo" y "el
+   ×4,4 era la modulación".
+3. Q de la silenciosa con colocación fija: 0,80-0,88·10⁻⁶ con tres modelos
+   de calibración, 0,63-1,14·10⁻⁶ por banda; al divisor la cota baja, 0,6·10⁻⁶.
+4. Retirado "escala con el periodo como el térmico".
+5. `G_KD_MIN` también bloquea el flujo; `kd 25` no cabe en el RTL actual
+   (`docs/decisiones_pendientes.md` §7).
+6. La raya: ×15 en potencia, ×4 en amplitud.
+7. Regulador: hipótesis abierta; portadora a ~480 kHz con bandas laterales a
+   ±39,5 kHz.
+8. `docs/decisiones_pendientes.md` §6: H de 11-13 etapas y de ro1/2
+   coherentes con la misma ley 1/T; divisor ×6,8 con 13 etapas.
+9. Bus: dicho lo que el experimento no descarta.
+
+Coincide con: el divisor calculado (`entropias_exactas`), el diseño y el
+resultado del experimento del bus, la frecuencia y la amplitud de la raya en
+la prueba de carga, y que no hay fase fija respecto al inicio de la captura.
 
 ### ¿Es el sondeo I2C? No (tarea 1) [MEDIDO]
 
@@ -569,7 +657,11 @@ menos que un periodo de la raya, así que el pico cae en el primer bin, 50,8
 kHz): 0,0388-0,0394 en las cuatro. **Callar el bus durante la captura no
 cambia la raya**: no la mete el tráfico I2C durante la captura. Tampoco el
 tick de FreeRTOS: con el firmware nuevo (1 kHz) el pico es el de anoche
-(1,13 con 100 Hz).
+(1,13 con 100 Hz). **No descarta** (revisión): el ESP32 conectado y en
+marcha (masa común, pull-ups a su 3,3 V, la UART vaciando la trama
+anterior), la actividad del bus antes de la captura (igual en los dos
+modos) ni las fuentes de la propia placa; para eso hay que desconectar o
+aislar el ESP32, o un osciloscopio.
 
 Origen sin identificar. Lo que se sabe: frecuencia fija en tiempo (~38-40 kHz
 con ro2 a 130 y a 205 MHz), sin fase fija respecto al inicio de la captura,
@@ -601,11 +693,14 @@ dos bins de la ventana de Hann, corregida con el periodo de ro2 medido.)
 - **La raya es una línea estrecha a ~39,4 kHz** (dos bins de 3,14 kHz).
 - **La carga no cambia su amplitud** (31,4 frente a 31,8) y mueve su
   frecuencia un 0,9 % (+0,35 kHz, repetible entre las dos capturas con carga
-  a 0,01 kHz). Un regulador en modo ráfaga cambiaría la frecuencia de ráfaga
-  con la corriente de carga mucho más que eso: **la hipótesis del regulador
-  pierde fuerza**; queda una fuente casi fija, débilmente dependiente de la
-  tensión o la temperatura (¿un oscilador RC de otro circuito de la placa?).
-  Origen sin identificar.
+  a 0,01 kHz). **Corregido (revisión)**: "encaja mal" no estaba cuantificado
+  (no se estimó la corriente que añade la carga ni la de base), la carga solo
+  afecta al regulador de VCCINT y no a los de 1,8 o 3,3 V, y la revisión
+  encontró una **portadora a ~480 kHz con bandas laterales a ±39,5 kHz**
+  (440 y 519 kHz) en todos los bitstreams (130 y 205 MHz), que no se mueve
+  con la carga (480,0 → 479,7 kHz): firma compatible con un convertidor
+  conmutado. **La hipótesis del regulador sigue abierta**; origen sin
+  identificar.
 - La carga baja ro2 un 0,39 % (caída de tensión del núcleo).
 - Con la carga instalada pero parada, el suelo a `kd 2` es 1,45-1,50·10⁻² y
   crece con la frecuencia (de 1,1·10⁻² a 3·10⁻² entre 100 y 400 kHz), el
