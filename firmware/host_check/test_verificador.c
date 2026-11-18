@@ -188,27 +188,30 @@ int main(void)
     chk(kd == 10, "kd 10 queda escrito");
     tramas = motor_n_tramas;
     t0 = motor_ticks();
-    cmd_crudo(3);
+    cmd_crudo(3, false);
     chk(motor_n_tramas == tramas + 3, "crudo 3 envia 3 tramas");
     chk(motor_ticks() - t0 >= 3 * ((4096u << 10) / 300000u),
         "y espera a que cada captura se llene (4096 x 2^10 periodos de ro2)");
+    tramas = motor_n_tramas;
+    cmd_crudo(2, true);
+    chk(motor_n_tramas == tramas + 2, "crudoq 2 (bus callado) envia 2 tramas");
     cmd_kd(18);                                /* ~3,6 s por captura en el modelo */
     tramas = motor_n_tramas;
     t0 = motor_ticks();
-    cmd_crudo(1);
+    cmd_crudo(1, false);
     chk(motor_n_tramas == tramas + 1 && motor_ticks() - t0 >= 3000,
         "con kd 18 la captura tarda mas de los 2 s del plazo antiguo y llega");
     motor_capturando = true;
     tramas = motor_n_tramas;
-    cmd_crudo(1);
+    cmd_crudo(1, false);
     chk(motor_n_tramas == tramas, "con otra captura en curso no sale trama");
     motor_capturando = false;
     motor_modo_test = false;
-    cmd_crudo(1);
+    cmd_crudo(1, false);
     chk(motor_n_tramas == tramas, "sin modo test no sale trama");
     motor_modo_test = true;
     cmd_kd(6);
-    cmd_crudo(1);
+    cmd_crudo(1, false);
     cmd_sembrar();
     chk((motor_status() & ST_SEMBRADO) != 0, "tras capturar se vuelve a sembrar");
 
@@ -303,7 +306,7 @@ int main(void)
     chk(motor_orden(CTL_SEMBRAR, T_ORDEN_MS, &st) == ESP_ERR_INVALID_STATE,
         "y el motor rechaza sembrar si se manda igualmente");
     tramas = motor_n_tramas;
-    cmd_crudo(1);
+    cmd_crudo(1, false);
     chk(motor_n_tramas == tramas, "sin buffer de captura, crudo no saca tramas");
     cmd_kd(14);
     tramas = motor_n_tramas;

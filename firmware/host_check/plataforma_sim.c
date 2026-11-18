@@ -66,6 +66,7 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t b,
 void esp_fill_random(void *buf, size_t len)
 { for (size_t i = 0; i < len; i++) ((uint8_t *)buf)[i] = (uint8_t)(rand() & 0xff); }
 uint32_t esp_random(void) { return (uint32_t)rand(); }
+void esp_rom_delay_us(uint32_t us) { (void)us; }
 /* CRC-32 normal (el de zlib), que es lo que da la ROM con crc inicial 0:
  * asi verifica_lecturas.py acepta las tramas de este banco. */
 uint32_t esp_rom_crc32_le(uint32_t crc, const uint8_t *buf, uint32_t len)

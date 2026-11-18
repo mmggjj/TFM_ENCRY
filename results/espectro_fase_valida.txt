@@ -1,0 +1,18 @@
+bits simulados con ero_model: kd 2, T(ro2) 4.878 ns, L 16, 1000 trozos de 4096; bloque 0.312 us
+pico: maximo entre 25 y 60 kHz; suelo: mediana entre 100 y 400 kHz
+caso                                   f pico kHz       pico      suelo pico/suelo rms sincr/total
+Q 0.0e+00, sin modulacion                    50.2  8.295e-07  1.027e-04        0.0           0.030
+Q 1.0e-06, sin modulacion                    50.2  6.229e-03  7.622e-03        0.8           0.037
+Q 3.0e-06, sin modulacion                    50.2  1.852e-02  2.030e-02        0.9           0.030
+Q 1.0e-05, sin modulacion                    50.2  6.163e-02  6.202e-02        1.0           0.030
+Q 1.4e-05, sin modulacion                    50.2  8.737e-02  8.730e-02        1.0           0.029
+Q 3.0e-05, sin modulacion                    50.2  1.847e-01  1.793e-01        1.0           0.030
+Q 0.0e+00, 38 kHz a 1e-04                    37.7  1.031e-02  6.458e-04       16.0           0.035
+Q 0.0e+00, 38 kHz a 3e-04                    37.7  9.277e-02  4.808e-04      192.9           0.036
+Q 0.0e+00, 38 kHz a 1e-03                    37.7  1.030e+00  3.814e-03      270.1           0.034
+Q 1.1e-06, 38 kHz a 1e-04                    37.7  1.699e-02  8.485e-03        2.0           0.036
+Q 1.1e-06, 38 kHz a 3e-04                    37.7  9.948e-02  8.655e-03       11.5           0.032
+Q 1.1e-06, 38 kHz a 1e-03                    37.7  1.037e+00  8.919e-03      116.3           0.035
+Q 1.4e-05, 38 kHz a 1e-04                    37.7  9.696e-02  8.708e-02        1.1           0.031
+Q 1.4e-05, 38 kHz a 3e-04                    37.7  1.790e-01  8.671e-02        2.1           0.031
+Q 1.4e-05, 38 kHz a 1e-03                    37.7  1.116e+00  8.700e-02       12.8           0.029

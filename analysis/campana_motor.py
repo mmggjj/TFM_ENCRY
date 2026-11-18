@@ -46,6 +46,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "results" / "motor_campana"
 BITS_TROZO = 4096
 LOTE = 8                     # capturas por orden "crudo"
+CALLADO = False              # --callado: "crudoq", sin bus durante la captura
 
 RE_TRAMA = re.compile(r"^F([A-Z])([0-9a-f]{4})([0-9a-f]*)([0-9a-f]{8})\s*$")
 RE_KD = re.compile(r"^kd (\d+) leido (\d+) (ok|IGNORADO)")
@@ -169,7 +170,7 @@ def capturar(t, log: Path, kds: list[int], trozos: int, arranque: float,
                 continue
             while hechos < trozos:
                 n = min(LOTE, trozos - hechos)
-                orden(f"crudo {n}")
+                orden(f"{'crudoq' if CALLADO else 'crudo'} {n}")
                 ult = f"crudo {n - 1} kd {kd} "
                 ln = escuchar(lambda ln: ln.startswith(ult) or ln.startswith("crudo:"),
                               plazo_lote * n)
@@ -366,6 +367,8 @@ def main() -> int:
     ap.add_argument("--plazo-flujo", type=float, default=0.0,
                     help="s por tira (0: bits*2^kd a 50 MHz, x4, minimo 30 s)")
     ap.add_argument("--sin-reset", action="store_true")
+    ap.add_argument("--callado", action="store_true",
+                    help="crudoq: el maestro no toca el bus mientras se llena el buffer")
     ap.add_argument("--arranque", type=float, default=5.0, help="s de espera al arrancar")
     ap.add_argument("--plazo", type=float, default=0.0,
                     help="s por captura (0: 4096*2^kd a 50 MHz, x4, minimo 5 s)")
@@ -375,6 +378,8 @@ def main() -> int:
     ap.add_argument("--90b", dest="con_90b", action="store_true",
                     help="pasa cada divisor por ea_non_iid (bits)")
     args = ap.parse_args()
+    global CALLADO
+    CALLADO = args.callado
 
     if args.reparsear:
         carpeta = args.reparsear.parent

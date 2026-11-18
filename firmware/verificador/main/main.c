@@ -25,6 +25,9 @@
  *   kd [N]    escribe CFG_KD (K_D = 2^N) y lo relee; sin N solo lo lee
  *   crudo N   vuelca N trozos del buffer de captura al PC (4096 bits cada uno,
  *             no contiguos entre si) con su tiempo de llenado
+ *   crudoq N  igual, pero sin tocar el bus mientras se llena el buffer
+ *             (espera fija tras la orden): para ver si el sondeo I2C modula
+ *             los anillos (docs/basys3.md, tarea 1)
  *   flujo N   vuelca N bytes CONSECUTIVOS de bits crudos (captura continua,
  *             registro FLUJO) en tramas C numeradas; si la FIFO del motor se
  *             desborda o falla el bus, lo dice y la tira no vale
@@ -37,6 +40,7 @@
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_rom_sys.h"
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_rom_crc.h"
@@ -276,7 +280,7 @@ static void cmd_kd(int v)
     printf("kd %d leido %u %s\n", v, leido, leido == v ? "ok" : "IGNORADO");
 }
 
-static void cmd_crudo(int n)
+static void cmd_crudo(int n, bool callado)
 {
     uint8_t trozo[512];
     uint8_t kd = 24;
@@ -285,9 +289,15 @@ static void cmd_crudo(int n)
     if (!(motor_status() & ST_MODO_TEST)) { printf("crudo: CAPTURA solo se lee en modo test\n"); return; }
     motor_reg_leer(REG_CFG_KD, &kd, 1);
     const uint32_t plazo = motor_plazo_bits_ms(4096, 2000);
+    /* Callado: 10 ns por periodo de ro2 (el doble del medido) mas 200 us. */
+    const uint64_t espera_us = ((uint64_t)4096 << (kd > 24 ? 24 : kd)) / 100 + 200;
     for (int t = 0; t < n; t++) {
         motor_io_reiniciar();
         motor_reg_escribir1(REG_CONTROL, CTL_CAPTURAR);
+        if (callado) {
+            if (espera_us < 20000) esp_rom_delay_us((uint32_t)espera_us);
+            else vTaskDelay(pdMS_TO_TICKS(espera_us / 1000 + 1));
+        }
         uint8_t diag = 0;
         motor_reg_leer(REG_DIAG, &diag, 1);
         if (diag & DG_RECHAZADA) { printf("crudo: captura rechazada (motor ocupado?)\n"); return; }
@@ -420,7 +430,7 @@ static bool leer_linea(char *linea, size_t n)
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N kd N crudo N flujo N esp N cero\n");
+    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N kd N crudo N crudoq N flujo N esp N cero\n");
     for (;;) {
         if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
@@ -432,7 +442,8 @@ static void bucle_consola(void)
         else if (!strcmp(cmd, "reto"))    cmd_reto(arg);
         else if (!strcmp(cmd, "aleatorio")) cmd_aleatorio(arg);
         else if (!strcmp(cmd, "kd"))      cmd_kd(campos >= 2 ? arg : -1);
-        else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg);
+        else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg, false);
+        else if (!strcmp(cmd, "crudoq"))  cmd_crudo(arg, true);
         else if (!strcmp(cmd, "flujo"))   cmd_flujo(arg);
         else if (!strcmp(cmd, "esp"))     cmd_esp(arg);
         else if (!strcmp(cmd, "cero"))    cmd_cero();

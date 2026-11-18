@@ -440,16 +440,21 @@ Medidas y análisis (sin decisión previa):
 
 1. **Origen de la raya de ~38 kHz**: captura `kd 2` con el bus callado (que
    el maestro no sondee STATUS durante la captura) o con I2C a 100 kHz; si la
-   raya se mueve con el bus, es el I2C.
+   raya se mueve con el bus, es el I2C. **Hecho el 18-11 por la tarde: no es
+   el sondeo I2C** (sección "Tarde del 18-11"); origen aún sin identificar
+   (¿regulador en modo ráfaga?).
 2. **Validar el estimador de fase y espectro** de la revisión con bits
-   simulados del modelo, con y sin una modulación conocida.
+   simulados del modelo, con y sin una modulación conocida. **Hecho**
+   (`analysis/espectro_fase.py --valida`).
 3. **Suelo blanco (Q térmica)**: estimarlo en frecuencia con las capturas de
    `kd 0` y fijar con él el `CFG_KD` de la FPGA (provisional ≥ 18-19 según la
-   revisión, frente al ≥ 16 actual).
+   revisión, frente al ≥ 16 actual). **Hecho**: Q blanca ≈ 0,8·10⁻⁶ por
+   periodo de ro2 (silenciosa, colocación fija); **`CFG_KD` ≥ 19** en la FPGA.
 4. **Repetir SP 800-90B a `kd 17-19`** y la **prueba de reinicios** con la
    colocación fija y el divisor que salga del punto 3.
 5. **Reflashear el verificador** tras borrar `firmware/verificador/sdkconfig`
-   (`CONFIG_FREERTOS_HZ=100` en vez de 1000).
+   (`CONFIG_FREERTOS_HZ=100` en vez de 1000). **Hecho el 18-11** (1 kHz, con
+   `crudoq`).
 
 Decisiones de Mario:
 
@@ -468,6 +473,106 @@ Decisiones de Mario:
 10. **Aislamiento de los anillos en el integrado** (buffer a la salida,
     alimentación o anillo de guarda propios, `ro_mon` sin carga).
 11. **Qué va a la memoria.**
+
+## Tarde del 18-11: la raya de ~38 kHz y el suelo térmico
+
+Tareas 1-3 de la lista de arriba. Firmware y método nuevos:
+
+- **Verificador** con `CONFIG_FREERTOS_HZ=1000` (`sdkconfig` regenerado desde
+  `sdkconfig.defaults`; arregla la tarea 5) y orden **`crudoq N`**: como
+  `crudo`, pero tras escribir `CONTROL ← capturar` espera sin tocar el bus
+  (10 ns por periodo de ro2 más 200 µs) antes de leer DIAG y STATUS.
+  `campana_motor.py --callado` la usa. Banco en PC 0 fallos (paso 13 con
+  `crudoq`), ESP-IDF 5.3.2 sin avisos, grabado en el ESP32 a0:dd:6c:0e:fb:4c
+  (con permiso de Mario).
+- **Por qué el bus podía estar en la captura**: con `crudo`, tras la orden el
+  maestro lee DIAG y STATUS enseguida (unos 100 µs por transacción a 400 kHz),
+  y una captura a `kd 2` dura 4 096 · 4 · 4,88 ns ≈ 80 µs: cae entera dentro
+  del sondeo. Un byte I2C son 9 ciclos de SCL, 22,5 µs (44 kHz).
+- **`analysis/espectro_fase.py`**: el método de la revisión
+  (`results/revision_fable_20261118/psd.py`) como script del repositorio:
+  demodula cada trozo a su ν, fase por bloques de 16 muestras, espectro de la
+  frecuencia instantánea promediado sobre los trozos; da el pico (25-60 kHz)
+  y el suelo (mediana de 100-400 kHz).
+
+### Validación del método con bits simulados (tarea 2) [SIMULADO]
+
+`espectro_fase.py --valida` (`results/espectro_fase_valida.txt`): trozos de
+`ero_model` con Q conocida, con y sin modulación senoidal de ν a 38 kHz:
+
+- **Sin modulación no hay raya** (pico/suelo 0,8-1,0) y el suelo crece
+  linealmente con Q: 7,6·10⁻³ con Q = 1·10⁻⁶ por periodo de ro2, 8,7·10⁻² con
+  1,42·10⁻⁵. **El ruido propio del estimador es despreciable** (1·10⁻⁴ con
+  Q = 0): el suelo mide el jitter blanco, no es solo una cota.
+- **Con modulación la raya sale a 37,7 kHz**; amplitud 1·10⁻³ ciclos por
+  muestra da un pico de 1,03-1,14. La raya también sube algo el suelo
+  (3,8·10⁻³ con Q = 0): hay que calibrar con ella.
+
+### Suelo blanco medido (tarea 3) [MEDIDO, calibración SIMULADA]
+
+`espectro_fase.py --calibra` (`results/espectro_fase_calibra*.txt`): rejilla de
+Q y amplitud que reproduce pico y suelo de cada captura (1 000 trozos por
+punto; incertidumbre de ±20 % por la rejilla y porque la modulación real no
+es una senoide pura: hay otra raya hacia 477 kHz).
+
+| Captura (2 000 trozos, `kd 2`) | ro2 | raya (frecuencia, pico) | suelo | Q blanca por periodo de ro2 |
+|---|---|---|---|---|
+| silenciosa, colocación fija (dos capturas) | 205 MHz | 37,7 kHz, 1,13-1,14 | 7,5-7,6·10⁻³ | **≈ 0,8·10⁻⁶** |
+| normal, colocación fija (dos capturas) | 207 MHz | 38,1 kHz, 0,071-0,074 | 9,1·10⁻³ | ≈ 1,2·10⁻⁶ |
+| silenciosa, libre (dos capturas) | 130 MHz | 39,9 kHz, 2,55 | 1,30-1,52·10⁻² | ≈ 1,2-1,6·10⁻⁶ |
+| normal, libre | 130 MHz | 39,9 kHz, 0,57 | 1,60·10⁻² | ≈ 1,6·10⁻⁶ |
+
+Lectura:
+
+1. **El jitter blanco es del mismo orden en las cuatro**, y escala con el
+   periodo como debe el térmico (σ² ∝ T): de 4,9 a 7,7 ns (×1,57) la Q pasa
+   de ~1·10⁻⁶ a ~1,4·10⁻⁶. σ ≈ 5 ps por periodo de 4,9 ns, dentro de los 2-4
+   ps por 3-5 ns de la bibliografía (`docs/modelo_ero_resultados.md` §5).
+2. **Lo que cambia entre variantes es la raya, no el suelo**: con el
+   frecuencímetro la raya es 15 veces menor (colocación fija). El "×4,4 del
+   frecuencímetro" del ajuste conjunto era la modulación contada como jitter.
+3. **La raya está a ~38-40 kHz con ro2 a 130 y a 205 MHz**: frecuencia fija
+   en tiempo, no ligada al anillo. Fuente externa (¿I2C?): tarea 1, abajo.
+4. **Divisor**: con Q = 0,82·10⁻⁶ (`results/cfg_kd_suelo_blanco.txt`,
+   `ero_model.entropias_exactas`, peor fase) H_∞ = 0,47 a `kd 16`, 0,80 a
+   `kd 17`, 0,974 a `kd 18`, 0,9996 a `kd 19`; con la mitad de Q, 0,974 a
+   `kd 19` y 0,9996 a `kd 20`. **`CFG_KD` ≥ 16 no es conservador en la
+   FPGA**: la cifra de la revisión (≥ 18-19) se confirma. Las campañas SP
+   800-90B a `kd` ≤ 16 midieron bits con H_∞ del modelo ≤ 0,47 que la
+   batería puntuó 0,82-0,88: la batería no ve la falta de entropía cuando la
+   fase es determinista y está modulada.
+
+### ¿Es el sondeo I2C? No (tarea 1) [MEDIDO]
+
+Variante silenciosa con colocación fija, mismo bitstream, firmware nuevo;
+2 000 trozos a `kd 0` y a `kd 2` por captura, alternando bus activo (`crudo`)
+y bus callado (`crudoq`, comprobado en `serie.log`: 500 órdenes de una y 0 de
+la otra), dos vueltas. Carpetas `basys3_bus_{activo,callado}_kd00_02_r{1,2}/`,
+0 CRC malos.
+
+| `kd 2` | activo r1 | callado r1 | activo r2 | callado r2 |
+|---|---|---|---|---|
+| pico (37,7 kHz) | 1,130 | 1,130 | 1,135 | 1,128 |
+| suelo | 7,80·10⁻³ | 7,40·10⁻³ | 7,67·10⁻³ | 7,69·10⁻³ |
+| fracción de unos | 0,5054 | 0,5052 | 0,5055 | 0,5054 |
+
+A `kd 0` (bloques de 64 muestras, la misma duración; el trozo dura 20 µs,
+menos que un periodo de la raya, así que el pico cae en el primer bin, 50,8
+kHz): 0,0388-0,0394 en las cuatro. **Callar el bus durante la captura no
+cambia la raya**: no la mete el tráfico I2C durante la captura. Tampoco el
+tick de FreeRTOS: con el firmware nuevo (1 kHz) el pico es el de anoche
+(1,13 con 100 Hz).
+
+Origen sin identificar. Lo que se sabe: frecuencia fija en tiempo (~38-40 kHz
+con ro2 a 130 y a 205 MHz), sin fase fija respecto al inicio de la captura,
+y 15 veces menor con el frecuencímetro y el display (más consumo).
+Hipótesis compatible, sin comprobar: un regulador conmutado de la placa en
+modo ráfaga, cuya frecuencia y amplitud dependen de la carga. Para el
+divisor no cambia nada (el `CFG_KD` de arriba solo cuenta el suelo blanco);
+para el integrado es otra razón para aislar la alimentación de los anillos
+(tarea 10).
+
+<!-- TAREA4 -->
 
 ## Campaña SP 800-90B [MEDIDO]
 
@@ -600,3 +705,8 @@ paso mínimo de un tick) y no ha afectado a ninguna medida salvo la
 resolución de las duraciones (10 ms). Arreglo: borrar `sdkconfig` y
 recompilar el verificador (y el medidor) para que tomen los valores por
 defecto; queda para Mario (reflashear el ESP32).
+
+**Arreglado el 18-11 por la tarde**: `sdkconfig` del verificador regenerado
+(`CONFIG_FREERTOS_HZ=1000`), compilado con ESP-IDF 5.3.2 sin avisos y grabado
+en el ESP32 a0:dd:6c:0e:fb:4c con permiso de Mario. El medidor (ESP32-C3) no
+se ha tocado.

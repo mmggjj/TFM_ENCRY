@@ -117,6 +117,12 @@ uint32_t esp_random(void);
 void esp_fill_random(void *buf, size_t len);
 """)
 
+esc("esp_rom_sys.h", """
+#pragma once
+#include <stdint.h>
+void esp_rom_delay_us(uint32_t us);
+""")
+
 esc("esp_rom_crc.h", """
 #pragma once
 #include <stddef.h>

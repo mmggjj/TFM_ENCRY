@@ -124,6 +124,15 @@ decide con la Basys 3 delante).
   comprobar, ¿sondeo I2C?); el suelo térmico quedaría en Q ≲ 1,1·10⁻⁶ y
   **`CFG_KD` ≥ 16 no sería conservador** (≥ 18-19 provisional) [ESTIMADO,
   sin validar]. Ningún valor de diseño cambiado.
+- **Tarde del 18-11** (`docs/basys3.md`, "Tarde del 18-11"):
+  `analysis/espectro_fase.py` (método de Fable) **validado con bits
+  simulados**: el suelo mide el jitter blanco. **Q blanca ≈ 0,8·10⁻⁶ por
+  periodo de ro2** (silenciosa con colocación fija; 1,2·10⁻⁶ la normal;
+  1,2-1,6·10⁻⁶ con colocación libre, escala con T como el térmico) →
+  **`CFG_KD` ≥ 19 en la FPGA** (kd 16 da H_∞ 0,47). El ×4,4 del
+  frecuencímetro era la amplitud de la raya. **La raya no es el sondeo I2C**
+  (orden nueva `crudoq` del verificador, bus callado: mismo pico). Verificador
+  regrabado con FREERTOS_HZ 1000.
 - **Tareas pendientes: lista numerada en `docs/basys3.md`, "Tareas
   pendientes (18-11-2026)"** (raya de 38 kHz con el bus callado, validar el
   estimador, suelo blanco y `CFG_KD`, 90B a `kd 17-19` y reinicios, reflashear
