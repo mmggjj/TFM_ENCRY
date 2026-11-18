@@ -229,6 +229,38 @@ Lectura:
    Mientras el modelo no describa los datos, el divisor no se apoya solo en
    el jitter: la campaña SP 800-90B de abajo hace de contraste.
 
+### Repetibilidad (18-11-2026) [MEDIDO]
+
+Tres capturas de la variante silenciosa con el mismo bitstream, seguidas
+(`basys3_jitter_kd00_02_quieto`, `_r2`, `_r3`), cada una de 2 000 trozos por
+divisor, 0 CRC malos, fracción de unos 0,4954-0,4956:
+
+| Q por periodo de ro2 | r1 | r2 | r3 | dispersión |
+|---|---|---|---|---|
+| ajuste conjunto, `kd 2`, M ≤ 100 (`jitter_conjunto_m.txt`) | 2,754·10⁻⁵ | 2,750·10⁻⁵ | 2,764·10⁻⁵ | ±0,3 % |
+| autocorrelación global, `kd 0` | 8,47·10⁻⁵ | 8,20·10⁻⁵ | 8,20·10⁻⁵ | ±2 % |
+| autocorrelación global, `kd 2` | 8,35·10⁻⁵ | 8,32·10⁻⁵ | 8,16·10⁻⁵ | ±1 % |
+| varianza, `kd 2` | 1,94·10⁻⁵ | 2,01·10⁻⁵ | 2,38·10⁻⁵ | ±10 % |
+| varianza, `kd 0` (no fiable, κ < 0) | 3,26·10⁻⁵ | 1,76·10⁻⁵ | 1,83·10⁻⁵ | ×1,9 |
+
+Residuo del ajuste conjunto 5,7-5,9 veces el ruido en las tres.
+
+- **Cada método es repetible** (±0,3-2 % los de autocorrelación), así que la
+  diferencia entre métodos (×3 entre el conjunto y el global) es
+  **sistemática**: depende de qué parte de la forma de c(M) atribuye cada uno
+  al jitter, porque el modelo no describe esa forma. No es ruido de medida.
+- **La diferencia entre variantes también se repite.** Variante normal a
+  `kd 2`, tres capturas (`basys3_jitter_kd00_02_normal`,
+  `basys3_jitter_kd02_normal_r2`, `_r3`): ajuste conjunto (M ≤ 100) 9,37 /
+  9,21 / 9,31·10⁻⁶ (±1 %, residuo 5,3-5,5), global 5,45 / 5,70 /
+  5,91·10⁻⁵, varianza 2,41 / 2,12 / 1,48·10⁻⁵; fracción de unos 0,5133. Frente
+  a la silenciosa: ×2,95 con el conjunto y ×1,5 con el global, muy por encima
+  de la repetibilidad. Lo que cuelga de los anillos (o la colocación, que
+  cambia entre las dos implementaciones) cambia el ruido de fase relativo,
+  como en la Basys 2 (×2,5 entre variantes). Para separar las dos causas
+  haría falta fijar la colocación de los anillos (LOC/BEL) y quitar solo el
+  medidor.
+
 ## Campaña SP 800-90B [MEDIDO]
 
 Variante silenciosa (`G_QUIETO=true G_MEDIDOR=false`, muestreo sin
