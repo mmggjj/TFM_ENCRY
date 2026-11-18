@@ -16,6 +16,7 @@
 # openFPGALoader -b basys3 (Vivado necesita los drivers de cable como root).
 # Los relojes de los anillos del XDC estan en g_inv[N-1] de 11/13 etapas: si
 # se cambian G_ETAPAS_RO1/RO2 hay que cambiar el XDC (se comprueba abajo).
+# XDC_EXTRA="ro_bel.xdc" fija LOC y BEL de cada etapa (una LUT6 por etapa).
 
 set part xc7a35tcpg236-1
 set top  basys3_top
@@ -28,6 +29,9 @@ if {[info exists ::env(GENERICOS)] && [string trim $::env(GENERICOS)] ne ""} {
         lappend gen_args -generic $g
         append variante "_[string map {= _} $g]"
     }
+}
+if {[info exists ::env(XDC_EXTRA)] && [string trim $::env(XDC_EXTRA)] ne ""} {
+    foreach x [split [string trim $::env(XDC_EXTRA)]] { append variante "_[file rootname $x]" }
 }
 set out  ./build[expr {$variante eq "" ? "" : "/[string range $variante 1 end]"}]
 file mkdir $out
@@ -54,6 +58,11 @@ read_vhdl -vhdl2008 [list \
     $raiz/rtl/fpga/basys3_top.vhd]
 read_xdc ./basys3.xdc
 read_xdc ./ro_pblocks.xdc
+# XDC_EXTRA="ro_bel.xdc": restricciones adicionales (colocacion fija de las
+# etapas); la salida va a build/<variante>_<nombre del xdc>.
+if {[info exists ::env(XDC_EXTRA)] && [string trim $::env(XDC_EXTRA)] ne ""} {
+    foreach x [split [string trim $::env(XDC_EXTRA)]] { read_xdc ./$x }
+}
 
 # 2) Sintesis. -flatten_hierarchy rebuilt conserva los nombres jerarquicos
 #    que usan los XDC (u_motor/u_ro1/...).

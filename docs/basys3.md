@@ -33,6 +33,7 @@ repetibilidad, añadida después.
 | Sesgo / correlación | fracción de unos 0,495-0,496 en la silenciosa (z −7 a −26; la normal 0,513: el signo cambia con la implementación); sin correlación a retardo 1 (muestreo libre) |
 | Salud | el RCT salta a `kd 8`; ni a `kd 6` ni a `kd 10` (batería 0,558 < 0,60) |
 | Reinicios (§3.1.4) | **pasa**: 1 000 reprogramaciones, H_r 0,843 y H_c 0,892 ≥ H_I 0,819; 1 000 arranques distintos |
+| Colocación fija | con los anillos en los mismos LUT6 (sin combinar): ro2 207 MHz y el frecuencímetro baja Q ×4,4 (conjunto) frente a la silenciosa: es la lógica colgada, no la colocación |
 | Revisión | dos agentes independientes: APT equivalente (exhaustivo, cosimulación, formal) y cifras recalculadas; correcciones aplicadas |
 
 ### Basys 2 frente a Basys 3
@@ -107,9 +108,11 @@ Tres problemas, en este orden, y cómo se resolvieron:
    en la implementación, ro2 ocupa una sola fila (SLICE_X0Y90 y X1Y90) y
    Vivado **ha combinado inversores de dos en dos en la misma LUT6** (NAND e
    inversor 5 en A6/A5, inversores 2 y 6 en B6/B5 de X1Y90, y 3 y 7 en C6/C5),
-   el "LUT Combining" del placer, que `DONT_TOUCH` no impide; ro1 no. Para
-   una colocación estable entre implementaciones habría que fijar LOC y BEL
-   de cada etapa (pendiente).
+   el "LUT Combining" del placer, que `DONT_TOUCH` no impide; ro1 no.
+   **Comprobado el 18-11** con `ro_bel.xdc` (una LUT6 por etapa, LOC y BEL
+   fijos, `XDC_EXTRA=ro_bel.xdc` en `build.tcl`): sin combinar, ro2 con 11
+   etapas va a **207,0 MHz** (variante normal) y 205,0 MHz (silenciosa)
+   [MEDIDO, flujo], no a 130 MHz. Ver "Colocación fija de los anillos".
 3. **El cierre de ventana del APT no cerraba a 100 MHz** (−0,26 ns en la
    esquina lenta, 13 niveles de lógica). `health_tests` compara ahora
    `c <= W − C` y `c >= ceil(W/2)` con constantes en vez de restar `W − c`:
@@ -270,6 +273,47 @@ Residuo del ajuste conjunto 5,7-5,9 veces el ruido en las tres.
   como en la Basys 2 (×2,5 entre variantes). Para separar las dos causas
   haría falta fijar la colocación de los anillos (LOC/BEL) y quitar solo el
   medidor.
+
+### Colocación fija de los anillos: el frecuencímetro baja el ruido de fase (18-11-2026) [MEDIDO]
+
+Para separar la colocación de la lógica colgada, las dos variantes se
+regeneraron con **los anillos en los mismos LUT6** (`ro_bel.xdc`: NAND y
+cada inversor con su LOC y su BEL `*6LUT`, sin combinar; verificado en la
+lista de celdas de las dos implementaciones). Fijados solo los LUT de los
+anillos: el rutado entre etapas y el biestable de muestreo no. Tiempos: ro2
+−0,391 ns (normal) y −0,120 ns (silenciosa) contra la restricción de 4,2 ns,
+es decir caminos de 4,59 y 4,32 ns frente a periodos medidos de 4,83 y 4,88
+ns: cumplen con un 5 y un 12 % de margen en la esquina lenta. Una captura
+por variante a `kd 2`, 2 000 trozos (`basys3_jitter_kd02_{normal,quieto}_bel/`,
+`basys3_frec_*ro_bel/`):
+
+| Q por periodo de ro2, `kd 2` | normal (display y frecuencímetro) | silenciosa | silenciosa / normal |
+|---|---|---|---|
+| ro2 [flujo] | 207,0 MHz | 205,0 MHz | |
+| fracción de unos | 0,519 | 0,506 | |
+| ajuste conjunto (M ≤ 100) | **3,22·10⁻⁶** (residuo 5,8) | **1,42·10⁻⁵** (residuo 5,0) | ×4,4 |
+| autocorrelación global | 4,86·10⁻⁵ | 5,75·10⁻⁵ | ×1,2 |
+| varianza | 1,23·10⁻⁵ | 1,98·10⁻⁵ | ×1,6 |
+
+- **Con los anillos en el mismo sitio la diferencia sigue (y crece):** no
+  viene de la colocación de los anillos, sino de lo que cuelga de ellos (el
+  frecuencímetro sobre ro1 y ro2, y el display). Los tres estimadores van en
+  el mismo sentido: **con el frecuencímetro el ruido de fase relativo
+  aparente es menor**, lo que encaja con un acoplamiento entre anillos (o
+  con el reloj de 100 MHz) a través de esa lógica, la hipótesis de la Basys
+  2. El ciclo de trabajo visto también cambia (0,519 frente a 0,506) con los
+  anillos fijos. Una captura por variante: la repetibilidad de cada método
+  medida arriba (±0,3-4 %) es mucho menor que estas diferencias.
+- **Para el divisor:** la configuración que se parece al producto es la
+  silenciosa (el integrado no lleva frecuencímetro): 1,42·10⁻⁵ da
+  K\* ≈ 2^14,0 y, con factor 2, 2^15,0: **`CFG_KD` ≥ 16 sigue valiendo**. Con
+  el frecuencímetro puesto (3,2·10⁻⁶) haría falta `CFG_KD` ≥ 18: las campañas
+  de entropía, siempre sin él.
+- Las campañas de esta noche (SP 800-90B, captura larga, reinicios) se
+  hicieron con la variante silenciosa **sin** `ro_bel.xdc` (ro2 a 130 MHz,
+  con inversores combinados). Recomendación: usar `ro_bel.xdc` por defecto
+  desde ahora (colocación reproducible); no se ha cambiado para no romper la
+  trazabilidad de lo medido.
 
 ## Campaña SP 800-90B [MEDIDO]
 

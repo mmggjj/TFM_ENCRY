@@ -1,0 +1,1 @@
+results/motor_campana/basys3_jitter_kd02_normal_bel/kd02_trozos.npz: conjunto M=1..100: Q/muestra 1.2875e-05, por periodo de ro2 3.2187e-06, residuo/ruido 5.83, saturado False

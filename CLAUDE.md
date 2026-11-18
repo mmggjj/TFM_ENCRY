@@ -87,7 +87,14 @@ decide con la Basys 3 delante).
   **SP 800-90B:** kd 8 0,125, kd 10 0,558, kd 11 0,786 (trozos no
   consecutivos), kd 12-16 saturada (0,82-0,88); compatible con Q del orden
   de 6-10·10⁻⁵ en kd 10-11 (kd 8 por debajo; kd 10 con correlación ρ₁ 0,05).
-  **`CFG_KD` ≥ 16** se mantiene (conservador, Q más baja 0,93·10⁻⁵). Sin correlación a retardo 1 (muestreo libre),
+  **`CFG_KD` ≥ 16** se mantiene (conservador, Q más baja 0,93·10⁻⁵).
+- **18-11, colocación fija** (`synth/basys3/ro_bel.xdc`, `XDC_EXTRA` en
+  `build.tcl`): Vivado combinaba inversores de ro2 en una LUT6 (por eso 130
+  MHz); con una LUT6 por etapa, ro2 207 MHz. Con los anillos idénticos, el
+  frecuencímetro baja la Q ×4,4 (conjunto; ×1,6 varianza, ×1,2 global):
+  es la lógica colgada, no la colocación. Silenciosa 1,42·10⁻⁵ → CFG_KD ≥ 16
+  vale; con frecuencímetro haría falta ≥ 18. Recomendado `ro_bel.xdc` por
+  defecto (no cambiado). Sin correlación a retardo 1 (muestreo libre),
   sesgo 0,495-0,496 (z −7 a −10). RCT salta a kd 8 en placa.
 - **Captura larga** (8 378 368 bits, kd 16): SP 800-90B 0,932 (ESP32 0,911,
   ideal 0,935): la cifra asignada sigue sin separar. **Reinicios §3.1.4**
@@ -105,7 +112,7 @@ decide con la Basys 3 delante).
   recalculadas desde los datos; sus correcciones están aplicadas.
 - Pendiente de Mario: leer en el display ro1 con 11/13 etapas; decidir qué va
   a la memoria; la decisión de H (ro1/2 o anillo más lento) sigue abierta;
-  fijar LOC/BEL de las etapas (Vivado combina inversores de ro2 en una LUT6).
+  decidir si `ro_bel.xdc` pasa a ser el defecto y repetir con él la campaña.
 
 ## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
 

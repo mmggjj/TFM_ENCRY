@@ -1,0 +1,38 @@
+results/motor_campana/basys3_jitter_kd02_quieto_bel/kd02.bin: 2000 trozos, CFG_KD de captura 2
+  M      media c   Var(c)      usada
+     50  0.3867   8.1452e-03  si
+     58  0.5284   1.0900e-02  si
+     66  0.6697   1.3993e-02  si
+     76  0.3473   1.8352e-02  si
+     88  0.4405   2.4754e-02  si
+    101  0.4603   3.2549e-02  si
+    117  0.2267   2.3873e-02  si
+    134  0.7739   2.2212e-02  si
+    155  0.7656   2.0913e-02  si
+    178  0.6156   6.6725e-02  si
+    205  0.5752   7.7862e-02  si
+    237  0.3476   4.8168e-02  no
+    273  0.4674   8.5163e-02  no
+    314  0.5673   6.8120e-02  no
+    362  0.4709   7.2311e-02  no
+    416  0.4997   8.0001e-02  no
+    480  0.5033   7.8227e-02  no
+    553  0.5042   7.7068e-02  no
+    636  0.5160   7.5468e-02  no
+    733  0.5038   7.6036e-02  no
+    844  0.5026   7.6127e-02  no
+    972  0.5057   7.6311e-02  no
+   1120  0.5090   7.9807e-02  no
+   1290  0.4981   7.9962e-02  no
+   1486  0.4954   8.1176e-02  no
+   1711  0.5069   7.5116e-02  no
+   1971  0.4933   7.5376e-02  no
+   2271  0.4974   7.9333e-02  no
+   2615  0.5012   8.1285e-02  no
+   3012  0.4928   7.5493e-02  no
+   3469  0.5069   7.6897e-02  no
+   3996  0.5031   8.1642e-02  no
+Q_raw por muestra 7.9362e-05 con 11 distancias; kappa -2.295 (1 = ruido binomial puro)
+Q por periodo de ro2 1.9841e-05, sigma/T 4.454e-03
+exponente de acumulacion b = 1.023 (1 termico; 2 flicker o global)
+K_D para Q >= 0,2286: 11522 periodos de ro2 -> CFG_KD = 14 (2^13.49)
