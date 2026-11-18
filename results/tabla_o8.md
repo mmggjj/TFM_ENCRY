@@ -5,13 +5,14 @@ display ni medidor, flujo consecutivo, kd 13-16 a 10^6 (kd 12 fuera: por
 debajo de K*) y kd 14 a 8 378 368. ESP32: las 36 capturas de los ANOVA
 (tres chips, condiciones A-D) y esp_rf_off_2. Ideal: bits uniformes,
 tres semillas. iid p1=0,4979: bits independientes con el sesgo de la
-FPGA y nada más (analysis/sesgo_90b.py), tres semillas. FPGA Basys 3:
-variante silenciosa, muestreo sin habilitacion, kd 13-16 a 10^6 y kd 16
-a 8 378 368 (docs/basys3.md).
+Basys 2 y nada más (analysis/sesgo_90b.py), tres semillas. FPGA Basys 3:
+variante silenciosa, muestreo sin habilitacion, los mismos kd 13-16 a
+10^6 (con su K* conservador, 13 y 14 quedan por debajo) y kd 16 a
+8 378 368 (docs/basys3.md).
 
 ### 10^6 bits
 
-| Estimador | FPGA (n=4) | FPGA Basys 3 (n=4) | ESP32 (n=36) | Ideal (n=3) | iid p1=0,4979 (n=3) |
+| Estimador | FPGA Basys 2 (n=4) | FPGA Basys 3 (n=4) | ESP32 (n=36) | Ideal (n=3) | iid p1=0,4979 (sesgo Basys 2) (n=3) |
 |---|---|---|---|---|---|
 | MCV | 0.989 (0.989-0.991) | 0.983 (0.983-0.986) | 0.995 (0.993-0.996) | 0.995 (0.994-0.995) | 0.991 (0.990-0.991) |
 | Colisión | 0.871 (0.859-0.888) | 0.913 (0.906-0.926) | 0.912 (0.880-0.986) | 0.916 (0.899-0.918) | 0.907 (0.904-0.909) |
@@ -30,7 +31,7 @@ a 8 378 368 (docs/basys3.md).
 
 ### 8 378 368 bits
 
-| Estimador | FPGA (n=1) | FPGA Basys 3 (n=1) | ESP32 (n=1) | Ideal (n=3) | iid p1=0,4979 (n=3) |
+| Estimador | FPGA Basys 2 (n=1) | FPGA Basys 3 (n=1) | ESP32 (n=1) | Ideal (n=3) | iid p1=0,4979 (sesgo Basys 2) (n=3) |
 |---|---|---|---|---|---|
 | MCV | 0.993 | 0.986 | 0.998 | 0.999 (0.998-0.999) | 0.993 (0.992-0.993) |
 | Colisión | 0.890 | 0.932 | 0.958 | 0.937 (0.936-0.938) | 0.950 (0.948-0.955) |

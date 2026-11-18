@@ -17,7 +17,9 @@ arranque del flujo.
 ## Resumen
 
 Sesión del 17-11-2026 por la noche, sin Mario delante salvo al principio
-(lectura del display y cableado). Todo [MEDIDO] en placa salvo lo marcado.
+(lectura del display y cableado). Todo [MEDIDO] en placa salvo la
+implementación (informes de Vivado). La revisión de cifras no cubre la
+repetibilidad, añadida después.
 
 | | Resultado |
 |---|---|
@@ -25,11 +27,11 @@ Sesión del 17-11-2026 por la noche, sin Mario delante salvo al principio
 | Implementación | motor entero: 4 011 LUT (19 %), 4 561 FF; todas las restricciones cumplen tras tres arreglos (pblocks, anillos de 11/13 etapas, APT) |
 | Anillos | ro2 357,8 MHz (5 etapas, display), 293 MHz (7), **130,0 MHz (11)** (flujo) |
 | **O5** | **40/40 retos AES-CMAC iguales a mbedtls**, dos claves distintas, aleatorio, zeroización |
-| Jitter | Q por periodo de ro2 ~1-8·10⁻⁵ según el método; el modelo deja residuo (como en la Basys 2) |
-| SP 800-90B | `kd 8` 0,125, `kd 10` 0,558, `kd 11` 0,786, `kd 12-16` saturada; a 8,4·10⁶ bits 0,932 (ESP32 0,911, ideal 0,935) |
+| Jitter | Q por periodo de ro2 ~1-8·10⁻⁵ según método y variante (las dos cosas repetibles, ±0,3-4 % con autocorrelación); el modelo deja residuo (como en la Basys 2) |
+| SP 800-90B | `kd 8` 0,125, `kd 10` 0,558, `kd 11` 0,786 (trozos no consecutivos), `kd 12-16` saturada; a 8,4·10⁶ bits 0,932 (ESP32 0,911, ideal 0,935) |
 | Divisor | `CFG_KD` ≥ 16 (conservador); la batería sería compatible con K\* ≈ 2^11,5 |
-| Sesgo / correlación | fracción de unos 0,495-0,496 (z −7 a −26); sin correlación a retardo 1 (muestreo libre) |
-| Salud | el RCT salta a `kd 8`; a `kd 10` (batería 0,558 < 0,60) no |
+| Sesgo / correlación | fracción de unos 0,495-0,496 en la silenciosa (z −7 a −26; la normal 0,513: el signo cambia con la implementación); sin correlación a retardo 1 (muestreo libre) |
+| Salud | el RCT salta a `kd 8`; ni a `kd 6` ni a `kd 10` (batería 0,558 < 0,60) |
 | Reinicios (§3.1.4) | **pasa**: 1 000 reprogramaciones, H_r 0,843 y H_c 0,892 ≥ H_I 0,819; 1 000 arranques distintos |
 | Revisión | dos agentes independientes: APT equivalente (exhaustivo, cosimulación, formal) y cifras recalculadas; correcciones aplicadas |
 
@@ -39,7 +41,7 @@ Sesión del 17-11-2026 por la noche, sin Mario delante salvo al principio
 |---|---|---|
 | Qué cabe | solo la fuente | el motor entero |
 | Anillos en placa | 7/9 etapas, ro2 ~144 MHz | 11/13 etapas, ro2 130 MHz |
-| Q por periodo de ro2 | 1,0-4,9·10⁻⁵ (según implementación, `kd 7-9`) | ~1-8·10⁻⁵ (según método, `kd 0-2`) |
+| Q por periodo de ro2 | 1,0-4,9·10⁻⁵ (según implementación, `kd 7-9`) | ~1-8·10⁻⁵ (según método y variante, `kd 0-2`) |
 | Residuo del modelo | sí | sí |
 | Sesgo (fracción de unos, flujos) | 0,496-0,498 (`kd 13-16`) | 0,495-0,496 (silenciosa, `kd 12-16`) |
 | Correlación ρ₁ | 0,003-0,006 con CE, ~0 sin CE | ~0 (sin CE) |
@@ -119,13 +121,17 @@ Tres problemas, en este orden, y cómo se resolvieron:
    pequeños (bancos, logs y salidas en `results/revision_apt_20261117/`);
    además, los doce bancos. Reloj de sistema +1,0 ns.
 
+Variante normal (display y frecuencímetro; la silenciosa, con la que se
+hicieron campaña, captura larga, reinicios y salud: sistema +1,111 / +0,027
+ns, ro2 +0,229 / +0,086 ns, sin cargas en el reloj de ro1):
+
 | Reloj | Restricción | WNS | WHS |
 |---|---|---|---|
 | sistema (100 MHz) | 10 ns | +1,014 ns | +0,043 ns |
 | ro2 (11 etapas) | 4,2 ns (medido luego 7,69 ns) | +0,075 ns | +0,155 ns |
 | ro1 (13 etapas) | 4,7 ns | +3,101 ns | +0,223 ns |
 
-Utilización [Vivado, implementado; `build/util_hier.rpt`, local]: **4 011 LUT
+Utilización de la variante normal [Vivado, implementado; `build/util_hier.rpt`, local]: **4 011 LUT
 (19 % del XC7A35T, 144 de ellas como RAM distribuida) y 4 561 biestables
 (11 %)**, sin BRAM ni DSP. Del motor (3 880 LUT, 4 392 FF): `ctr_drbg` 1 631 /
 2 225, `aes_enc_32` 647 / 266, `aes_cmac` 390 / 523, `i2c_slave` 452 / 86,
@@ -199,7 +205,8 @@ alcance M, salida en `jitter_conjunto_m.txt`): con M hasta 100, 300 y 1 000
 da 0,9·10⁻⁵ a 2,8·10⁻⁵ por periodo, con residuos de 5 a 250 veces el ruido
 binomial, creciendo con el rango. El de `kd 0` con M = 300 cae en el borde
 inferior de la rejilla de Q (1·10⁻⁵): es una cota superior, no un valor. El
-valor más bajo bien determinado es **0,94·10⁻⁵** (`kd 2`, M = 100).
+valor más bajo bien determinado es **0,93·10⁻⁵** (`kd 2`, M = 100; 0,92-0,94
+en tres capturas, ver "Repetibilidad").
 
 Lectura:
 
@@ -207,9 +214,9 @@ Lectura:
    de 3-9·10⁻³, σ ≈ 25-70 ps por periodo de 7,7 ns. Del mismo orden que en
    la Basys 2 (1,0-4,9·10⁻⁵ en `kd 7-9` con el ajuste conjunto según la
    implementación, `docs/basys2.md` "Residuo del jitter: halo, CE e
-   implementación"; σ calculada allí con el periodo de ro1) y entre 5 y 35
-   veces los 2-5 ps de jitter térmico por periodo que da la literatura para
-   anillos en FPGA (`docs/modelo_ero_resultados.md` §5).
+   implementación"; σ calculada allí con el periodo de ro1) y entre 6 y 35
+   veces los 2-4 ps de jitter térmico por periodo de 3-5 ns que da la
+   literatura para anillos en FPGA (`docs/modelo_ero_resultados.md` §5).
 2. **El modelo del ERO no describe la forma**: la b libre de la
    autocorrelación sale de 1,6 a 2,1 (1 sería jitter térmico; la del
    estimador por varianza, 0,96-1,44, no es fiable a `kd 0`) y los residuos
@@ -219,12 +226,14 @@ Lectura:
    comparten ESP32, alimentación por USB del mismo PC y análisis.
 3. **Las dos variantes difieren** en fracción de unos (0,5133 frente a
    0,4956; en la Basys 2, 0,519 y 0,498 con y sin frecuencímetro) y en la Q
-   del ajuste global (5,0-5,5 frente a 8,3-8,5·10⁻⁵, ×1,6 en los dos `kd`).
+   del ajuste global (5,0-5,5 frente a 8,3-8,5·10⁻⁵, ×1,5-1,7).
    No se puede atribuir a la carga de ro1: son implementaciones distintas
    (la silenciosa colocó ro1 de otra forma dentro de su pblock) y cambian
-   display y medidor a la vez. Sin repetibilidad medida en esta placa.
+   display y medidor a la vez. La diferencia sí es repetible (×2,95 con el
+   ajuste conjunto y ×1,5 con el global en tres capturas; ver
+   "Repetibilidad").
 4. **Divisor de trabajo provisional: `CFG_KD` ≥ 16.** Con la Q más baja bien
-   determinada (0,94·10⁻⁵), K\* = 0,2286 / Q ≈ 2^14,6 y con un factor 2 de
+   determinada (0,93·10⁻⁵), K\* = 0,2286 / Q ≈ 2^14,6 y con un factor 2 de
    margen, 2^15,6.
    Mientras el modelo no describa los datos, el divisor no se apoya solo en
    el jitter: la campaña SP 800-90B de abajo hace de contraste.
@@ -245,7 +254,8 @@ divisor, 0 CRC malos, fracción de unos 0,4954-0,4956:
 
 Residuo del ajuste conjunto 5,7-5,9 veces el ruido en las tres.
 
-- **Cada método es repetible** (±0,3-2 % los de autocorrelación), así que la
+- **Los métodos de autocorrelación son repetibles** (±0,3-4 %; la varianza
+  no: ±10-25 % a `kd 2` y ×1,9 a `kd 0`), así que la
   diferencia entre métodos (×3 entre el conjunto y el global) es
   **sistemática**: depende de qué parte de la forma de c(M) atribuye cada uno
   al jitter, porque el modelo no describe esa forma. No es ruido de medida.
@@ -327,7 +337,11 @@ H asignada no separa nada: Basys 3 0,838 (0,819-0,877), Basys 2 0,845, ESP32
 0,848, bits ideales 0,847. Los estimadores sueltos sí separan las dos FPGA del
 ESP32 por el sesgo (MCV 0,983 frente a 0,995; MultiMMC 0,984 y LZ78Y 0,983
 frente a 0,996); Markov 0,988 frente a 0,998, aquí sin correlación: bits iid
-con P(0) = 0,5046 dan ~0,987.
+con P(0) = 0,5046 darían ~0,987 [ESTIMADO, revisión independiente; no sale
+de ninguna tabla]. Entran `kd 13-16`, los mismos divisores que la Basys 2
+(la columna "FPGA" de la tabla es la Basys 2); con el K\* conservador de
+arriba, `kd 13` y `14` quedan por debajo, así que la columna mezcla
+divisores dentro y fuera del margen.
 
 ### A 8 378 368 bits (captura larga) [MEDIDO]
 

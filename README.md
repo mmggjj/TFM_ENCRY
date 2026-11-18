@@ -22,7 +22,7 @@ reinicios) y es la justificación del diseño de caja blanca.
 |---|---|
 | `docs/` | plan, arquitectura, mapa de registros, estados del arte (TRNG, cripto, plataforma, vía ASIC) con ~200 referencias etiquetadas, resultados del modelo y de la síntesis |
 | `analysis/` | modelo estocástico del anillo, estimadores de jitter, banco SPICE, modelo de referencia del DRBG (960 vectores CAVP), verificación cruzada, verificador de lecturas firmadas del PC y sesión con el medidor en placa (`placa_medidor.py`) |
-| `.github/workflows/` | CI: modelo y estimadores, siete bancos GHDL con PSL, síntesis Yosys, banco en host con mbedtls real (y con ASan), compilación ESP-IDF de los dos firmwares y memoria en PDF con tectonic |
+| `.github/workflows/` | CI: modelo y estimadores, todos los bancos GHDL con PSL, síntesis Yosys, banco en host con mbedtls real (y con ASan), compilación ESP-IDF de los dos firmwares y memoria en PDF con tectonic |
 | `rtl/` | VHDL-2008 portable: `trng/`, `io/`, `aes/`, `drbg/`, `top/`; bancos en `tb/`; `run_tb.py` los ejecuta todos con GHDL |
 | `synth/` | síntesis a celdas estándar abiertas (IHP SG13G2) con Yosys; área en puertas equivalentes por bloque. `synth/basys3/`: XDC, pblocks de los anillos y flujo Tcl de Vivado para la placa (probado en Linux con Vivado 2025.2, `docs/basys3.md`) |
 | `rtl/fpga/` | envoltorio del motor para la Basys 3 (reset, SDA en colector abierto, LED de latido) |

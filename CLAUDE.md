@@ -81,9 +81,13 @@ decide con la Basys 3 delante).
   `cero` funcionan.
 - **Jitter [MEDIDO]:** Q por periodo de ro2 1-8·10⁻⁵ según el método; el
   modelo deja residuos de decenas de veces el ruido (mismo problema que en la
-  Basys 2). **SP 800-90B:** kd 8 0,125, kd 10 0,558, kd 11 0,786, kd 12-16
-  saturada (0,82-0,88); cuadra con Q ≈ 8·10⁻⁵ (K\* ≈ 2^11,5). **`CFG_KD` ≥ 16**
-  se mantiene (conservador). Sin correlación a retardo 1 (muestreo libre),
+  Basys 2). **Repetibilidad (18-11, tres capturas):** cada estimador de
+  autocorrelación repite en ±0,3-4 %; la diferencia ×3 entre métodos y la
+  ×1,5-3 entre variantes (normal / silenciosa) son sistemáticas.
+  **SP 800-90B:** kd 8 0,125, kd 10 0,558, kd 11 0,786 (trozos no
+  consecutivos), kd 12-16 saturada (0,82-0,88); compatible con Q del orden
+  de 6-10·10⁻⁵ en kd 10-11 (kd 8 por debajo; kd 10 con correlación ρ₁ 0,05).
+  **`CFG_KD` ≥ 16** se mantiene (conservador, Q más baja 0,93·10⁻⁵). Sin correlación a retardo 1 (muestreo libre),
   sesgo 0,495-0,496 (z −7 a −10). RCT salta a kd 8 en placa.
 - **Captura larga** (8 378 368 bits, kd 16): SP 800-90B 0,932 (ESP32 0,911,
   ideal 0,935): la cifra asignada sigue sin separar. **Reinicios §3.1.4**
@@ -726,6 +730,8 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
   entra en el DRBG cuando se cierra limpia la ventana que contiene su último
   bit (estado `VALIDANDO`); registro nuevo **DIAG (0x0E)** con `arrancado` y
   `rechazada`; VERSION pasa a 0x02. Especificación en `docs/mapa_registros.md`.
+  (Ojo, 17-11: el `sdkconfig` local del verificador se quedó con
+  `CONFIG_FREERTOS_HZ=100`; ver "Estado al 17-11-2026".)
 - `tb_health_tests` (caso 6) y `tb_motor_top` (2.0, 5b, 5c; la alarma se
   fuerza con `force` sobre un nombre externo) cubren todo. Los siete bancos
   pasan con GHDL 6.0.0 (`results/tb_motor_top.log`). Si el Python es el de
@@ -878,8 +884,9 @@ Revisión externa del RTL y del firmware. Fallo grave corregido (rama
 | `firmware/host_check/` | `run_host.py`: los dos firmwares contra `motor_sim.c` y mbedtls real | `results/host_check.log` |
 | `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 y la fuente simulada bajo SP 800-90B) y apéndices A-C; 8 pendiente |
 
-**Pendiente de hardware:** puesta en marcha en la Basys 3, campaña de
-entropía del motor, ESP32 en el bucle con el motor. Lo que sí está hecho
+**Pendiente de hardware:** nada de lo básico desde el 17-11 (Basys 3, motor
+entero con el ESP32, campaña de entropía: `docs/basys3.md`); la tabla de
+arriba es la del 19-09 (hoy doce bancos). Lo que sí está hecho
 sin placa: la **línea base del ESP32 bajo SP 800-90B** (5 capturas reales,
 `docs/esp32_linea_base_90b.md`, `results/entropia_90b.csv`), que cierra
 la mitad del objetivo O8.

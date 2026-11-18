@@ -149,8 +149,8 @@ def z(p_hat, n):
 
 def tabla(g, sufijo, titulo, cols=None):
     b3 = [("FPGA Basys 3", g[f"b3_{sufijo}"])] if g.get(f"b3_{sufijo}") else []
-    cols = cols or [("FPGA", g[f"fpga_{sufijo}"])] + b3 + [("ESP32", g[f"esp_{sufijo}"]),
-                    ("Ideal", g[f"ideal_{sufijo}"]), ("iid p1=0,4979", g[f"sesgo_{sufijo}"])]
+    cols = cols or [("FPGA Basys 2", g[f"fpga_{sufijo}"])] + b3 + [("ESP32", g[f"esp_{sufijo}"]),
+                    ("Ideal", g[f"ideal_{sufijo}"]), ("iid p1=0,4979 (sesgo Basys 2)", g[f"sesgo_{sufijo}"])]
     out = [f"### {titulo}", "",
            "| Estimador | " + " | ".join(f"{c} (n={len(f)})" for c, f in cols) + " |",
            "|---|" + "---|" * len(cols)]
@@ -177,9 +177,10 @@ def main():
            "debajo de K*) y kd 14 a 8 378 368. ESP32: las 36 capturas de los ANOVA",
            "(tres chips, condiciones A-D) y esp_rf_off_2. Ideal: bits uniformes,",
            "tres semillas. iid p1=0,4979: bits independientes con el sesgo de la",
-           "FPGA y nada más (analysis/sesgo_90b.py), tres semillas. FPGA Basys 3:",
-           "variante silenciosa, muestreo sin habilitacion, kd 13-16 a 10^6 y kd 16",
-           "a 8 378 368 (docs/basys3.md).", ""]
+           "Basys 2 y nada más (analysis/sesgo_90b.py), tres semillas. FPGA Basys 3:",
+           "variante silenciosa, muestreo sin habilitacion, los mismos kd 13-16 a",
+           "10^6 (con su K* conservador, 13 y 14 quedan por debajo) y kd 16 a",
+           "8 378 368 (docs/basys3.md).", ""]
     lin += tabla(g, "1e6", "10^6 bits")
     lin += tabla(g, "8e6", "8 378 368 bits")
     lin += ["Con y sin habilitacion (CE) en el biestable que muestrea ro1: mismos",
