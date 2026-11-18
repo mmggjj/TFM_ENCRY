@@ -91,7 +91,8 @@ decide con la Basys 3 delante).
 - **18-11, colocación fija** (`synth/basys3/ro_bel.xdc`, `XDC_EXTRA` en
   `build.tcl`): Vivado combinaba inversores de ro2 en una LUT6 (por eso 130
   MHz); con una LUT6 por etapa, ro2 207 MHz. Con los anillos idénticos, el
-  frecuencímetro baja la Q ×4,4 (conjunto; ×1,6 varianza, ×1,2 global):
+  frecuencímetro baja la Q ×4,4 (conjunto, dos capturas por variante ±1 %;
+  ×1,6 varianza, ×1,2 global):
   es la lógica colgada, no la colocación. Silenciosa 1,42·10⁻⁵ → CFG_KD ≥ 16
   vale; con frecuencímetro haría falta ≥ 18. Recomendado `ro_bel.xdc` por
   defecto (no cambiado). Sin correlación a retardo 1 (muestreo libre),
@@ -100,8 +101,8 @@ decide con la Basys 3 delante).
   ideal 0,935): la cifra asignada sigue sin separar. **Reinicios §3.1.4**
   (1 000 reprogramaciones con djtgcfg): `ea_restart` pasa (H_r 0,843, H_c
   0,892, H_I 0,819), 1 000 arranques distintos. Tabla O8 con la Basys 3.
-- La placa quedó con la variante silenciosa
-  (`synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/basys3_top.bit`,
+- La placa quedó con la variante silenciosa con colocación fija
+  (`synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false_ro_bel/basys3_top.bit`,
   volátil); el ESP32 con el verificador, cableado a JA1/JA2/GND.
 - **Hallazgo:** el `sdkconfig` local del verificador (29-10) tiene
   `CONFIG_FREERTOS_HZ=100`; el `=1000` de `sdkconfig.defaults` no se aplicó.

@@ -303,7 +303,11 @@ por variante a `kd 2`, 2 000 trozos (`basys3_jitter_kd02_{normal,quieto}_bel/`,
   con el reloj de 100 MHz) a través de esa lógica, la hipótesis de la Basys
   2. El ciclo de trabajo visto también cambia (0,519 frente a 0,506) con los
   anillos fijos. Una captura por variante: la repetibilidad de cada método
-  medida arriba (±0,3-4 %) es mucho menor que estas diferencias.
+  medida arriba (±0,3-4 %) es mucho menor que estas diferencias, y una
+  segunda captura de cada una (`_r2`) repite el ajuste conjunto: normal
+  3,16·10⁻⁶ (antes 3,22), silenciosa 1,43·10⁻⁵ (antes 1,42), ±1 %;
+  fracciones de unos 0,519 y 0,505.
+- La placa queda con la silenciosa con colocación fija grabada (volátil).
 - **Para el divisor:** la configuración que se parece al producto es la
   silenciosa (el integrado no lleva frecuencímetro): 1,42·10⁻⁵ da
   K\* ≈ 2^14,0 y, con factor 2, 2^15,0: **`CFG_KD` ≥ 16 sigue valiendo**. Con
