@@ -34,7 +34,7 @@ repetibilidad, añadida después.
 | Salud | el RCT salta a `kd 8`; ni a `kd 6` ni a `kd 10` (batería 0,558 < 0,60) |
 | Reinicios (§3.1.4) | **pasa**: 1 000 reprogramaciones, H_r 0,843 y H_c 0,892 ≥ H_I 0,819; 1 000 arranques distintos |
 | Colocación fija | con los anillos en los mismos LUT6 (sin combinar): ro2 207 MHz y el frecuencímetro baja Q ×4,4 (conjunto) frente a la silenciosa: es la lógica colgada, no la colocación |
-| Campaña con `ro_bel.xdc` (18-11, por defecto) | ro2 207,2 / ro1 167,2 MHz; O5 40/40; `kd 10` 0,430, `kd 11` 0,695, `kd 12-16` saturada; a 8,4·10⁶ bits 0,880; fracción de unos 0,505 (signo cambiado); reinicios sin repetir |
+| Campaña con `ro_bel.xdc` (18-11, por defecto) | ro2 207,2 / ro1 167,2 MHz; O5 40/40; `kd 10` 0,430, `kd 11` 0,695, `kd 12-16` saturada; a 8,4·10⁶ bits 0,880; fracción de unos 0,505 (signo cambiado); salud sin alarma ni a `kd 8` (bits anticorrelados); reinicios sin repetir |
 | Revisión de Fable (18-11) | raya a ~38 kHz en la fase de los anillos (repetible, origen sin ver); `CFG_KD` ≥ 16 quizá no conservador; tareas en "Tareas pendientes" |
 | Revisión | dos agentes independientes: APT equivalente (exhaustivo, cosimulación, formal) y cifras recalculadas; correcciones aplicadas |
 
@@ -393,8 +393,18 @@ indistinguible de ESP32 (0,848) e ideal (0,847).
   Con la Q del ajuste conjunto (1,42·10⁻⁵), K\* ≈ 2^14,0; el `CFG_KD` ≥ 16 se
   mantiene **provisional**, pendiente del suelo térmico (tareas 3-4).
 
-Sin repetir con la colocación fija: reinicios (§3.1.4) y tests de salud en
-placa.
+- **Tests de salud en placa** (cortes 51/766; por divisor `kd`, `borrar`,
+  40 s de escucha, `id`; logs locales `results/esp32_consola_basys3_salud_bel_kd*.log`):
+  **ninguna alarma a `kd 6`, `8`, `10` ni `11`**, tampoco a `kd 8` (SP
+  800-90B 0,186). Sobre los trozos guardados [MEDIDO, cálculo fuera de línea]:
+  racha máxima 8 / 16 / 20 / 21 bits a `kd 8` / `10` / `11` / `12` (corte 51)
+  y cuenta máxima del APT 546 / 554 / 573 / 570 (corte 766). Con la
+  colocación fija el régimen de poco jitter es **anticorrelado** (ρ₁ −0,54 a
+  `kd 8`): bits que alternan, que ni el RCT (rachas) ni el APT (proporción)
+  pueden ver. Sin colocación fija el RCT sí saltaba a `kd 8`; depende de la
+  implementación. Refuerza la tarea 7 (`G_KD_MIN`).
+
+Sin repetir con la colocación fija: reinicios (§3.1.4).
 
 ## Revisión independiente de los problemas abiertos (18-11-2026)
 
@@ -447,7 +457,9 @@ Decisiones de Mario:
    ro1 de 11-13 etapas (recomendado por la revisión) o ro1/2; validar con el
    mismo Monte Carlo y añadir ff a −40 °C y 1,32 V.
 7. **`G_KD_MIN`**: 23 en el integrado (25 con ro1 largo) según la revisión;
-   en la FPGA, el que salga del punto 3.
+   en la FPGA, el que salga del punto 3. Con la colocación fija los tests de
+   salud no saltan ni a `kd 8` (H 0,186): el divisor mínimo es la única
+   protección de ese régimen.
 8. **Restricción de ro2** a ~4,5 ns en compilaciones nuevas, con
    comprobación en `build.tcl` (camino ≤ 0,9 × periodo medido); cambia la
    implementación, así que habría que repetir una captura corta.

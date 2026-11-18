@@ -115,8 +115,10 @@ decide con la Basys 3 delante).
   (decisión de Mario; `docs/basys3.md` "Campaña con la colocación fija"):
   ro2 207,2 / ro1 167,2 MHz (display); O5 40/40; flujos `kd 13-16` 0,815-0,876,
   unos 0,505-0,506 (el sesgo cambia de signo con la colocación), sin ρ₁;
-  `kd 12` ya no cabe en flujo (205 MHz desborda la UART). Reinicios con
-  colocación fija sin repetir.
+  `kd 12` ya no cabe en flujo (205 MHz desborda la UART); trozos `kd 10`
+  0,430, `kd 11` 0,695; larga 0,880. Tests de salud sin alarma ni a `kd 8`
+  (H 0,186, bits anticorrelados ρ₁ −0,54): solo `G_KD_MIN` protege ese
+  régimen. Reinicios con colocación fija sin repetir.
 - **Revisión de Fable (18-11, `results/revision_fable_20261118/`)**: raya a
   ~38 kHz en la frecuencia relativa de los anillos (repetible; origen sin
   comprobar, ¿sondeo I2C?); el suelo térmico quedaría en Q ≲ 1,1·10⁻⁶ y
