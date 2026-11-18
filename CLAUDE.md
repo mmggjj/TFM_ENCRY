@@ -88,22 +88,22 @@ decide con la Basys 3 delante).
   consecutivos), kd 12-16 saturada (0,82-0,88); compatible con Q del orden
   de 6-10·10⁻⁵ en kd 10-11 (kd 8 por debajo; kd 10 con correlación ρ₁ 0,05).
   **`CFG_KD` ≥ 16** se mantiene (conservador, Q más baja 0,93·10⁻⁵).
-- **18-11, colocación fija** (`synth/basys3/ro_bel.xdc`, `XDC_EXTRA` en
-  `build.tcl`): Vivado combinaba inversores de ro2 en una LUT6 (por eso 130
+- **18-11, colocación fija** (`synth/basys3/ro_bel.xdc`, por defecto en
+  `build.tcl` desde el 18-11; `SIN_BEL=1` lo quita): Vivado combinaba inversores de ro2 en una LUT6 (por eso 130
   MHz); con una LUT6 por etapa, ro2 207 MHz. Con los anillos idénticos, el
   frecuencímetro baja la Q ×4,4 (conjunto, dos capturas por variante ±1 %;
   ×1,6 varianza, ×1,2 global):
   es la lógica colgada, no la colocación. Silenciosa 1,42·10⁻⁵ → CFG_KD ≥ 16
-  vale; con frecuencímetro haría falta ≥ 18. Recomendado `ro_bel.xdc` por
-  defecto (no cambiado). Sin correlación a retardo 1 (muestreo libre),
+  vale; con frecuencímetro haría falta ≥ 18. Sin correlación a retardo 1 (muestreo libre),
   sesgo 0,495-0,496 (z −7 a −10). RCT salta a kd 8 en placa.
 - **Captura larga** (8 378 368 bits, kd 16): SP 800-90B 0,932 (ESP32 0,911,
   ideal 0,935): la cifra asignada sigue sin separar. **Reinicios §3.1.4**
   (1 000 reprogramaciones con djtgcfg): `ea_restart` pasa (H_r 0,843, H_c
   0,892, H_I 0,819), 1 000 arranques distintos. Tabla O8 con la Basys 3.
 - La placa quedó con la variante silenciosa con colocación fija
-  (`synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false_ro_bel/basys3_top.bit`,
-  volátil); el ESP32 con el verificador, cableado a JA1/JA2/GND.
+  (`synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/basys3_top.bit`, igual
+  bit a bit al `_ro_bel` del 18-11; volátil); el ESP32 con el verificador,
+  cableado a JA1/JA2/GND.
 - **Hallazgo:** el `sdkconfig` local del verificador (29-10) tiene
   `CONFIG_FREERTOS_HZ=100`; el `=1000` de `sdkconfig.defaults` no se aplicó.
   Las duraciones van en pasos de 10 ms. Arreglo: borrar `sdkconfig`,
@@ -111,9 +111,23 @@ decide con la Basys 3 delante).
 - Dos revisiones independientes (agentes sin las conclusiones de la sesión):
   APT equivalente (`results/revision_apt_20261117/`) y cifras del documento
   recalculadas desde los datos; sus correcciones están aplicadas.
-- Pendiente de Mario: leer en el display ro1 con 11/13 etapas; decidir qué va
-  a la memoria; la decisión de H (ro1/2 o anillo más lento) sigue abierta;
-  decidir si `ro_bel.xdc` pasa a ser el defecto y repetir con él la campaña.
+- **18-11 (madrugada), `ro_bel.xdc` por defecto y campaña repetida**
+  (decisión de Mario; `docs/basys3.md` "Campaña con la colocación fija"):
+  ro2 207,2 / ro1 167,2 MHz (display); O5 40/40; flujos `kd 13-16` 0,815-0,876,
+  unos 0,505-0,506 (el sesgo cambia de signo con la colocación), sin ρ₁;
+  `kd 12` ya no cabe en flujo (205 MHz desborda la UART). Reinicios con
+  colocación fija sin repetir.
+- **Revisión de Fable (18-11, `results/revision_fable_20261118/`)**: raya a
+  ~38 kHz en la frecuencia relativa de los anillos (repetible; origen sin
+  comprobar, ¿sondeo I2C?); el suelo térmico quedaría en Q ≲ 1,1·10⁻⁶ y
+  **`CFG_KD` ≥ 16 no sería conservador** (≥ 18-19 provisional) [ESTIMADO,
+  sin validar]. Ningún valor de diseño cambiado.
+- **Tareas pendientes: lista numerada en `docs/basys3.md`, "Tareas
+  pendientes (18-11-2026)"** (raya de 38 kHz con el bus callado, validar el
+  estimador, suelo blanco y `CFG_KD`, 90B a `kd 17-19` y reinicios, reflashear
+  el verificador; decisiones de Mario: biestable del integrado, `G_KD_MIN`,
+  restricción de ro2 a ~4,5 ns, tiempos del contador a 2,73 GHz, aislamiento
+  de anillos, memoria).
 
 ## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
 

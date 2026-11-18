@@ -1,7 +1,8 @@
 # Colocacion fija de cada etapa de los anillos (17/18-11-2026): una LUT6 por
 # etapa (BEL *6LUT), en orden, para que Vivado no combine dos inversores en
 # la misma LUT6 y para que las dos variantes tengan los anillos identicos.
-# Se carga con XDC_EXTRA=ro_bel.xdc en build.tcl. 11/13 etapas.
+# build.tcl lo carga por defecto desde el 18-11-2026 (SIN_BEL=1 lo quita).
+# 11/13 etapas.
 
 set_property LOC SLICE_X0Y90 [get_cells {u_motor/u_ro2/u_nand}]
 set_property BEL A6LUT [get_cells {u_motor/u_ro2/u_nand}]

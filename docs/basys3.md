@@ -34,6 +34,8 @@ repetibilidad, añadida después.
 | Salud | el RCT salta a `kd 8`; ni a `kd 6` ni a `kd 10` (batería 0,558 < 0,60) |
 | Reinicios (§3.1.4) | **pasa**: 1 000 reprogramaciones, H_r 0,843 y H_c 0,892 ≥ H_I 0,819; 1 000 arranques distintos |
 | Colocación fija | con los anillos en los mismos LUT6 (sin combinar): ro2 207 MHz y el frecuencímetro baja Q ×4,4 (conjunto) frente a la silenciosa: es la lógica colgada, no la colocación |
+| Campaña con `ro_bel.xdc` (18-11, por defecto) | ro2 207,2 / ro1 167,2 MHz; O5 40/40; `kd 10` 0,430, `kd 11` 0,695, `kd 12-16` saturada; a 8,4·10⁶ bits 0,880; fracción de unos 0,505 (signo cambiado); reinicios sin repetir |
+| Revisión de Fable (18-11) | raya a ~38 kHz en la fase de los anillos (repetible, origen sin ver); `CFG_KD` ≥ 16 quizá no conservador; tareas en "Tareas pendientes" |
 | Revisión | dos agentes independientes: APT equivalente (exhaustivo, cosimulación, formal) y cifras recalculadas; correcciones aplicadas |
 
 ### Basys 2 frente a Basys 3
@@ -110,7 +112,8 @@ Tres problemas, en este orden, y cómo se resolvieron:
    inversor 5 en A6/A5, inversores 2 y 6 en B6/B5 de X1Y90, y 3 y 7 en C6/C5),
    el "LUT Combining" del placer, que `DONT_TOUCH` no impide; ro1 no.
    **Comprobado el 18-11** con `ro_bel.xdc` (una LUT6 por etapa, LOC y BEL
-   fijos, `XDC_EXTRA=ro_bel.xdc` en `build.tcl`): sin combinar, ro2 con 11
+   fijos; `build.tcl` lo carga por defecto desde el 18-11 y `SIN_BEL=1` lo
+   quita): sin combinar, ro2 con 11
    etapas va a **207,0 MHz** (variante normal) y 205,0 MHz (silenciosa)
    [MEDIDO, flujo], no a 130 MHz. Ver "Colocación fija de los anillos".
 3. **El cierre de ventana del APT no cerraba a 100 MHz** (−0,26 ns en la
@@ -149,6 +152,7 @@ y semilla de 384 bits; no es comparable uno a uno.)
 | 5 / 7 | 357,8 MHz | 291,8 MHz | display (Mario) |
 | 7 / 9 | 293 MHz | — | duración de un flujo de 16 000 B a `kd 14` |
 | 11 / 13 | 130,0 MHz (129,94 / 130,02 / 130,10 a `kd 13`, `14`, `15`) | sin medir (display) | flujo de 128 000 bits |
+| 11 / 13, `ro_bel.xdc` | **207,2 MHz** (display; 207,0 por flujo) | **167,2 MHz** | display (Mario, 18-11), variante normal |
 
 La medida por flujo divide `bits · 2^kd` por la duración que da el ESP32
 (resolución 10 ms: ±0,12 % a `kd 13`); las tres coinciden en ±0,06 %.
@@ -315,9 +319,143 @@ por variante a `kd 2`, 2 000 trozos (`basys3_jitter_kd02_{normal,quieto}_bel/`,
   de entropía, siempre sin él.
 - Las campañas de esta noche (SP 800-90B, captura larga, reinicios) se
   hicieron con la variante silenciosa **sin** `ro_bel.xdc` (ro2 a 130 MHz,
-  con inversores combinados). Recomendación: usar `ro_bel.xdc` por defecto
-  desde ahora (colocación reproducible); no se ha cambiado para no romper la
-  trazabilidad de lo medido.
+  con inversores combinados). **Desde el 18-11 `ro_bel.xdc` es el defecto**
+  (decisión de Mario) y la campaña se repitió con él: ver "Campaña con la
+  colocación fija". Lo del 17-11 se reproduce con `SIN_BEL=1` (salida en
+  `build/<variante>_libre`).
+
+## Campaña con la colocación fija (18-11-2026) [MEDIDO]
+
+`ro_bel.xdc` por defecto en `build.tcl` (decisión de Mario). La variante
+silenciosa reconstruida con el `build.tcl` nuevo da un `.bin` **idéntico
+bit a bit** (md5 igual) al medido la noche anterior con
+`XDC_EXTRA=ro_bel.xdc`: es la misma implementación. Tiempos: sistema +0,845
+ns, ro2 −0,120 ns contra 4,2 ns (camino 4,32 ns frente a 4,88 ns medidos;
+la restricción no se ha relajado para no cambiar la implementación).
+
+- **Frecuencias** (variante normal con colocación fija, display, Mario):
+  ro2 **207,2 MHz**, ro1 **167,2 MHz** (±0,1 MHz de lectura). ro2/ro1 =
+  1,24, frente a 13/11 = 1,18 de las etapas.
+- **O5**: `kd 16`, sembrar, generar, `reto 20`, `aleatorio 4`, `cero`,
+  sembrar, generar, `reto 20`: **40/40 aciertos**, dos claves distintas, 4
+  tramas con CRC correcto (`results/basys3_o5_consola_20261118_bel.txt`).
+- **Flujos de 10⁶ bits** (`basys3_campana_90b_flujo_bel/`): `kd 12` **ya no
+  cabe**: con ro2 a 205 MHz la fuente da 6,25 kB/s y la UART a 115 200
+  baudios no vacía la FIFO (desborda tras 1 285 bytes,
+  `basys3_flujo_bel_kd12_desborda/serie.log`, local); el flujo sirve desde `kd 13`.
+
+| kd | ro2 (flujo) | fracción de unos | z sesgo | ρ₁ (z) | H SP 800-90B |
+|---|---|---|---|---|---|
+| 13 | 205,16 MHz | 0,5064 | +12,8 | −0,0005 (−0,5) | 0,815 |
+| 14 | 205,18 MHz | 0,5057 | +11,5 | −0,0005 (−0,5) | 0,876 |
+| 15 | 205,16 MHz | 0,5056 | +11,2 | +0,0021 (+2,1) | 0,854 |
+| 16 | 205,17 MHz | 0,5054 | +10,9 | −0,0008 (−0,8) | 0,850 |
+
+(`sesgo_correlacion.txt` en la carpeta.) Saturada como sin colocación fija
+(0,819-0,879). **El sesgo cambia de signo** con la colocación (sin ella
+0,495-0,496): confirma que depende de la implementación del camino de
+muestreo. Sin correlación a retardo 1 (el z 2,1 de `kd 15` es uno de cuatro).
+Tabla O8 con columna "Basys 3 ro_bel": H asignada 0,852 (0,815-0,876),
+indistinguible de ESP32 (0,848) e ideal (0,847).
+
+- **Captura larga** (`basys3_larga_kd16_n8378368_bel/`): 8 378 368 bits
+  consecutivos a `kd 16`, 0 errores, ro2 205,16 MHz durante 45 min. SP
+  800-90B no-IID **0,880** (compresión; colisión 0,948), frente a 0,932 sin
+  colocación fija. Fracción de unos 0,5054 (z +31), ρ₁ = +0,0004 (z 1,1). A
+  la misma N, bits ideales 0,907-0,935 (tres semillas; 0,889-0,935 en las
+  doce de `docs/fuente_simulada_90b.md`) y bits iid con el sesgo de la Basys
+  2 0,885-0,910: el 0,880 queda en el borde de lo que da el sesgo solo, con
+  el estimador de compresión, el más ruidoso, y una sola secuencia. No se
+  interpreta como pérdida de entropía; tampoco separa.
+
+- **Trozos** (`basys3_campana_90b_trozos_bel/`, 245 trozos de 4 096 bits por
+  divisor, no consecutivos; 0 CRC malos), con `kd 12` añadido porque ya no
+  cabe en flujo:
+
+| kd | fracción de unos | ρ₁ (z) | H SP 800-90B | sin colocación fija (ro2 130 MHz) |
+|---|---|---|---|---|
+| 8 | 0,5050 | −0,536 (−537) | 0,186 | 0,125 |
+| 10 | 0,5052 | −0,241 (−241) | **0,430** | 0,558 |
+| 11 | 0,5055 | −0,010 (−10) | **0,695** | 0,786 |
+| 12 | 0,5059 | +0,0045 (+4,5) | 0,848 | — (flujo, 0,879) |
+
+  Con ro2 a 205 MHz cada divisor acumula 1,57 veces menos tiempo que con
+  130 MHz, así que a igual `kd` hay menos jitter: la caída de `kd 10-11` es
+  lo esperado. **La correlación de fase determinista llega hasta `kd 11-12`**
+  (z −10 y +4,5). Contraste con el modelo (`compara_q*.txt`): `kd 8` y `10`
+  compatibles con Q = 4·10⁻⁵ por periodo de ro2; `kd 11` y `12` por encima de
+  4·10⁻⁵ y por debajo de 8·10⁻⁵; con 1,42·10⁻⁵ (el ajuste conjunto de esta
+  variante) todo queda por encima. Mismo patrón que sin colocación fija: la
+  batería ve más "entropía" de la que da la Q más baja medida, y no separa
+  la que viene de la modulación (ver la revisión de abajo). Los flujos
+  `kd 13-16` quedan saturados o por encima con cualquier Q de la rejilla.
+
+  Con la Q del ajuste conjunto (1,42·10⁻⁵), K\* ≈ 2^14,0; el `CFG_KD` ≥ 16 se
+  mantiene **provisional**, pendiente del suelo térmico (tareas 3-4).
+
+Sin repetir con la colocación fija: reinicios (§3.1.4) y tests de salud en
+placa.
+
+## Revisión independiente de los problemas abiertos (18-11-2026)
+
+Otro modelo (Fable 5.2), solo lectura, recibió los seis problemas abiertos
+sin las recomendaciones de esta sesión. Informe, scripts y la comprobación
+de la sesión en `results/revision_fable_20261118/LEEME.md`. Lo principal:
+
+- **Modulación periódica en la frecuencia relativa de los anillos**: raya a
+  ~38 kHz (×160 sobre el suelo) y otra hacia 477 kHz en el espectro de la
+  frecuencia instantánea por trozo (`kd 2`, silenciosa con colocación fija).
+  **Comprobado aquí**: se repite en las dos capturas (1,130 y 1,139 frente a
+  ~7·10⁻³) y no está en fase con el inicio de la captura. **Sin comprobar**:
+  el origen (hipótesis: el sondeo I2C del ESP32, 400 kHz / 9 ≈ 44 kHz por
+  byte) y que el estimador sea fiable (no validado con bits simulados).
+  Explicaría el residuo del modelo, la b ≈ 2 y el ×3 entre métodos.
+- **Consecuencia [ESTIMADO, de la revisión]**: el suelo blanco (lo térmico)
+  quedaría en Q ≲ 1,1·10⁻⁶ por periodo de ro2, y con eso `kd 16` daría
+  H_∞ ≈ 0,57: **`CFG_KD` ≥ 16 no sería conservador**; propone ≥ 18-19
+  provisional. Todas las campañas SP 800-90B y de reinicios son a `kd` ≤ 16,
+  y la batería cuenta la modulación como entropía.
+- Biestable del integrado: alargar ro1 a 11-13 etapas antes que ro1/2;
+  `G_KD_MIN` como medida de seguridad (23 en el integrado); restricción de
+  ro2 a ~4,5 ns con comprobación en `build.tcl`; repetir reinicios con la
+  colocación fija; análisis de tiempos del contador de 24 bits a 2,73 GHz en
+  el integrado.
+
+**No se ha cambiado ningún valor de diseño** (`CFG_KD`, `G_KD_MIN`,
+restricción, circuito) a la espera de Mario.
+
+## Tareas pendientes (18-11-2026)
+
+Medidas y análisis (sin decisión previa):
+
+1. **Origen de la raya de ~38 kHz**: captura `kd 2` con el bus callado (que
+   el maestro no sondee STATUS durante la captura) o con I2C a 100 kHz; si la
+   raya se mueve con el bus, es el I2C.
+2. **Validar el estimador de fase y espectro** de la revisión con bits
+   simulados del modelo, con y sin una modulación conocida.
+3. **Suelo blanco (Q térmica)**: estimarlo en frecuencia con las capturas de
+   `kd 0` y fijar con él el `CFG_KD` de la FPGA (provisional ≥ 18-19 según la
+   revisión, frente al ≥ 16 actual).
+4. **Repetir SP 800-90B a `kd 17-19`** y la **prueba de reinicios** con la
+   colocación fija y el divisor que salga del punto 3.
+5. **Reflashear el verificador** tras borrar `firmware/verificador/sdkconfig`
+   (`CONFIG_FREERTOS_HZ=100` en vez de 1000).
+
+Decisiones de Mario:
+
+6. **Corrección del biestable del integrado** (H declarable 0,532 < 0,60):
+   ro1 de 11-13 etapas (recomendado por la revisión) o ro1/2; validar con el
+   mismo Monte Carlo y añadir ff a −40 °C y 1,32 V.
+7. **`G_KD_MIN`**: 23 en el integrado (25 con ro1 largo) según la revisión;
+   en la FPGA, el que salga del punto 3.
+8. **Restricción de ro2** a ~4,5 ns en compilaciones nuevas, con
+   comprobación en `build.tcl` (camino ≤ 0,9 × periodo medido); cambia la
+   implementación, así que habría que repetir una captura corta.
+9. **Análisis de tiempos del contador de 24 bits a 2,73 GHz** en el
+   integrado (`docs/sintesis_resultados.md`), junto con el punto 6.
+10. **Aislamiento de los anillos en el integrado** (buffer a la salida,
+    alimentación o anillo de guarda propios, `ro_mon` sin carga).
+11. **Qué va a la memoria.**
 
 ## Campaña SP 800-90B [MEDIDO]
 

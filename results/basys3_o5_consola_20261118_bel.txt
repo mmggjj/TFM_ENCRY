@@ -1,0 +1,35 @@
+--- id ---
+id 0xa5 version 0x04 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=0 rechazada=0 agotado=0 solo_fuente=0
+--- kd 16 ---
+kd 16 leido 16 ok
+--- sembrar ---
+sembrar: ok
+--- id ---
+id 0xa5 version 0x04 status 0x81 sembrado=1 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+--- generar ---
+clave b654ca05e64bc057fc55bd77a1dfb509
+provision: ok
+--- reto 20 ---
+reto-respuesta: 20 aciertos, 0 fallos criptograficos, 0 errores de bus, de 20
+--- aleatorio 4 ---
+FD0020e6c52eef40d71539cebaae3554d52face1dea569b0150376775065938a9ff24836acb208
+FD002056bff6a4233d8c573033699410d1a44e915fbb7ba64cbd38184faac866c43cba4f21cf4d
+FD0020d0ea4e3af32a730607afe4c106ab259a45ccd292e9375c3cb6f883efff4c8aea8f9d1136
+FD00203883653cb8ad1fb9112de29e56247aaf99b59c4ceec93c7f7b0e77faf99c4f8072f7c27d
+--- id ---
+id 0xa5 version 0x04 status 0xd1 sembrado=1 ocupado=0 alm_rct=0 alm_apt=0 clave=1 captura=0 etiqueta=1 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+--- cero ---
+cero: ok, motor borrado; hay que sembrar de nuevo
+--- id ---
+id 0xa5 version 0x04 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+--- sembrar ---
+sembrar: ok
+--- generar ---
+clave c3daa2050b88196975b5c221075b87a1
+provision: ok
+--- reto 20 ---
+reto-respuesta: 20 aciertos, 0 fallos criptograficos, 0 errores de bus, de 20
+--- id ---
+id 0xa5 version 0x04 status 0xd1 sembrado=1 ocupado=0 alm_rct=0 alm_apt=0 clave=1 captura=0 etiqueta=1 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+tramas tipo D: 128 bytes -> esp32_tramas_D_basys3_motor_completo_bel_20261118.bin
+tramas con CRC correcto: 4; incorrectas: 0

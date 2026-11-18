@@ -14,7 +14,7 @@ de la FPGA y de los dos ESP32, leidos de sus logs.
 
 17-11-2026: la Basys 3 (docs/basys3.md), variante silenciosa con muestreo
 sin habilitacion: kd 13-16 a 10^6, kd 16 a 8 378 368 y su prueba de
-reinicios, si estan calculadas.
+reinicios, si estan calculadas. 18-11-2026: columna con ro_bel.xdc.
 """
 import argparse
 import csv
@@ -105,6 +105,12 @@ def cargar():
                    for kd in (13, 14, 15, 16) if (j3 / f"kd{kd}_flujo_noniid_b1.json").exists()]
     p3 = CAMP / "basys3_larga_kd16_n8378368" / "entropia90b" / "kd16_flujo_noniid_b1.json"
     g["b3_8e6"] = [("kd16",) + valores_json(p3)] if p3.exists() else []
+    # Basys 3 con la colocacion fija de los anillos (ro_bel.xdc, 18-11-2026)
+    j3b = CAMP / "basys3_campana_90b_flujo_bel" / "entropia90b"
+    g["b3bel_1e6"] = [(f"kd{kd}",) + valores_json(j3b / f"kd{kd}_flujo_noniid_b1.json")
+                      for kd in (13, 14, 15, 16) if (j3b / f"kd{kd}_flujo_noniid_b1.json").exists()]
+    p3b = CAMP / "basys3_larga_kd16_n8378368_bel" / "entropia90b" / "kd16_flujo_noniid_b1.json"
+    g["b3bel_8e6"] = [("kd16",) + valores_json(p3b)] if p3b.exists() else []
     return g
 
 
@@ -149,6 +155,8 @@ def z(p_hat, n):
 
 def tabla(g, sufijo, titulo, cols=None):
     b3 = [("FPGA Basys 3", g[f"b3_{sufijo}"])] if g.get(f"b3_{sufijo}") else []
+    if g.get(f"b3bel_{sufijo}"):
+        b3.append(("Basys 3 ro_bel", g[f"b3bel_{sufijo}"]))
     cols = cols or [("FPGA Basys 2", g[f"fpga_{sufijo}"])] + b3 + [("ESP32", g[f"esp_{sufijo}"]),
                     ("Ideal", g[f"ideal_{sufijo}"]), ("iid p1=0,4979 (sesgo Basys 2)", g[f"sesgo_{sufijo}"])]
     out = [f"### {titulo}", "",
@@ -180,7 +188,8 @@ def main():
            "Basys 2 y nada más (analysis/sesgo_90b.py), tres semillas. FPGA Basys 3:",
            "variante silenciosa, muestreo sin habilitacion, los mismos kd 13-16 a",
            "10^6 (con su K* conservador, 13 y 14 quedan por debajo) y kd 16 a",
-           "8 378 368 (docs/basys3.md).", ""]
+           "8 378 368 (docs/basys3.md). Basys 3 ro_bel: lo mismo con los anillos",
+           "en LUT6 fijas (ro_bel.xdc, ro2 a 205 MHz, 18-11-2026).", ""]
     lin += tabla(g, "1e6", "10^6 bits")
     lin += tabla(g, "8e6", "8 378 368 bits")
     lin += ["Con y sin habilitacion (CE) en el biestable que muestrea ro1: mismos",

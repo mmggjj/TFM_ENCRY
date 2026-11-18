@@ -48,8 +48,11 @@ set_false_path -to [get_ports {led_alarma led_vivo sda ro_div seg[*] dp an[*]}]
 ## registros (ero_core, trng_capture, bit_cdc origen, reset_sync del anillo)
 ## se temporizan contra el. Medido el 17-11-2026: 5 etapas 357,8 MHz
 ## (display), 7 etapas 293 MHz (flujo), 11 etapas 130,0 MHz (flujo, 7,69 ns;
-## no sigue la recta de 5 y 7). La restriccion de 4,2 ns es mas dura que lo
-## medido: se deja asi, con margen sobre el camino critico (~4,1 ns).
+## no sigue la recta de 5 y 7: Vivado combinaba inversores en una LUT6). Con
+## ro_bel.xdc (por defecto desde el 18-11) 205-207 MHz (4,83-4,88 ns): contra
+## estos 4,2 ns el informe da -0,12 ns (silenciosa) y -0,39 ns (normal), caminos
+## de 4,32 y 4,59 ns, por debajo del periodo medido. Se deja en 4,2 ns para que
+## la implementacion sea la misma que la medida (docs/basys3.md).
 create_clock -name ro2_clk -period 4.2 [get_pins {u_motor/u_ro2/g_inv[10].u_inv/O}]
 set_clock_groups -asynchronous -group [get_clocks sys_clk_pin] -group [get_clocks ro2_clk]
 
