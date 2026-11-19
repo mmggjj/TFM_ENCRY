@@ -490,11 +490,12 @@ Decisiones de Mario (opciones, costes y recomendación en
 ## 19-11-2026: decisiones de Mario aplicadas y probadas en placa
 
 Decisiones y su porqué en `docs/decisiones_pendientes.md` ("Decidido el
-19-11-2026"): ro1 y ro2 de 11 etapas y preescalador ÷16 de ro2 en el
-integrado; `G_KD_MIN` 25 (integrado) y 19 (FPGA); `CFG_KD` = 19 en la FPGA;
+19-11-2026"): ro1 de 11 y ro2 de 13 etapas (primero 11 y 11; se cambió el
+mismo día para que los anillos no sean iguales) y preescalador ÷16 de ro2 en
+el integrado; `G_KD_MIN` 25 (integrado) y 19 (FPGA); `CFG_KD` = 19 en la FPGA;
 restricción de ro2 a 4,5 ns con comprobación en `build.tcl`.
 
-- **RTL** (`motor_top`): `G_ETAPAS_RO1` 11, `G_ETAPAS_RO2` 11, `G_PRESC_RO2`
+- **RTL** (`motor_top`): `G_ETAPAS_RO1` 11, `G_ETAPAS_RO2` 13, `G_PRESC_RO2`
   4 (genérico nuevo: el dominio del anillo corre a ro2/16; `CFG_KD` sigue
   contando periodos de ro2), `G_KD_MIN` 25, `G_KD_RESET` 25, `G_KD_MAX` 26
   (genérico nuevo, ancho del contador del ERO; un `CFG_KD` mayor se ignora y
@@ -520,7 +521,7 @@ restricción de ro2 a 4,5 ns con comprobación en `build.tcl`.
   raya 1,22 a 37,7 kHz, Q blanca por banda 0,95-1,35·10⁻⁶ (calibrada con su
   ν 0,398, su dispersión y su sesgo): por encima de la cota de 0,6·10⁻⁶,
   `kd 19` sigue siendo conservador.
-- **Integrado**: área 95,52 kGE frente a 95,09 kGE de la configuración
+- **Integrado**: área 95,53 kGE (ro2 de 13 etapas; 95,52 con 11) frente a 95,09 kGE de la configuración
   anterior (`results/sintesis_19_11.log`). SPICE en marcha al escribir esto:
   jitter del anillo de 11 etapas en ss −40 °C 1,08 V (divisor del integrado)
   y Monte Carlo del biestable con ro1 de 11 etapas (primero las esquinas

@@ -77,7 +77,7 @@ begin
   -- G_FLUJO_BYTES = 64 (256 en la placa): la FIFO da varias vueltas en el
   -- paso 9 y se desborda en 1 ms.
   dut : entity work.motor_top
-    -- G_ETAPAS_RO2 = 5 SOLO en este banco (el integrado lleva 11): mismo
+    -- G_ETAPAS_RO2 = 5 SOLO en este banco (el integrado lleva 13): mismo
     -- modelo de anillo de siempre, para que la simulacion no tarde el doble.
     -- G_PRESC_RO2 queda en su valor (4): el preescalador se prueba aqui.
     generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4,

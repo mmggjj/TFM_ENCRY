@@ -25,10 +25,11 @@ entity motor_top is
     -- proporcion 1/T del anillo muestreado (Monte Carlo del 16-11, H 0,532
     -- con 5 etapas en SPICE); decision de Mario (docs/decisiones_pendientes.md).
     G_ETAPAS_RO1 : positive := 11;     -- anillo muestreado
-    -- 11 y no 5 desde el 19-11-2026: con 5 (2,73 GHz, 0,366 ns) ni un
+    -- 13 y no 5 desde el 19-11-2026: con 5 (2,73 GHz, 0,366 ns) ni un
     -- biestable sg13g2 conmuta a tiempo (~0,37 ns) [ESTIMADO, biblioteca
-    -- tipica]; decision de Mario (docs/decisiones_pendientes.md).
-    G_ETAPAS_RO2 : positive := 11;     -- anillo de muestreo
+    -- tipica]; y distinto de ro1, porque dos anillos iguales se enganchan.
+    -- Decision de Mario (docs/decisiones_pendientes.md).
+    G_ETAPAS_RO2 : positive := 13;     -- anillo de muestreo
     -- Preescalador de ro2 en cadena (2**G_PRESC_RO2): el dominio del anillo
     -- (ERO, cruce, captura) corre a ro2 / 16 porque su logica tarda 1,53 ns
     -- [ESTIMADO]. K_D sigue siendo 2**CFG_KD periodos de ro2. 0 en las FPGA.

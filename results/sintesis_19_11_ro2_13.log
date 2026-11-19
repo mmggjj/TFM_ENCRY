@@ -1,0 +1,11 @@
+camino: OSS CAD Suite (WSL), Yosys con el plugin de GHDL
+biblioteca sg13g2_stdcell_typ_1p20V_25C.lib: 1 GE = sg13g2_nand2_1 = 7.2576 um2
+
+bloque          celdas     FF   area um2     kGE     s
+motor_top        34421   8425   693345.3  95.534    44
+motor_top_aes11   41329   8422   759106.3 104.595    53
+motor_top_flujo   41226  10531   864400.2 119.103    52
+motor_top_antes1911   33988   8420   690100.0  95.087    43
+
+GE = area de sg13g2_nand2_1 (7.2576 um2). Area de celdas, sin rutar: cota inferior.
+datos en results/sintesis_sg13g2.csv
