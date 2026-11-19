@@ -36,3 +36,16 @@ sf125_v108_mm uno_buf 11 etapas rep 7: periodo 1007.7 ps, modulacion 0.00 ps, hu
 ffm40_v132_mm uno_buf 11 etapas rep 7: periodo 519.4 ps, modulacion 0.01 ps, hueco de fase max 0.0059, 2246 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4697/0.4991; 0.4697/0.4991
 sf125_mm uno_buf 11 etapas rep 8: periodo 836.8 ps, modulacion 0.00 ps, hueco de fase max 0.0036, 1395 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5053; 0.4754/0.5053
   AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 11 etapas rep 8: periodo 1006.5 ps, modulacion 0.00 ps, hueco de fase max 0.0038, 2307 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5065; 0.4762/0.5065
+  AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 8: periodo 519.2 ps, modulacion 0.01 ps, hueco de fase max 0.0046, 2155 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4977; 0.4876/0.4977
+  AVISO nudo 11: bordes ff 10, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 9: periodo 828.6 ps, modulacion 0.00 ps, hueco de fase max 0.0037, 1927 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4769/0.5078; 0.4769/0.5078
+sf125_v108_mm uno_buf 11 etapas rep 9: periodo 1025.0 ps, modulacion 0.00 ps, hueco de fase max 0.0047, 2112 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4733/0.5047; 0.4733/0.5047
+ffm40_v132_mm uno_buf 11 etapas rep 9: periodo 520.2 ps, modulacion 0.01 ps, hueco de fase max 0.0107, 1636 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4796/0.4939; 0.4796/0.4939
+sf125_mm uno_buf 11 etapas rep 10: periodo 826.5 ps, modulacion 0.00 ps, hueco de fase max 0.0036, 1841 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5048; 0.4639/0.5048
+  AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 11 etapas rep 10: periodo 1013.5 ps, modulacion 0.00 ps, hueco de fase max 0.0164, 2014 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4754/0.5056; 0.4754/0.5056
+ffm40_v132_mm uno_buf 11 etapas rep 10: periodo 521.5 ps, modulacion 0.01 ps, hueco de fase max 0.0307, 1885 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4568/0.4958; 0.4568/0.4958
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 5 leaked semaphore objects to clean up at shutdown: {'/mp-s6leyn6n', '/mp-gebzcub8', '/mp-28cgau62', '/mp-oweauepm', '/mp-7rnixqjt'}
+  warnings.warn(
