@@ -376,9 +376,10 @@ muestreado de 11 etapas en ss, −40 °C, 1,08 V, sin desapareamiento:
 realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
 `analysis/anillo_ihp_divisor.py` → `results/anillo_ihp_divisor_e11.txt`.
 
-- T = 1 240,9 ps (dispersión entre realizaciones 0,001 %), σ = 203-229 fs,
-  **Q por periodo 2,67-3,41·10⁻⁸** (media 3,04·10⁻⁸, dispersión 11 %, 6
-  realizaciones), 0 dobles cruces. Con 5 etapas la Q era ~6,0·10⁻⁸:
+- T = 1 240,9 ps (dispersión entre realizaciones 0,006 ps), σ = 214,9 ± 4,0 fs
+  (202-229 fs), **Q por periodo 2,65-3,41·10⁻⁸** (media 3,00 ± 0,11·10⁻⁸,
+  dispersión 10,5 %, 8 realizaciones), 0 dobles cruces; K_D (H_∞ 0,98) =
+  7,62 M periodos de ro1 (por realización 6,70-8,62 M). Con 5 etapas la Q era ~6,0·10⁻⁸:
   6,0 × 5/11 = 2,7·10⁻⁸, la ley 1/N de etapas.
 - La ventana es 2^`CFG_KD` periodos de ro2 (el preescalador no la cambia).
   T(ro2)/T(ro1) = 13/11 [ESTIMADO, sin simular ro2]; el jitter de ro2 no se
@@ -387,17 +388,16 @@ realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
 
 | `CFG_KD` | H_∞, Q media | Q mínima | Q mínima, peor chip |
 |---|---|---|---|
-| 22 | 0,909 | 0,871 | 0,813 |
-| 23 | 0,9952 | 0,9901 | 0,9785 |
-| 24 | 0,99999 | 0,99995 | 0,99974 |
+| 22 | 0,905 | 0,869 | 0,811 |
+| 23 | 0,9948 | 0,9898 | 0,9779 |
+| 24 | 0,99999 | 0,99994 | 0,99973 |
 | 25 | ≈ 1 | ≈ 1 | ≈ 1 |
 
 **Lectura:** con ro2 de 13 etapas la ventana dura más por periodo de ro2 y
 basta `CFG_KD` 24; el `G_KD_MIN` = 25 del integrado deja un factor 2 de
-margen y el contador de 26 bits otro factor 2 por encima. Pendiente: las dos
-realizaciones que faltan de 8 (si no acabaron, se repiten con
-`--prefijo ss_m40_v108_e11_` y el mismo `--etapas`) y simular ro2 de 13
-etapas para quitar el 13/11 estimado.
+margen y el contador de 26 bits otro factor 2 por encima. Pendiente: simular
+ro2 de 13 etapas para quitar el 13/11 estimado, y desapareamiento con 11
+etapas (aquí se usa el factor del Monte Carlo de 5).
 
 ## 5. Del jitter al divisor [simulado → estimado]
 

@@ -65,7 +65,7 @@ Bancos en verde, banco en PC 0 fallos, verificador grabado (rango 0-26).
 FPGA: WNS +0,524 ns, **O5 40/40**, rechazos comprobados en placa. Área 95,52
 kGE con ro2 de 13 (+0,5 %). **SPICE de la noche** (`docs/decisiones_pendientes.md`,
 "Validación con SPICE"; `docs/anillo_ihp.md` §4.4): ro1 de 11 etapas en ss
-−40 °C 1,08 V, Q 2,67-3,41·10⁻⁸ por periodo → `CFG_KD` 24 ya da H_∞ 0,9997
+−40 °C 1,08 V (8 realizaciones), Q 2,65-3,41·10⁻⁸ por periodo → `CFG_KD` 24 ya da H_∞ 0,9997
 con el peor chip (ro2 13/11 estimado): **`G_KD_MIN` 25 con factor 2 de
 margen**. Monte Carlo del biestable cortado a 7-8 de 24 chips por esquina
 crítica: **H declarable 0,728 ≥ 0,60** (0,86 sin dos chips con huecos de fase
