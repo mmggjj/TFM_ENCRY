@@ -1,0 +1,7 @@
+tt27 uno_buf 11 etapas rep 0: periodo 794.9 ps, modulacion 0.00 ps, hueco de fase max 0.0043, 1923 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4836/0.4962; 0.4836/0.4962
+ffm40_v132 uno_buf 11 etapas rep 0: periodo 522.6 ps, modulacion 0.01 ps, hueco de fase max 0.0061, 2410 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4970; 0.4826/0.4970
+  AVISO nudo 11: bordes ff 12, ideal 2 (deberian ser 2)
+ff125_v132_mm uno_buf 11 etapas rep 0: periodo 578.1 ps, modulacion 0.01 ps, hueco de fase max 0.0048, 1716 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5023; 0.4724/0.5023
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 5 leaked semaphore objects to clean up at shutdown: {'/mp-7opurjvp', '/mp-zn0cy6w1', '/mp-leuemm2n', '/mp-qov44i8c', '/mp-uei2uh9s'}
+  warnings.warn(

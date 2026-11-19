@@ -17,6 +17,48 @@ aplicadas; `docs/basys3.md`, "Revisión de la tarde del 18-11").
 95,09 kGE con la configuración anterior en la misma tanda (+0,5 %;
 `results/sintesis_19_11.log`; el CSV no se toca hasta actualizar el cap. 6).
 
+### Validación con SPICE (noche del 19-11; parcial, el PC se apaga a las 23:00)
+
+**Divisor** [SIMULADO → ESTIMADO; `docs/anillo_ihp.md` §4.4]: ro1 de 11
+etapas en ss, −40 °C, 1,08 V, 6 de 8 realizaciones: Q por periodo
+2,67-3,41·10⁻⁸. Con ro2 de 13 etapas (13/11 estimado) y el factor de peor
+chip, `CFG_KD` 24 da H_∞ 0,9997 y 25 ≈ 1: **`G_KD_MIN` 25 tiene un factor 2
+de margen**.
+
+**Biestable** [SIMULADO, sin ruido; `results/biestable_mc_e11.md`,
+`analysis/biestable_mc.py --fuentes biestable_ihp_mc24_e11_criticas.log
+--salida biestable_mc_e11.md`]: Monte Carlo de las esquinas críticas cortado
+a 7-8 chips de 24 por esquina. Con el criterio fijado (μ ∓ 3σ, todos los
+chips):
+
+| Esquina | n | P(1) μ ± σ | H en μ − 3σ | peor chip |
+|---|---|---|---|---|
+| sf, 125 °C, 1,08 V | 8 | 0,4670 ± 0,0235 | **0,728** | 0,4166 |
+| sf, 125 °C, 1,2 V | 8 | 0,4693 ± 0,0071 | 0,857 | 0,4592 |
+| ff, −40 °C, 1,32 V | 7 | 0,4821 ± 0,0055 | 0,904 | 0,4741 |
+
+H declarable 0,728 ≥ 0,60 (con 5 etapas, 0,532). **Ojo:** dos chips de sf a
+1,08 V (rep 5: 0,5000; rep 7: 0,4166) tienen huecos de fase de 0,082 y 0,068
+(~12 fases distintas, P(1) con resolución ~±0,04): con desapareamiento el
+periodo de la simulación previa es de otro chip y el reloj puede caer cerca
+de una razón racional. Son los que inflan la σ; sin ellos la esquina daría
+~0,86. El Monte Carlo de 5 etapas también tenía huecos de hasta 0,077 y se
+contaron. Con cualquiera de las dos lecturas se pasa el 0,60; la cifra
+válida es la de 24 chips.
+
+**Para seguir** (otro día): completar las críticas hasta 24 chips con otra
+etiqueta (los sorteos son independientes; `biestable_mc.py --fuentes` junta
+logs y CSV):
+
+    ~/eda/venv/bin/python analysis/biestable_ihp.py --montajes uno_buf --casos ffm40_v132 \
+      --mismatch-n 16 --mm-casos sf125_v108,sf125,ffm40_v132 --procesos 4 \
+      --etiqueta mc24_e11_criticas_b --etapas 11 > results/biestable_ihp_mc24_e11_criticas_b.log 2>&1
+
+y después ff y tt a 125 °C (`--mm-casos ff125_v132,tt125 --casos tt27
+--etiqueta mc24_e11_resto`; Mario lo deja para otro momento). Desde esta
+noche `biestable_ihp.py` escribe además `<csv>.parcial.csv` fila a fila.
+Mejora pendiente: rechazar o repetir los chips con hueco de fase > 0,05.
+
 Una página para decidir las tareas 6-10 de `docs/basys3.md` ("Tareas
 pendientes"). Cada punto: qué hay que decidir, opciones, coste, lo que dicen
 los datos y una recomendación. Las cifras llevan su origen; nada de aquí está

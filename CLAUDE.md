@@ -63,10 +63,15 @@ típica]), **`G_KD_MIN` 25 / `G_KD_RESET` 25 / `G_KD_MAX` 26** en `motor_top`
 `basys3_top`**, restricción de ro2 a 4,5 ns con comprobación en `build.tcl`.
 Bancos en verde, banco en PC 0 fallos, verificador grabado (rango 0-26).
 FPGA: WNS +0,524 ns, **O5 40/40**, rechazos comprobados en placa. Área 95,52
-kGE con ro2 de 13 (+0,5 %). **Pendiente**: SPICE del anillo de 11 etapas (divisor del
-integrado) y Monte Carlo del biestable con ro1 de 11 etapas (~horas; primero
-las esquinas críticas, logs `results/biestable_ihp_mc24_e11_*.log`), luego
-`biestable_mc.py` sobre los CSV nuevos; memoria y PR a `main`.
+kGE con ro2 de 13 (+0,5 %). **SPICE de la noche** (`docs/decisiones_pendientes.md`,
+"Validación con SPICE"; `docs/anillo_ihp.md` §4.4): ro1 de 11 etapas en ss
+−40 °C 1,08 V, Q 2,67-3,41·10⁻⁸ por periodo → `CFG_KD` 24 ya da H_∞ 0,9997
+con el peor chip (ro2 13/11 estimado): **`G_KD_MIN` 25 con factor 2 de
+margen**. Monte Carlo del biestable cortado a 7-8 de 24 chips por esquina
+crítica: **H declarable 0,728 ≥ 0,60** (0,86 sin dos chips con huecos de fase
+de 0,07-0,08). **Pendiente**: completar las críticas a 24 chips (orden en
+`decisiones_pendientes.md`), ff/tt a 125 °C (Mario: otro momento), simular
+ro2 de 13 etapas; memoria y PR a `main`.
 
 ## Estado al 17-11-2026: la Basys 3 llegó, el motor entero en placa
 

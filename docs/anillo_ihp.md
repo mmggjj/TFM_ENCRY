@@ -367,6 +367,38 @@ chip 9 (405,3 ns frente a 392,1-394,0 de los otros quince).
 - La cifra de cada chip lleva el error de estimación de una sola
   realización (~650 periodos): el envolvente por chip es pesimista.
 
+### 4.4 Anillo de 11 etapas en el peor punto (19-11-2026) [simulado → estimado]
+
+Con la decisión del 19-11 (ro1 de 11 etapas, ro2 de 13 con preescalador
+÷16, `docs/decisiones_pendientes.md`), el divisor se recalcula con el anillo
+muestreado de 11 etapas en ss, −40 °C, 1,08 V, sin desapareamiento:
+`anillo_ihp_repeticiones.py --etapas 11 --tstop 900n` (~2 h 10 min por
+realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
+`analysis/anillo_ihp_divisor.py` → `results/anillo_ihp_divisor_e11.txt`.
+
+- T = 1 240,9 ps (dispersión entre realizaciones 0,001 %), σ = 203-229 fs,
+  **Q por periodo 2,67-3,41·10⁻⁸** (media 3,04·10⁻⁸, dispersión 11 %, 6
+  realizaciones), 0 dobles cruces. Con 5 etapas la Q era ~6,0·10⁻⁸:
+  6,0 × 5/11 = 2,7·10⁻⁸, la ley 1/N de etapas.
+- La ventana es 2^`CFG_KD` periodos de ro2 (el preescalador no la cambia).
+  T(ro2)/T(ro1) = 13/11 [ESTIMADO, sin simular ro2]; el jitter de ro2 no se
+  cuenta (conservador); peor chip = Q mínima ÷ 1,175 (cociente peor/medio de
+  los 23 chips de 5 etapas de §4.3).
+
+| `CFG_KD` | H_∞, Q media | Q mínima | Q mínima, peor chip |
+|---|---|---|---|
+| 22 | 0,909 | 0,871 | 0,813 |
+| 23 | 0,9952 | 0,9901 | 0,9785 |
+| 24 | 0,99999 | 0,99995 | 0,99974 |
+| 25 | ≈ 1 | ≈ 1 | ≈ 1 |
+
+**Lectura:** con ro2 de 13 etapas la ventana dura más por periodo de ro2 y
+basta `CFG_KD` 24; el `G_KD_MIN` = 25 del integrado deja un factor 2 de
+margen y el contador de 26 bits otro factor 2 por encima. Pendiente: las dos
+realizaciones que faltan de 8 (si no acabaron, se repiten con
+`--prefijo ss_m40_v108_e11_` y el mismo `--etapas`) y simular ro2 de 13
+etapas para quitar el 13/11 estimado.
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
 Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:

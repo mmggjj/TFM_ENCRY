@@ -247,10 +247,19 @@ def main() -> int:
     if a.solo:
         trabajos = [w for w in trabajos if w[0] == a.solo][:1]
     filas = []
+    sufijo = (f"_{a.solo}" if a.solo else "") + (f"_{a.etiqueta}" if a.etiqueta else "")
+    salida = RES / f"biestable_ihp{sufijo}.csv"
+    parcial = salida.with_suffix(".parcial.csv")   # fila a fila, por si se corta
+    parcial.unlink(missing_ok=True)
     with ProcessPoolExecutor(a.procesos, initializer=_fija_etiqueta,
                              initargs=(a.etiqueta,)) as ex:
         for fs in ex.map(un_caso, trabajos):
             filas += fs
+            with open(parcial, "a", newline="") as fh:
+                w = csv.DictWriter(fh, fieldnames=list(fs[0]))
+                if fh.tell() == 0:
+                    w.writeheader()
+                w.writerows(fs)
             print(f"{fs[0]['caso']} {fs[0]['montaje']} {fs[0]['etapas']} etapas rep {fs[0]['rep']}: periodo "
                   f"{fs[0]['periodo_ps']:.1f} ps, modulacion {fs[0]['modulacion_periodo_ps']:.2f} ps, "
                   f"hueco de fase max {max(f['hueco_fase'] for f in fs):.4f}, "
@@ -262,12 +271,11 @@ def main() -> int:
                 if f["n_bordes_ff"] != 2 or f["n_bordes_ideal"] != 2:
                     print(f"  AVISO nudo {f['nudo']}: bordes ff {f['n_bordes_ff']}, "
                           f"ideal {f['n_bordes_ideal']} (deberian ser 2)", flush=True)
-    sufijo = (f"_{a.solo}" if a.solo else "") + (f"_{a.etiqueta}" if a.etiqueta else "")
-    salida = RES / f"biestable_ihp{sufijo}.csv"
     with open(salida, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(filas[0]))
         w.writeheader()
         w.writerows(filas)
+    parcial.unlink(missing_ok=True)
     print(f"\nCSV: {salida}")
     print("\nP(1) ponderada por el tramo de fase de cada muestra (no necesita bordes limpios)")
     print("\n| caso | montaje | n | periodo ps | modulacion ps | P(1) biestable (min-max) | "

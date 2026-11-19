@@ -12,7 +12,9 @@ extremo alto de ese intervalo, y el peor chip como dato. SIMULADO, sin ruido.
 """
 from __future__ import annotations
 
+import argparse
 import csv
+import re
 import sys
 from pathlib import Path
 
@@ -35,19 +37,41 @@ def cola(mu: float, s: float) -> float:
     return float(np.clip(mu - 3 * s if mu < 0.5 else mu + 3 * s, 0.0, 1.0))
 
 
+LINEA = re.compile(r"^(\S+) uno_buf \d+ etapas rep \d+:.*; ([0-9.]+)/[0-9.]+$")
+
+
+def filas_log(p: Path):
+    """Filas de un log de biestable_ihp.py (por si el proceso no llego a escribir el CSV;
+    P(1) con 4 decimales)."""
+    for lin in p.open():
+        m = LINEA.match(lin.strip())
+        if m:
+            yield {"caso": m.group(1), "montaje": "uno_buf",
+                   "mismatch": "1" if m.group(1).endswith("_mm") else "0", "p1w_ff": m.group(2)}
+
+
 def main() -> int:
+    global FUENTES, SALIDA
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fuentes", default="", help="CSV o log de results/, separados por comas")
+    ap.add_argument("--salida", default="", help="markdown en results/")
+    a = ap.parse_args()
+    if a.fuentes:
+        FUENTES = a.fuentes.split(",")
+    if a.salida:
+        SALIDA = RES / a.salida
     datos: dict[str, list[tuple[str, float]]] = {}
     for f in FUENTES:
         p = RES / f
         if not p.exists():
             print(f"falta {f}")
             continue
-        for fila in csv.DictReader(p.open()):
+        for fila in (filas_log(p) if p.suffix == ".log" else csv.DictReader(p.open())):
             if fila["montaje"] != "uno_buf" or fila["mismatch"] != "1":
                 continue
             datos.setdefault(fila["caso"], []).append((f, float(fila["p1w_ff"])))
     lin = ["# Monte Carlo del biestable sg13g2 (analysis/biestable_mc.py)", "",
-           "SIMULADO, sin ruido; P(1) ponderada por fase, montaje uno_buf, 125 °C.",
+           "SIMULADO, sin ruido; P(1) ponderada por fase, montaje uno_buf. Fuentes: " + ", ".join(FUENTES) + ".",
            "Criterio fijado antes de simular (docs/basys2.md, 16-11-2026).", "",
            "| Esquina | n | μ | σ | σ IC 95 % | Shapiro-Wilk p | μ ∓ 3σ | H | H con σ alta | peor chip | H peor |",
            "|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -67,7 +91,7 @@ def main() -> int:
         if len(tandas) == 2 and min(t.size for t in tandas) >= 2:
             notas.append(f"{caso}: tandas {tandas[0].mean():.4f} (n {tandas[0].size}) y {tandas[1].mean():.4f} "
                          f"(n {tandas[1].size}), Welch p = {stats.ttest_ind(*tandas, equal_var=False).pvalue:.2f}")
-        orig = ", ".join(f"{f.removeprefix('biestable_ihp_').removesuffix('.csv')} {sum(1 for g, _ in v if g == f)}"
+        orig = ", ".join(f"{f.removeprefix('biestable_ihp_').removesuffix('.csv').removesuffix('.log')} {sum(1 for g, _ in v if g == f)}"
                          for f in FUENTES if any(g == f for g, _ in v))
         lin.append(f"| {caso} ({orig}) | {n} | {mu:.4f} | {s:.4f} | {lo:.4f}-{hi:.4f} | {sw:.2f} | "
                    f"{q:.4f} | {h(q):.3f} | {h(cola(mu, hi)):.3f} | {peor:.4f} | {h(peor):.3f} |")
