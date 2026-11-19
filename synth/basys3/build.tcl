@@ -108,6 +108,21 @@ foreach r {u_ro1 u_ro2} {
 }
 report_route_status -file $out/route_status.rpt
 
+# Camino del dominio de ro2 frente al periodo medido del anillo (19-11-2026):
+# un fallo de tiempos en el divisor del ERO pareceria aleatoriedad. Con la
+# variante silenciosa (la del producto) se para; con las demas, aviso.
+set ro2_med [expr {[info exists ::env(RO2_MEDIDO_NS)] ? $::env(RO2_MEDIDO_NS) : 4.88}]
+set p_ro2 [get_timing_paths -max_paths 1 -group ro2_clk -delay_type max]
+set camino [expr {[get_property REQUIREMENT $p_ro2] - [get_property SLACK $p_ro2]}]
+set limite [expr {0.9 * $ro2_med}]
+puts [format "RO2: camino %.3f ns, limite 0,9 x %.2f = %.3f ns" $camino $ro2_med $limite]
+if {$camino > $limite} {
+    if {[string match "*G_QUIETO_true*" $variante]} {
+        error [format "camino de ro2 %.3f ns > %.3f ns (silenciosa)" $camino $limite]
+    }
+    puts "AVISO: camino de ro2 por encima del limite (variante no silenciosa)"
+}
+
 # 4) Informes. El lazo combinacional de cada anillo sale como LUTLP-1:
 #    se baja a aviso porque es intencionado (ALLOW_COMBINATORIAL_LOOPS).
 set_property SEVERITY {Warning} [get_drc_checks LUTLP-1]

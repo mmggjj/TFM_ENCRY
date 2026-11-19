@@ -13,7 +13,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x01 | VERSION | R | 0x04 (0x02: DIAG y test de arranque; 0x01 hasta el 27-10-2026). 0x03 anade `borrar_todo`, `DIAG.agotado`, las reglas de `capturar` y CFG_KD de reset 24. 0x04 (10-11-2026) añade la captura continua (FLUJO); lo demás no cambia, y un maestro escrito para la 0x03 funciona igual |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
-| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor. Rango efectivo 0 a 24 (el contador del ERO tiene 24 bits desde el 08-10-2026; antes 20, que con el anillo de IHP solo dejaba un 11 % de margen, ver `anillo_ihp.md`; valores mayores equivalen a 24). Con el anillo de IHP en ss/tt/ff de −40 a 125 °C a 1,2 V, el valor fijo que cubre todo el rango es 22 (peor caso ss a −40 °C); **con V_DD ± 10 % es 23** (peor caso ss, −40 °C, 1,08 V, donde 22 deja un 10 % de margen y no cubre el peor de quince chips con desapareamiento; `anillo_ihp.md` §4.2-4.3). **Tras el reset vale 24** (generico `G_KD_RESET`; hasta la version 0x02 era 7): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre y sin flujo activo |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor (periodos de ro2). **Desde el 19-11-2026 el rango es 0 a 26** (genérico `G_KD_MAX` de `motor_top`, que fija también el ancho del contador del ERO; antes 0 a 24, y 20 hasta el 08-10-2026). **Escribir un valor mayor que `G_KD_MAX` se ignora y levanta `DIAG.rechazada`.** En el integrado ro2 pasa por un preescalador ÷16 (`G_PRESC_RO2` = 4): el ERO cuenta 2^(valor − 4) flancos del reloj preescalado, que son los mismos 2^valor periodos de ro2; por debajo de 4 el divisor efectivo es 2^4. En la FPGA no hay preescalador. Con el anillo de IHP en ss/tt/ff de −40 a 125 °C a 1,2 V, el valor fijo que cubre todo el rango es 22 (peor caso ss a −40 °C); **con V_DD ± 10 % es 23** (peor caso ss, −40 °C, 1,08 V, donde 22 deja un 10 % de margen y no cubre el peor de quince chips con desapareamiento; `anillo_ihp.md` §4.2-4.3). **Tras el reset vale 25** (genérico `G_KD_RESET`; 24 hasta el 19-11-2026, 7 hasta la versión 0x02; en la Basys 3, 19): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre y sin flujo activo |
 | 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
 | 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
 | 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |
@@ -246,7 +246,14 @@ siendo del maestro.
    no lo detectan: el RCT busca fuente pegada y el APT busca sesgo, no
    correlación. Por eso `sembrar` y `resembrar` **se rechazan** (la orden se
    ignora y `ocupado` no llega a subir) si `CFG_KD` está por debajo del
-   mínimo, fijado por el genérico `G_KD_MIN` de `motor_top` (6 por defecto).
+   mínimo, fijado por el genérico `G_KD_MIN` de `motor_top`: **25 por
+   defecto desde el 19-11-2026** (el divisor caracterizado del integrado con
+   ro1 de 11 etapas; antes 6, solo el cruce de dominio) y **19 en la Basys
+   3** (el que pide el jitter térmico medido, `docs/basys3.md`). El mismo
+   mínimo vale para arrancar el flujo. Por qué tan alto: en placa los tests
+   de salud no saltan ni con H 0,19 (`kd 8`, bits que alternan), así que el
+   mínimo es la única protección frente a un maestro que escriba un divisor
+   bajo. Para caracterizar se compila una variante con el mínimo bajo.
    El maestro comprueba tras cada orden `DIAG.rechazada`, que distingue el
    rechazo de una orden que acabó enseguida (antes había que deducirlo de
    `sembrado`, que se queda a 1 de la siembra anterior). El banco

@@ -43,7 +43,8 @@ def correr(k: int, args) -> Path:
         r = subprocess.run([sys.executable, str(RAIZ / "analysis" / "anillo_ihp.py"),
                             "--tstop", args.tstop, "--escalas", escalas, "--sesion", sesion,
                             "--esquina", args.esquina, "--temp", str(args.temp),
-                            "--vdd", str(args.vdd)] + (["--mismatch"] if args.mismatch else []),
+                            "--vdd", str(args.vdd), "--etapas", str(args.etapas)]
+                           + (["--mismatch"] if args.mismatch else []),
                            stdout=fh, stderr=subprocess.STDOUT, timeout=6 * 3600)
     if r.returncode or not js.exists():
         raise RuntimeError(f"{sesion} devolvio {r.returncode}; ver {log}")
@@ -59,6 +60,7 @@ def main() -> int:
     ap.add_argument("--esquina", default="mos_tt")
     ap.add_argument("--temp", type=float, default=27.0)
     ap.add_argument("--vdd", type=float, default=1.2)
+    ap.add_argument("--etapas", type=int, default=5, help="etapas del anillo (19-11: ro1 de 11)")
     ap.add_argument("--mismatch", action="store_true",
                     help="cada realizacion es ademas un sorteo del desapareamiento (Monte Carlo)")
     ap.add_argument("--escalas-primera", default="0,1,4",

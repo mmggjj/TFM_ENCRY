@@ -3,6 +3,20 @@
 Revisado por un agente independiente el 18-11 por la noche (correcciones
 aplicadas; `docs/basys3.md`, "Revisión de la tarde del 18-11").
 
+## Decidido el 19-11-2026 (Mario) y aplicado
+
+| Punto | Decisión | Aplicado |
+|---|---|---|
+| 6. Biestable | **ro1 de 11 etapas** | `motor_top` `G_ETAPAS_RO1` 7 → 11. Ojo: el SPICE simulaba 5 etapas y el RTL llevaba 7; la corrección es ×2,2 de periodo respecto a lo simulado. Monte Carlo con 11 etapas en marcha (`results/biestable_ihp_mc24_e11_*`), primero sf 1,08 V, sf 1,2 V y ff −40 °C 1,32 V, luego ff y tt a 125 °C |
+| 9. Tiempos de ro2 en el integrado | **ro2 de 11 etapas + preescalador ÷16** | Estimación [Yosys + ABC, biblioteca típica 1,2 V 25 °C]: el contador de 26 bits tarda 1,53 ns y un biestable sg13g2 necesita ~0,37 ns para conmutar (clk→Q 0,22 + setup 0,11 + inversor), frente a 0,366 ns de ro2 con 5 etapas: no cerraba nada. Ahora ro2 de 11 etapas (~0,8 ns, el primer biestable cierra con ×2,2 de margen) y `G_PRESC_RO2` = 4: el dominio del anillo (ERO, cruce, captura) corre a ro2/16 (~13 ns). `CFG_KD` sigue contando periodos de ro2. Sin biblioteca lenta en el PDK local: la esquina 1,08 V 125 °C queda sin comprobar |
+| 7. `G_KD_MIN` | **25 integrado, 19 FPGA** | `motor_top` 25 (y `G_KD_RESET` 25, `G_KD_MAX` 26 con el contador ensanchado; un `CFG_KD` > máximo se ignora y levanta `DIAG.rechazada`); `basys3_top` 19/19 con `G_KD_MAX` 24 (con 26 el camino de ro2 subía a 4,41 ns); variante de caracterización con `GENERICOS="... G_KD_MIN=6"` |
+| `CFG_KD` de la FPGA | **19** (H_∞ ≥ 0,99 con la cota baja 0,6·10⁻⁶) | recalibración con la ν y el sesgo de cada captura: 0,59-1,13·10⁻⁶ (18-11) y 0,95-1,35·10⁻⁶ (bitstream del 19-11) por banda |
+| 8. Restricción de ro2 | **4,5 ns + comprobación** | `basys3.xdc` 4,5 ns; `build.tcl` para la silenciosa si el camino supera 0,9 × `RO2_MEDIDO_NS` (4,88). La paró una vez (4,407 > 4,392 ns, con el contador de 26 bits); con 24, camino 3,98 ns, WNS +0,524 ns |
+
+Área [Yosys, biblioteca típica, celdas sin rutar]: `motor_top` 95,52 kGE frente a
+95,09 kGE con la configuración anterior en la misma tanda (+0,5 %;
+`results/sintesis_19_11.log`; el CSV no se toca hasta actualizar el cap. 6).
+
 Una página para decidir las tareas 6-10 de `docs/basys3.md` ("Tareas
 pendientes"). Cada punto: qué hay que decidir, opciones, coste, lo que dicen
 los datos y una recomendación. Las cifras llevan su origen; nada de aquí está

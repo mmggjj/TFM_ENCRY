@@ -69,16 +69,19 @@ begin
 
   -- G_KD_MIN = 4 SOLO en este banco: con el anillo lento del modelo, K_D = 16
   -- ya da 24 ciclos de sistema por bit, por encima de los 8 que exige el
-  -- cruce de dominio. En hardware el valor por defecto es 6 (K_D = 64).
+  -- cruce de dominio. En hardware el valor por defecto es 25 (19-11-2026).
   -- G_PET_BITS = 4 SOLO en este banco: el contador de peticiones se agota en
   -- 15 y se puede probar que el motor deja de generar hasta resembrar. En
-  -- hardware son 32 bits. G_KD_RESET se deja en su valor (24): el banco
-  -- escribe CFG_KD antes de que pase un solo bit a esa tasa.
+  -- hardware son 32 bits. G_KD_RESET y G_KD_MAX se dejan en su valor (25 y
+  -- 26): el banco escribe CFG_KD antes de que pase un solo bit a esa tasa.
   -- G_FLUJO_BYTES = 64 (256 en la placa): la FIFO da varias vueltas en el
   -- paso 9 y se desborda en 1 ms.
   dut : entity work.motor_top
+    -- G_ETAPAS_RO2 = 5 SOLO en este banco (el integrado lleva 11): mismo
+    -- modelo de anillo de siempre, para que la simulacion no tarde el doble.
+    -- G_PRESC_RO2 queda en su valor (4): el preescalador se prueba aqui.
     generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4,
-                 G_FLUJO_BYTES => 64)
+                 G_FLUJO_BYTES => 64, G_ETAPAS_RO2 => 5)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
@@ -388,7 +391,16 @@ begin
     leer_reg(x"0E", b);
     comprobar(b(0) = '0', "test de arranque aun sin pasar");
     leer_reg(x"04", b);
-    comprobar(b = x"18", "CFG_KD arranca en el maximo (24), no en un valor bajo");
+    comprobar(b = x"19", "CFG_KD arranca en G_KD_RESET (25), no en un valor bajo");
+    -- Por encima de G_KD_MAX (26) la escritura se ignora y se marca rechazada.
+    escribir_reg(x"04", x"1B");
+    leer_reg(x"04", b);
+    comprobar(b = x"19", "CFG_KD por encima de G_KD_MAX se ignora");
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '1', "y levanta DIAG.rechazada");
+    escribir_reg(x"04", x"1A");
+    leer_reg(x"04", b);
+    comprobar(b = x"1A", "CFG_KD = G_KD_MAX (26) se acepta");
 
     report "2) Sembrar";
     -- 2.0) Antes de pasar el test de arranque (1024 muestras sin alarma,

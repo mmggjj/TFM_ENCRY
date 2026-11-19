@@ -41,7 +41,7 @@ begin
   -- G_KD_MIN = 4 por el anillo lento del banco, como en tb_motor_top.
   dut : entity work.motor_top
     generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_FLUJO_BYTES => 64,
-                 G_CAPTURA_BYTES => 0, G_SOLO_FUENTE => true)
+                 G_CAPTURA_BYTES => 0, G_SOLO_FUENTE => true, G_ETAPAS_RO2 => 5)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);

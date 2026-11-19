@@ -105,9 +105,14 @@ VARIANTES = {
     "motor_top_aes11": ("motor_top", ["-gG_AES_COMPACTO=false"]),
     # El motor con la FIFO de captura continua de la FPGA (256 bytes).
     "motor_top_flujo": ("motor_top", ["-gG_FLUJO_BYTES=256"]),
+    # El motor con los anillos y el divisor de antes del 19-11-2026 (ro1 7,
+    # ro2 5 etapas, sin preescalador, contador de 24 bits, minimo 6).
+    "motor_top_antes1911": ("motor_top", ["-gG_ETAPAS_RO1=7", "-gG_ETAPAS_RO2=5", "-gG_PRESC_RO2=0",
+                                          "-gG_KD_MAX=24", "-gG_KD_RESET=24", "-gG_KD_MIN=6"]),
 }
 BLOQUES["motor_top_aes11"] = BLOQUES["motor_top"]
 BLOQUES["motor_top_flujo"] = BLOQUES["motor_top"]
+BLOQUES["motor_top_antes1911"] = BLOQUES["motor_top"]
 
 
 def wsl(p: Path) -> str:

@@ -73,6 +73,7 @@
 #define T_SIEMBRA_MS     40000u
 #define T_ORDEN_MS       500u
 #define MOTOR_RO2_MIN_HZ 100000000ull     /* suelo de ro2 para los plazos */
+#define MOTOR_KD_MAX     26u              /* G_KD_MAX del motor (19-11-2026; antes 24) */
 #define MOTOR_BITS_APT   1024u            /* ventana del test de arranque */
 #define MOTOR_BITS_SEMILLA 512u        /* 384 de entropia + 128 de nonce */
 
@@ -108,7 +109,7 @@ esp_err_t motor_esperar_libre(uint32_t max_ms, uint8_t *st);
 esp_err_t motor_orden(uint8_t ctl, uint32_t max_ms, uint8_t *st);
 
 /* Plazo para que el ERO entregue `bits` bits con el CFG_KD actual (se lee
- * del motor; si el bus falla se toma 24): bits * 2^CFG_KD periodos de ro2 a
+ * del motor; si el bus falla se toma MOTOR_KD_MAX): bits * 2^CFG_KD periodos de ro2 a
  * MOTOR_RO2_MIN_HZ, por dos, y nunca menos de minimo_ms. */
 uint32_t motor_plazo_bits_ms(uint32_t bits, uint32_t minimo_ms);
 

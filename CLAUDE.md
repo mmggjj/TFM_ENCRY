@@ -52,6 +52,22 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 19-11-2026: decisiones del integrado aplicadas
+
+Decisiones de Mario (`docs/decisiones_pendientes.md`, "Decidido el
+19-11-2026") aplicadas y probadas (`docs/basys3.md`, "19-11-2026"):
+**ro1 y ro2 de 11 etapas, preescalador ÷16 de ro2** (`G_PRESC_RO2` = 4: con 5
+etapas ni un biestable sg13g2 conmutaba a 2,73 GHz [ESTIMADO, biblioteca
+típica]), **`G_KD_MIN` 25 / `G_KD_RESET` 25 / `G_KD_MAX` 26** en `motor_top`
+(un `CFG_KD` mayor se ignora con `DIAG.rechazada`), **19/19/24 en
+`basys3_top`**, restricción de ro2 a 4,5 ns con comprobación en `build.tcl`.
+Bancos en verde, banco en PC 0 fallos, verificador grabado (rango 0-26).
+FPGA: WNS +0,524 ns, **O5 40/40**, rechazos comprobados en placa. Área 95,52
+kGE (+0,5 %). **Pendiente**: SPICE del anillo de 11 etapas (divisor del
+integrado) y Monte Carlo del biestable con ro1 de 11 etapas (~horas; primero
+las esquinas críticas, logs `results/biestable_ihp_mc24_e11_*.log`), luego
+`biestable_mc.py` sobre los CSV nuevos; memoria y PR a `main`.
+
 ## Estado al 17-11-2026: la Basys 3 llegó, el motor entero en placa
 
 Todo en **`docs/basys3.md`**. Sesión nocturna autónoma (Mario fuera, hasta

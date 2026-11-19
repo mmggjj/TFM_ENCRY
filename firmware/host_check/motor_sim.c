@@ -122,7 +122,8 @@ void motor_sim_cmac16(const uint8_t clave[16], const uint8_t msg[16], uint8_t ta
 /* Como el RTL: test de arranque, minimo de CFG_KD y "ocupado" que dura. El
  * tiempo es el tick del sistema (1 ms, FREERTOS_HZ = 1000): en el PC lo
  * avanza el vTaskDelay de plataforma_sim.c; en el chip es el de verdad. */
-#define KD_MIN           6
+#define KD_MIN           6        /* el del banco (tb_motor_top usa 4); el RTL va a 25 */
+#define KD_MAX           26u      /* G_KD_MAX */
 #define T_ARRANQUE       30u      /* ticks hasta pasar el test de arranque */
 #define T_SIEMBRA        20u
 #define T_ORDEN          1u
@@ -206,7 +207,7 @@ static void resolver_flujo(void)
 {
     if (!motor_modo_test) flujo_parar();
     if (!m.fl_activo) return;
-    const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
+    const unsigned kd = m.cfg_kd > KD_MAX ? KD_MAX : m.cfg_kd;
     const uint64_t producidos = (((uint64_t)(ahora() - m.fl_t0) * MOTOR_SIM_RO2_KHZ) >> kd) / 8;
     if (producidos - m.fl_leidos > MOTOR_SIM_FIFO) {
         m.fl_metidos = m.fl_leidos + MOTOR_SIM_FIFO;
@@ -221,7 +222,7 @@ static bool fluyendo(void) { resolver_flujo(); return m.fl_activo; }
 static uint32_t t_arranque(void)
 {
     if (!motor_arranque_lento) return T_ARRANQUE;
-    const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
+    const unsigned kd = m.cfg_kd > KD_MAX ? KD_MAX : m.cfg_kd;
     return (uint32_t)((1024ull << kd) / MOTOR_SIM_RO2_KHZ);
 }
 
@@ -334,7 +335,7 @@ static void ejecutar_control(uint8_t v)
         if (motor_solo_fuente || !motor_modo_test || capturando() || fluyendo()) { m.rechazada = true; return; }
         /* motor_capturando lo pone el banco cuando quiere una captura que
          * no acabe nunca. */
-        const unsigned kd = m.cfg_kd > 24 ? 24 : m.cfg_kd;
+        const unsigned kd = m.cfg_kd > KD_MAX ? KD_MAX : m.cfg_kd;
         m.status &= (uint8_t)~ST_CAPTURA_LLENA;
         m.cap_fin = ahora() + (uint32_t)((4096ull << kd) / MOTOR_SIM_RO2_KHZ);
         m.cap_pendiente = true;
@@ -381,7 +382,9 @@ static void escribir_reg(uint8_t d, uint8_t v)
 {
     resolver_siembra();
     if (d == 0x03) ejecutar_control(v);
-    else if (d == 0x04) { if (!ocupado() && !fluyendo()) m.cfg_kd = v; }
+    else if (d == 0x04) {                      /* > G_KD_MAX: se ignora y rechazada */
+        if (!ocupado() && !fluyendo()) { if (v <= KD_MAX) m.cfg_kd = v; else m.rechazada = true; }
+    }
     else if (d == 0x0F) {                      /* FLUJO: arrancar cuenta como una orden */
         resolver_flujo();
         if (!(v & 1)) flujo_parar();
@@ -401,7 +404,7 @@ void motor_reset(void)
 {
     iniciado = true;
     memset(&m, 0, sizeof m);
-    m.cfg_kd = 24;                             /* G_KD_RESET */
+    m.cfg_kd = 25;                             /* G_KD_RESET (24 hasta el 19-11-2026) */
     m.arranque_en = ahora() + t_arranque();
     motor_colgado = false;
 }

@@ -51,9 +51,10 @@ set_false_path -to [get_ports {led_alarma led_vivo sda ro_div seg[*] dp an[*]}]
 ## no sigue la recta de 5 y 7: Vivado combinaba inversores en una LUT6). Con
 ## ro_bel.xdc (por defecto desde el 18-11) 205-207 MHz (4,83-4,88 ns): contra
 ## estos 4,2 ns el informe da -0,12 ns (silenciosa) y -0,39 ns (normal), caminos
-## de 4,32 y 4,59 ns, por debajo del periodo medido. Se deja en 4,2 ns para que
-## la implementacion sea la misma que la medida (docs/basys3.md).
-create_clock -name ro2_clk -period 4.2 [get_pins {u_motor/u_ro2/g_inv[10].u_inv/O}]
+## de 4,32 y 4,59 ns, por debajo del periodo medido. 4,5 ns desde el 19-11
+## (decision de Mario): build.tcl comprueba ademas el camino frente a 0,9 x el
+## periodo medido (RO2_MEDIDO_NS), y para la compilacion de la silenciosa.
+create_clock -name ro2_clk -period 4.5 [get_pins {u_motor/u_ro2/g_inv[10].u_inv/O}]
 set_clock_groups -asynchronous -group [get_clocks sys_clk_pin] -group [get_clocks ro2_clk]
 
 ## Anillo muestreado (ro1, 13 etapas en esta placa): es dato en ero_core (la

@@ -183,6 +183,11 @@ int main(void)
     uint8_t kd = 0;
     motor_reg_leer(REG_CFG_KD, &kd, 1);
     chk(kd != 30, "kd fuera de rango no se escribe");
+    motor_reg_escribir1(REG_CFG_KD, MOTOR_KD_MAX + 1);   /* directo, sin cmd_kd */
+    uint8_t dg = 0;
+    motor_reg_leer(REG_DIAG, &dg, 1);
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    chk(kd != MOTOR_KD_MAX + 1 && (dg & DG_RECHAZADA), "CFG_KD > G_KD_MAX se ignora y levanta DIAG.rechazada");
     cmd_kd(10);
     motor_reg_leer(REG_CFG_KD, &kd, 1);
     chk(kd == 10, "kd 10 queda escrito");

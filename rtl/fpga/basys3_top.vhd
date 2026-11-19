@@ -34,7 +34,12 @@ entity basys3_top is
     -- Prueba de la raya de ~38 kHz (docs/basys3.md): G_CARGA biestables que
     -- conmutan a 100 MHz con sw1 arriba, lejos de los anillos, para cambiar
     -- el consumo del nucleo. 0 en uso normal: no hay nada.
-    G_CARGA      : natural  := 0
+    G_CARGA      : natural  := 0;
+    -- Divisor minimo y de reset en la placa: 19, el que pide el jitter
+    -- termico medido (docs/basys3.md, 18/19-11-2026). La variante de
+    -- caracterizacion se compila con G_KD_MIN=6 (flujo y siembra a kd bajo).
+    G_KD_MIN     : natural  := 19;
+    G_KD_RESET   : natural  := 19
   );
   port (
     clk        : in    std_logic;   -- W5, 100 MHz
@@ -77,7 +82,11 @@ begin
 
   u_motor : entity work.motor_top
     generic map (G_FLUJO_BYTES => 256,
-                 G_ETAPAS_RO1 => G_ETAPAS_RO1, G_ETAPAS_RO2 => G_ETAPAS_RO2)
+                 G_ETAPAS_RO1 => G_ETAPAS_RO1, G_ETAPAS_RO2 => G_ETAPAS_RO2,
+                 G_KD_MIN => G_KD_MIN, G_KD_RESET => G_KD_RESET,
+                 -- contador de 24 bits como hasta el 18-11: con 26 el camino
+                 -- de ro2 pasa a 4,41 ns, sobre 0,9 x 4,88 (build.tcl)
+                 G_KD_MAX => 24, G_PRESC_RO2 => 0)
     port map (clk => clk, rst_n => rst_n,
               scl_in => scl, sda_in => sda, sda_oe => sda_oe,
               modo_test => sw_test, led_alarma => led_alarma,

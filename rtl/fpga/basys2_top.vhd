@@ -83,7 +83,9 @@ begin
   -- garantizado hasta ~203 MHz (docs/basys2.md).
   u_motor : entity work.motor_top
     generic map (G_ETAPAS_RO1 => 9, G_ETAPAS_RO2 => 7,
-                 G_KD_MIN => 7, G_FLUJO_BYTES => 256,
+                 G_KD_MIN => 7, G_KD_RESET => 24, G_KD_MAX => 24,
+                 G_PRESC_RO2 => 0,
+                 G_FLUJO_BYTES => 256,
                  G_CAPTURA_BYTES => 0, G_SOLO_FUENTE => true,
                  G_MUESTREO_LIBRE => G_MUESTREO_LIBRE)
     port map (clk => clk, rst_n => rst_n,

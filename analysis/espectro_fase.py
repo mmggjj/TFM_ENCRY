@@ -66,10 +66,12 @@ def resumen(fq, P, banda_pico=(25e3, 60e3), banda_suelo=(100e3, 400e3)):
     return fq[i], P[i], float(np.median(P[ms]))
 
 
-def simular(n_trozos, q_periodo, kd, t2, nu=0.38388, f_mod=0.0, a_mod=0.0, semilla=0):
+def simular(n_trozos, q_periodo, kd, t2, nu=0.38388, f_mod=0.0, a_mod=0.0, semilla=0,
+            sd_nu=0.0, p1=0.5):
     """Trozos de 4096 bits del ERO. q_periodo: Q por periodo de ro2; a_mod:
     amplitud de la modulacion de nu (ciclos de ro1 por muestra), fase
-    aleatoria en cada trozo."""
+    aleatoria en cada trozo; sd_nu: dispersion de nu entre trozos (deriva);
+    p1: fraccion de unos (ciclo de trabajo del anillo visto por el biestable)."""
     rng = np.random.default_rng(semilla)
     n = 4096
     ts = (1 << kd) * t2
@@ -78,10 +80,31 @@ def simular(n_trozos, q_periodo, kd, t2, nu=0.38388, f_mod=0.0, a_mod=0.0, semil
     out = np.empty((n_trozos, n), dtype=np.uint8)
     for i in range(n_trozos):
         th = rng.random() * 2 * np.pi
-        incr = nu + a_mod * np.sin(2 * np.pi * f_mod * ts * k + th) + rng.normal(0.0, s, n)
+        nu_i = nu + (rng.normal(0.0, sd_nu) if sd_nu > 0 else 0.0)
+        incr = nu_i + a_mod * np.sin(2 * np.pi * f_mod * ts * k + th) + rng.normal(0.0, s, n)
         fase = (rng.random() + np.cumsum(incr)) % 1.0
-        out[i] = fase >= 0.5
+        out[i] = fase >= 1.0 - p1
     return out
+
+
+def estadistica(trozos: np.ndarray):
+    """nu media, su dispersion entre trozos (mismo pico de FFT que espectro())
+    y fraccion de unos."""
+    x = 2.0 * trozos - 1.0
+    n = x.shape[1]
+    nus = []
+    for t in x:
+        s = np.abs(np.fft.rfft(t - t.mean(), n * 16))
+        nus.append((np.argmax(s[16:]) + 16) / (n * 16.0))
+    nus = np.array(nus)
+    return float(nus.mean()), float(nus.std()), float(trozos.mean())
+
+
+BANDAS = ((100e3, 200e3), (200e3, 300e3), (300e3, 400e3))
+
+
+def suelos(fq, P):
+    return [float(np.median(P[(fq >= a) & (fq <= b)])) for a, b in BANDAS]
 
 
 def valida(args):
@@ -103,17 +126,47 @@ def valida(args):
 
 def calibra(args):
     """Q blanca que reproduce el suelo medido con la raya medida: rejilla de
-    Q y amplitud de modulacion a 38 kHz, mismo metodo que los datos."""
+    Q y amplitud de modulacion a 38 kHz, mismo metodo que los datos. Con
+    --npz (una captura) toma de ella nu, su dispersion entre trozos y la
+    fraccion de unos (revision del 18-11: el suelo depende de las tres), y da
+    la Q que reproduce el suelo en cada banda de 100 kHz."""
     kd, t2, L = 2, args.t2_ns * 1e-9, args.L
     dt = L * (1 << kd) * t2
-    print(f"calibracion: kd {kd}, T(ro2) {args.t2_ns} ns, {args.trozos} trozos por punto")
-    print(f"{'Q periodo':>10s} {'a_mod':>8s} {'pico':>10s} {'suelo':>10s}")
+    nu, sd, p1 = args.nu, args.sdnu, args.p1
+    medido = None
+    if args.npz:
+        tr = cargar(args.npz[0])
+        nu, sd, p1 = estadistica(tr)
+        fq, P, _, _ = espectro(tr, dt, L)
+        medido = (resumen(fq, P)[1], suelos(fq, P))
+        print(f"{args.npz[0]}: nu {nu:.5f}, dispersion {sd:.2e}, unos {p1:.4f}; "
+              f"pico {medido[0]:.3e}, suelos por banda " + " ".join(f"{v:.3e}" for v in medido[1]))
+    print(f"calibracion: kd {kd}, T(ro2) {args.t2_ns} ns, nu {nu:.5f}, dispersion {sd:.2e}, "
+          f"unos {p1:.4f}, {args.trozos} trozos por punto")
+    print(f"{'Q periodo':>10s} {'a_mod':>8s} {'pico':>10s} " +
+          " ".join(f"{'suelo ' + str(int(a / 1e3)) + '-' + str(int(b / 1e3)):>14s}" for a, b in BANDAS))
+    filas = []
     for a in args.amplitudes:
         for q in args.qs:
-            tr = simular(args.trozos, q, kd, t2, f_mod=38e3, a_mod=a, semilla=2)
+            tr = simular(args.trozos, q, kd, t2, nu=nu, f_mod=38e3, a_mod=a, semilla=2, sd_nu=sd, p1=p1)
             fq, P, _, _ = espectro(tr, dt, L)
-            _, pp, su = resumen(fq, P)
-            print(f"{q:10.2e} {a:8.1e} {pp:10.3e} {su:10.3e}")
+            pp = resumen(fq, P)[1]
+            su = suelos(fq, P)
+            filas.append((a, q, pp, su))
+            print(f"{q:10.2e} {a:8.1e} {pp:10.3e} " + " ".join(f"{v:14.3e}" for v in su))
+    if medido:
+        # amplitud de la rejilla cuyo pico se acerca mas al medido; Q por
+        # interpolacion lineal del suelo de cada banda en esa amplitud
+        a_mej = min(args.amplitudes, key=lambda a: min(abs(np.log(f[2] / medido[0]))
+                                                       for f in filas if f[0] == a))
+        fs = sorted((f for f in filas if f[0] == a_mej), key=lambda f: f[1])
+        qs = np.array([f[1] for f in fs])
+        for j, (b0, b1) in enumerate(BANDAS):
+            ys = np.array([f[3][j] for f in fs])
+            y = medido[1][j]
+            nota = "" if ys[0] <= y <= ys[-1] else " (fuera de la rejilla: extrapolado)"
+            print(f"Q que reproduce el suelo {int(b0 / 1e3)}-{int(b1 / 1e3)} kHz (a_mod {a_mej:.1e}): "
+                  f"{np.interp(y, ys, qs, left=np.nan, right=np.nan):.3e}{nota}")
 
 
 def main():
@@ -121,6 +174,9 @@ def main():
     ap.add_argument("--calibra", action="store_true")
     ap.add_argument("--qs", type=float, nargs="*", default=[3e-7, 5e-7, 7e-7, 9e-7, 1.1e-6, 1.3e-6])
     ap.add_argument("--amplitudes", type=float, nargs="*", default=[2.6e-4, 1.05e-3])
+    ap.add_argument("--nu", type=float, default=0.38388, help="--calibra sin --npz")
+    ap.add_argument("--sdnu", type=float, default=0.0, help="dispersion de nu entre trozos")
+    ap.add_argument("--p1", type=float, default=0.5, help="fraccion de unos")
     ap.add_argument("--npz", type=Path, nargs="*", default=[])
     ap.add_argument("--kd", type=int, default=2)
     ap.add_argument("--t2-ns", type=float, default=4.878, help="periodo de ro2 en ns")

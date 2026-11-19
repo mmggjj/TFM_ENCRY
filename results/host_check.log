@@ -115,8 +115,9 @@ reto-respuesta: 3 aciertos, 0 fallos criptograficos, 0 errores de bus, de 3
   [ok ] tras borrar, sembrar y generar, el reto-respuesta vuelve a cerrar
 
 13) Divisor y captura de bits crudos
-kd: fuera de rango (0 a 24)
+kd: fuera de rango (0 a 26)
   [ok ] kd fuera de rango no se escribe
+  [ok ] CFG_KD > G_KD_MAX se ignora y levanta DIAG.rechazada
 kd 10 leido 10 ok
   [ok ] kd 10 queda escrito
 crudo 0 kd 10 ms 13

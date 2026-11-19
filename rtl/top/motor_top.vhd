@@ -21,19 +21,37 @@ use ieee.numeric_std.all;
 
 entity motor_top is
   generic (
-    G_ETAPAS_RO1 : positive := 7;      -- anillo muestreado
-    G_ETAPAS_RO2 : positive := 5;      -- anillo de muestreo
+    -- 11 y no 7 desde el 19-11-2026: el biestable sg13g2 sesga el bit en
+    -- proporcion 1/T del anillo muestreado (Monte Carlo del 16-11, H 0,532
+    -- con 5 etapas en SPICE); decision de Mario (docs/decisiones_pendientes.md).
+    G_ETAPAS_RO1 : positive := 11;     -- anillo muestreado
+    -- 11 y no 5 desde el 19-11-2026: con 5 (2,73 GHz, 0,366 ns) ni un
+    -- biestable sg13g2 conmuta a tiempo (~0,37 ns) [ESTIMADO, biblioteca
+    -- tipica]; decision de Mario (docs/decisiones_pendientes.md).
+    G_ETAPAS_RO2 : positive := 11;     -- anillo de muestreo
+    -- Preescalador de ro2 en cadena (2**G_PRESC_RO2): el dominio del anillo
+    -- (ERO, cruce, captura) corre a ro2 / 16 porque su logica tarda 1,53 ns
+    -- [ESTIMADO]. K_D sigue siendo 2**CFG_KD periodos de ro2. 0 en las FPGA.
+    G_PRESC_RO2  : natural := 4;
     G_DIR_I2C    : std_logic_vector(6 downto 0) := "0110000";
     -- Divisor minimo (CFG_KD) con el que se acepta sembrar. Por debajo, el
     -- cruce de dominio pierde bits en silencio y la semilla acumula muy
     -- poco jitter; los tests de salud no lo detectan. Antes esto era una
     -- obligacion del maestro que el hardware no imponia; ahora la impone.
-    -- 6 (K_D = 64) para anillos a velocidad fisica con reloj de 100 MHz.
-    G_KD_MIN     : natural := 6;
+    -- 25 desde el 19-11-2026: el divisor caracterizado del integrado (SPICE,
+    -- peor esquina, ro1 de 11 etapas). Los tests de salud no ven el regimen
+    -- de poco jitter (docs/basys3.md), asi que este minimo es la proteccion;
+    -- antes 6 (K_D = 64, solo el cruce de dominio). Bloquea tambien FLUJO.
+    G_KD_MIN     : natural := 25;
     -- CFG_KD tras el reset. El maximo: un maestro que no lo escriba
     -- siembra con la tasa mas lenta y mas entropia por bit, nunca con una
-    -- por debajo de la caracterizada. Antes arrancaba en 7 (K_D = 128).
-    G_KD_RESET   : natural := 24;
+    -- por debajo de la caracterizada. Antes arrancaba en 7 (K_D = 128) y
+    -- hasta el 19-11-2026 en 24. Debe ser >= G_KD_MIN.
+    G_KD_RESET   : natural := 25;
+    -- Mayor CFG_KD admitido y ancho del contador del ERO (K_D maximo =
+    -- 2**G_KD_MAX). Escribir un valor mayor se ignora y levanta
+    -- DIAG.rechazada. 26 desde el 19-11-2026 (antes 24 fijo en ero_core).
+    G_KD_MAX     : natural := 26;
     -- Bits del contador de peticiones que cuentan para agotarlo: con todos
     -- a uno el DRBG no genera mas hasta resembrar (SP 800-90A,
     -- reseed_interval). 32 en hardware; el banco lo baja para probarlo.
@@ -94,6 +112,8 @@ architecture rtl of motor_top is
 
   -- Anillos y muestreo
   signal ro1, ro2      : std_logic;
+  signal ro2c          : std_logic;           -- reloj del dominio ro2 (preescalado)
+  signal kd_ero        : unsigned(4 downto 0);
   signal en_anillos    : std_logic := '0';
   signal kd_sel        : unsigned(4 downto 0) := to_unsigned(G_KD_RESET, 5);
   signal bit_ro, stb_ro : std_logic;          -- dominio ro2
@@ -225,7 +245,7 @@ begin
     port map (clk => clk, rst_n_in => rst_n, rst_n_out => rst_n_s);
 
   u_rst_ro : entity work.reset_sync
-    port map (clk => ro2, rst_n_in => rst_n, rst_n_out => rst_n_ro);
+    port map (clk => ro2c, rst_n_in => rst_n, rst_n_out => rst_n_ro);
 
   -- ------------------------------------------------------------------
   -- Fuente de entropia
@@ -238,13 +258,44 @@ begin
     generic map (G_ETAPAS => G_ETAPAS_RO2)
     port map (en => en_anillos, osc => ro2);
 
+  assert G_KD_MIN <= G_KD_RESET and G_KD_RESET <= G_KD_MAX and G_KD_MAX <= 31
+    report "motor_top: hace falta G_KD_MIN <= G_KD_RESET <= G_KD_MAX <= 31"
+    severity failure;
+
+  -- Preescalador: biestables T en cadena, cada uno con el anterior de reloj.
+  gen_presc : if G_PRESC_RO2 > 0 generate
+    signal div      : std_logic_vector(G_PRESC_RO2 downto 0) := (others => '0');
+    signal rst_n_r2 : std_logic;
+  begin
+    u_rst_r2 : entity work.reset_sync
+      port map (clk => ro2, rst_n_in => rst_n, rst_n_out => rst_n_r2);
+    div(0) <= ro2;
+    gen_t : for i in 1 to G_PRESC_RO2 generate
+      p_t : process (div(i - 1), rst_n_r2)
+      begin
+        if rst_n_r2 = '0' then
+          div(i) <= '0';
+        elsif rising_edge(div(i - 1)) then
+          div(i) <= not div(i);
+        end if;
+      end process p_t;
+    end generate gen_t;
+    ro2c   <= div(G_PRESC_RO2);
+    kd_ero <= kd_sel - G_PRESC_RO2 when to_integer(kd_sel) >= G_PRESC_RO2
+              else (others => '0');
+  end generate gen_presc;
+  gen_sin_presc : if G_PRESC_RO2 = 0 generate
+    ro2c   <= ro2;
+    kd_ero <= kd_sel;
+  end generate gen_sin_presc;
+
   u_ero : entity work.ero_core
-    generic map (G_MUESTREO_LIBRE => G_MUESTREO_LIBRE)
-    port map (ro1 => ro1, ro2 => ro2, rst_n => rst_n_ro, kd_sel => kd_sel,
+    generic map (G_CNT_BITS => G_KD_MAX - G_PRESC_RO2, G_MUESTREO_LIBRE => G_MUESTREO_LIBRE)
+    port map (ro1 => ro1, ro2 => ro2c, rst_n => rst_n_ro, kd_sel => kd_ero,
               bit_o => bit_ro, bit_stb => stb_ro);
 
   u_cdc : entity work.bit_cdc
-    port map (clk_o => ro2, rst_n_o => rst_n_ro, bit_o => bit_ro, stb_o => stb_ro,
+    port map (clk_o => ro2c, rst_n_o => rst_n_ro, bit_o => bit_ro, stb_o => stb_ro,
               clk_d => clk, rst_n_d => rst_n_s, bit_d => bit_s, stb_d => stb_s);
 
   u_salud : entity work.health_tests
@@ -258,7 +309,7 @@ begin
   g_captura : if G_CAPTURA_BYTES > 0 generate
     u_captura : entity work.trng_capture
       generic map (G_PALABRAS => G_CAPTURA_BYTES)
-      port map (ro_clk => ro2, rst_n_ro => rst_n_ro, bit_dato => bit_ro, bit_stb => stb_ro,
+      port map (ro_clk => ro2c, rst_n_ro => rst_n_ro, bit_dato => bit_ro, bit_stb => stb_ro,
                 clk => clk, rst_n => rst_n_s, arranca => cap_arranca,
                 lleno => cap_lleno, rd_dir => cap_dir, rd_dato => cap_dato);
   end generate g_captura;
@@ -552,7 +603,11 @@ begin
             -- semilla. Con una orden en curso la escritura se ignora. Tampoco
             -- con el flujo activo: la tira mezclaria dos divisores.
             if orden = LIBRE and flujo_ocup = '0' then
-              kd_sel <= unsigned(reg_wdato(4 downto 0));
+              if to_integer(unsigned(reg_wdato(4 downto 0))) <= G_KD_MAX then
+                kd_sel <= unsigned(reg_wdato(4 downto 0));
+              else
+                rechazada <= '1';
+              end if;
             end if;
           when 16#05# => pagina <= unsigned(reg_wdato(1 downto 0));
           when 16#0F# =>                              -- FLUJO

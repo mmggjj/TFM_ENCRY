@@ -59,6 +59,8 @@ CASOS = [  # (nombre, esquina, temp, vdd)
     # 16-11-2026, para el Monte Carlo de la H declarada (docs/basys2.md):
     ("tt125", "mos_tt", 125.0, 1.2),
     ("sf125_v108", "mos_sf", 125.0, 1.08),
+    # 19-11-2026: periodo mas corto (revision del 18-11), con ro1 de 11 etapas.
+    ("ffm40_v132", "mos_ff", -40.0, 1.32),
 ]
 ETIQUETA = ""              # --etiqueta; va tambien en el nombre de los .npz
 

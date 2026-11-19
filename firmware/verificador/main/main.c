@@ -272,7 +272,7 @@ static void cmd_kd(int v)
         else printf("kd leido %u\n", leido);
         return;
     }
-    if (v < 0 || v > 24) { printf("kd: fuera de rango (0 a 24)\n"); return; }
+    if (v < 0 || v > (int)MOTOR_KD_MAX) { printf("kd: fuera de rango (0 a %u)\n", MOTOR_KD_MAX); return; }
     motor_reg_escribir1(REG_CFG_KD, (uint8_t)v);
     motor_reg_leer(REG_CFG_KD, &leido, 1);
     if (!motor_io_ok()) { printf("kd: ERROR I2C\n"); return; }
