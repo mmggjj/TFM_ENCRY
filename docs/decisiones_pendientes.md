@@ -105,6 +105,43 @@ con la tanda `mc24_e11_criticas_b` aún en marcha (15 de 39 chips):
    comprobar, de enganche del anillo al reloj en algunos chips (otra razón para
    que ninguna cifra dependa de ellos).
 
+### Factor de peor chip del divisor con 11 etapas: regla fijada el 22-11-2026 a las 19:00, antes de simular
+
+Hoy el divisor del integrado (`docs/anillo_ihp.md` §4.4) usa como peor chip
+la Q mínima de las 8 realizaciones nominales de 11 etapas dividida por 1,175,
+el cociente peor/medio de K_D de los 23 chips de 5 etapas (§4.3). Se sustituye
+por un Monte Carlo de 11 etapas en el mismo punto. Regla:
+
+1. **Muestra:** 24 chips en ss, −40 °C, 1,08 V (el peor punto), ro1 de 11
+   etapas, `--mismatch`, 900 ns (~704 periodos, igual que las 8 nominales),
+   con la histéresis:
+
+       ~/eda/venv/bin/python analysis/anillo_ihp_repeticiones.py --n 24 --procesos 5 \
+         --tstop 900n --esquina mos_ss --temp -40 --vdd 1.08 --etapas 11 --mismatch \
+         --escalas-primera 1 --prefijo mc_ss_m40_v108_e11_
+
+2. **Exclusión:** solo por inconsistencia de los cruces, no por el valor: un
+   chip cuyos cruces ocupan, (cruces + 10) · T, más de un 1 % fuera de la
+   mediana de los 24 (el criterio del chip 9 de §4.3). Se anota y se repone
+   con otro hasta tener 24.
+3. **Cifras:** K_D de cada chip = 0,2286 / Q del chip (periodos de ro1).
+   **Factor = K_D peor / K_D medio**, la misma definición que con 5 etapas
+   (4 494 997 / 3 824 707 = 1,175). Se da también la dispersión de Q entre
+   chips frente a la de las 8 nominales (10,5 %).
+4. **Divisor:** H_∞ para `CFG_KD` 22-26 con la razón 1,1754, con Q media de
+   los 24 y con el peor chip **directamente** (la Q mínima de los 24; ya no
+   hace falta dividir por un factor), y la columna de antes (Q mínima nominal
+   ÷ factor nuevo) para comparar.
+5. **Decisión:** si el peor chip da H_∞ ≥ 0,98 con `CFG_KD` 24, `G_KD_MIN` 25
+   conserva el factor 2 de margen y no cambia nada. Si 24 da < 0,98 y 25 da
+   ≥ 0,98, el margen baja de 2 y decide Mario (subir `G_KD_MIN` a 26, que es
+   `G_KD_MAX`). Si 25 da < 0,98, hay que subir el divisor. Como referencia,
+   para que 24 no llegue el peor chip tendría que tener Q < 1,16·10⁻⁸ por
+   periodo, 2,6 veces por debajo de la media nominal (3,00·10⁻⁸); para 25,
+   Q < 0,58·10⁻⁸.
+
+Duración [ESTIMADO]: ~2,1 h por chip, 5 a la vez, unas 11 h.
+
 ### Revisión independiente del RTL del 19-11 (22-11-2026)
 
 Agente sin las conclusiones de la sesión; informe, bancos propios, mutante y
