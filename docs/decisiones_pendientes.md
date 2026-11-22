@@ -21,7 +21,8 @@ aplicadas; `docs/basys3.md`, "Revisión de la tarde del 18-11").
 
 **Divisor** [SIMULADO → ESTIMADO; `docs/anillo_ihp.md` §4.4]: ro1 de 11
 etapas en ss, −40 °C, 1,08 V, 8 realizaciones: Q por periodo
-2,65-3,41·10⁻⁸. Con ro2 de 13 etapas (13/11 estimado) y el factor de peor
+2,65-3,41·10⁻⁸. Con ro2 de 13 etapas (razón de periodos 1,175 simulada el
+22-11; 13/11 = 1,182 estimada antes) y el factor de peor
 chip, `CFG_KD` 24 da H_∞ 0,9997 y 25 ≈ 1: **`G_KD_MIN` 25 tiene un factor 2
 de margen**.
 

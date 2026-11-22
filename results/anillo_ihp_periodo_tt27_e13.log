@@ -1,0 +1,26 @@
+== 1. Ruido del inversor en su punto de conmutacion (PDK IHP) ==
+  vtrip = 0.630529
+  idd = 1.12866e-05
+  wn = 0.5u
+  wp = 1.2u
+  l = 0.13u
+  vdd = 1.2
+  temp = 27.0
+  esquina = mos_tt
+  s_termico_A2Hz = 4.126986221871625e-24
+  planitud_banda = 1.0020345107585988
+  alfa_flicker = 0.9999991319523198
+  k_flicker = 8.155731962261962e-17
+  f_esquina_Hz = 19762244.05963434
+  g_nudo_S = 0.00023841438697313328
+  gamma_efectiva = 1.0442847554154622
+  directorio = /tmp/ruido_ihp_b2o0925p
+
+== 2. Anillo en transitorio ==
+  V_T del nmos (extrapolacion lineal) = 0.5573 V
+  escala    0: S_i 0.000e+00 A2/Hz, 90 cruces, T 904.806 ps, sigma 0.306 fs, sigma/T 3.384e-07, exp -0.21, P 140.2 uW, 130 s, 0 dobles cruces quitados
+  AVISO: dobles cruces o exponente lejos de 1; cruces y forma de onda en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_periodo_tt27_e13_e0_diag.npz
+
+== 3. Lectura ==
+
+datos en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_periodo_tt27_e13.csv

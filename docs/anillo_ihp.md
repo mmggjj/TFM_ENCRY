@@ -374,7 +374,7 @@ Con la decisión del 19-11 (ro1 de 11 etapas, ro2 de 13 con preescalador
 muestreado de 11 etapas en ss, −40 °C, 1,08 V, sin desapareamiento:
 `anillo_ihp_repeticiones.py --etapas 11 --tstop 900n` (~2 h 10 min por
 realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
-`analysis/anillo_ihp_divisor.py` → `results/anillo_ihp_divisor_e11.txt`.
+`analysis/anillo_ihp_divisor.py --razon 1.17536` → `results/anillo_ihp_divisor_e11.txt`.
 
 - T = 1 240,9 ps (dispersión entre realizaciones 0,006 ps), σ = 214,9 ± 4,0 fs
   (202-229 fs), **Q por periodo 2,65-3,41·10⁻⁸** (media 3,00 ± 0,11·10⁻⁸,
@@ -382,22 +382,24 @@ realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
   7,62 M periodos de ro1 (por realización 6,70-8,62 M). Con 5 etapas la Q era ~6,0·10⁻⁸:
   6,0 × 5/11 = 2,7·10⁻⁸, la ley 1/N de etapas.
 - La ventana es 2^`CFG_KD` periodos de ro2 (el preescalador no la cambia).
-  T(ro2)/T(ro1) = 13/11 [ESTIMADO, sin simular ro2]; el jitter de ro2 no se
-  cuenta (conservador); peor chip = Q mínima ÷ 1,175 (cociente peor/medio de
+  **T(ro2)/T(ro1) = 1,1754** [SIMULADO, 22-11, sin ruido, 98-101 cruces:
+  1 458,6 / 1 241,0 ps; tt 27 °C 904,8 / 770,2 = 1,1747; ff 125 °C 1,32 V
+  658,7 / 560,9 = 1,1742; `results/anillo_ihp_periodo_*`], algo menos que
+  13/11 = 1,1818 (la carga de la última etapa no escala con N); el jitter de
+  ro2 no se cuenta (conservador); peor chip = Q mínima ÷ 1,175 (cociente peor/medio de
   los 23 chips de 5 etapas de §4.3).
 
 | `CFG_KD` | H_∞, Q media | Q mínima | Q mínima, peor chip |
 |---|---|---|---|
-| 22 | 0,905 | 0,869 | 0,811 |
-| 23 | 0,9948 | 0,9898 | 0,9779 |
-| 24 | 0,99999 | 0,99994 | 0,99973 |
+| 22 | 0,904 | 0,867 | 0,809 |
+| 23 | 0,9947 | 0,9895 | 0,9774 |
+| 24 | 0,99998 | 0,99994 | 0,99972 |
 | 25 | ≈ 1 | ≈ 1 | ≈ 1 |
 
 **Lectura:** con ro2 de 13 etapas la ventana dura más por periodo de ro2 y
 basta `CFG_KD` 24; el `G_KD_MIN` = 25 del integrado deja un factor 2 de
-margen y el contador de 26 bits otro factor 2 por encima. Pendiente: simular
-ro2 de 13 etapas para quitar el 13/11 estimado, y desapareamiento con 11
-etapas (aquí se usa el factor del Monte Carlo de 5).
+margen y el contador de 26 bits otro factor 2 por encima. Pendiente:
+desapareamiento con 11 etapas (aquí se usa el factor del Monte Carlo de 5).
 
 ## 5. Del jitter al divisor [simulado → estimado]
 
