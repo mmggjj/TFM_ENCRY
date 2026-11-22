@@ -8,6 +8,15 @@ contra qué se compara el ESP32 a la misma longitud, y tener la
 referencia preparada para cuando la campaña en la Basys 3 dé bits reales.
 No sustituye a esa campaña.
 
+**Nota del 22-11-2026:** todo esto es con el anillo de 5 etapas; el
+"divisor recomendado 2²³" es el de aquel diseño. Desde el 19-11 el
+integrado usa ro1 de 11 y ro2 de 13 etapas con `CFG_KD` 25. Los bits
+salen de `simular_bits(N, Q·2^kd)`, así que los resultados dependen solo
+del producto Q·K_D: con 11 etapas el eje del divisor se desplaza ~0,8 en
+log₂, y 2²⁵ cae más allá de los puntos 2²³-2²⁴ ya simulados (H_∞ ≥ 0,9996,
+batería saturada). No se repite; ninguna conclusión cambia (revisión
+independiente del 22-11, sin simular).
+
 Scripts: `analysis/fuente_simulada_90b.py` (genera y pasa la batería) y
 `analysis/fuente_simulada_figura.py` (figura y tabla). Datos:
 `results/fuente_simulada_90b.csv`, `results/fuente_simulada_90b_resumen.md`,

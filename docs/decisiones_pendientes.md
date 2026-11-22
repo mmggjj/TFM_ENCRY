@@ -142,6 +142,18 @@ por un Monte Carlo de 11 etapas en el mismo punto. Regla:
 
 Duración [ESTIMADO]: ~2,1 h por chip, 5 a la vez, unas 11 h.
 
+**Sin lanzar** (22-11; Mario pidió consultarlo con un revisor independiente).
+Veredicto del revisor: recomendable, no necesaria; no puede cambiar
+`G_KD_MIN`, la H 0,60 ni los cortes (los umbrales quedan a −5,8σ y −7,7σ de
+la dispersión de Q entre realizaciones; a −2,9σ y −3,8σ con el extremo alto
+de su IC). Observaciones suyas: el cociente peor/medio está dominado por el
+error de estimación de una sola realización (con solo ruido, 24 chips darían
+~1,24, p95 1,40), así que no mide desapareamiento puro; "Q mínima ÷ 1,175"
+cuenta dos veces ese error (conservador); **la dispersión del 10,5 % entre
+las 8 realizaciones nominales de 11 etapas no está explicada** (el doble de
+√(2/N) = 5,3 % con 704 periodos; IC 95 % 7-21 %), y se puede mirar con los
+datos que ya hay. Se declara en la memoria tal cual.
+
 ### Revisión independiente del RTL del 19-11 (22-11-2026)
 
 Agente sin las conclusiones de la sesión; informe, bancos propios, mutante y
