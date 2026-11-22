@@ -29,27 +29,30 @@ repetibilidad, añadida después.
 | **O5** | **40/40 retos AES-CMAC iguales a mbedtls**, dos claves distintas, aleatorio, zeroización |
 | Jitter | Q por periodo de ro2 ~1-8·10⁻⁵ según método y variante (las dos cosas repetibles, ±0,3-4 % con autocorrelación); el modelo deja residuo (como en la Basys 2) |
 | SP 800-90B | `kd 8` 0,125, `kd 10` 0,558, `kd 11` 0,786 (trozos no consecutivos), `kd 12-16` saturada; a 8,4·10⁶ bits 0,932 (ESP32 0,911, ideal 0,935) |
-| Divisor | `CFG_KD` ≥ 16 (conservador); la batería sería compatible con K\* ≈ 2^11,5 |
+| Divisor | `CFG_KD` ≥ 16 el 17-11; **≥ 19 desde el 18-11** con el suelo blanco (Q 0,6-1,1·10⁻⁶); `G_KD_MIN` 19 en `basys3_top` desde el 19-11 |
 | Sesgo / correlación | fracción de unos 0,495-0,496 en la silenciosa (z −7 a −26; la normal 0,513: el signo cambia con la implementación); sin correlación a retardo 1 (muestreo libre) |
 | Salud | el RCT salta a `kd 8`; ni a `kd 6` ni a `kd 10` (batería 0,558 < 0,60) |
 | Reinicios (§3.1.4) | **pasa**: 1 000 reprogramaciones, H_r 0,843 y H_c 0,892 ≥ H_I 0,819; 1 000 arranques distintos |
 | Colocación fija | con los anillos en los mismos LUT6 (sin combinar): ro2 207 MHz y el frecuencímetro baja Q ×4,4 (conjunto) frente a la silenciosa: es la lógica colgada, no la colocación |
-| Campaña con `ro_bel.xdc` (18-11, por defecto) | ro2 207,2 / ro1 167,2 MHz; O5 40/40; `kd 10` 0,430, `kd 11` 0,695, `kd 12-16` saturada; a 8,4·10⁶ bits 0,880; fracción de unos 0,505 (signo cambiado); salud sin alarma ni a `kd 8` (bits anticorrelados); reinicios sin repetir |
+| Campaña con `ro_bel.xdc` (18-11, por defecto) | ro2 207,2 / ro1 167,2 MHz; O5 40/40; `kd 10` 0,430, `kd 11` 0,695, `kd 12-16` saturada; a 8,4·10⁶ bits 0,880; fracción de unos 0,505 (signo cambiado); salud sin alarma ni a `kd 8` (bits anticorrelados); reinicios repetidos a `kd 19` el 18-11 (pasan) |
 | Revisión de Fable (18-11) | raya a ~38 kHz en la fase de los anillos (repetible, origen sin ver); `CFG_KD` ≥ 16 quizá no conservador; tareas en "Tareas pendientes" |
 | Revisión | dos agentes independientes: APT equivalente (exhaustivo, cosimulación, formal) y cifras recalculadas; correcciones aplicadas |
 
 ### Basys 2 frente a Basys 3
 
+Comparación completa, con fuentes y discrepancias: `docs/basys2_frente_basys3.md`
+(22-11). Resumen al día:
+
 | | Basys 2 (XC3S100E, 90 nm) | Basys 3 (XC7A35T, 28 nm) |
 |---|---|---|
 | Qué cabe | solo la fuente | el motor entero |
-| Anillos en placa | 7/9 etapas, ro2 ~144 MHz | 11/13 etapas, ro2 130 MHz |
-| Q por periodo de ro2 | 1,0-4,9·10⁻⁵ (según implementación, `kd 7-9`) | ~1-8·10⁻⁵ (según método y variante, `kd 0-2`) |
+| Anillos en placa | 7/9 etapas, ro2 ~144 MHz | 11/13 etapas; ro2 130 MHz con inversores combinados, **207 MHz con `ro_bel.xdc`** (por defecto desde el 18-11) |
+| Q por periodo de ro2 | 1,0-4,9·10⁻⁵ (según implementación, `kd 7-9`) | ~1-8·10⁻⁵ (según método y variante, `kd 0-2`); suelo blanco 0,6-1,1·10⁻⁶ (solo medido aquí) |
 | Residuo del modelo | sí | sí |
-| Sesgo (fracción de unos, flujos) | 0,496-0,498 (`kd 13-16`) | 0,495-0,496 (silenciosa, `kd 12-16`) |
-| Correlación ρ₁ | 0,003-0,006 con CE, ~0 sin CE | ~0 (sin CE) |
-| SP 800-90B a 8,4·10⁶ | 0,890 (`kd 14`) | 0,932 (`kd 16`) |
-| Divisor provisional | ≥ 16 | ≥ 16 |
+| Sesgo (fracción de unos, flujos) | 0,496-0,498 (`kd 13-16`) | 0,495-0,496 (silenciosa libre) y 0,505-0,506 (silenciosa con `ro_bel.xdc`): el signo cambia con la implementación |
+| Correlación ρ₁ | 0,003-0,006 con CE, ~0 sin CE | ~0 (sin CE; no hay variante con CE) |
+| SP 800-90B a 8,4·10⁶ | 0,890 (`kd 14`) | 0,932 (`kd 16`, libre), 0,880 (`kd 16`, `ro_bel.xdc`) |
+| Divisor | ≥ 16 (provisional, sin suelo blanco medido) | ≥ 19 (suelo blanco) |
 
 ## Herramientas en el Linux (17-11-2026)
 
@@ -404,7 +407,8 @@ indistinguible de ESP32 (0,848) e ideal (0,847).
   pueden ver. Sin colocación fija el RCT sí saltaba a `kd 8`; depende de la
   implementación. Refuerza la tarea 7 (`G_KD_MIN`).
 
-Sin repetir con la colocación fija: reinicios (§3.1.4).
+Reinicios (§3.1.4) con la colocación fija: repetidos a `kd 19` el 18-11 por
+la tarde (pasan; sección "Tarde del 18-11").
 
 ## Revisión independiente de los problemas abiertos (18-11-2026)
 
@@ -663,7 +667,9 @@ no versionados). Correcciones aplicadas arriba, por orden de importancia:
    fija ν = 0,38388. Retirado "lo que cambia es la raya, no el suelo" y "el
    ×4,4 era la modulación".
 3. Q de la silenciosa con colocación fija: 0,80-0,88·10⁻⁶ con tres modelos
-   de calibración, 0,63-1,14·10⁻⁶ por banda; al divisor la cota baja, 0,6·10⁻⁶.
+   de calibración, 0,63-1,14·10⁻⁶ por banda (recalibrado con la ν, la dispersión y
+   el sesgo de cada captura: 0,59-1,13·10⁻⁶, `results/espectro_fase_calibra.txt`);
+   al divisor la cota baja, 0,6·10⁻⁶.
 4. Retirado "escala con el periodo como el térmico".
 5. `G_KD_MIN` también bloquea el flujo; `kd 25` no cabe en el RTL actual
    (`docs/decisiones_pendientes.md` §7).

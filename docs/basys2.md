@@ -24,11 +24,13 @@ Resumen de lo conseguido (todo en placa salvo lo marcado):
 |---|---|---|
 | Fuente en la FPGA | variante de solo fuente, 85 % de slices; reloj 50 MHz; ro2 143,8 MHz y ro1 108,7 MHz (7 y 9 etapas, colocados); tiempos cumplidos con 33 % de margen | medido |
 | Integración con el ESP32 | I2C a 400 kHz; `id` con `solo_fuente=1`; flujo de 10⁶ bits consecutivos sin un error | medido |
-| Ruido de fase entre anillos | Q por periodo de ro2 ≈ 4,5·10⁻⁵ (±3-5 % entre capturas) en la variante sin display ni medidor; depende ×2,5 de la lógica colgada de los anillos; el modelo deja residuo 3-11 veces el ruido en `kd 7-9` | medido, interpretación provisional |
+| Ruido de fase entre anillos | Q por periodo de ro2 ≈ 4,5·10⁻⁵ (±3-5 % entre capturas) en la variante sin display ni medidor del 14-11; depende ×2,5 de la lógica colgada y ×2,5-3,5 del rutado del reloj de ro2 (16-11: 1,0-4,9·10⁻⁵ según implementación); el modelo deja residuo 3-11 veces el ruido en `kd 7-9` | medido, interpretación provisional |
 | Modulación determinista | el display multiplexado modula los anillos (ν bimodal por trozo); apagarlo baja el residuo de 45 a ~7 veces el ruido | medido |
 | SP 800-90B | `kd 13-16` saturadas (0,82-0,86); `kd 12` = 0,760, coherente con el modelo con la Q medida y no con la de otra variante | medido |
-| Divisor de trabajo | `CFG_KD` ≥ 14 (K\* ≈ 2^12,3 con factor 2 de margen) | provisional |
+| Divisor de trabajo | `CFG_KD` ≥ 14 el 14-11; ≥ 16 el 16-11 con la Q más baja medida (sección "Residuo del jitter"); la Basys 3 llevó la cota a ≥ 19 con el suelo blanco, que aquí no se midió | provisional |
 | Criptografía en la FPGA (O5) | no cabe en el XC3S100E | — |
+
+Comparación con la Basys 3: `docs/basys2_frente_basys3.md`.
 
 Lo que queda abierto en esta placa: el origen del residuo del modelo (ESP32
 leyendo durante la captura, reloj de 50 MHz, alimentación), la comparación
