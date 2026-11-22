@@ -443,6 +443,39 @@ Lo de la Fase 2 no depende de la Fase 3: se puede escribir ya y dejar las
 frases del integrado (divisor, caudal, H) como están, con su nota no
 impresa, hasta el paso 19-20.
 
+## Hecho el 22-11-2026 (noche): fases 2, 3 y 4 escritas
+
+Pasos 13-21 del §6 llevados a la memoria, EN y ES, un commit por capítulo
+(caps. 5, 4, 6, apéndices A-C, 3, 7, 1 + resumen, 8, y cierre). Decisiones
+de Mario aplicadas: notación del §4 entera (macros `\kd`, `\Hnb`, `\Hdecl`
+en los dos preámbulos; definición en `sec:ero` del cap. 3 y genéricos solo en
+el apéndice A); columna de 8 378 368 bits declarada como afirmación sobre la
+batería; fuente simulada sin repetir (depende solo de Q·K_D); factor de peor
+chip heredado de 5 etapas, declarado conservador.
+
+- **Hecho:** `sec:bringup` (cap. 5) con tablas, esquemático y plano; campaña
+  en la FPGA (`sec:campaign`, sustituye a `sec:protocol`, con las tres
+  desviaciones declaradas), comparación O8 (`sec:o8`, tabla O8 reducida y
+  reinicios), Monte Carlo del biestable (`sec:ff_mc`) y anillo de 11 etapas
+  (`sec:ihp_ring11`) en el cap. 7; notas PROVISIONAL de los caps. 4 y 7
+  quitadas; `tab:synth` del 22-11; apéndices A-C; resumen y cap. 8 sin
+  [PENDIENTE]; comentarios de borrador fuera.
+- **Sigue abierto (nota no impresa en el `.tex`):** KAT en placa y texto de
+  O5 (`% PENDIENTE DE MARIO`, en caps. 1, 5, 7 y 8; O5 queda "parcial" en
+  `tab:status`); ciclos del DRBG con el AES de 32 bits (cap. 4); foto del
+  montaje (cap. 5); "13 a 25 kGE" como estimación propia (nota en el cap. 6).
+- **Sin tocar:** cap. 2 (el ítem 1 del hueco, redacción, D);
+  `docs/modelo_ero_resultados.md` sigue con el dato de Fischer y Lubicz de
+  7,81 ns (el cap. 3 usa los de `docs/estado_del_arte_trng.md`).
+- **Fuentes fuera de `docs/`:** la utilización y los tiempos del bitstream
+  final en `tab:impl` salen de los informes locales de
+  `synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/` (sin versionar);
+  `jitter_estimator.py` da hoy 14 comprobaciones (la memoria decía 20).
+- **Comprobación:** `python3 memoria/cmp_cifras.py` (cifras, etiquetas,
+  referencias y citas EN frente a ES; las tres diferencias que quedan son de
+  maquetación) y las dos compilaciones con tectonic, sin overfull nuevos.
+- **Falta del §6:** paso 22 (revisión independiente de la memoria) y 23 (PR).
+
 ## Hecho el 22-11-2026
 
 - Apéndice D, "The Two FPGA Boards: Basys 2 and Basys 3" (`memoria/chapters/app_fpga.tex` y `memoria/chapters_es/app_fpga.tex`), a partir de `docs/basys2_frente_basys3.md`, a petición de Mario. Sin referencias desde el texto principal todavía; las cifras de la Basys 2 en los caps. 4, 7 y 8 siguen pendientes (tabla de `docs/basys2_frente_basys3.md` §6).
