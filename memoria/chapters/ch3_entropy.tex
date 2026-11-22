@@ -1,7 +1,6 @@
 \chapter{Entropy Source: from Transistor to Min-Entropy}
 \label{ch:ch3_entropy}
 
-% [DRAFT v1 -- theory and simulation only; hardware figures pending]
 % Source material: docs/modelo_ero_resultados.md, docs/arquitectura.md,
 % analysis/ero_model.py, analysis/jitter_estimator.py, analysis/spice_ring.py
 
@@ -42,7 +41,33 @@ oscillator in a 28~nm process (2--4~ps \est{}~\cite{petura_2016_survey}).
 Sampling RO1 with that clock would measure the phase noise of the PLL,
 a global and potentially inducible component, rather than the thermal
 noise of the ring. RO2 therefore samples RO1, and the 100~MHz system
-clock only drives the synchronous logic.
+clock only drives the synchronous logic. The campaign of this work
+places its own rings in that range: the white floor of the relative phase
+variance of the two rings on the Basys~3 is $0.6$--$1.1\times10^{-6}$ per
+RO2 period, $\sigma \approx 4$--$5$~ps per 4.9~ns period \meas{}, with a
+calibration that is \simu{} (Section~\ref{sec:campaign}).
+
+\paragraph{Notation.} Four symbols are fixed here and used unchanged in
+the rest of the document. $K_D$ is the number of RO2 periods between two
+samples. In the hardware it is always a power of two, $K_D = 2^{n}$,
+where $n$ is the value of the register \texttt{CFG\_KD}
+(Appendix~\ref{app:regs}); the text writes the divider as that power.
+$q_2$ is the variance of the phase of RO1, in RO1 periods, accumulated
+during one RO2 period, so that the quality factor of the next section is
+$Q = K_D\,q_2$. With two rings of the same period $T$ and a period jitter
+$\sigma$, $q_2 = (\sigma/T)^2$, which the theory and the estimator of this
+chapter call $Q_{\mathrm{raw}}$. With rings of different periods $T_1$
+(RO1) and $T_2$ (RO2), and crediting only the jitter $\sigma_1$ of RO1,
+\begin{equation}
+  q_2 = \frac{T_2}{T_1}\left(\frac{\sigma_1}{T_1}\right)^{2} ,
+  \label{eq:q2}
+\end{equation}
+and this is the only place where that step is written. Finally, three
+entropies per bit appear and are never interchangeable: $H_\infty$ is the
+min-entropy the stochastic model gives for a known $Q$; $\Hnb$ is the
+figure the SP~800-90B battery assigns to a recorded sequence; and
+$\Hdecl = 0.60$ is the value declared for the health-test cut-offs and
+the seed length (Section~\ref{sec:health}).
 
 \section{Stochastic model and the quality factor}
 \label{sec:model}
@@ -179,6 +204,10 @@ independent seeds for $K=20\,000$ blocks. The fitted accumulation
 exponent is $1.009$ for a simulator without flicker noise; measured on
 hardware, the same exponent separates the thermal component ($b=1$, which
 counts as entropy) from flicker and global jitter ($b=2$, which does not).
+On the board the free exponent came out between 1.6 and 2.1 \meas{} and
+the model did not describe the shape of the pair statistic, so the white
+part was separated in the frequency domain instead
+(Section~\ref{sec:campaign}).
 
 \begin{table}[htbp]
 \centering
@@ -267,17 +296,33 @@ known resistor before use: its density is $\mathrm{NAMP}^2/(\pi f)$ to
 \section{Design target and divider selection}
 \label{sec:kd}
 
-With $\sigma/T$ measured per period, $Q_{\mathrm{raw}} = (\sigma/T)^2$ and
-the divider follows from $K_D = \lceil Q_{\mathrm{target}} /
-Q_{\mathrm{raw}} \rceil$. For the range of jitter expected in a 28~nm
-process the divider lies between $3\times10^4$ and $5\times10^5$ and the
-throughput per ring between 1 and 20~kbit/s. The model reproduces the
-published design point of Fischer and Lubicz ($K_D \approx 430\,000$ for
-$\sigma = 5.01$~ps over $T = 7.81$~ns)~\cite{fischer_2014_embedded}. Such
-rates are sufficient here: seeding the deterministic generator with
-256~bits of full entropy requires about 512 raw bits at $H_\infty \approx
-0.98$, i.e.\ between 0.03 and 0.5~s per seed, and the engine issues a seed
-only at start-up and at reseed intervals. If more throughput were ever
+With $q_2$ known, from $\sigma/T$ per period and equation~\eqref{eq:q2}
+or measured directly, the divider follows from
+$K_D \ge Q_{\mathrm{target}} / q_2$, rounded up to the next power of two.
+Before any measurement, the jitter expected in a 28~nm process (2--4~ps
+per period of 3--5~ns) put the divider between $3\times10^4$ and
+$5\times10^5$ and the throughput per ring between 1 and 20~kbit/s with
+RO2 at 500~MHz \est{}. The same inversion reproduces the published design
+point of Fischer and Lubicz~\cite{fischer_2014_embedded}: with
+$T_1 = 8.9$~ns, $T_2 = 8.7$~ns, $\sigma = 5.01$~ps and their target, a
+Shannon entropy of 0.997 through equation~\eqref{eq:baudet14}, it gives
+$K_D = 431\,153$ against their $K_D \approx 430\,000$. That target
+corresponds to $Q \approx 0.13$; the min-entropy target adopted here,
+$Q \ge 0.2286$, would ask for about $738\,000$ with the same rings.
+
+What was measured falls at the upper end of the estimated range. On the
+\ac{FPGA} the lower edge of the measured white floor,
+$q_2 = 0.6\times10^{-6}$, gives $K_D \ge 0.2286 / q_2 \approx
+3.8\times10^{5}$, hence \kd{19} (\texttt{CFG\_KD} $= 19$) and about
+390~bit/s with RO2 at 205~MHz \meas{} (Section~\ref{sec:campaign}). On
+the integrated circuit the divider is \kd{25}, at 20 to 50~bit/s \est{}
+(Section~\ref{sec:ihp_ring11}). Such rates are sufficient here. A seed is
+512 raw bits, 384 of entropy input and 128 of nonce, dimensioned for
+$\Hdecl = 0.60$ (Section~\ref{sec:health}), and the engine waits for the
+health-test window that contains the last of them, so a seeding consumes
+between 512 and 1535 bits: 1.3 to 4~s on the \ac{FPGA}, after a start-up
+test of about 2.6~s, and 10 to 75~s on the integrated circuit \est{}. The
+engine issues a seed only at start-up and at reseed intervals. If more throughput were ever
 needed, the clean route is several independent \acp{ERO}, each with its
 own bound, rather than a multi-ring XOR whose independence cannot be
 demonstrated~\cite{bochard_2010_true}.
