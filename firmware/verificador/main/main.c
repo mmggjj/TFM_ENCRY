@@ -283,14 +283,14 @@ static void cmd_kd(int v)
 static void cmd_crudo(int n, bool callado)
 {
     uint8_t trozo[512];
-    uint8_t kd = 24;
+    uint8_t kd = MOTOR_KD_MAX;
     /* Sin modo test CAPTURA se lee como ceros: saldrian tramas de ceros con
      * CRC valido. */
     if (!(motor_status() & ST_MODO_TEST)) { printf("crudo: CAPTURA solo se lee en modo test\n"); return; }
     motor_reg_leer(REG_CFG_KD, &kd, 1);
     const uint32_t plazo = motor_plazo_bits_ms(4096, 2000);
     /* Callado: 10 ns por periodo de ro2 (el doble del medido) mas 200 us. */
-    const uint64_t espera_us = ((uint64_t)4096 << (kd > 24 ? 24 : kd)) / 100 + 200;
+    const uint64_t espera_us = ((uint64_t)4096 << (kd > MOTOR_KD_MAX ? MOTOR_KD_MAX : kd)) / 100 + 200;
     for (int t = 0; t < n; t++) {
         motor_io_reiniciar();
         motor_reg_escribir1(REG_CONTROL, CTL_CAPTURAR);
@@ -333,7 +333,7 @@ static struct { uint32_t bytes; bool ok; } ult_flujo;
 static void cmd_flujo(int n_bytes)
 {
     uint8_t buf[1 + MOTOR_FLUJO_MAX], trama[4 + FLUJO_TRAMA];
-    uint8_t kd = 24, fl = 0, diag = 0;
+    uint8_t kd = MOTOR_KD_MAX, fl = 0, diag = 0;
     ult_flujo.bytes = 0;
     ult_flujo.ok = false;
     if (n_bytes < 1) { printf("flujo: N bytes, N >= 1\n"); return; }

@@ -28,7 +28,8 @@ entity basys3_top is
     G_QUIETO  : boolean := false;
     -- Etapas de los anillos en esta placa: con 5/7 ro2 iba a 357,8 MHz y con
     -- 7/9 a 293 MHz, y el dominio de ro2 no cerraba tiempos (camino de
-    -- 3,9 ns). 11/13 (docs/basys3.md). El integrado sigue con 5/7.
+    -- 3,9 ns). 11/13 (docs/basys3.md). El integrado lleva 11/13 al reves
+    -- (ro1 11, ro2 13) con preescalador de ro2 (19-11-2026).
     G_ETAPAS_RO1 : positive := 13;
     G_ETAPAS_RO2 : positive := 11;
     -- Prueba de la raya de ~38 kHz (docs/basys3.md): G_CARGA biestables que

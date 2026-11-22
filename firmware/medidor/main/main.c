@@ -53,8 +53,6 @@ static const char *TAG = "medidor";
 #define PIN_SCL          6
 #endif
 
-/* Divisor del anillo con el que se siembra, del rango caracterizado. */
-#define CFG_KD_SIEMBRA   24
 
 #define INTERVALO_MS     1000u   /* entre lecturas; un medidor real, 60 s */
 
@@ -118,9 +116,11 @@ static void cmd_id(void)
 static void cmd_sembrar(void)
 {
     uint8_t st = 0, diag = 0;
-    if (motor_reg_escribir1(REG_CFG_KD, CFG_KD_SIEMBRA) != ESP_OK) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
+    /* Se siembra con el CFG_KD que tenga el motor: el de reset (G_KD_RESET)
+     * es el minimo que admite cada version (25 el integrado, 19 la Basys 3).
+     * Escribir un valor fijo lo rechazaba en una de las dos (revision 22-11). */
     /* Los plazos salen del CFG_KD actual: con el anillo lento de la FPGA y
-     * CFG_KD = 24 el test de arranque puede tardar minutos. */
+     * CFG_KD = 25 el test de arranque puede tardar minutos. */
     const uint32_t plazo = motor_plazo_arranque_ms();
     if (plazo > T_ARRANQUE_MS) printf("sembrar: esperando el test de arranque (hasta %" PRIu32 " s)\n", plazo / 1000);
     esp_err_t e = motor_esperar_arranque(plazo, &diag);

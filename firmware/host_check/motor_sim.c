@@ -124,6 +124,7 @@ void motor_sim_cmac16(const uint8_t clave[16], const uint8_t msg[16], uint8_t ta
  * avanza el vTaskDelay de plataforma_sim.c; en el chip es el de verdad. */
 #define KD_MIN           6        /* el del banco (tb_motor_top usa 4); el RTL va a 25 */
 #define KD_MAX           26u      /* G_KD_MAX */
+#define KD_PRESC         4u       /* G_PRESC_RO2: por debajo la ventana no es 2^CFG_KD */
 #define T_ARRANQUE       30u      /* ticks hasta pasar el test de arranque */
 #define T_SIEMBRA        20u
 #define T_ORDEN          1u
@@ -382,8 +383,8 @@ static void escribir_reg(uint8_t d, uint8_t v)
 {
     resolver_siembra();
     if (d == 0x03) ejecutar_control(v);
-    else if (d == 0x04) {                      /* > G_KD_MAX: se ignora y rechazada */
-        if (!ocupado() && !fluyendo()) { if (v <= KD_MAX) m.cfg_kd = v; else m.rechazada = true; }
+    else if (d == 0x04) {                      /* fuera de [G_PRESC_RO2, G_KD_MAX]: se ignora y rechazada */
+        if (!ocupado() && !fluyendo()) { if (v >= KD_PRESC && v <= KD_MAX) m.cfg_kd = v; else m.rechazada = true; }
     }
     else if (d == 0x0F) {                      /* FLUJO: arrancar cuenta como una orden */
         resolver_flujo();

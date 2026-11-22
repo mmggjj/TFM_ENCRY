@@ -119,6 +119,8 @@ kd: fuera de rango (0 a 26)
   [ok ] kd fuera de rango no se escribe
   [ok ] CFG_KD > G_KD_MAX se ignora y levanta DIAG.rechazada
 kd 10 leido 10 ok
+  [ok ] CFG_KD < G_PRESC_RO2 se ignora y levanta DIAG.rechazada
+kd 10 leido 10 ok
   [ok ] kd 10 queda escrito
 crudo 0 kd 10 ms 13
 FR020089d4b66335c1c7e4248367d8ed9612ec453902d8e50af89d7709d1a596c1f41f95aa82ca6c49ae90cd1668baac7aa6f2b4a8ca99b2c2372acb08cf61c9c3805e6e0328da4cd76a19edd2d3994c798b0022569ad418d1fee4d9cd45a391c601ffc92ad91501432fee150287617c13629e69fc7281cd7165a63eab49cf714bce3a75a74f76ea7e64ff81eb61fdfec39b67bf0de98c7e4e32bdf97c8c6ac75ba43c02f4b2ed7216ecf3014df000108b67cf99505b179f8ed4980a6103d1bca70dbe9bbfab0ed59801d6e5f2d6f67d3ec5168e212e2daf02c6b963c98a1f7097de0c56891a2b211b01070dd8fd8b16c2a1a4e3cfd292d2984b3561d555d16c33ddc2bcf7edde13efe520c7e2abdda44d81881c531aeeeb66244c3b791ea8acfb6a68f3584606472b260e0dd2ebb21f6c3a3bc0542aabba4ef8f6c7169e731108db0460220aa74d31b55b03a00d220d475dcd9b877856d5704c9c86ea0f98f2eb9c530da7fa5ad8b0b5db50c2fd5d095a2aa5e2a3fbb71347549a316332234ece765b7571b64d216b28712e25cf3780f9dc629cd719b01e6d4a4fd17c731f4ae97bc05a310d7b9c36edca5bbc02dbb5de3d52b65702d4c44c2495c897b5128030d2db61e056fd1643c871ffca4db5a88a075ee10933a655573b1deef02f6e20024981e2a07ff8e34769e311b698b9419f1822a84bc8fda2041a90f449fe154b48962d431d994f
@@ -193,7 +195,7 @@ flujo: solo en modo test
   [ok ] sin modo test no sale ninguna trama
 flujo: ERROR I2C al arrancar
   [ok ] con el bus caido tampoco
-kd 2 leido 2 ok
+kd 5 leido 5 ok
 flujo: rechazado (motor ocupado, captura en curso, CFG_KD bajo o motor sin FLUJO)
   [ok ] con CFG_KD bajo el motor lo rechaza
 kd 6 leido 6 ok
@@ -293,7 +295,7 @@ csr: FALLO (-16000), sin clave
   [ok ] ni CSR
 
 2) Clave del equipo con aleatorio del motor
-sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: esperando el test de arranque (hasta 1374 s)
 sembrar: ok
   [ok ] el motor queda sembrado
 clave: ok, P-256 con 3 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
@@ -330,7 +332,7 @@ FL005f7cdfa10011220000010000060000000400000001000005143045022044ee8e70875239868d
 FL00607cdfa10011220000010000070000000500000001000003e83046022100df1b37a26ed202bb323beb9f138d3071703a9ba50dae1fdecfaf8c513ca28322022100b03d07921f20cddc70e27f4053c50aaaebf5b5a026928e92a0a229d44b9a39d343a84039
   [ok ] las lecturas siguen saliendo con la clave que hay
 borrar: alarmas bajadas; hay que repetir el test de arranque
-sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: esperando el test de arranque (hasta 1374 s)
 sembrar: ok
   [ok ] tras borrar y repetir el arranque, sembrado
 
@@ -348,7 +350,7 @@ rearmar: FALLO PERMANENTE, 3 rearmes en 24 h; reiniciar el equipo
 clave: FALLO, el motor no da aleatorio (-60) ALARMA_RCT; sigue la clave anterior
   [ok ] en fallo permanente no hay clave nueva y sigue la anterior
 borrar: alarmas bajadas; hay que repetir el test de arranque
-sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: esperando el test de arranque (hasta 1374 s)
 sembrar: ok
   [ok ] borrar y sembrar a mano siguen funcionando
 

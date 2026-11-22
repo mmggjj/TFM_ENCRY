@@ -79,9 +79,12 @@ begin
   dut : entity work.motor_top
     -- G_ETAPAS_RO2 = 5 SOLO en este banco (el integrado lleva 13): mismo
     -- modelo de anillo de siempre, para que la simulacion no tarde el doble.
-    -- G_PRESC_RO2 queda en su valor (4): el preescalador se prueba aqui.
+    -- G_PRESC_RO2 = 2 SOLO en este banco (por defecto 4): CFG_KD < G_PRESC_RO2
+    -- se rechaza al escribirlo, y con 2 se puede seguir escribiendo un
+    -- divisor bajo el minimo (2 < 4) para probar el rechazo de la siembra.
+    -- La ventana con el preescalador de 4 la mide tb_ventana_ero.
     generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4,
-                 G_FLUJO_BYTES => 64, G_ETAPAS_RO2 => 5)
+                 G_FLUJO_BYTES => 64, G_ETAPAS_RO2 => 5, G_PRESC_RO2 => 2)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
@@ -328,7 +331,8 @@ begin
     alias drbg_x_df is << signal .tb_motor_top.dut.g_cripto.u_drbg.x_df : std_logic_vector(127 downto 0) >>;
     alias cmac_x is << signal .tb_motor_top.dut.g_cripto.u_cmac.x : std_logic_vector(127 downto 0) >>;
 
-    variable b, status : std_logic_vector(7 downto 0);
+    variable b, b2, status : std_logic_vector(7 downto 0);
+    variable t_lim : time;
     variable pet1, pet2 : std_logic_vector(31 downto 0);
     variable clave1, clave2, reto, etiqueta1, etiqueta2 : std_logic_vector(127 downto 0);
     variable aleatorio : std_logic_vector(255 downto 0);
@@ -401,6 +405,19 @@ begin
     escribir_reg(x"04", x"1A");
     leer_reg(x"04", b);
     comprobar(b = x"1A", "CFG_KD = G_KD_MAX (26) se acepta");
+    -- El byte entero cuenta: 32 no se lee como 0 (antes del 22-11 se truncaba).
+    escribir_reg(x"04", x"20");
+    leer_reg(x"04", b);
+    leer_reg(x"0E", b2);
+    comprobar(b = x"1A" and b2(1) = '1', "CFG_KD = 32 se ignora con rechazada, no se trunca a 0");
+    escribir_reg(x"04", x"FF");
+    leer_reg(x"04", b);
+    comprobar(b = x"1A", "CFG_KD = 255 se ignora");
+    -- Por debajo de G_PRESC_RO2 la ventana no seria 2^CFG_KD: se ignora.
+    escribir_reg(x"04", x"01");
+    leer_reg(x"04", b);
+    leer_reg(x"0E", b2);
+    comprobar(b = x"1A" and b2(1) = '1', "CFG_KD < G_PRESC_RO2 se ignora con rechazada");
 
     report "2) Sembrar";
     -- 2.0) Antes de pasar el test de arranque (1024 muestras sin alarma,
@@ -411,7 +428,7 @@ begin
     --     orden: la semilla seria de calidad no garantizada y los tests de
     --     salud no lo detectarian. Antes era solo una obligacion documentada.
     esperar_arranque;
-    escribir_reg(x"04", x"02");                 -- K_D = 4 < minimo (16)
+    escribir_reg(x"04", x"02");                 -- 2 < G_KD_MIN (4)
     orden_rechazada(x"01", "sembrar con CFG_KD por debajo del minimo se rechaza");
     leer_reg(x"02", status);
     comprobar(status(0) = '0', "sigue sin sembrar");
@@ -655,7 +672,7 @@ begin
     comprobar(b(0) = '0' and status(1) = '1', "arrancar el flujo sin modo test se rechaza");
     modo_test <= '1';
     wait for 1 us;
-    escribir_reg(x"04", x"02");                 -- K_D = 4 < minimo
+    escribir_reg(x"04", x"02");                 -- 2 < G_KD_MIN (4)
     escribir_reg(x"0F", x"01");
     leer_reg(x"0F", b);
     leer_reg(x"0E", status);
@@ -682,9 +699,11 @@ begin
     -- 9c) Continuidad: 400 bytes seguidos, mas de seis vueltas de la FIFO,
     --     iguales bit a bit a los que cruzaron bit_cdc.
     total := 0; n_max := 0; iguales := true; resto_cero := true; distintos := 0;
-    while total < 400 loop
+    t_lim := now + 20 ms;                       -- ~6 ms a la tasa correcta
+    while total < 400 and now < t_lim loop
       leer_flujo;
     end loop;
+    comprobar(total >= 400, "400 bytes leidos en plazo (" & integer'image(total) & ")");
     comprobar(iguales, "400 bytes consecutivos iguales a los bits crudos, sin huecos");
     comprobar(distintos > 300, "y con contenido: " & integer'image(distintos) & " de " &
               integer'image(total) & " bytes no son 0x00 ni 0xFF");

@@ -1,0 +1,99 @@
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:383:5:@2200ns:(report note): 1) Identificacion
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@43200ns:(report note):   [ok ] ID = 0xA5
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@84200ns:(report note):   [ok ] STATUS refleja modo test
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@84200ns:(report note):   [ok ] sin sembrar al arrancar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@125200ns:(report note):   [ok ] VERSION = 0x04
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@166200ns:(report note):   [ok ] test de arranque aun sin pasar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@207200ns:(report note):   [ok ] CFG_KD arranca en G_KD_RESET (25), no en un valor bajo
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@278700ns:(report note):   [ok ] CFG_KD por encima de G_KD_MAX se ignora
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@319700ns:(report note):   [ok ] y levanta DIAG.rechazada
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@391200ns:(report note):   [ok ] CFG_KD = G_KD_MAX (26) se acepta
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:405:5:@391200ns:(report note): 2) Sembrar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@539200ns:(report note):   [ok ] sembrar antes del test de arranque se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@851200ns:(report note):   [ok ] sembrar con CFG_KD por debajo del minimo se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@892200ns:(report note):   [ok ] sigue sin sembrar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1024700ns:(report note):   [ok ] CFG_KD se ignora mientras hay una orden en curso
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1188700ns:(report note):   [ok ] sembrado
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1188700ns:(report note):   [ok ] sin alarmas de salud
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1229700ns:(report note):   [ok ] DIAG.rechazada a 0 tras una siembra completa
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:432:5:@1229700ns:(report note): 3) Generar clave
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1301200ns:(report note):   [ok ] clave valida
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1477200ns:(report note):   [ok ] clave no nula: 59ea7a5292089897e845d07c1039cf0c
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:439:5:@1477200ns:(report note): 3b) Aleatorio: generacion independiente, nunca la clave
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1868700ns:(report note):   [ok ] ALEATORIO no nulo
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@1868700ns:(report note):   [ok ] ALEATORIO no contiene la clave en ninguna de sus mitades
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:449:5:@1868700ns:(report note): 4) Reto-respuesta
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@2428200ns:(report note):   [ok ] etiqueta lista
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@2604200ns:(report note):   [ok ] etiqueta: f871e0778d2c142ab03c0defd2718fb5
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@2882200ns:(report note):   [ok ] la etiqueta cambia con el reto
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:468:5:@2882200ns:(report note): 5) Segunda clave distinta
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3129700ns:(report note):   [ok ] dos generaciones dan claves distintas
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:474:5:@3129700ns:(report note): 5b) Con alarma no sale nada del motor
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3171700ns:(report note):   [ok ] alarma RCT visible en STATUS
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3289200ns:(report note):   [ok ] generar con alarma se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3465200ns:(report note):   [ok ] la clave no cambia
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3582700ns:(report note):   [ok ] aleatorio con alarma se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3700200ns:(report note):   [ok ] resembrar con alarma se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3771700ns:(report note):   [ok ] borrar baja las alarmas
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3812700ns:(report note):   [ok ] borrar obliga a repetir el test de arranque
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@3930200ns:(report note):   [ok ] resembrar antes de repetir el test se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@4124700ns:(report note):   [ok ] pasado el test, aleatorio se acepta otra vez
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:499:5:@4124700ns:(report note): 5c) Alarma a mitad de un resembrado: se aborta
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@4307200ns:(report note):   [ok ] DIAG.rechazada marca la siembra abortada
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@4375200ns:(report note):   [ok ] PETICIONES no se reinicia: no hubo resembrado
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:513:5:@4692700ns:(report note): 5d) El contador de peticiones se agota y obliga a resembrar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@4760700ns:(report note):   [ok ] PETICIONES = 5 antes de agotar (byte bajo primero): 05000000
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@5998200ns:(report note):   [ok ] se aceptan 10 generaciones mas (hasta 15) y la siguiente no
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@6039200ns:(report note):   [ok ] DIAG.agotado a 1
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@6107200ns:(report note):   [ok ] PETICIONES se queda en 15, no da la vuelta
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@6224700ns:(report note):   [ok ] generar con el contador agotado se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@6706200ns:(report note):   [ok ] resembrar se acepta y baja DIAG.agotado
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@6774200ns:(report note):   [ok ] PETICIONES vuelve a 1 tras resembrar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:539:5:@6774200ns:(report note): 6) Captura de bits crudos
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@6892700ns:(report note):   [ok ] capturar sin modo test se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@7041700ns:(report note):   [ok ] capturar durante una siembra se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@7205700ns:(report note):   [ok ] y no deja captura hecha
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@7353700ns:(report note):   [ok ] resembrar durante una captura se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@8255700ns:(report note):   [ok ] buffer de captura lleno
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@8462200ns:(report note):   [ok ] bits crudos con contenido variado: 66cd993336664ccc999332664cc99336
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:576:5:@8462200ns:(report note): 6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@8493700ns:(report note):   [ok ] cap_en_curso sigue a 1 con la segunda captura en marcha
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@8611200ns:(report note):   [ok ] resembrar durante la segunda captura se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@9513200ns:(report note):   [ok ] segunda captura llena
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@9830700ns:(report note):   [ok ] resembrado tras la segunda captura
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@14688700ns:(report note):   [ok ] la semilla no aparece en el buffer de captura
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:607:5:@14688700ns:(report note): 7) Sin modo test la clave no se lee
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@14865700ns:(report note):   [ok ] CLAVE devuelve ceros sin modo test
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:615:5:@14866700ns:(report note): 8) Borrar todo (zeroizacion)
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15042700ns:(report note):   [ok ] antes de borrar, la clave sigue ahi
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15114200ns:(report note):   [ok ] sin clave valida y sin sembrar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15290200ns:(report note):   [ok ] ETIQUETA a ceros tras borrar
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15290200ns:(report note):   [ok ] sin residuos de la clave en los registros intermedios del DRBG
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15290200ns:(report note):   [ok ] sin residuo en el encadenamiento del CMAC
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15407700ns:(report note):   [ok ] resembrar tras borrar se rechaza: no hay estado
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15583700ns:(report note):   [ok ] CLAVE a ceros (en modo test, que si se lee)
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15903700ns:(report note):   [ok ] ALEATORIO a ceros
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@15971700ns:(report note):   [ok ] PETICIONES a 0
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@16089200ns:(report note):   [ok ] generar tras borrar se rechaza: no hay estado
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@16206700ns:(report note):   [ok ] autenticar tras borrar se rechaza: no hay clave
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@16483200ns:(report note):   [ok ] tras borrar se puede sembrar de nuevo
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@16730700ns:(report note):   [ok ] y la clave nueva no es nula ni la de antes
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:646:5:@16730700ns:(report note): 9) Captura continua (FLUJO)
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@16771700ns:(report note):   [ok ] FLUJO a cero sin arrancarlo
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@16885200ns:(report note):   [ok ] arrancar el flujo sin modo test se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@17029200ns:(report note):   [ok ] con CFG_KD por debajo del minimo se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@17202700ns:(report note):   [ok ] durante una siembra se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@18709200ns:(report note):   [ok ] flujo activo
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@18826700ns:(report note):   [ok ] resembrar con el flujo activo se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@18944200ns:(report note):   [ok ] capturar con el flujo activo se rechaza
+/home/mmggjj/workspace/TFM_ENCRY/rtl/tb/tb_motor_top.vhd:191:9:@19015700ns:(report note):   [ok ] CFG_KD se ignora con el flujo activo
+Terminado                  /usr/bin/ghdl -r --std=08 --workdir=w/work -Pw/unisim tb_motor_top --psl-report=psl.json
+
+real	68m59,439s
+user	62m42,492s
+sys	6m4,912s
+rc=143

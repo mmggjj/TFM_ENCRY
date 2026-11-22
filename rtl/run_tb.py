@@ -62,6 +62,7 @@ BANCOS = [
     ("tb_medidor_frec", "tb/tb_medidor_frec.vhd", []),
     ("tb_basys3_top", "tb/tb_basys3_top.vhd", ["-Pbuild/unisim"]),
     ("tb_basys2_top", "tb/tb_basys2_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_ventana_ero", "tb/tb_ventana_ero.vhd", ["-Pbuild/unisim"]),
 ]
 
 

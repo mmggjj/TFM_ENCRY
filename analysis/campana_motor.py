@@ -389,8 +389,8 @@ def main() -> int:
         carpeta.mkdir(parents=True, exist_ok=True)
         log = carpeta / "serie.log"
         trozos = math.ceil(args.bits / BITS_TROZO)
-        if any(not 0 <= k <= 24 for k in args.kd):
-            raise SystemExit("kd de 0 a 24")
+        if any(not 0 <= k <= 26 for k in args.kd):
+            raise SystemExit("kd de 0 a 26 (G_KD_MAX del integrado; la Basys 3 admite 24)")
         plazo = args.plazo or max(5.0, 4 * BITS_TROZO * 2 ** max(args.kd) / 50e6)
         t = Simulador(args.simulador) if args.simulador else Serie(args.puerto, not args.sin_reset)
         try:

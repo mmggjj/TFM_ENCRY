@@ -52,6 +52,27 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
+## Estado al 22-11-2026: placa cerrada con el bitstream final, revisión del RTL
+
+- **Placa, bitstream del 19-11 [MEDIDO]:** SP 800-90B a `kd 19` 0,853
+  (10⁶ consecutivos), reinicios §3.1.4 pasan (H_r 0,847, H_c 0,845);
+  `docs/basys3.md` "22-11-2026".
+- **SPICE:** T(ro2 13)/T(ro1 11) = 1,175 simulado (antes 13/11 estimado);
+  divisor sin cambios. Monte Carlo de las críticas completándose a 24 chips
+  (`mc24_e11_criticas_b`); **regla de lectura fijada antes del resultado**
+  (`docs/decisiones_pendientes.md`: oficial con todos los chips,
+  sensibilidad sin hueco de fase > 0,025).
+- **Revisión independiente del RTL** (`results/revision_rtl_20261122/`):
+  medidor que no sembraba en el integrado, `CFG_KD` ≥ 32 truncado y 0-3 con
+  ventana 2^4: corregidos (`CFG_KD` fuera de [`G_PRESC_RO2`, `G_KD_MAX`] se
+  ignora con `rechazada`). Banco nuevo `tb_ventana_ero` (47/47); **trece
+  bancos en verde** (`results/run_tb_todos.log`), banco en PC 0 fallos. El
+  bitstream de la placa es anterior a este cambio (solo difiere ante
+  escrituras fuera de rango); síntesis sin repetir.
+- **Documentos nuevos:** `docs/plan_memoria_cierre.md` (qué está desfasado en
+  la memoria), `docs/basys2_frente_basys3.md`; **memoria: apéndice D**,
+  Basys 2 frente a Basys 3 (EN y ES).
+
 ## Estado al 19-11-2026: decisiones del integrado aplicadas
 
 Decisiones de Mario (`docs/decisiones_pendientes.md`, "Decidido el
@@ -980,7 +1001,8 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   para provisionar en banco. En producto la clave no sale del chip; el
   ESP32 solo obtiene etiquetas y aleatorio.
 - El hardware **rechaza** `sembrar`/`resembrar` si `CFG_KD` está por debajo
-  del mínimo (genérico `G_KD_MIN`, 6 por defecto): la orden se ignora y
+  del mínimo (genérico `G_KD_MIN`, 25 por defecto desde el 19-11; 19 en la
+  Basys 3): la orden se ignora y
   `ocupado` no llega a subir. Escribir `CFG_KD` con una orden en curso se
   ignora. Ambas cosas desde el 19-09; antes eran obligaciones del maestro
   sin comprobar. Desde el 27-10 **con alarma no sale nada** (se rechazan
@@ -989,7 +1011,9 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   `DIAG.rechazada`. Desde la versión 0x03: `capturar` solo en modo test y
   nunca durante una siembra (ni siembra durante una captura); `PETICIONES`
   se para en 2^32−1 y `DIAG.agotado` pide resembrar; `borrar_todo` (bit 7)
-  zeroiza; CFG_KD arranca en 24. Detalle en `docs/mapa_registros.md`.
+  zeroiza; CFG_KD arranca en `G_KD_RESET` (25; 19 en la Basys 3) y un valor
+  fuera de [`G_PRESC_RO2`, `G_KD_MAX`] (4-26) se ignora con `DIAG.rechazada`
+  (22-11). Detalle en `docs/mapa_registros.md`.
 - Aleatorio para el host: `CONTROL ← aleatorio` (bit 6), sondear, leer
   `ALEATORIO` (0x40, 32 bytes). Es una generación del DRBG **independiente
   de la clave**. Hasta el 15-09 `generar` dejaba la clave en ese registro

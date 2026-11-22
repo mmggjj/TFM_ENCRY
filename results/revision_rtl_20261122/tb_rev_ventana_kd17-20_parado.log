@@ -1,0 +1,15 @@
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+tb_rev_ventana.vhd:81:20:@61200ns:(report note):   [ok ] reset CFG_KD = 25
+tb_rev_ventana.vhd:81:20:@132700ns:(report note):   [ok ] CFG_KD 17 escrito
+tb_rev_ventana.vhd:81:20:@472126600ps:(report note):   [ok ] kd 17 ventana 1: 131072 periodos de ro2 (esperado 2^kd efectivo 131072, 2^CFG_KD 131072)
+tb_rev_ventana.vhd:81:20:@590091400ps:(report note):   [ok ] kd 17 ventana 2: 131072 periodos de ro2 (esperado 2^kd efectivo 131072, 2^CFG_KD 131072)
+tb_rev_ventana.vhd:81:20:@662591400ps:(report note):   [ok ] CFG_KD 18 escrito
+tb_rev_ventana.vhd:81:20:@1179915400ps:(report note):   [ok ] kd 18 ventana 1: 262144 periodos de ro2 (esperado 2^kd efectivo 262144, 2^CFG_KD 262144)
+tb_rev_ventana.vhd:81:20:@1415845ns:(report note):   [ok ] kd 18 ventana 2: 262144 periodos de ro2 (esperado 2^kd efectivo 262144, 2^CFG_KD 262144)
+tb_rev_ventana.vhd:81:20:@1488345ns:(report note):   [ok ] CFG_KD 19 escrito
+tb_rev_ventana.vhd:81:20:@2831422600ps:(report note):   [ok ] kd 19 ventana 1: 524288 periodos de ro2 (esperado 2^kd efectivo 524288, 2^CFG_KD 524288)
+tb_rev_ventana.vhd:81:20:@3303281800ps:(report note):   [ok ] kd 19 ventana 2: 524288 periodos de ro2 (esperado 2^kd efectivo 524288, 2^CFG_KD 524288)
+tb_rev_ventana.vhd:81:20:@3375781800ps:(report note):   [ok ] CFG_KD 20 escrito

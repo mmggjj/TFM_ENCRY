@@ -7,7 +7,8 @@
 -- estable desde que cambio la conmutacion.
 --
 -- Vale mientras cada bit dure bastante mas que la sincronizacion: al
--- menos 8 ciclos de destino. Con K_D >= 64 se cumple de sobra; ver
+-- menos 8 ciclos de destino: con ro2 de 13 etapas, CFG_KD >= 7, muy por
+-- debajo de G_KD_MIN; ver
 -- docs/mapa_registros.md. Para tasas mayores (medida de jitter con K_D
 -- pequeno) se usa trng_capture, que no cruza bit a bit.
 

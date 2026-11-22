@@ -13,7 +13,7 @@ ESP32; si cambia uno, cambian los tres.
 | 0x01 | VERSION | R | 0x04 (0x02: DIAG y test de arranque; 0x01 hasta el 27-10-2026). 0x03 anade `borrar_todo`, `DIAG.agotado`, las reglas de `capturar` y CFG_KD de reset 24. 0x04 (10-11-2026) añade la captura continua (FLUJO); lo demás no cambia, y un maestro escrito para la 0x03 funciona igual |
 | 0x02 | STATUS | R | ver bits abajo |
 | 0x03 | CONTROL | W | órdenes, ver bits abajo; se autolimpian |
-| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor (periodos de ro2). **Desde el 19-11-2026 el rango es 0 a 26** (genérico `G_KD_MAX` de `motor_top`, que fija también el ancho del contador del ERO; antes 0 a 24, y 20 hasta el 08-10-2026). **Escribir un valor mayor que `G_KD_MAX` se ignora y levanta `DIAG.rechazada`.** En el integrado ro2 pasa por un preescalador ÷16 (`G_PRESC_RO2` = 4): el ERO cuenta 2^(valor − 4) flancos del reloj preescalado, que son los mismos 2^valor periodos de ro2; por debajo de 4 el divisor efectivo es 2^4. En la FPGA no hay preescalador. Con el anillo de IHP en ss/tt/ff de −40 a 125 °C a 1,2 V, el valor fijo que cubre todo el rango es 22 (peor caso ss a −40 °C); **con V_DD ± 10 % es 23** (peor caso ss, −40 °C, 1,08 V, donde 22 deja un 10 % de margen y no cubre el peor de quince chips con desapareamiento; `anillo_ihp.md` §4.2-4.3). **Tras el reset vale 25** (genérico `G_KD_RESET`; 24 hasta el 19-11-2026, 7 hasta la versión 0x02; en la Basys 3, 19): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre y sin flujo activo |
+| 0x04 | CFG_KD | R/W | divisor del anillo, K_D = 2^valor (periodos de ro2). **Desde el 19-11-2026 el rango es 0 a 26** (genérico `G_KD_MAX` de `motor_top`, que fija también el ancho del contador del ERO; antes 0 a 24, y 20 hasta el 08-10-2026). **Escribir un valor fuera de [`G_PRESC_RO2`, `G_KD_MAX`] se ignora y levanta `DIAG.rechazada`**; cuenta el byte entero (hasta el 22-11-2026 solo se miraban los 5 bits bajos: 32 se leía como 0, y 0-3 se aceptaban con una ventana real de 2^4; revisión `results/revision_rtl_20261122/`). Una escritura válida posterior no baja `rechazada` (no es una orden), y una ignorada por motor ocupado o flujo activo no la sube. En el integrado ro2 pasa por un preescalador ÷16 (`G_PRESC_RO2` = 4): el ERO cuenta 2^(valor − 4) flancos del reloj preescalado, que son los mismos 2^valor periodos de ro2, así que el rango útil es 4 a 26. En la FPGA no hay preescalador (0 a 24). Con el anillo de IHP en ss/tt/ff de −40 a 125 °C a 1,2 V, el valor fijo que cubre todo el rango es 22 (peor caso ss a −40 °C); **con V_DD ± 10 % es 23** (peor caso ss, −40 °C, 1,08 V, donde 22 deja un 10 % de margen y no cubre el peor de quince chips con desapareamiento; `anillo_ihp.md` §4.2-4.3). **Tras el reset vale 25** (genérico `G_KD_RESET`; 24 hasta el 19-11-2026, 7 hasta la versión 0x02; en la Basys 3, 19): un maestro que no lo escriba siembra con la tasa mas lenta, nunca con una por debajo de la caracterizada. Cambiarlo solo con el motor libre y sin flujo activo |
 | 0x05 | CFG_PAG | R/W | página del buffer de captura, 0 a 3 |
 | 0x06 | RCT_MAX_L | R | racha máxima vista, byte bajo |
 | 0x07 | RCT_MAX_H | R | racha máxima vista, byte alto |
@@ -248,7 +248,9 @@ baratas de imponer y su incumplimiento era silencioso; la tercera sigue
 siendo del maestro.
 
 1. **Suelo de `CFG_KD`, impuesto por hardware.** La vía que lleva los bits
-   del dominio del anillo al de sistema necesita `CFG_KD >= 6` (K_D >= 64).
+   del dominio del anillo al de sistema necesita que cada bit dure al menos
+   8 ciclos de sistema: `CFG_KD >= 7` con ro2 de 13 etapas (≥ 0,66 ns
+   [SIMULADO]; hasta el 19-11, con ro2 de 5 etapas, `>= 6`).
    Por debajo, el cruce pierde bits **en silencio** y los que pasan tienen
    muy poco jitter acumulado, o sea muy poca entropía, y los tests de salud
    no lo detectan: el RCT busca fuente pegada y el APT busca sesgo, no
@@ -291,4 +293,6 @@ ro2/16 y el ERO cuenta 2^(CFG_KD−4) de esos periodos. `G_KD_MIN` (25 en el
 integrado, 19 en la Basys 3) queda muy por encima, así que no aprieta
 (hasta el 19-11 el texto suponía ro2 a ~700 MHz y pedía CFG_KD ≥ 6). La captura de bits crudos para medir
 jitter no pasa por esta vía: `trng_capture` escribe en el dominio del
-anillo y admite cualquier K_D, incluido 1.
+anillo y admite cualquier K_D que admita `CFG_KD`: desde 1 en la FPGA y
+desde 2^4 en el integrado (por debajo del preescalador la escritura se
+rechaza).

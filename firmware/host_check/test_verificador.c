@@ -59,7 +59,7 @@ int main(void)
     chk(!(diag & DG_ARRANCADO), "al arrancar el test de arranque no ha pasado");
 
     printf("\n2) Sembrar y generar\n");
-    motor_reg_escribir1(REG_CFG_KD, 2);
+    motor_reg_escribir1(REG_CFG_KD, 5);       /* >= G_PRESC_RO2 (4), < minimo del modelo (6) */
     uint32_t t0 = motor_ticks();
     cmd_sembrar();
     chk(motor_ticks() > t0, "sembrar espera al test de arranque");
@@ -189,6 +189,11 @@ int main(void)
     motor_reg_leer(REG_CFG_KD, &kd, 1);
     chk(kd != MOTOR_KD_MAX + 1 && (dg & DG_RECHAZADA), "CFG_KD > G_KD_MAX se ignora y levanta DIAG.rechazada");
     cmd_kd(10);
+    motor_reg_escribir1(REG_CFG_KD, 3);       /* < G_PRESC_RO2: la ventana no seria 2^3 */
+    motor_reg_leer(REG_DIAG, &dg, 1);
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    chk(kd == 10 && (dg & DG_RECHAZADA), "CFG_KD < G_PRESC_RO2 se ignora y levanta DIAG.rechazada");
+    cmd_kd(10);
     motor_reg_leer(REG_CFG_KD, &kd, 1);
     chk(kd == 10, "kd 10 queda escrito");
     tramas = motor_n_tramas;
@@ -292,7 +297,7 @@ int main(void)
     motor_fallo_bus = 0;
     chk(!ult_flujo.ok && motor_n_tramas == tramas, "con el bus caido tampoco");
     motor_reg_escribir1(REG_FLUJO, 0);
-    cmd_kd(2);
+    cmd_kd(5);
     cmd_flujo(100);
     chk(!ult_flujo.ok && motor_n_tramas == tramas, "con CFG_KD bajo el motor lo rechaza");
     cmd_kd(6);

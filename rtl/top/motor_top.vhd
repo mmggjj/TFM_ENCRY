@@ -603,8 +603,11 @@ begin
             -- de un sembrado invalidaria el modelo estocastico de esa
             -- semilla. Con una orden en curso la escritura se ignora. Tampoco
             -- con el flujo activo: la tira mezclaria dos divisores.
+            -- Fuera de [G_PRESC_RO2, G_KD_MAX] (byte entero) se ignora:
+            -- por debajo del preescalador la ventana no seria 2^CFG_KD.
             if orden = LIBRE and flujo_ocup = '0' then
-              if to_integer(unsigned(reg_wdato(4 downto 0))) <= G_KD_MAX then
+              if to_integer(unsigned(reg_wdato)) <= G_KD_MAX and
+                 to_integer(unsigned(reg_wdato)) >= G_PRESC_RO2 then
                 kd_sel <= unsigned(reg_wdato(4 downto 0));
               else
                 rechazada <= '1';

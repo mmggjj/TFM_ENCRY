@@ -531,6 +531,26 @@ restricción de ro2 a 4,5 ns con comprobación en `build.tcl`.
   y Monte Carlo del biestable con ro1 de 11 etapas (primero las esquinas
   críticas; criterio del 16-11 sin cambios).
 
+## 22-11-2026: SP 800-90B y reinicios con el bitstream final [MEDIDO]
+
+Bitstream del 19-11 (variante silenciosa, `ro_bel.xdc`, 4,5 ns, `G_KD_MIN`
+y `G_KD_RESET` 19; SHA-256 `3affc2f5…9659`), regrabado tras reiniciar el PC
+(DONE alto); el ESP32 lee `arrancado=1` y `CFG_KD` 19 de reset. Es el diseño
+que va a la memoria: las campañas del 18-11 eran de otra implementación.
+
+- **Flujo de 10⁶ bits consecutivos a `kd 19`** (`motor_campana/basys3_final_1911_kd19/`,
+  2 565 s, 0 CRC malos, ro2 204,4 MHz por la duración): SP 800-90B no-IID
+  **0,853** (compresión; MCV 0,985, colisión 0,922, t-Tuple 0,919),
+  saturada como a `kd 13-19` en las campañas anteriores. Fracción de unos
+  0,4959 (z −8,1): el signo vuelve a ser el de la implementación libre;
+  ρ₁ +0,0004 (z 0,4), ρ₂…ρ₈ ≤ 0,0021.
+- **Reinicios §3.1.4 a `kd 19`** (`fpga_reinicios/basys3_kd19_final/`,
+  1 000 reprogramaciones por JTAG, 0 descartadas, 1,1-1,9 s por
+  reprogramación): **pasa**, H_r 0,847, H_c 0,845 ≥ H_I/2 con H_I 0,853 (la
+  del flujo de arriba); 1 000 arranques distintos (también en los 8
+  primeros bytes), Hamming 512,0 ± 15,98 (mínima 436), primer byte uniforme
+  (p = 0,47), ningún arranque es el flujo de otro desplazado.
+
 ## Plan para el 19-11-2026
 
 Lo de la tarde del 18-11 (abajo) está hecho y subido; una revisión
