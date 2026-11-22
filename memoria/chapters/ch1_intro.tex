@@ -1,7 +1,7 @@
 \chapter{Introduction}
 \label{ch:ch1_intro}
 
-% [DRAFT v1] Source material: docs/plan.md, docs/arquitectura.md, docs/via_asic.md.
+% Source material: docs/plan.md, docs/arquitectura.md, docs/via_asic.md.
 
 \section{Motivation: keys are only as good as their entropy}
 \label{sec:motivation}
@@ -66,9 +66,11 @@ The second part builds the generator instead of measuring someone
 else's: an engine whose entropy source is designed, whose jitter can be
 measured inside the device, whose min-entropy follows from a model, and
 whose keys are produced and used by primitives verified against the
-standards. The ESP32 changes role from subject to judge. It has its own
-AES and SHA accelerators and a mature cryptographic library, so it can
-recompute everything the engine produces with an implementation that
+standards. The ESP32 then plays two roles. It remains a subject: its
+generator and the engine's source are measured with the same tools and
+compared. And it becomes the judge of the engine: it has its own
+accelerators and a mature cryptographic library, so it can recompute the
+authentication tags the engine produces with an implementation that
 shares nothing with it, over a real bus.
 
 The engine is designed for silicon. Secure elements --- small integrated
@@ -78,9 +80,9 @@ microcontroller over I2C --- are a mature product category; the
 one ships with a NIST validation of its entropy source and two do not
 mention SP~800-90 anywhere in their documentation~\cite{microchip_atecc608b_ds}.
 The FPGA in this work is therefore the verification vehicle, not the
-target: it lets millions of test vectors run against the design in
-minutes, which no transistor-level simulator can, before the same
-description is synthesized on standard cells.
+target: it lets the whole engine run at speed against an independent
+verifier on a real bus, and its rings be measured, which no simulator
+can, before the same description is synthesized on standard cells.
 
 \section{Objectives}
 \label{sec:objectives}
@@ -98,6 +100,7 @@ divider that meets the AIS~20/31 target with margin.
 \item[O4] Write the digital engine --- health tests, AES-based
 conditioning and CTR\_DRBG, AES-CMAC and an I2C register interface --- as
 technology-independent RTL verified against official vectors.
+% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
 \item[O5] Verify the engine functionally on an FPGA with the ESP32 as an
 independent oracle: known-answer tests, cross interoperability and
 challenge-response.
@@ -116,14 +119,19 @@ into a bound, and a digital engine verified against an independent
 implementation. A negative result that is well measured closes the work
 as well as a positive one: if the accumulation exponent on hardware is
 two rather than one, flicker dominates and the divider cannot grow
-indefinitely, and that is a finding.
+indefinitely, and that is a finding. Part of it came true. On the
+FPGA the exponent is between 1.6 and 2.1 \meas{}, the model does not
+describe the shape of the measured phase noise, a deterministic
+modulation of external origin explains much of the difference, and the
+bound had to be taken from the white floor of a spectrum instead of from
+the fit planned at the outset (Section~\ref{sec:campaign}).
 
 \section{Scope and exclusions}
 \label{sec:scope}
 
 Four things are deliberately out of scope, each for a stated reason.
-\emph{Fabrication}: an academic shuttle is affordable and the engine fits
-in the smallest block offered, but the schedule from tape-out to packaged
+\emph{Fabrication}: an academic shuttle is affordable and the engine is
+no larger than the smallest area that can be ordered, but the schedule from tape-out to packaged
 and characterized samples exceeds a master's thesis; the cost and the path
 are documented, not executed. \emph{Asymmetric cryptography}: an
 elliptic-curve multiplier is a project in itself and would consume the
@@ -168,5 +176,7 @@ min-entropy and validates every link. Chapter~\ref{ch:ch4_engine}
 describes the digital engine and Chapter~\ref{ch:ch5_verification} its
 verification. Chapter~\ref{ch:ch6_asic} synthesizes the engine on standard
 cells and states the path and cost of an integrated circuit.
-Chapter~\ref{ch:ch7_results} reports the hardware campaign and the
-comparisons, and Chapter~\ref{ch:ch8_concl} concludes.
+Chapter~\ref{ch:ch7_results} reports the simulated rings of the
+integrated circuit, the campaign on the FPGA and the comparisons,
+and Chapter~\ref{ch:ch8_concl} concludes. Appendix~\ref{app:fpga} sets
+the two FPGA boards used side by side.

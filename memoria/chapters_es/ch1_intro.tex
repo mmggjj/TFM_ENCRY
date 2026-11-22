@@ -1,7 +1,7 @@
 \chapter{Introducción}
 \label{ch:ch1_intro}
 
-% [BORRADOR v1] Material de partida: docs/plan.md, docs/arquitectura.md, docs/via_asic.md.
+% Material de partida: docs/plan.md, docs/arquitectura.md, docs/via_asic.md.
 
 \section{Motivación: una clave vale lo que vale su entropía}
 \label{sec:motivation}
@@ -67,10 +67,12 @@ La segunda parte construye el generador en lugar de medir el de otro: un
 motor cuya fuente de entropía esté diseñada, cuyo jitter se
 pueda medir dentro del dispositivo, cuya min-entropía se deduzca de un modelo y
 cuyas claves produzcan y usen primitivas verificadas frente a las normas.
-El ESP32 cambia de papel: de objeto de estudio pasa a juez. Tiene sus
-propios aceleradores AES y SHA y una biblioteca criptográfica madura, de
-modo que puede recalcular todo lo que produce el motor con una
-implementación que no comparte nada con él, a través de un bus real.
+El ESP32 tiene entonces dos papeles. Sigue siendo objeto de estudio: su
+generador y la fuente del motor se miden con las mismas herramientas y se
+comparan. Y pasa a ser el juez del motor: tiene sus propios aceleradores
+y una biblioteca criptográfica madura, de modo que puede recalcular las
+etiquetas de autenticación que produce el motor con una implementación
+que no comparte nada con él, a través de un bus real.
 
 El motor está diseñado para silicio. Los elementos seguros --- pequeños
 circuitos integrados que generan, almacenan y usan claves en nombre de un
@@ -79,10 +81,11 @@ producto madura; la \emph{transparencia} de su entropía no lo es. De tres
 componentes de uso extendido, uno se vende con una validación NIST de su
 fuente de entropía y dos no mencionan SP~800-90 en ningún lugar de su
 documentación~\cite{microchip_atecc608b_ds}. La FPGA de este trabajo es,
-por tanto, el vehículo de verificación, no el objetivo: permite ejecutar
-millones de vectores de prueba contra el diseño en minutos, algo que
-ningún simulador a nivel de transistor puede hacer, antes de que la misma
-descripción se sintetice sobre celdas estándar.
+por tanto, el vehículo de verificación, no el objetivo: permite que el
+motor entero funcione a su velocidad frente a un verificador
+independiente por un bus real, y que se midan sus anillos, algo que
+ningún simulador puede hacer, antes de que la misma descripción se
+sintetice sobre celdas estándar.
 
 \section{Objetivos}
 \label{sec:objectives}
@@ -102,6 +105,7 @@ divisor del muestreador que cumple con margen el objetivo de AIS~20/31.
 basado en AES y CTR\_DRBG, AES-CMAC y una interfaz de registros I2C ---
 como RTL independiente de la tecnología, verificado frente a vectores
 oficiales.
+% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
 \item[O5] Verificar funcionalmente el motor en una FPGA con el ESP32 como
 oráculo independiente: pruebas de respuesta conocida, interoperabilidad
 cruzada y reto-respuesta.
@@ -122,14 +126,20 @@ en una cota, y un motor digital verificado frente a una implementación
 independiente. Un resultado negativo bien medido cierra el trabajo igual
 que uno positivo: si el exponente de acumulación en hardware es dos en
 lugar de uno, domina el ruido de parpadeo y el divisor no puede crecer
-indefinidamente, y eso es un hallazgo.
+indefinidamente, y eso es un hallazgo. En parte se cumplió. En la
+FPGA el exponente está entre 1,6 y 2,1 \meas{}, el modelo no describe
+la forma del ruido de fase medido, una modulación determinista de origen
+externo explica buena parte de la diferencia, y la cota hubo que tomarla
+del suelo blanco de un espectro en lugar del ajuste previsto al principio
+(Sección~\ref{sec:campaign}).
 
 \section{Alcance y exclusiones}
 \label{sec:scope}
 
 Cuatro cosas quedan deliberadamente fuera del alcance, cada una por una
 razón explícita. \emph{Fabricación}: una lanzadera académica es asequible
-y el motor cabe en el bloque más pequeño que se ofrece, pero el plazo
+y el motor no es mayor que el área más pequeña que se puede encargar,
+pero el plazo
 desde el tape-out hasta tener muestras encapsuladas y caracterizadas
 excede lo que cabe en un TFM; el coste y el camino se documentan, no se
 ejecutan. \emph{Criptografía asimétrica}: un multiplicador de curva
@@ -179,5 +189,7 @@ Capítulo~\ref{ch:ch4_engine} describe el motor digital y el
 Capítulo~\ref{ch:ch5_verification}, su verificación. El
 Capítulo~\ref{ch:ch6_asic} sintetiza el motor sobre celdas estándar y
 expone el camino y el coste de un circuito integrado. El
-Capítulo~\ref{ch:ch7_results} presenta la campaña en hardware y las
-comparaciones, y el Capítulo~\ref{ch:ch8_concl} concluye.
+Capítulo~\ref{ch:ch7_results} presenta los anillos simulados del
+circuito integrado, la campaña en la FPGA y las comparaciones, y el
+Capítulo~\ref{ch:ch8_concl} concluye. El Apéndice~\ref{app:fpga} pone
+lado a lado las dos placas FPGA usadas.
