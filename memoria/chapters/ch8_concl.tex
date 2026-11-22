@@ -1,10 +1,6 @@
 \chapter{Conclusions and Future Work}
 \label{ch:ch8_concl}
 
-% [DRAFT, 08-11-2026] Written before the FPGA bring-up. Every sentence
-% that depends on the board is marked [PENDING] and must be rewritten with
-% the measured figures (docs/puesta_en_marcha_fpga.md).
-
 \section{Conclusions}
 
 The work set out to design a key-generation engine for an integrated
@@ -26,10 +22,26 @@ read. The exact wrapped-Gaussian computation, not the truncated series
 usually quoted, turns the jitter into a min-entropy per bit, and the
 target $H_\infty \ge 0.98$ fixes $Q \ge 0.2286$. Across corners, supply
 ($\pm 10$\,\%) and mismatch, the worst case is the slow corner at
-$-40$~\textdegree C and 1.08~V; a fixed divider of $2^{23}$ covers every
-simulated chip with $H_\infty \ge 0.9996$ \simu{}, at 0.20--0.41~kbit/s.
-The divider therefore follows from the cold, slow, low-supply corner, not
-from the typical one, which alone would have suggested $2^{20}$.
+$-40$~\textdegree C and 1.08~V, where a five-stage ring would need a
+fixed divider of $2^{23}$ \simu{}. The divider therefore follows from the
+cold, slow, low-supply corner, not from the typical one, which alone
+would have suggested $2^{20}$.
+
+\paragraph{The sampler, not the ring, fixed the length of the ring.} The
+flip-flop of the library that samples the ring captures rising and
+falling inputs at different instants, and that biases the bit. A
+criterion was written before the Monte Carlo that would test it: declare
+no more entropy than the $\mu - 3\sigma$ point of the worst corner
+supports, and if that falls below 0.60 correct the circuit instead of
+lowering the figure. With the five-stage ring it fell to 0.532 \simu{}.
+The sampled ring was lengthened to eleven stages and the Monte Carlo
+repeated on 24 dies in each of five corners: 0.757 \simu{}, so the
+declared entropy of 0.60 stands, with a 512-bit seed. The final source
+has rings of eleven and thirteen stages and a minimum divider of \kd{25},
+twice what the simulation of its worst corner asks for, and delivers 20
+to 50~bit/s \est{}. That is a hundred times slower than the first
+estimates, and it is the honest cost of the bias, the worst corner and
+the margin together.
 
 \paragraph{A battery of statistical estimators cannot replace the model.}
 Bits drawn from the model with the IHP jitter, and ideal uniform bits,
@@ -38,7 +50,10 @@ captures. At $10^6$ bits the tool saturates at $0.839 \pm 0.021$
 \simu{}: every point of the model with $H_\infty \ge 0.97$ reads alike,
 and with little entropy the tool overestimates. With longer sequences the
 ceiling rises for every source, ESP32 included, and the tool still does
-not separate them (Section~\ref{sec:sim_90b}). Statistical tests detect
+not separate them (Section~\ref{sec:sim_90b}). The board confirmed it
+\meas{}: on the \ac{FPGA} the tool gives 0.82 to 0.88 for every divider
+from $2^{12}$ to $2^{19}$, while the model with the measured jitter goes
+from almost nothing to 0.9996 over that range. Statistical tests detect
 defects; they do not certify entropy. For a ring oscillator the bound has
 to come from the physics, and that is the argument for the stochastic
 model.
@@ -46,23 +61,26 @@ model.
 \paragraph{The digital engine is correct against independent references
 (O4).} The engine --- \ac{ERO} sampler, health tests with start-up test,
 CTR\_DRBG with derivation function, AES-CMAC, zeroization and an I2C
-register map --- is portable VHDL-2008. Its testbenches reproduce the
-official FIPS-197, SP~800-38B, RFC~4493 and \ac{CAVP} vectors, and the
+register map --- is portable VHDL-2008. Its thirteen testbenches
+reproduce the official FIPS-197, SP~800-38B and RFC~4493 vectors and the
+outputs of a reference model validated on the \ac{CAVP} vectors, and the
 security rules of the sequencer are checked as \ac{PSL} properties over
-the whole simulation, not only in the steps that exercise them. Two
+the whole simulation, not only in the steps that exercise them. Three
 independent reviews found defects that the testbenches had not caught ---
 output still enabled with a health alarm raised, the seed reaching the
-capture buffer, intermediate values surviving zeroization ---; all were
-fixed and each now has a test. The lesson is methodological: a design
+capture buffer, intermediate values surviving zeroization, a divider
+setting out of range accepted in silence ---; all were fixed and each now
+has a test. The lesson is methodological: a design
 verified by its own author against its own testbench is not verified.
 
 \paragraph{The engine fits a small integrated circuit (O7).} Synthesized
-on IHP SG13G2 standard cells, the engine occupies 92.5~kGE with one shared
-32-bit AES core \simu{}, of which about 46~kGE are the digital engine
+on IHP SG13G2 standard cells, the engine occupies 95.5~kGE with one shared
+32-bit AES core \simu{}, of which 48.7~kGE are the digital engine
 without the capture buffer. The two optimizations applied --- one AES core
 shared by the generator and the authenticator, then a 32-bit datapath ---
-saved 23~kGE; the published 20--25~kGE of the state of the art are not
-reached, and the path to about 42~kGE is identified.
+saved 23~kGE when they were made; the 13 to 25~kGE that this work first
+estimated for an engine of this kind are not reached, and the path to
+about 45~kGE is identified.
 
 \paragraph{The ESP32 generator is not a reference to be trusted blindly
 (O8, ESP32 side).} Thirty-eight captures from three chips under four radio
@@ -73,28 +91,58 @@ produces after every reset is a window of one fixed sequence, and two
 different chips produce the same one \meas{}. Its output is as good as its seeding, which
 depends on the radio, the \ac{ADC} or the bootloader being active.
 
-% NOTE (14-11-2026, not printed; Spanish, see docs): hay resultados PROVISIONALES de una
-% Basys 2 (XC3S100E: solo la fuente; reloj 50 MHz, ro2 143,8 MHz y ro1
-% 108,7 MHz con 7 y 9 etapas; ESP32 por I2C con 10^6 bits de flujo sin
-% errores; Q por periodo de ro2 ~4,5e-5 con residuo del modelo; el display
-% modula los anillos; SP 800-90B kd 13-16 saturadas y kd 12 = 0,760
-% coherente con el modelo; CFG_KD provisional >= 14). Mario intenta
-% conseguir una Basys 3: NO cerrar este parrafo con ellos hasta decidirlo.
-% Todo en docs/basys2.md.
-\paragraph{Integration on the FPGA (O5, O6).} [PENDING: bring-up on the
-board, measured ring frequencies, measured $Q_{\mathrm{raw}}$ and
-accumulation exponent, divider for the \ac{FPGA}, SP~800-90B campaign on
-the real rings, challenge--response with the ESP32 on the bus.] Before
-the board, the firmware ran against a model of the engine on the host
-with the real mbedtls, in an emulated chip, and on a real ESP32-C3; the
-board wrapper with its ring frequency meter was simulated with the rings
-of the engine.
+% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
+\paragraph{The whole engine works on an FPGA with an independent verifier
+(O5).} The engine was implemented complete on a Basys~3 and driven by an
+ESP32 over \ac{I2C}. In three sessions, on three different
+implementations, the ESP32 recomputed with mbedTLS 40 of 40
+authentication tags, under two keys per session separated by a
+zeroization \meas{}; the rejection of a divider below the minimum and of
+one above the maximum was also exercised on the board. Known-answer
+vectors cannot be loaded through the register map, which accepts neither
+a key nor a seed, and remain covered in simulation. Getting there took
+corrections that no simulation had asked for --- a ring that would not
+route, a ring domain and a health-test comparison that did not close
+timing, and inverters that the tool had merged --- and the rule
+learned on the first prototype board: check in the implemented netlist
+that the ring exists.
 
-\paragraph{Comparison of the two sources (O8).} [PENDING: the measured
-engine against the measured ESP32 under the same battery. Expected from
-the simulation: the battery will not separate them where both are near
-full entropy; the informative points are the low dividers, where the model
-predicts $H_\infty < 0.8$ and the battery can contradict it.]
+\paragraph{The rings of the FPGA have a measurable white noise floor, and
+little else in their bits is entropy (O6).} The estimators of the
+relative phase noise give between $3\times10^{-6}$ and $8\times10^{-5}$
+per period of the sampling ring \meas{} depending on the method and on
+the logic attached to the rings, each repeatable within a few per cent:
+the stochastic model does not describe the shape of what was measured,
+and the accumulation exponent is 1.6 to 2.1. A spectrum explains most of
+it: a narrow line near 39.4~kHz, of external and unidentified origin,
+modulates the relative phase. Away from the line the white floor is 0.6
+to $1.1\times10^{-6}$ \meas{}, with an estimator that errs upwards, and
+its lower edge puts the \ac{FPGA} divider at \kd{19}, for
+$H_\infty \ge 0.99$ in the model at about 390~bit/s. The divider first
+derived from the fits, $2^{16}$, would have given 0.47. Two findings bear
+on the design rather than on the board. The health tests of SP~800-90B do
+not fire when the divider is lowered until the bits simply alternate, so
+a minimum divider enforced in hardware is the only protection of that
+regime. And the logic attached to a ring changes its apparent phase noise
+several times over, which is why the integrated circuit asks for
+isolated rings. Three steps of the protocol fixed beforehand were not
+followed as written, and Section~\ref{sec:campaign} declares each.
+
+\paragraph{Comparison of the two sources (O8).} Under the SP~800-90B
+battery the assigned figure does not separate the \ac{FPGA} source
+(0.857), the ESP32 (0.848) and ideal bits (0.847) at $10^6$ bits
+\meas{}. The estimators sensitive to bias do separate the \ac{FPGA}, by a
+bias of half a per cent that follows the implementation, and so the
+battery gives the better marks to the generator that, without boot
+noise, repeats its sequence. At low dividers the battery overestimates,
+as the simulation predicted, instead of contradicting the model. What
+separates the two sources is the restart test, which the ring source
+passes with nothing but its own noise in 1000 reconfigurations and the
+ESP32 fails without the noise injected at boot; and, behind the figures,
+a physical quantity measured inside the device, which the ESP32 does not
+offer. The long records of the \ac{FPGA} were taken at a divider that
+the white floor later showed to be too low, and they say something about
+the battery, not about the source.
 
 \section{Contributions}
 
@@ -103,9 +151,21 @@ predicts $H_\infty < 0.8$ and the battery can contradict it.]
 oscillator on an open \ac{PDK}, with the divider fixed by the worst of
 corners, supply and mismatch, and with every link validated on data of
 known answer.
-\item Evidence, on simulated sources of known entropy, that the
-SP~800-90B estimators saturate below 0.9 at the usual sequence lengths and
-cannot tell a sound source from a weaker one in that range.
+\item A Monte Carlo of the sampling flip-flop that turned its bias into a
+design decision, the length of the sampled ring, under a criterion fixed
+before the simulation.
+\item Evidence, on simulated sources of known entropy and then on a real
+one, that the SP~800-90B estimators saturate below 0.9 at the usual
+sequence lengths and cannot tell a sound source from a weaker one in that
+range.
+\item The white floor of the relative phase noise of two rings in an
+Artix-7, measured inside the device and separated from a deterministic
+modulation that the usual fits count as jitter, with the limits of the
+estimator stated; and the observation that the standard health tests are
+blind to the anticorrelated low-jitter regime, which is the case for a
+minimum divider enforced in hardware.
+\item A restart test of the \ac{FPGA} source set beside that of the ESP32
+generator.
 \item A characterization of the ESP32 generator under SP~800-90B with
 three chips and four conditions, and a restart test showing that, without
 external noise at boot, different chips produce the same sequence. This
@@ -123,14 +183,23 @@ shuttle and measure the jitter that this work simulated; the \ac{FPGA}
 measures a different ring.
 \item \emph{Foundry models.} Repeat the corner and mismatch study with the
 noise models of a commercial \ac{PDK}.
-\item \emph{Continuous capture on the board.} The continuous stream that
-gives the consecutive samples SP~800-90B asks for is written and
-simulated, not yet run; its rate is limited by the serial link of the
-ESP32, and storing the string before sending it would extend it to lower
-dividers.
+\item \emph{What the simulation of the final rings leaves open.} Mismatch
+with eleven stages and the jitter of the thirteen-stage ring; the timing
+of the prescaled domain with a slow library; and a sampling clock drawn
+at random in the flip-flop Monte Carlo, to settle the difference between
+its batches.
+\item \emph{The line near 39.4~kHz.} Identify its origin, with an
+oscilloscope on the supplies of the board or with the ESP32 isolated, and
+a model of the shape of the measured autocorrelation that includes it.
+\item \emph{What the campaign did not do.} A long record at the operating
+divider, the rings in adjacent regions, and temperature and supply on the
+board. The stream is limited by the serial link of the ESP32; storing the
+string before sending it would extend it to lower dividers.
+\item \emph{The meter with the real engine.} The signed-readings firmware
+ran against a model of the engine; run it against the \ac{FPGA}.
 \item \emph{Online jitter test.} Move the pair estimator into the RTL as an
 online test that detects cooling and locking, as its authors propose.
-\item \emph{Area.} Apply the third optimization to approach 42~kGE, and
+\item \emph{Area.} Apply the third optimization to approach 45~kGE, and
 measure power.
 \item \emph{The product.} Store the device key encrypted or make the
 engine a secure element that signs, and add real time to the signed
