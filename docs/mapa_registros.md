@@ -70,8 +70,11 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
    `borrar_alarmas`, el motor no siembra hasta que se cierra sin alarma una
    ventana completa del APT. Borrar las alarmas reinicia la ventana, así que
    esa ventana solo contiene muestras posteriores al borrado. El maestro
-   sondea `DIAG.arrancado` antes de sembrar; con K_D = 2^24 y el anillo a
-   ~700 MHz son unos 25 s.
+   sondea `DIAG.arrancado` antes de sembrar. En el integrado (`CFG_KD` 25,
+   ro2 de 13 etapas a 0,66-1,46 ns por periodo [SIMULADO, ff 125 °C a ss
+   −40 °C, `results/anillo_ihp_periodo_*`]) el bit sale cada 22-49 ms
+   (20-45 bit/s) y la ventana de 1024 tarda 23-50 s; en la Basys 3
+   (`CFG_KD` 19, ro2 a 207 MHz [MEDIDO]) unos 2,6 s.
 2. **La semilla se valida entera.** El APT solo da veredicto al cerrar su
    ventana de 1024 muestras y la semilla son 512 bits, así que antes la
    primera semilla entraba en el DRBG sin que el APT la hubiera evaluado.
@@ -79,7 +82,9 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
    ventana que contiene el último y solo instancia el DRBG si se cierra sin
    alarma. Una alarma, o un `borrar_alarmas`, durante la recogida o la
    espera aborta la siembra: el DRBG queda como estaba y `DIAG.rechazada`
-   sube. Una siembra tarda como mucho 512 + 1024 bits.
+   sube. Una siembra tarda como mucho 512 + 1024 bits: 34-75 s en el
+   integrado con `CFG_KD` 25 [ESTIMADO con los periodos de arriba], ~4 s en
+   la Basys 3 a `CFG_KD` 19.
 3. **Alarma bloquea la salida**, ver STATUS arriba.
 
 **Cortes (desde el 16-11-2026):** RCT C = 51 y APT C = 766 (W = 1024),
@@ -111,8 +116,11 @@ ESP32. Con estos cortes y bits iid [ESTIMADO, `cortes_salud.py` y
 `docs/basys2.md`], a 8,7 kbit/s (Basys 2, `kd 14`): con bits ideales,
 ninguna en la vida del equipo; con el peor chip simulado (P(1) 0,372), ~8
 al año del RCT; con un chip justo en H = 0,60, ~89 al año (0,24 al día). Al
-ritmo del integrado con 2²³ (≤ 0,41 kbit/s), ≤ 0,4 y ≤ 4,2 al año. Tres en
-un día no son azar.
+ritmo del integrado con `CFG_KD` 25 y ro2 de 13 etapas (≤ 45 bit/s; hasta el
+19-11, 2²³ con 5 etapas, ≤ 0,41 kbit/s), ≤ 0,05 y ≤ 0,5 al año (las tasas
+escalan con el caudal). El peor chip de 0,372 es del biestable con ro1 de 5
+etapas; con 11 etapas el Monte Carlo (en curso, `docs/decisiones_pendientes.md`)
+da P(1) ≥ 0,41. Tres en un día no son azar.
 
 ## CONTROL (0x03)
 
@@ -276,8 +284,11 @@ siendo del maestro.
 
 La vía que alimenta los tests de salud y la recogida de semilla cruza del
 dominio del anillo al de sistema bit a bit, y necesita que cada bit dure
-al menos 8 ciclos de sistema. Con reloj de 100 MHz y anillo de muestreo a
-~700 MHz, eso exige K_D ≥ 64 (CFG_KD ≥ 6). En modo generador K_D es
-mucho mayor, así que no aprieta. La captura de bits crudos para medir
+al menos 8 ciclos de sistema (80 ns a 100 MHz), es decir 2^CFG_KD
+periodos de ro2 ≥ 80 ns: con ro2 de 13 etapas (≥ 0,66 ns) basta CFG_KD ≥ 7,
+y con el preescalador ÷16 (`G_PRESC_RO2` = 4) el dominio del anillo corre a
+ro2/16 y el ERO cuenta 2^(CFG_KD−4) de esos periodos. `G_KD_MIN` (25 en el
+integrado, 19 en la Basys 3) queda muy por encima, así que no aprieta
+(hasta el 19-11 el texto suponía ro2 a ~700 MHz y pedía CFG_KD ≥ 6). La captura de bits crudos para medir
 jitter no pasa por esta vía: `trng_capture` escribe en el dominio del
 anillo y admite cualquier K_D, incluido 1.
