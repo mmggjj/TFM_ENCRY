@@ -3,11 +3,14 @@
 
 Este capítulo reúne lo que el trabajo establece y lo separa, sin
 suavizarlo, de lo que no establece. El motor se ha modelado, escrito,
-verificado en simulación frente a vectores oficiales y sintetizado sobre
-una biblioteca de celdas estándar real; todavía no ha funcionado en la
-\ac{FPGA}. Por eso cada cifra que sigue lleva su marca de procedencia, y
-la campaña de entropía --- el único resultado que necesita silicio en el
-banco --- se presenta como un protocolo por ejecutar, no como datos.
+verificado en simulación frente a vectores oficiales, sintetizado sobre
+una biblioteca de celdas estándar real y ha funcionado entero en una
+\ac{FPGA} con un ESP32 en su bus. Cada cifra que sigue lleva su marca de
+procedencia. La campaña de entropía en la \ac{FPGA} se había escrito como
+protocolo antes de tener la placa; la Sección~\ref{sec:campaign} la
+presenta paso a paso y declara dónde no se siguió el protocolo. Aparecen
+dos anillos distintos que no deben mezclarse: el del circuito integrado,
+que solo existe en simulación, y el de la \ac{FPGA}, que se midió.
 
 \section{Estado frente a los objetivos}
 \label{sec:status}
@@ -26,32 +29,45 @@ Obj. & Estado & Evidencia \\
 \midrule
 O1 & cumplido  & Anillo a nivel de transistor en el \ac{PDK} abierto IHP SG13G2,
               con el ruido de sus propios modelos de dispositivo
-              (Sección~\ref{sec:ihp_ring}); pendiente el \ac{PDK} de fundición \\
+              (Sección~\ref{sec:ihp_ring}), repetido para el anillo de once
+              etapas del diseño final en su peor esquina
+              (Sección~\ref{sec:ihp_ring11}); el biestable de muestreo de
+              la biblioteca simulado sin ruido en 120 chips
+              (Sección~\ref{sec:ff_mc}); pendiente el \ac{PDK} de fundición \\
 O2 & cumplido  & Jitter extraído de las formas de onda; térmico y $1/f$
               separados (banco y función de sensibilidad al impulso);
               estimador validado sobre datos sintéticos con $Q$ conocido \\
 O3 & cumplido  & Modelo estocástico cerrado: cálculo exacto con la gaussiana envuelta,
               punto de diseño $Q \ge 0{,}2286$ (Sección~\ref{sec:opoint}) \\
-O4 & cumplido  & Motor escrito en VHDL-2008 portable; nueve bancos de pruebas pasan
-              con los vectores de FIPS-197, SP 800-38B, RFC 4493 y \ac{CAVP} \\
-O5 & parcial   & El firmware del verificador compila y el protocolo está cerrado;
-              falta la ejecución en placa \\
-O6 & pendiente & Requiere la \ac{FPGA} en el banco
-              (Sección~\ref{sec:protocol}) \\
+O4 & cumplido  & Motor escrito en VHDL-2008 portable; trece bancos de pruebas
+              pasan, con los vectores de FIPS-197, SP 800-38B y RFC 4493 y
+              un modelo de referencia validado con los vectores \ac{CAVP} \\
+% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
+O5 & parcial   & El motor entero funciona en una Basys~3 y el ESP32 recalculó
+              con mbedTLS 40 de 40 etiquetas \ac{CMAC} en cada una de tres
+              sesiones, con dos claves por sesión \meas{}
+              (Sección~\ref{sec:bringup}). Las pruebas de respuesta conocida
+              no se hicieron en placa: el mapa de registros no carga ni
+              clave ni semilla, y se cubren en simulación \\
+O6 & cumplido  & Jitter, estimaciones SP~800-90B, tests de salud y prueba de
+              reinicios medidos en los anillos de la \ac{FPGA}
+              (Secciones~\ref{sec:campaign} y~\ref{sec:o8}); el modelo
+              estocástico no describe la forma del ruido de fase medido, y
+              el divisor se apoya solo en su suelo blanco \\
 O7 & cumplido  & Síntesis en IHP SG13G2, área por bloque y vía de optimización
               (Capítulo~\ref{ch:ch6_asic}) \\
-O8 & parcial   & Comparación estructural cerrada (Sección~\ref{sec:se_comparison});
-              el lado ESP32 de la comparación numérica está medido según
-              SP 800-90B (Sección~\ref{sec:esp32_90b}); el lado del motor
-              está simulado bajo la misma batería (Sección~\ref{sec:sim_90b})
-              y su medida necesita O6 \\
+O8 & cumplido  & Comparación estructural (Sección~\ref{sec:se_comparison}); las
+              dos fuentes medidas bajo SP~800-90B a la misma longitud y
+              bajo la prueba de reinicios (Sección~\ref{sec:o8}); la fuente
+              simulada bajo la misma batería (Sección~\ref{sec:sim_90b}) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 El resultado mínimo defendible declarado en el Capítulo~\ref{ch:ch1_intro} ---
-O1--O3 junto con O5 --- se alcanza en su parte de modelado y diseño.
-Lo que aún le falta a O5 es la puesta en marcha, no el diseño.
+O1--O3 junto con O5 --- se alcanza: la fuente se dimensiona desde el
+transistor y el motor construido a su alrededor responde a una
+implementación independiente por un bus real.
 
 \section{Ruido del anillo a nivel de transistor}
 \label{sec:spice_results}
@@ -179,9 +195,17 @@ a través de la alimentación o del sustrato, algo que solo el silicio
 puede mostrar. Una consecuencia de diseño se aplicó de inmediato: el
 contador del divisor tenía 20 bits, así que el mayor $K_D$ era
 $2^{20} = 1\,048\,576$, un margen del 7\,\% (del 4 al 9\,\%) sobre lo
-requerido en la esquina típica a temperatura ambiente. Ahora tiene 24 bits (cuatro
-flip-flops, 0,04~kGE), y el banco del motor completo y su verificación
-cruzada se volvieron a ejecutar con él.
+requerido en la esquina típica a temperatura ambiente. Se ensanchó
+enseguida a 24 bits (cuatro flip-flops, 0,04~kGE) y más tarde a 26, al
+alargar el anillo (Sección~\ref{sec:ihp_ring11}).
+
+El resto de esta sección conserva el anillo de cinco etapas como
+caracterización de la tecnología: sobre él se estudiaron las esquinas, la
+alimentación, el desapareamiento y el ruido de parpadeo. El diseño final
+no lo usa tal cual. El anillo muestreado tiene once etapas y el de
+muestreo trece, por la razón que da la Sección~\ref{sec:ff_mc}, y el
+divisor y la tasa de bits del circuito integrado son los de la
+Sección~\ref{sec:ihp_ring11}, no los que se deducen aquí abajo.
 
 \paragraph{Esquinas y temperatura.} El punto térmico se repitió en las
 esquinas lenta, típica y rápida a $-40$, 27 y 125~$^\circ$C, recalculando
@@ -221,10 +245,10 @@ onda. Ocho chips más simulados con ella en el mismo punto no tienen
 ningún doble cruce, y sus cruces caben en 392,4--393,5~ns, como los otros
 quince \simu{}. De los 23 chips, cuatro piden más de $2^{22}$; el peor
 pide $K_D = 4{,}49\times10^6$ ($H_\infty = 0{,}973$ con $2^{22}$), y
-$2^{23}$ los cubre a todos ($H_\infty \ge 0{,}9996$). El registro del divisor arranca en $2^{24}$, así que un maestro que no lo
-escriba ya está del lado seguro; un valor menor tiene que salir de la
-esquina más fría y la tensión más baja a las que deba funcionar el
-producto.
+$2^{23}$ los cubre a todos ($H_\infty \ge 0{,}9996$). Para un anillo de
+cinco etapas el divisor fijo sería, por tanto, $2^{23}$: tiene que salir
+de la esquina más fría y la tensión más baja a las que deba funcionar el
+producto, no del punto típico.
 
 \paragraph{Ruido de parpadeo.} Añadir el ruido $1/f$ del \ac{PDK} no
 cambia nada en 400~ns: $\sigma$ sube un 3,8\,\%, dentro de la dispersión
@@ -256,7 +280,10 @@ acumulación corta, por debajo de unos cien periodos para este anillo, y
 separarse del término cuadrático --- deducirlo del jitter acumulado total
 en $K_D$ atribuiría una entropía que no existe. Y el banco estacionario
 puede sobrestimar la varianza térmica hasta en un factor dos, lo que
-duplicaría $K_D$; el contador de 24 bits lo cubre, y la herramienta que lo
+duplicaría $K_D$. El diseño final guarda un factor dos entre el divisor
+que pide la simulación y su divisor mínimo
+(Sección~\ref{sec:ihp_ring11}); ese margen es uno solo, y este factor lo
+consumiría, no es un segundo margen añadido. La herramienta que lo
 resuelve es un análisis de ruido transitorio cicloestacionario, un uso
 concreto de un simulador comercial.
 
@@ -271,13 +298,19 @@ $V_{DD}/2$, dos nudos quedan en 0,517--0,528 y los otros tres en
 el punto típico y otros ocho en el peor. Un umbral a 100~mV de $V_{DD}/2$
 lo mueve unos 0,019, porque los flancos son lentos frente a un periodo de
 270--600~ps \simu{}. La cota baja a 0,90 a $V_{DD}/2$ y a 0,85 con esa
-incertidumbre del umbral; en la FPGA, donde el sesgo medido es del
-0,4\,\%, es 0,989.
+incertidumbre del umbral. La \ac{FPGA} muestra el mismo efecto con otro
+anillo y otro biestable \meas{}: en flujos de $10^6$ bits la fracción de
+unos es 0,4951--0,4966 o 0,5054--0,5064 con el envoltorio silencioso,
+según la implementación, lo que acota el bit en 0,982--0,990, y
+0,513--0,519 con el display y el frecuencímetro puestos (0,946--0,962). El
+signo del sesgo cambia de una implementación a otra
+(Sección~\ref{sec:campaign}). El ciclo de trabajo del anillo de once
+etapas no se simuló por separado; el Monte Carlo de la subsección
+siguiente lo contiene, porque muestrea el anillo con el biestable real.
 
-% PROVISIONAL (16-11-2026): H = 0,60, los cortes 51/766 y la semilla de 512 bits se
-% apoyan en ocho chips SPICE sin ruido (cuatro por esquina). Pendiente del Monte
-% Carlo de docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); no cerrar
-% la memoria con esto. No se imprime.
+\subsection{El biestable de muestreo y la longitud del anillo}
+\label{sec:ff_mc}
+
 El biestable de muestreo sesga el bit más que el anillo. Con el
 \texttt{sg13g2\_\allowbreak dfrbpq\_1} real de la biblioteca en el nudo~5, detrás de
 un \texttt{sg13g2\_\allowbreak buf\_1} (sin él, la capacidad de entrada del biestable
@@ -286,19 +319,180 @@ probabilidad de un uno ponderada por la fase de muestreo, tt y ss quedan a
 menos de 0,01 del umbral ideal. A 125~$^\circ$C con desapareamiento no:
 en cuatro chips por esquina, $P(1)$ va de 0,372 a 0,461 en ff y de 0,399 a
 0,437 en sf, mientras que el umbral ideal sobre los mismos anillos da
-0,49--0,51. Cinco de los ocho chips quedan por debajo de $H = 0{,}80$; la
-peor cota es 0,672 \simu{}. El biestable no captura en el mismo instante
+0,49--0,51 \simu{}. El biestable no captura en el mismo instante
 una entrada que sube y una que baja: la diferencia, expresada como un
 retardo equivalente, es de 26--30~ps en sf y de 13--15~ps en ff, y se
 mantiene al alargar el anillo a nueve y once etapas, así que el sesgo
-baja aproximadamente como $1/T$. Un anillo más lento o RO1 dividido por
-dos lo curarían a costa de un divisor cuatro o cinco veces mayor. El
-diseño declara en cambio $H = 0{,}60$, con umbrales y una semilla de 512
-bits calculados para ese valor (Sección~\ref{sec:health}), lo que
-conserva el circuito y la tasa de bits y cubre el peor chip simulado. Son
-simulaciones sin ruido de cuatro chips por esquina, ocho en total; con más chips la cola
-solo puede crecer, y por eso el valor declarado queda por debajo del
-peor.
+baja aproximadamente como $1/T$.
+
+Esos ocho chips ya descartaron la primera revisión de la entropía
+declarada, $\Hdecl = 0{,}80$: cinco quedaban por debajo y el peor daba
+0,672. El valor se bajó a $\Hdecl = 0{,}60$, con umbrales y una semilla de
+512 bits calculados para él (Sección~\ref{sec:health}), y se declaró
+provisional, porque ocho chips dicen poco de una cola. El criterio que lo
+cerraría se dejó escrito antes de simular nada más: un Monte Carlo de 24
+chips por esquina; la entropía declarable es $-\log_2\max(p, 1-p)$
+evaluada en $p = \mu - 3\sigma$ de $P(1)$, y la cifra es el mínimo sobre
+las esquinas; si queda por debajo de 0,60 se corrige el circuito, y
+$\Hdecl$ no se vuelve a bajar.
+
+\begin{table}[htbp]
+\centering
+\caption{Monte Carlo del biestable de muestreo con desapareamiento de
+dispositivos \simu{}, sin ruido. $P(1)$ está ponderada por la fase de
+muestreo; $H$ es la cota de la entropía del bit, menos el logaritmo en
+base 2 del mayor de $p$ y $1-p$, en $p = \mu - 3\sigma$. La entropía
+declarable de cada anillo es la menor $H$ de sus filas.}
+\label{tab:ff_mc}
+\small
+\begin{tabular}{@{}llrcccc@{}}
+\toprule
+RO1 & Esquina & Chips & $P(1)$, $\mu \pm \sigma$ & $\mu - 3\sigma$ & $H$ & Peor chip \\
+\midrule
+5 etapas  & sf, 125~$^\circ$C, 1,08~V & 24 & $0{,}4167 \pm 0{,}0361$ & 0,3083 & \textbf{0,532} & 0,3385 \\
+          & sf, 125~$^\circ$C, 1,2~V  & 28 & $0{,}4201 \pm 0{,}0316$ & 0,3254 & 0,568 & 0,3507 \\
+          & ff, 125~$^\circ$C, 1,32~V & 28 & $0{,}4458 \pm 0{,}0273$ & 0,3639 & 0,653 & 0,3724 \\
+          & tt, 125~$^\circ$C, 1,2~V  & 24 & $0{,}4747 \pm 0{,}0159$ & 0,4269 & 0,803 & 0,4259 \\
+\midrule
+11 etapas & sf, 125~$^\circ$C, 1,08~V & 24 & $0{,}4631 \pm 0{,}0183$ & 0,4081 & \textbf{0,757} & 0,4166 \\
+          & sf, 125~$^\circ$C, 1,2~V  & 24 & $0{,}4642 \pm 0{,}0100$ & 0,4342 & 0,822 & 0,4355 \\
+          & ff, $-40~^\circ$C, 1,32~V & 24 & $0{,}4784 \pm 0{,}0088$ & 0,4521 & 0,868 & 0,4568 \\
+          & ff, 125~$^\circ$C, 1,32~V & 24 & $0{,}4700 \pm 0{,}0098$ & 0,4406 & 0,838 & 0,4447 \\
+          & tt, 125~$^\circ$C, 1,2~V  & 24 & $0{,}4811 \pm 0{,}0119$ & 0,4454 & 0,851 & 0,4673 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La Tabla~\ref{tab:ff_mc} da las dos campañas de Monte Carlo. Con el
+anillo de cinco etapas la entropía declarable es \textbf{0,532}, por
+debajo de 0,60, en la esquina asimétrica a 125~$^\circ$C y tensión baja;
+hasta el peor chip suelto de esa esquina, con 0,596, queda por debajo.
+Según el criterio, se corrigió el circuito. De las opciones que ofrece la
+ley $1/T$, se prefirió un anillo muestreado más largo a RO1 seguido de un
+divisor por dos, cuyo biestable basculante a 2,7~GHz traería una asimetría
+propia que no se simuló: RO1 tiene ahora once etapas, 2,2 veces el
+periodo. El Monte Carlo se repitió con él, en las mismas cuatro esquinas
+más la esquina rápida a $-40~^\circ$C y 1,32~V, donde el periodo es más
+corto: 24 chips en cada una de cinco esquinas, 120 en total. La entropía
+declarable es \textbf{0,757} \simu{}, fijada otra vez por sf a
+125~$^\circ$C y 1,08~V, así que $\Hdecl = 0{,}60$ se mantiene, los
+umbrales no cambian y el circuito no se vuelve a tocar. Con $\sigma$ en el
+extremo alto de su intervalo de confianza del 95\,\% esa esquina aún da
+0,704.
+
+Cómo se leerían los 24 chips también se fijó antes de que acabara la
+última tanda. En algunos chips las fases de muestreo dejan sin cubrir
+parte del periodo, y la $P(1)$ ponderada por fase tiene entonces una
+incertidumbre de aproximadamente la anchura de ese hueco dividida por
+$\sqrt{6}$. La cifra oficial usa todos los chips; una lectura de
+sensibilidad quita los chips con un hueco mayor que 0,025 de periodo
+(error de hasta 0,01) y nunca decide sola. Da 0,789 con 22 chips en la
+esquina que limita, así que las dos lecturas pasan. La misma lectura de
+sensibilidad sobre la campaña de cinco etapas da 0,530 frente a 0,532:
+quitar esos chips tampoco habría cambiado aquella decisión.
+
+Se declaran tres límites. Son simulaciones sin ruido, con los modelos
+estadísticos de un \ac{PDK} abierto. Las esquinas críticas se simularon en
+dos tandas de 11 y 13 chips, y en sf a 1,2~V las dos tandas difieren en
+la media ($0{,}4700$ frente a $0{,}4592$, Welch $p = 0{,}004$); la causa
+no se estableció --- la candidata es el periodo del reloj de muestreo, que
+cada tanda toma de una simulación previa de otro chip --- y la cifra
+oficial junta las dos tandas, de modo que esa variación está dentro de su
+$\sigma$. Y un chip de tt a 125~$^\circ$C sale con el sesgo al revés,
+$P(1) = 0{,}5278$, el único de los 120 por encima de un medio; infla la
+$\sigma$ de esa esquina, lo que hace su cifra más conservadora, y su causa
+no se examinó.
+
+\subsection{Anillo de once etapas: divisor y tasa de bits del circuito
+integrado}
+\label{sec:ihp_ring11}
+
+Un RO1 más largo tiene menos jitter relativo por periodo, así que el
+divisor se recalculó. El anillo de once etapas se simuló en el peor punto
+encontrado arriba, ss a $-40~^\circ$C y 1,08~V, sin desapareamiento, ocho
+realizaciones de 900~ns (unos 700 periodos cada una) \simu{}:
+$T = 1240{,}9$~ps, $\sigma = 214{,}9 \pm 4{,}0$~fs, ningún doble cruce, y
+una varianza por periodo de RO1
+$(\sigma/T)^2 = (3{,}00 \pm 0{,}26)\times10^{-8}$ (intervalo de confianza
+del 95\,\% de la media), con $2{,}65\times10^{-8}$ en la realización más
+baja. El anillo de cinco etapas daba unos $6{,}0\times10^{-8}$ en el mismo
+punto, y $6{,}0 \times 5/11 = 2{,}7$: se cumple la ley $1/N$ del número de
+etapas. La dispersión entre las ocho realizaciones, un 10,5\,\%, es mayor
+que el 5,6\,\% que da el mismo estimador con jitter blanco y los mismos
+cruces; la causa no se identificó. No llega al divisor, que se calcula con
+la realización más baja y conserva un factor 2,3 antes de perder \kd{24}.
+
+El anillo de muestreo, RO2, tiene trece etapas y no once, porque dos
+anillos iguales tienden a engancharse, y alimenta un preescalador
+divisor por 16, porque un biestable de la biblioteca necesita para
+conmutar aproximadamente lo que dura el periodo entero de un anillo de
+cinco etapas \est{} (Sección~\ref{sec:ro_silicon}); el divisor sigue
+contando periodos de RO2. Su periodo, simulado sin ruido, es 1,1754 veces
+el de RO1 en esta esquina (1458,6 frente a 1241,0~ps) y de 1,174 a 1,175
+en las otras tres esquinas simuladas, algo menos que $13/11$ porque la
+carga de la última etapa no escala con el número de etapas. La
+ecuación~\eqref{eq:q2} da entonces
+$q_2 = 1{,}1754 \times 3{,}00\times10^{-8} = 3{,}5\times10^{-8}$ de
+media; el jitter del propio RO2 no se cuenta. La Tabla~\ref{tab:ihp_e11}
+da la min-entropía del modelo para cada divisor.
+
+\begin{table}[htbp]
+\centering
+\caption{Min-entropía del modelo estocástico con RO1 de once etapas y RO2
+de trece en ss, $-40~^\circ$C, 1,08~V \simu{}$\rightarrow$\est{}. $n$ es
+el valor de \texttt{CFG\_KD}. La última columna divide la realización más
+baja por 1,175, el cociente entre el peor $K_D$ y el medio en los 23
+chips del Monte Carlo de cinco etapas.}
+\label{tab:ihp_e11}
+\small
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$n = \log_2 K_D$ & Media de ocho & Realización más baja & Más baja, peor chip \\
+\midrule
+22 & 0,904   & 0,867   & 0,809 \\
+23 & 0,9947  & 0,9895  & 0,9774 \\
+24 & 0,99998 & 0,99994 & 0,99972 \\
+25 & $\approx 1$ & $\approx 1$ & $\approx 1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Basta \kd{24}, con $H_\infty = 0{,}9997$ en la columna más pesimista. El
+divisor mínimo del motor, que es también el valor que toma el registro
+tras el reset, es \kd{25} (\texttt{CFG\_KD} $= 25$), y el contador llega a
+$2^{26}$. Ese factor dos sobre lo que pide la simulación es deliberado:
+está por lo que la simulación no contiene --- parásitos del trazado,
+ruido de alimentación y componentes deterministas de la fase. En la
+\ac{FPGA}, donde se pudieron medir las dos cosas, la parte blanca del
+ruido de fase resultó más de diez veces menor que la aparente
+(Sección~\ref{sec:campaign}).
+
+La columna del peor chip es conservadora, y no es un Monte Carlo del
+anillo de once etapas: el desapareamiento no se simuló con once etapas.
+El factor 1,175 viene del anillo de cinco etapas. Es un cociente de
+extremos dominado por el error de estimación de una sola realización de
+650 a 700 periodos, no una medida pura del desapareamiento --- en
+aquellos chips la dispersión de $\sigma/T$ entre chips no superaba la que
+hay entre ejecuciones --- y aquí se aplica encima de la más baja de ocho
+realizaciones, así que ese error se cuenta dos veces. Para que \kd{24}
+bajara de $H_\infty = 0{,}98$ la varianza por periodo tendría que ser 2,6
+veces menor que la media nominal de $3{,}00\times10^{-8}$, y 5,2 veces
+menor para el divisor mínimo \kd{25} \est{}.
+
+Con \kd{25} la tasa de bits sale del periodo de RO2, que se simuló sin
+ruido ni desapareamiento y con 1~fF por nudo, de 594,4~ps (ff,
+$-40~^\circ$C, 1,32~V) a 1458,6~ps (ss, $-40~^\circ$C, 1,08~V): un bit
+cada 20 a 49~ms, \textbf{de 20 a 50~bit/s} \est{}. El test de arranque
+(una ventana de 1024 bits) tarda de 20 a 50~s, y una siembra, 512 bits
+más la espera de la ventana que contiene el último, de 10 a 75~s. La
+esquina más rápida es la rápida en frío, no en caliente. Dos cosas mueven
+estas cifras un pequeño tanto por ciento: la carga real de RO2 (en RO1 el
+biestable con su búfer alarga el periodo alrededor de un 3\,\%) y el
+desapareamiento (1,3\,\% de dispersión del periodo en el anillo de cinco
+etapas). Son dos órdenes de magnitud menos que los kbit/s de las primeras
+estimaciones, y es lo que cuestan juntos el sesgo del biestable, la peor
+esquina y el margen; el motor siembra un generador determinista y se lo
+puede permitir.
 
 \section{Punto de funcionamiento: divisor y tasa de bits}
 \label{sec:opoint}
@@ -316,10 +510,11 @@ exacto con la gaussiana envuelta; y la deducción de la min-entropía con el
 primer armónico coincide con la exacta en seis cifras en todo el rango de
 interés.
 
-Como $Q_{\mathrm{gen}} = K_D \cdot Q_{\mathrm{bruto}}$, el divisor se
-deduce del jitter que mida la campaña. La Tabla~\ref{tab:opoint} da los
-puntos de funcionamiento para el rango de jitter esperable en esta
-tecnología~\cite{petura_2016_survey}, suponiendo RO2 a 500~MHz.
+Como $Q = K_D\,q_2$ (Sección~\ref{sec:ero}), el divisor se deduce del
+jitter. La Tabla~\ref{tab:opoint} da los puntos de funcionamiento
+estimados antes de medir nada para el rango de jitter esperable en una
+\ac{FPGA} de 28~nm~\cite{petura_2016_survey}, con dos anillos iguales
+($q_2 = Q_{\mathrm{bruto}}$) y RO2 a 500~MHz.
 
 \begin{table}[htbp]
 \centering
@@ -338,17 +533,28 @@ $2{,}8\times10^{-3}$ & $8\times10^{-6}$ & 28\,575  & 17,5~kbit/s \\
 \end{tabular}
 \end{table}
 
-Estos valores encierran el punto de diseño publicado por Fischer y
-Lubicz~\cite{fischer_2014_embedded} ($K_D \approx 430\,000$ para
-$\sigma = 5{,}01$~ps sobre $T = 7{,}81$~ns), y esa es la comprobación de
-coherencia de que el modelo se aplica como pretendían sus autores.
+La comprobación de coherencia de que el modelo se aplica como pretendían
+sus autores es el punto de diseño publicado por Fischer y
+Lubicz~\cite{fischer_2014_embedded}, que la misma inversión reproduce con
+sus anillos y su propio objetivo, una entropía de Shannon de 0,997
+($K_D = 431\,153$ frente a sus $\approx 430\,000$,
+Sección~\ref{sec:kd}); el objetivo de min-entropía que se usa aquí es más
+estricto y pediría un divisor mayor con los mismos anillos.
+
+Los dos puntos de funcionamiento de este trabajo caen fuera de la tabla,
+por el lado lento. En la \ac{FPGA} el suelo blanco medido está en la
+primera fila o por debajo, $q_2 = 0{,}6$ a $1{,}1\times10^{-6}$ con RO2 a
+205~MHz, y el divisor es \kd{19} (\texttt{CFG\_KD} $= 19$), unos
+390~bit/s \meas{} (Sección~\ref{sec:campaign}). En el circuito integrado
+$q_2 \approx 3{,}5\times10^{-8}$ en la peor esquina y el divisor es
+\kd{25}, de 20 a 50~bit/s \est{} (Sección~\ref{sec:ihp_ring11}).
 
 La consecuencia para la arquitectura se dice sin rodeos: un solo \ac{ERO}
-entrega kbit/s, no Mbit/s. Ese es el precio de una entropía demostrable,
-y aquí se puede pagar porque el producto del motor es una semilla de
-256 bits para el \ac{DRBG}, no un flujo de bits. Más tasa de bits
-significa más anillos independientes, cada uno con su propia cota, no un
-anillo más rápido.
+entrega decenas o centenares de bits por segundo, no Mbit/s. Ese es el
+precio de una entropía demostrable, y aquí se puede pagar porque el
+producto del motor es una semilla de 512 bits para el \ac{DRBG}, no un
+flujo de bits. Más tasa de bits significa más anillos independientes,
+cada uno con su propia cota, no un anillo más rápido.
 
 \section{Verificación funcional consolidada}
 \label{sec:verif_results}
@@ -362,20 +568,22 @@ obtuvo ejecutando la batería de pruebas, no leyendo un registro anterior.
 \caption{Totales de la verificación \simu{}.}
 \label{tab:verif}
 \small
-\begin{tabular}{@{}lp{7.6cm}l@{}}
+\begin{tabular}{@{}lp{7.0cm}l@{}}
 \toprule
 Batería & Qué comprueba & Resultado \\
 \midrule
-Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO}, captura, tests de salud,
-  \ac{I2C}, \ac{AES}, \ac{CMAC}, \ac{CTRDRBG}, nivel superior, envoltorio
-  de placa y su frecuencímetro & 9/9 pasan \\
+Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO} y su ventana de
+  muestreo, captura, tests de salud, \ac{I2C}, \ac{AES}, \ac{CMAC},
+  \ac{CTRDRBG}, nivel superior con y sin criptografía, envoltorios de
+  placa y frecuencímetro; 306 comprobaciones (Tabla~\ref{tab:tb}) & 13/13 pasan \\
 \texttt{ctr\_drbg\_ref.py} & vectores \ac{CAVP}, con y sin
   función de derivación & 960/960 \\
 \texttt{ero\_model.py} & modelo estocástico, exactitud y cotas & 26/26 \\
 \texttt{jitter\_estimator.py} & recuperación del jitter sobre datos
-  sintéticos de $Q$ conocido & 20/20 \\
+  sintéticos de $Q$ conocido & 14/14 \\
 \texttt{cortes\_salud.py} & umbrales de los tests de salud frente a las
-  fórmulas de SP 800-90B, y la regla de la semilla & 7/7 \\
+  fórmulas de SP 800-90B, la regla de la semilla y el Monte Carlo del
+  biestable & 11/11 \\
 \texttt{verifica\_top.py} & verificación cruzada del banco de nivel
   superior con un \ac{AES} independiente & 5/5 \\
 \bottomrule
@@ -400,8 +608,12 @@ complementaria estaba a 5,7 desviaciones típicas; con el vigente está a
 27,5 y el coste no se aprecia. Comprueba además que los 512 bits de la
 semilla llevan al menos los 192 bits de entropía que necesita el
 generador, incluso con la peor proporción que deja pasar el test, y que
-el peor chip simulado del biestable de muestreo queda por encima de la
-$H$ declarada.
+tanto el peor de los 120 chips simulados del biestable de muestreo
+(0,777) como el punto $\mu - 3\sigma$ de su peor esquina (0,757) quedan
+por encima de $\Hdecl$ (Tabla~\ref{tab:ff_mc}). El estimador espectral del
+suelo blanco que se usa en la Sección~\ref{sec:campaign} tiene su propia
+validación con bits simulados, que se cuenta allí porque sus límites
+importan más que un recuento de aciertos.
 
 \section{Comparación con elementos seguros comerciales}
 \label{sec:se_comparison}
@@ -427,7 +639,7 @@ infineon_optiga_trustm_ds}.}
 Bus            & \ac{I2C} & \ac{I2C} & \ac{I2C} & \ac{I2C} \\
 Certificación  & JIL High; NIST ESV \#E46 para la fuente de entropía & CC EAL6+ (hasta el SO) & CC EAL6+ (hardware) & ninguna \\
 Fuente de entropía & osciladores en anillo, según el registro ESV & ``TRNG, SP~800-90B'' en la hoja de datos & no indicada & \ac{ERO}, publicada \\
-Entropía declarada & 0,5071~bit/muestra, validada por el NIST & no publicada & no publicada & cota obtenida del jitter (aquí simulado, medible en el dispositivo) \\
+Entropía declarada & 0,5071~bit/muestra, validada por el NIST & no publicada & no publicada & cota obtenida del jitter (medido en el prototipo \ac{FPGA}, simulado para el circuito integrado) \\
 Modelo estocástico & no publicado & no publicado & no publicado & publicado \\
 Exportación de claves & no es posible & no es posible & no es posible & solo en modo de prueba \\
 Inspeccionable & no & no & no & sí, \ac{RTL} publicado \\

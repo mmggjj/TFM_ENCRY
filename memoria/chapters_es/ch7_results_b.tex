@@ -11,15 +11,13 @@ bit con una media de 0,85 sobre las treinta y seis capturas de las
 condiciones A--D, porque es lo que un evaluador acreditaría sin conceder
 la hipótesis IID, con la prueba de reinicios como recordatorio de que para
 la condición~D es una cifra estadística y no entropía física; los bits en
-bruto del motor, cuando la campaña de la
-Sección~\ref{sec:protocol} los produzca, deben pasarse por la misma
-batería con el mismo $N$, y compararse estimador por estimador, ya que el
-mismo sesgo conservador actuará sobre ellos; la calibración de las pruebas
-IID a esa longitud se les aplica sin cambios. Segunda, la cifra de Shannon
+bruto del motor se pasaron por la misma batería con el mismo $N$ y se
+comparan estimador por estimador en la Sección~\ref{sec:o8}, ya que el
+mismo sesgo conservador actúa sobre ellos. Segunda, la cifra de Shannon
 de la primera campaña, 0,99999 bit por bit, y las cifras de
 min-entropía de más arriba no se contradicen --- $H_\infty \le H$
 siempre --- pero son monedas distintas: acreditar 256 bits de entropía
-cuesta 256 bits de salida en la primera y hasta 316 en la segunda, y solo
+cuesta 256 bits de salida en la primera y hasta 317 en la segunda, y solo
 la segunda es la que puede usar la generación de claves. Tercera, e
 independiente de cualquier número, la medida es de una caja negra: la
 fuente y el posprocesado que hay tras \texttt{esp\_fill\_random} no están
@@ -34,14 +32,22 @@ magnitud física, el jitter de sus anillos. Esa asimetría es la comparación.
 \section{La fuente simulada bajo la misma batería}
 \label{sec:sim_90b}
 
-Antes de la campaña, el lado del motor en O8 puede pasarse en simulación
+Una fuente cuya entropía se conoce por construcción dice lo que la
+batería puede y no puede ver, así que el modelo estocástico se pasó
 exactamente por la cadena que dio las cifras del ESP32: mismos binarios,
-opciones y longitud. Los bits salen del modelo estocástico del \ac{ERO}
-alimentado con el jitter del anillo del \ac{PDK} abierto
+opciones y longitud. Los bits salen del modelo del \ac{ERO} alimentado
+con el jitter del anillo de cinco etapas del \ac{PDK} abierto
 (Sección~\ref{sec:ihp_ring}) en tres puntos ---tt a 27~$^\circ$C, ss a
 $-40~^\circ$C y 1,08~V, y el peor chip con desapareamiento en ese
 punto--- para divisores de $2^{14}$ a $2^{24}$, tres semillas cada uno,
-$10^6$ bits por secuencia \simu{}. Como referencia, se pasaron por la
+$10^6$ bits por secuencia \simu{}. El estudio es anterior al anillo de
+once etapas y no se repitió con él. No hace falta: los bits simulados
+solo dependen del producto $Q = K_D\,q_2$, así que un anillo con otro
+$q_2$ desplaza el eje del divisor y no cambia nada más. Con los anillos
+finales el eje se mueve alrededor de 0,8 en $\log_2 K_D$, y el \kd{25}
+del circuito integrado cae más allá de los puntos $2^{23}$ y $2^{24}$
+simulados aquí, donde el modelo da $H_\infty \ge 0{,}9996$ y la batería
+está saturada. Como referencia, se pasaron por la
 misma batería bits uniformes e independientes de la misma longitud. La
 Figura~\ref{fig:sim_90b} enfrenta la min-entropía exacta del modelo con la
 estimación no IID.
@@ -62,9 +68,9 @@ De ello se siguen cuatro lecturas. Primera, a $10^6$ bits la batería se
 satura: los bits uniformes puntúan $0{,}839 \pm 0{,}021$, y todo punto en
 que el modelo da $H_\infty \ge 0{,}97$ puntúa entre 0,82 y 0,87, siempre
 limitado por el estimador de compresión. Por encima de ese techo la
-batería no distingue nada, así que el ESP32, con 0,85, y el motor con el
-divisor recomendado de $2^{23}$, con 0,84 a 0,85 en los tres casos, son
-indistinguibles a esta longitud; las cifras no deben compararse como si
+batería no distingue nada, así que el ESP32, con 0,85, y la fuente
+simulada con $2^{23}$, el divisor que usaría un anillo de cinco etapas,
+con 0,84 a 0,85 en los tres casos, son indistinguibles a esta longitud; las cifras no deben compararse como si
 fueran distintas. Segunda, con poca entropía la batería
 \emph{sobreestima}: con $2^{14}$ el modelo da $H_\infty \approx 0$ y la
 batería de 0,07 a 0,11, y hasta $2^{19}$ en el peor punto de 0,10 a 0,32
@@ -106,15 +112,433 @@ el ruido de arranque repite secuencias entre chips
 
 Estos bits solo contienen jitter gaussiano blanco. El ruido de parpadeo,
 el acoplamiento entre anillos, una alimentación compartida y las derivas
-lentas no están, y son lo que la batería menos puede ver y lo que la
-campaña debe medir. Con tres semillas, las dispersiones son solo
+lentas no están, y son lo que la batería menos puede ver. La placa
+confirmó tanto la saturación como la ceguera \meas{}: en la \ac{FPGA} la
+batería da la misma cifra con \kd{16}, donde el modelo con el suelo
+blanco medido da $H_\infty \approx 0{,}47$, y con \kd{19}, donde da
+0,9996 (Tabla~\ref{tab:fpga_90b}), y puntúa como entropía una modulación
+determinista de la fase. Con tres semillas, las dispersiones son solo
 indicativas. La lectura completa, con las tablas en bytes y de la vía
 IID, está en \nolinkurl{docs/fuente_simulada_90b.md}.
+
+\section{La campaña en la FPGA}
+\label{sec:campaign}
+
+La campaña se hizo en la Basys~3 de la Sección~\ref{sec:bringup}, con el
+motor entero en la \ac{FPGA} y el verificador del ESP32 como maestro del
+bus, recogiendo bits en bruto en modo de prueba. En esta placa el anillo
+de muestreo RO2 tiene once etapas de tablas de consulta y el anillo
+muestreado RO1, trece. Salvo que se diga otra cosa, los datos son del
+envoltorio silencioso --- sin display ni frecuencímetro, la configuración
+más parecida al circuito integrado --- con la colocación de cada etapa de
+los anillos fijada. El Apéndice~\ref{app:fpga} pone estos resultados
+junto a los de la primera placa de prototipo.
+
+El procedimiento se había fijado en cinco pasos antes de tener la placa,
+para que no pudiera ajustarse después de ver los datos: confirmar que los
+anillos oscilan; medir el jitter con $K_D = 1$ por el método de Fischer y
+Lubicz~\cite{fischer_2014_embedded}, conservando solo el término lineal
+de un ajuste $\sigma^2(t) = at + bt^2$; fijar $K_D$ con ese jitter y
+recalcular los umbrales de los tests de salud para la entropía medida;
+recoger $10^6$ bits en bruto consecutivos con ese divisor y contrastar la
+estimación de SP~800-90B con la cota del modelo; y repetir con los
+anillos en regiones separadas y en regiones adyacentes. Los pasos se
+presentan en ese orden. Tres de ellos no se hicieron como estaba escrito,
+y cada desviación se declara donde ocurre.
+
+\paragraph{Paso 1: los anillos oscilan.} El frecuencímetro del
+envoltorio normal marca 207,2~MHz para RO2 y 167,2~MHz para RO1 \meas{}
+($\pm0{,}1$~MHz de lectura), y la duración de un flujo da 205~MHz para
+RO2 en el envoltorio silencioso (Tabla~\ref{tab:ringfreq}). El script de
+compilación lista cada celda y cada red de los anillos después de rutar,
+así que un anillo eliminado o fundido por las herramientas no puede pasar
+por una fuente que funciona.
+
+\paragraph{Paso 2: jitter.} El búfer de captura da trozos de 4096 bits
+consecutivos con cualquier divisor, y cada captura son 2000 trozos con
+$K_D = 4$, precedidos en los primeros bitstreams por 2000 con $K_D = 1$,
+sin ningún error de CRC en ninguna. A los mismos bits se les aplicaron
+tres estimadores de $q_2$: el estimador por varianza de la
+Sección~\ref{sec:estimator}; un ajuste de la autocorrelación de los bits
+frente a la distancia entre pares, $c(M)$, con el modelo del \ac{ERO} y
+un paso de fase medio para toda la captura; y el mismo ajuste con un paso
+de fase por trozo, que quita la deriva entre trozos. La
+Tabla~\ref{tab:fpga_q} da los resultados.
+
+\begin{table}[htbp]
+\centering
+\caption{$q_2$ en la Basys~3 según el estimador \meas{}, $K_D = 4$,
+colocación fija de las etapas, RO2 a 205--207~MHz. El residuo es el del
+ajuste, en unidades del ruido binomial. Repetibilidad: tres capturas
+seguidas de un bitstream sin colocación fija, y dos de cada bitstream con
+ella.}
+\label{tab:fpga_q}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.16\linewidth}@{}}
+\toprule
+Estimador & Envoltorio silencioso & Con frecuencímetro & Repetibilidad \\
+\midrule
+Varianza de $c$ (Sección~\ref{sec:estimator}) & $1{,}98\times10^{-5}$ & $1{,}23\times10^{-5}$ & $\pm10$\,\% \\
+Ajuste de $c(M)$, un paso de fase & $5{,}75\times10^{-5}$ & $4{,}86\times10^{-5}$ & $\pm1$ a 2\,\% \\
+Ajuste de $c(M)$, un paso por trozo, $M \le 100$ & $1{,}42\times10^{-5}$ (residuo 5,0) & $3{,}22\times10^{-6}$ (residuo 5,8) & $\pm0{,}3$ a 1\,\% \\
+Suelo blanco del espectro de la frecuencia instantánea & 0,6 a $1{,}1\times10^{-6}$ & no determinable & ver el texto \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las tres primeras filas no miden lo mismo, y ninguna mide el jitter
+térmico. Cada estimador de autocorrelación se repite dentro de un pequeño
+tanto por ciento, así que el factor de tres a cuatro que hay entre ellos
+es sistemático: depende de cuánta parte de la forma de $c(M)$ atribuye
+cada uno al jitter. El modelo no describe esa forma. En los primeros
+bitstreams, con el exponente de acumulación libre, el ajuste devuelve
+$b = 1{,}6$ a 2,1, donde el jitter térmico da uno, y los residuos del
+ajuste conjunto son de 5 a 250 veces el ruido binomial y crecen con el
+rango de $M$. Es el resultado negativo que anticipaba el
+Capítulo~\ref{ch:ch1_intro}, y la primera placa de prototipo había
+mostrado lo mismo en otra familia y otro nodo de proceso. La lógica que
+cuelga de los anillos también cuenta: con las etapas de los anillos en
+las mismas tablas de consulta, el envoltorio con frecuencímetro da un
+$q_2$ del ajuste conjunto 4,4 veces menor que el silencioso, y cada valor
+se repite dentro de un 1\,\% en una segunda captura. Lo que cuelga de los
+anillos cambia su ruido de fase relativo aparente; la colocación de las
+etapas no lo explica.
+
+El espectro de la frecuencia instantánea muestra lo que los ajustes
+estaban absorbiendo. Cada trozo se demodula con su propio paso de fase
+medio, la fase se toma por bloques de 16 muestras y los espectros se
+promedian sobre los trozos. Hay una raya estrecha a unos 39,4~kHz, más
+de cien veces por encima del suelo en el envoltorio silencioso. Es fija
+en tiempo, no en periodos del anillo: está a 38--40~kHz con RO2 a 130 y a
+205~MHz. No está enganchada en fase al inicio de la captura. No es el
+tráfico \ac{I2C} durante la captura: una orden del firmware que mantiene
+el bus callado mientras se llena el búfer deja la raya donde estaba (1,13
+frente a 1,13 en las unidades del espectro, dos capturas de cada forma).
+Una carga de 4000 biestables conmutando a 100~MHz en otra parte del
+dispositivo no cambia su amplitud y la mueve un 0,9\,\%. Su potencia es
+quince veces menor con el frecuencímetro puesto. Y en todos los
+bitstreams hay una portadora cerca de 480~kHz con bandas laterales a
+$\pm39{,}5$~kHz. Un regulador conmutado de la placa es una hipótesis
+compatible con todo ello; no se comprobó, y el origen de la raya sigue
+sin identificar. Lo que queda establecido es que una modulación
+determinista de origen externo entra en la fase relativa de los anillos
+\meas{}, y eso es lo que explica $b \approx 2$ y el desacuerdo entre
+estimadores.
+
+Lejos de la raya el espectro es plano, y ese suelo es la parte blanca del
+ruido de fase. Se convirtió en $q_2$ calibrando con bits simulados de
+$q_2$ conocida y una modulación de la frecuencia y la amplitud medidas
+\simu{}. La validación con bits simulados fijó los límites del método
+antes de usar la cifra: sin modulación no aparece ninguna raya y el suelo
+crece linealmente con $q_2$; pero el suelo también sube con la dispersión
+del paso de fase entre trozos, con el sesgo de los bits y con los
+armónicos de la raya, y depende del propio paso de fase. El suelo
+contiene, por tanto, jitter blanco \emph{más} componentes del estimador,
+y la $q_2$ que se lee de él se equivoca por arriba, el lado no
+conservador. Para el envoltorio silencioso con colocación fija, tres
+modelos de calibración dan de 0,80 a $0{,}88\times10^{-6}$ y las bandas
+entre 100 y 400~kHz dan de 0,59 a $1{,}13\times10^{-6}$: \textbf{$q_2 =
+0{,}6$ a $1{,}1\times10^{-6}$} \meas{}, calibración \simu{}, es decir, un
+jitter de 4 a 5~ps por periodo de 4,9~ns, del orden de los 2 a 4~ps
+publicados para anillos en esta tecnología~\cite{petura_2016_survey}.
+Para el envoltorio con frecuencímetro el paso de fase medio es otro y la
+calibración no determina $q_2$.
+
+Esta es la primera desviación declarada. El protocolo pedía un ajuste
+polinómico de la varianza acumulada y conservar su término lineal; ese
+ajuste no describe estos datos, y la separación del jitter global y el
+local con un tercer anillo~\cite{lubicz_2024_jitter} no está al alcance
+de un motor con dos. El suelo blanco sale, en cambio, de un estimador
+espectral introducido después de ver los datos, a propuesta de una
+revisión independiente. Se validó con bits simulados con y sin una
+modulación conocida, su sesgo va en un sentido conocido, y lo que se
+lleva al divisor es el borde inferior de su rango.
+
+\paragraph{Paso 3: divisor.} La Tabla~\ref{tab:fpga_kd} da la
+min-entropía del modelo para los divisores cercanos a la decisión.
+
+\begin{table}[htbp]
+\centering
+\caption{Min-entropía del modelo estocástico en la \ac{FPGA} frente al
+divisor, para tres valores de $q_2$: el centro del suelo blanco medido,
+un valor un 20\,\% menor y la mitad \meas{}$\rightarrow$\est{}. $n$ es el
+valor de \texttt{CFG\_KD}.}
+\label{tab:fpga_kd}
+\small
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$n = \log_2 K_D$ & $q_2 = 8{,}2\times10^{-7}$ & $q_2 = 6{,}6\times10^{-7}$ & $q_2 = 4{,}1\times10^{-7}$ \\
+\midrule
+16 & 0,473  & 0,375  & 0,196 \\
+17 & 0,795  & 0,700  & 0,473 \\
+18 & 0,974  & 0,941  & 0,795 \\
+19 & 0,9996 & 0,9980 & 0,974 \\
+20 & $\approx 1$ & $\approx 1$ & 0,9996 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Con el borde inferior del suelo, $q_2 = 0{,}6\times10^{-6}$, \kd{19}
+(\texttt{CFG\_KD} $= 19$) da $H_\infty = 0{,}996$; se mantiene por encima
+de 0,99 mientras $q_2 \ge 5{,}0\times10^{-7}$ y por encima de
+$\Hdecl = 0{,}60$ mientras $q_2 \ge 1{,}3\times10^{-7}$. La compilación
+para la \ac{FPGA} toma, por tanto, \kd{19} como valor de reset y como
+divisor mínimo: unos 390~bit/s con RO2 a 205~MHz. Un factor dos más en
+$q_2$ pediría $2^{20}$ y no se tomó; es el margen que este punto de
+funcionamiento no tiene. El bitstream final, que difiere del anterior en
+la restricción de tiempos de RO2 y en el divisor mínimo, se midió otra
+vez y da de 0,95 a $1{,}35\times10^{-6}$ por banda, por encima del borde
+usado. El divisor al que este sustituyó merece quedar anotado. El ajuste
+conjunto de la Tabla~\ref{tab:fpga_q} había sugerido $K_D \ge 2^{16}$ con
+un factor dos de margen, y la mayor parte de la primera campaña se hizo
+ahí; con el suelo blanco ese divisor da $H_\infty \approx 0{,}47$. Un
+divisor deducido de una cifra de jitter que incluye una modulación
+determinista no es conservador.
+
+La segunda desviación está en este paso. Los umbrales de los tests de
+salud no se recalcularon a partir de una entropía medida en la
+\ac{FPGA}. Son los de $\Hdecl = 0{,}60$, que fija el biestable de
+muestreo del circuito integrado (Sección~\ref{sec:ff_mc}); la \ac{FPGA},
+cuyo sesgo acota el bit cerca de 0,98, funciona con los umbrales del
+producto.
+
+\paragraph{Paso 4: bits en bruto bajo SP~800-90B.} El flujo continuo
+entrega $10^6$ bits consecutivos desde \kd{13} en adelante; por debajo,
+el enlace serie del ESP32 no da abasto, y los divisores de $2^{8}$ a
+$2^{12}$ se registraron como 245 trozos de 4096 bits, que no son
+consecutivos como pide la norma. La Tabla~\ref{tab:fpga_90b} da la
+estimación no IID $\Hnb$ con la fracción de unos y la correlación a
+retardo 1.
+
+\begin{table}[htbp]
+\centering
+\caption{Estimación no IID de SP~800-90B en la Basys~3 frente al divisor
+\meas{}, alrededor de $10^6$ bits por fila, envoltorio silencioso,
+colocación fija de las etapas, RO2 a 205~MHz. $z$ es la correlación a
+retardo 1 en desviaciones típicas. La última columna es el modelo con
+$q_2 = 8{,}2\times10^{-7}$ \est{}; no se tabuló por debajo de $2^{14}$,
+donde es aún menor. La última fila es el bitstream final.}
+\label{tab:fpga_90b}
+\small
+\begin{tabular}{@{}clcrcc@{}}
+\toprule
+$n = \log_2 K_D$ & Registro & Unos & $\rho_1$ ($z$) & $\Hnb$ & $H_\infty$, modelo \\
+\midrule
+8  & trozos & 0,5050 & $-0{,}536$ ($-537$)      & 0,186 & $<0{,}05$ \\
+10 & trozos & 0,5052 & $-0{,}241$ ($-241$)      & 0,430 & $<0{,}05$ \\
+11 & trozos & 0,5055 & $-0{,}010$ ($-10$)       & 0,695 & $<0{,}05$ \\
+12 & trozos & 0,5059 & $+0{,}0045$ ($+4{,}5$)   & 0,848 & $<0{,}05$ \\
+13 & flujo  & 0,5064 & $-0{,}0005$ ($-0{,}5$)   & 0,815 & $<0{,}05$ \\
+14 & flujo  & 0,5057 & $-0{,}0005$ ($-0{,}5$)   & 0,876 & 0,05 \\
+15 & flujo  & 0,5056 & $+0{,}0021$ ($+2{,}1$)   & 0,854 & 0,20 \\
+16 & flujo  & 0,5054 & $-0{,}0008$ ($-0{,}8$)   & 0,850 & 0,47 \\
+17 & flujo  & 0,5058 & $0{,}0000$ ($0{,}0$)     & 0,864 & 0,80 \\
+18 & flujo  & 0,5060 & $+0{,}0007$ ($+0{,}7$)   & 0,833 & 0,974 \\
+19 & flujo  & 0,5055 & $+0{,}0008$ ($+0{,}8$)   & 0,857 & 0,9996 \\
+\midrule
+19 & flujo  & 0,4959 & $+0{,}0004$ ($+0{,}4$)   & 0,853 & 0,9996 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El protocolo decía que el acuerdo entre la batería y el modelo
+respaldaría el modelo y que el desacuerdo sería un resultado sobre sus
+hipótesis. El resultado es un desacuerdo, y habla de la batería tanto
+como del modelo. De \kd{12} a \kd{19} la estimación es plana, de 0,815 a
+0,876, la banda de saturación que dan los bits uniformes a esta longitud
+(Sección~\ref{sec:sim_90b}), mientras que el modelo con el suelo blanco
+medido va de casi cero a 0,9996 en los mismos divisores. La batería no ve
+la falta de entropía cuando la fase es determinista y está modulada;
+contrastadas con la fuente simulada, las cifras de $2^{10}$ y $2^{11}$
+son las de una $q_2$ de 4 a $8\times10^{-5}$, de cincuenta a cien veces
+el suelo blanco. Sí ve los divisores más bajos, donde los bits están
+claramente correlados. La misma campaña sin colocación fija, con RO2 a
+130~MHz, da el mismo cuadro: 0,125, 0,558 y 0,786 con $2^{8}$, $2^{10}$ y
+$2^{11}$, y de 0,819 a 0,879 de $2^{12}$ a $2^{16}$. El divisor de
+funcionamiento no se puede leer de esta tabla. Sale del suelo blanco, y
+la batería solo deja de contradecirlo.
+
+Dos propiedades de los bits no dependen del divisor. La fracción de unos
+es de 0,5054 a 0,5064 con todos los divisores de este bitstream, de
+0,4951 a 0,4963 sin colocación fija y 0,4959 en el bitstream final: un
+sesgo de alrededor de medio punto porcentual que está a entre 7 y 13
+desviaciones típicas de un medio en $10^6$ bits, y cuyo signo cambia con
+la implementación. Viene del camino de muestreo, no del jitter. Y no hay
+correlación a retardo 1 en los flujos ($|z| \le 2{,}1$, uno de los ocho
+flujos de la tabla por encima de dos), con el biestable muestreando en
+cada flanco de RO2 (Sección~\ref{sec:health}).
+
+Un registro largo no cambia la lectura. Con 8\,378\,368 bits
+consecutivos, la longitud de la captura más larga del ESP32, la
+estimación es 0,932 sin colocación fija y 0,880 con ella, las dos con
+\kd{16}, frente a 0,907--0,935 de bits ideales de esa longitud; la
+fracción de unos es 0,4955 y 0,5054 y $\rho_1$ queda a menos de 1,1
+desviaciones típicas de cero. Estos dos registros se tomaron antes de
+medir el suelo blanco, con un divisor en el que el modelo da
+$H_\infty \approx 0{,}47$. No hay ningún registro largo con \kd{19}. Son,
+por tanto, una afirmación sobre la batería, que los puntúa como bits
+ideales, y no sobre la fuente.
+
+\paragraph{Tests de salud en la placa.} Con los umbrales de
+$\Hdecl = 0{,}60$ (51 y 766), se bajó el divisor a propósito y se
+vigilaron las alarmas durante unos 40~s en cada valor. Sin colocación
+fija el test de repetición salta con $2^{8}$, donde $\Hnb = 0{,}125$, y
+no salta nada con $2^{6}$ ni con $2^{10}$, donde $\Hnb = 0{,}558$ ya está
+por debajo del valor declarado. Con colocación fija no salta nada con
+$2^{6}$, $2^{8}$, $2^{10}$ ni $2^{11}$: con $2^{8}$ los bits alternan
+($\rho_1 = -0{,}54$, $\Hnb = 0{,}186$), la racha más larga de los trozos
+registrados es 8 frente a un umbral de 51 y la mayor cuenta de proporción
+546 frente a 766 \meas{}. Un test de repetición busca una fuente pegada y
+uno de proporción una fuente sesgada; ninguno puede ver bits
+anticorrelados. Los tests de salud no protegen el régimen de poco jitter,
+y que salten o no ahí depende de la implementación. Esa es la medida que
+hay detrás del divisor mínimo impuesto por hardware
+(Sección~\ref{sec:health}): es la única protección frente a un maestro
+que escriba un divisor bajo. Con el divisor de funcionamiento, con el
+sesgo medido y bits independientes, la tasa estimada de falsas alarmas
+está por debajo de $10^{-5}$ al año \est{}.
+
+\paragraph{Paso 5: colocación.} Esta es la tercera desviación: la
+comparación entre anillos en regiones separadas y en regiones adyacentes
+no se hizo. Los anillos se mantuvieron siempre en sus dos regiones. Lo
+que se varió en su lugar es la colocación de las etapas dentro de cada
+región (a criterio de la herramienta, o una tabla de consulta por etapa,
+lo que además cambia la frecuencia de RO2 de 130 a 207~MHz), la lógica
+que cuelga de los anillos (envoltorio silencioso frente a display y
+frecuencímetro) y la carga en la alimentación del núcleo. Esas
+comparaciones respondieron a una pregunta distinta de la que se hacía: el
+ruido de fase aparente depende de lo que cuelga de los anillos y entra
+una modulación desde fuera, pero cuánto se acoplan dos anillos adyacentes
+no se midió.
+
+\paragraph{Qué establece la campaña.} Los anillos de la \ac{FPGA} tienen
+un suelo blanco de ruido de fase de 0,6 a $1{,}1\times10^{-6}$ por
+periodo de RO2, medido dentro del dispositivo con la salvedad de que el
+estimador se equivoca por arriba; con su borde inferior, \kd{19} da
+$H_\infty \ge 0{,}99$ en el modelo. Todo lo demás que contienen los bits
+--- una modulación cercana a 39,4~kHz de origen sin identificar, un sesgo
+de medio punto porcentual que sigue a la implementación --- no es
+entropía, y ni la batería SP~800-90B ni los tests de salud lo distinguen
+de la entropía. El modelo estocástico describe la parte blanca y no la
+forma de la autocorrelación medida, así que la cota es una cota de la
+parte blanca solamente.
+
+\section{Comparación de las dos fuentes}
+\label{sec:o8}
+
+El objetivo O8 pide la fuente del motor y el generador del ESP32 bajo la
+misma metodología. La Tabla~\ref{tab:o8} los pone lado a lado con $10^6$
+bits y los mismos binarios y opciones: las treinta y seis capturas del
+ESP32 del Capítulo~\ref{ch:esp32}, los tres flujos de la \ac{FPGA} de
+$2^{17}$ a $2^{19}$ de la Tabla~\ref{tab:fpga_90b}, bits uniformes
+ideales, y bits independientes con un sesgo del 0,2\,\% y nada más.
+
+\begin{table}[htbp]
+\centering
+\caption{Estimadores no IID de SP~800-90B con $10^6$ bits, mediana y
+rango sobre las secuencias. ESP32 y \ac{FPGA} \meas{}; bits ideales y
+bits independientes sesgados \simu{}. La cifra asignada $\Hnb$ es el
+mínimo de los diez estimadores de la batería; se muestran cuatro de los
+demás (MCV: valor más común). $\hat p$ es la proporción del valor más
+común y $z$ su distancia a un medio en desviaciones típicas.}
+\label{tab:o8}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & ESP32 & Basys~3, $2^{17}$--$2^{19}$ & Ideal & Independientes, \\
+ & (36) & (3) & (3) & $P(1) = 0{,}4979$ (3) \\
+\midrule
+$\Hnb$ (mínimo) & 0,848 (0,809--0,918) & 0,857 (0,833--0,864) & 0,847 (0,815--0,854) & 0,841 (0,830--0,902) \\
+MCV & 0,995 (0,993--0,996) & 0,980 (0,979--0,980) & 0,995 (0,994--0,995) & 0,991 (0,990--0,991) \\
+Markov & 0,998 (0,994--1,000) & 0,983 (0,982--0,983) & 0,999 (0,999--0,999) & 0,995 (0,994--0,996) \\
+MultiMMC & 0,996 (0,983--1,000) & 0,980 (0,980--0,981) & 0,998 (0,996--0,999) & 0,992 (0,992--0,992) \\
+LZ78Y & 0,996 (0,877--0,999) & 0,980 (0,979--0,980) & 0,997 (0,995--0,999) & 0,991 (0,991--0,992) \\
+$\hat p$ & 0,500 (0,500--0,501) & 0,506 (0,506--0,506) & 0,500 (0,500--0,501) & 0,502 (0,502--0,502) \\
+$z$ & 0,6 (0,0--2,6) & 11,6 (11,1--12,0) & 0,7 (0,6--1,6) & 3,9 (3,8--4,3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La cifra asignada no separa nada: 0,857 la \ac{FPGA}, 0,848 el ESP32 y
+0,847 los bits ideales, con rangos que se solapan, todas fijadas por el
+estimador de compresión en su techo para esta longitud. Los estimadores
+sensibles al sesgo sí separan la \ac{FPGA}, con 0,980 a 0,983 frente a
+0,995 a 0,999, y la columna de bits independientes sesgados muestra que
+un sesgo solo los mueve en ese sentido; el sesgo de la \ac{FPGA} es mayor
+que el simulado en esa columna, que se generó para la primera placa de
+prototipo. Así que la batería distingue las dos fuentes por el único
+defecto de los bits de la \ac{FPGA} que a este nivel no tiene
+consecuencias, un sesgo que acota el bit en 0,98, y da mejor nota al
+ESP32. No dice nada sobre cuál de las dos tiene entropía detrás de sus
+bits.
+
+Con 8\,378\,368 bits la comparación es la misma y hay que leerla con más
+cuidado todavía. La captura del ESP32 puntúa 0,911, los bits ideales de
+0,907 a 0,935, y los dos registros de la \ac{FPGA} 0,932 y 0,880; los
+estimadores del valor más común, MultiMMC y LZ78Y dan de 0,983 a 0,986
+para la \ac{FPGA} frente a 0,998--0,999 para el ESP32 y para los bits
+ideales. Pero esos registros de la \ac{FPGA} son con \kd{16}, donde el
+modelo con el suelo blanco medido da $H_\infty \approx 0{,}47$
+(Sección~\ref{sec:campaign}). Esa columna de la comparación habla de la
+batería SP~800-90B, que no distingue un registro así de uno ideal, y no
+de la fuente con su divisor de funcionamiento.
+
+Lo que sí separa las dos fuentes es la prueba de reinicios de SP~800-90B
+\S3.1.4, que pregunta si la fuente se repite de un encendido al
+siguiente. Para la \ac{FPGA} se hizo reconfigurando el dispositivo por
+JTAG 1000 veces y leyendo cada vez los primeros 128 bytes del flujo. La
+Tabla~\ref{tab:restart_cmp} pone el resultado junto al del ESP32
+(Tabla~\ref{tab:esp32_restart}).
+
+\begin{table}[htbp]
+\centering
+\caption{Prueba de reinicios (SP~800-90B \S3.1.4, 1000 reinicios de 1000
+bits) \meas{}. $H_I$ es la estimación no IID de la fuente con la que se
+compara; la prueba pasa si pasa la comprobación de cordura y las
+estimaciones por filas y por columnas, $H_r$ y $H_c$, son al menos
+$H_I/2$.}
+\label{tab:restart_cmp}
+\small
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Fuente & Variante & $H_I$ & $H_r$ & $H_c$ & Veredicto \\
+\midrule
+Basys~3 & \kd{16}, sin colocación fija & 0,819 & 0,843 & 0,892 & pasa \\
+Basys~3 & \kd{19}, colocación fija            & 0,857 & 0,854 & 0,830 & pasa \\
+Basys~3 & \kd{19}, bitstream final            & 0,853 & 0,847 & 0,845 & pasa \\
+ESP32, primer chip  & bootloader de serie     & 0,838 & 0,898 & 0,854 & pasa \\
+ESP32, primer chip  & sin el ruido de arranque & 0,838 & 0,024 & 0,813 & falla \\
+ESP32, segundo chip & bootloader de serie     & 0,833 & 0,892 & 0,848 & pasa \\
+ESP32, segundo chip & sin el ruido de arranque & 0,833 & 0,016 & 0,844 & falla \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La \ac{FPGA} pasa en las tres tandas. En la última los 1000 arranques
+son todos distintos, también en sus ocho primeros bytes; la distancia de
+Hamming entre ellos es $512{,}0 \pm 16{,}0$ frente a los 512 y 16,0 de
+bits independientes; el primer byte es uniforme; y ningún arranque es el
+flujo de otro desplazado. El ESP32 pasa con su bootloader de serie y
+falla sin el ruido que inyecta el bootloader, cuando su generador
+continúa una secuencia fija que dos chips comparten. A la cifra de la
+\ac{FPGA} se le aplica una salvedad: los bits son los primeros del flujo,
+unos cientos de milisegundos después de la configuración, no los de los
+primeros nanosegundos.
+
+La comparación de O8 se lee, por tanto, así. Bajo la batería SP~800-90B
+las dos fuentes son indistinguibles en la cifra asignada, y la batería no
+notaría que cualquiera de las dos tuviera la mitad de entropía. Bajo la
+prueba de reinicios la fuente de anillos arranca distinta cada vez sin
+más que su propio ruido, y el generador del ESP32 depende de un ruido
+inyectado al arrancar. Y solo para la fuente de anillos hay una magnitud
+física, medida dentro del dispositivo, de la que se sigue una cota; para
+el ESP32 no hay ninguna que medir desde fuera.
 
 \section{Balance de incertidumbre}
 \label{sec:uncertainty}
 
-Cinco magnitudes sostienen las conclusiones, y cada una tiene un tipo de
+Siete magnitudes sostienen las conclusiones, y cada una tiene un tipo de
 incertidumbre distinto y declarado.
 
 \begin{description}
@@ -144,9 +568,11 @@ no es cosmética.
 \item[Área.] Una cota inferior \simu{}: solo celdas, con el diseño aplanado,
 sin rutado, relleno ni árbol de reloj. Los factores de crecimiento
 publicados de área de celdas a área de núcleo en esta biblioteca son
-$\approx 2{,}35$ para un \ac{AES}, y los ahorros de optimización del
-Capítulo~\ref{ch:ch6_asic} son \est{} y explícitamente no se presentan
-como medidos.
+$\approx 2{,}35$ para un \ac{AES}. De los ahorros de optimización del
+Capítulo~\ref{ch:ch6_asic}, dos están sintetizados y el tercero es
+\est{} y explícitamente no se presenta como medido. Solo con cambiar
+nombres, la cifra del optimizador lógico se mueve alrededor de un
+0,2\,\%.
 \item[Min-entropía de la referencia del ESP32.] Medida \meas{} en
 treinta y ocho capturas de $10^6$ a $8{,}4\times10^6$ bits, nueve por
 condición, tres en cada uno de tres chips del mismo modelo identificados por dirección
@@ -169,51 +595,37 @@ bootloader de serie solo por abajo: que no haya ninguna repetición en 1000
 reinicios significa más de unos $1{,}7\times10^5$ estados de partida igual
 de probables, unos 17 bits, con un 95\,\% de confianza. El tamaño del
 estado interno del generador no está documentado.
-\item[Min-entropía del dispositivo construido.] Aún no acotada. El modelo,
-el estimador y los umbrales de corte están listos; el número requiere la
-campaña de la Sección~\ref{sec:protocol}. Aquí no se ofrece ningún valor,
-y no debe inferirse ninguno del jitter simulado, ni de la fuente simulada
-de la Sección~\ref{sec:sim_90b}, cuyos bits solo llevan el ruido que el
-modelo les pone.
+\item[Sesgo del biestable de muestreo.] Simulado sin ruido \simu{} en 24
+chips en cada una de cinco esquinas. La cifra declarable, 0,757, usa
+$\mu - 3\sigma$ de la peor esquina; con $\sigma$ en el extremo alto de su
+intervalo del 95\,\% es 0,704, y sin los chips cuyas fases de muestreo
+dejan un hueco, 0,789. Dos tandas de una esquina difieren en la media por
+una razón que no se estableció, y los modelos estadísticos son los de un
+\ac{PDK} abierto. El margen hasta $\Hdecl = 0{,}60$ es lo que absorbe todo
+eso.
+\item[Min-entropía en la \ac{FPGA}.] Acotada mediante el
+modelo a partir de una magnitud medida \meas{}, con una calibración
+\simu{}: un suelo blanco $q_2 = 0{,}6$ a $1{,}1\times10^{-6}$, que da
+$H_\infty \ge 0{,}99$ con \kd{19} usando su borde inferior. El estimador
+del suelo se equivoca por arriba, en una cantidad que depende del paso de
+fase y que no se acotó, y el borde inferior del rango es lo único que se
+concede por ello; un factor dos en $q_2$ llevaría la cota a 0,974. Un
+envoltorio en una placa a temperatura ambiente; no se variaron ni la
+temperatura ni la alimentación, y el origen de la modulación cercana a
+39,4~kHz se desconoce. Las cifras SP~800-90B de los mismos bits, de 0,83 a
+0,86, están en el techo de la batería para $10^6$ bits y no acotan nada.
+\emergencystretch=1em
+\item[Min-entropía en el circuito integrado.] Simulada y
+después estimada, no medida. En la peor esquina la varianza por periodo
+del anillo de once etapas es $3{,}00\times10^{-8}$ \simu{}, con un
+intervalo del 95\,\% de $\pm0{,}26\times10^{-8}$ en ocho realizaciones, y
+el divisor \est{} se calcula con la
+realización más baja y un factor de peor chip prestado del anillo de
+cinco etapas. No se simularon el desapareamiento con once etapas, las
+esquinas distintas de la peor, el jitter del anillo de trece etapas, los
+tiempos del dominio preescalado con una biblioteca lenta ni nada de lo
+que añade un trazado. El factor dos entre \kd{24} y el divisor mínimo
+\kd{25} es lo que se concede por ello, y la \ac{FPGA} es el aviso de
+cuánto puede dejarse fuera una simulación de ruido blanco. Ningún valor
+medido en la \ac{FPGA} se traslada al circuito integrado: es otro anillo.
 \end{description}
-
-\section{La campaña pendiente}
-\label{sec:protocol}
-
-El único resultado que debe aportar el silicio es la min-entropía de los
-anillos tal como se construyan, y el procedimiento se fija de antemano
-para que no pueda ajustarse después de ver los datos.
-
-\begin{enumerate}
-\item \textbf{Confirmar que los anillos oscilan.} Leer la frecuencia de
-cada anillo con el contador integrado antes de fiarse de cualquier medida
-de entropía. Un anillo eliminado por el sintetizador, o dos anillos que se
-han enganchado entre sí, serían de otro modo indistinguibles de una fuente
-que funciona.
-\item \textbf{Medir el jitter} con $K_D = 1$ por el método de Fischer
-y Lubicz~\cite{fischer_2014_embedded}, barriendo la distancia entre pares
-$M$ y ajustando la región lineal. Separar la componente global de la
-local como en~\cite{lubicz_2024_jitter} pide tres anillos y el motor
-tiene dos, así que aquí es el ajuste $\sigma^2(t) = at + bt^2$ el que
-quita lo que no es térmico: solo se conserva el término lineal.
-\item \textbf{Fijar $K_D$} a partir del jitter medido para
-$Q \ge 0{,}2286$ con margen, y recalcular los umbrales de corte de los
-tests de salud para la $H_\infty$ medida en lugar del 0,98 supuesto, con
-\texttt{cortes\_salud.py}.
-\item \textbf{Recoger bits en bruto} en ese punto de funcionamiento,
-$10^6$ consecutivos por el flujo continuo de la
-Sección~\ref{sec:cdc}, y
-ejecutar los estimadores de \ac{NIST} SP 800-90B, contrastando la
-estimación empírica con la cota del modelo. El acuerdo respalda el modelo;
-el desacuerdo es un resultado sobre las hipótesis del modelo, y en ambos
-casos se informa de ello.
-\item \textbf{Repetir con distintas ubicaciones} --- anillos en regiones
-separadas frente a anillos adyacentes --- para cuantificar el acoplamiento
-sobre el que advierte la bibliografía, que es la medida que la
-arquitectura de este motor se eligió para hacer posible.
-\end{enumerate}
-
-Hasta que se cierre el paso 4, la afirmación del motor es precisa y
-limitada: la cadena desde el ruido físico hasta el material de clave está
-diseñada, implementada y verificada frente a las normas, y la cota que
-producirá es calculable a partir de una medida que aún no se ha tomado.
