@@ -292,7 +292,8 @@ siendo del maestro.
 La vía que alimenta los tests de salud y la recogida de semilla cruza del
 dominio del anillo al de sistema bit a bit, y necesita que cada bit dure
 al menos 8 ciclos de sistema (80 ns a 100 MHz), es decir 2^CFG_KD
-periodos de ro2 ≥ 80 ns: con ro2 de 13 etapas (≥ 0,66 ns) basta CFG_KD ≥ 7,
+periodos de ro2 ≥ 80 ns: con ro2 de 13 etapas (≥ 0,59 ns en ff, −40 °C, 1,32 V
+[SIMULADO]; 2⁷ periodos serían 76 ns) basta CFG_KD ≥ 8,
 y con el preescalador ÷16 (`G_PRESC_RO2` = 4) el dominio del anillo corre a
 ro2/16 y el ERO cuenta 2^(CFG_KD−4) de esos periodos. `G_KD_MIN` (25 en el
 integrado, 19 en la Basys 3) queda muy por encima, así que no aprieta

@@ -397,10 +397,10 @@ cuya entropía es un AES con semilla fija, no una medida.
 % anillos", "El motor entero con el ESP32", "Colocación fija", "19-11-2026"),
 % docs/decisiones_pendientes.md, results/basys3_o5_consola_*.txt,
 % results/basys3_esquema, results/basys3_plano. Utilización y tiempos del
-% bitstream final (19-11): synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/
-% util_hier.rpt y timing.rpt (informes locales de Vivado, sin versionar; el
-% .bit de esa carpeta tiene el SHA-256 3affc2f5...9659 que docs/basys3.md da
-% para el bitstream final).
+% bitstream final (19-11): results/basys3_final_1911/util_hier.rpt y
+% timing.rpt (copiados de synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/,
+% cuyo .bit tiene el SHA-256 3affc2f5...9659 que docs/basys3.md da para el
+% bitstream final).
 El motor completo corre en una placa Digilent Basys~3, cuya \ac{FPGA} es
 una Artix-7 XC7A35T, con el ESP32 de la Sección~\ref{sec:firmware} en su
 bus \ac{I2C} a 400~kHz (dos hilos y masa a un conector de la placa, con

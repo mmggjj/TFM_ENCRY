@@ -86,6 +86,11 @@ todo. Léelo entero antes de tocar nada.
   bancos en verde** (`results/run_tb_todos.log`), banco en PC 0 fallos. El
   bitstream de la placa es anterior a este cambio (solo difiere ante
   escrituras fuera de rango).
+- **Memoria escrita** (fases 2-4 de `docs/plan_memoria_cierre.md`, un agente
+  Fable, commits f0bce5a-ade2d66; EN 145 páginas, ES 150): todo lo cerrado,
+  notación K_D = 2^n, H 0,60 cerrada, campaña FPGA y O8. Quedan notas no
+  impresas: O5/KAT (decisión de Mario), ciclos con el AES de 32 bits (M1),
+  foto del montaje. Tareas de la semana del 23-11: `docs/tareas_pendientes.md`.
 - **Documentos nuevos:** `docs/plan_memoria_cierre.md` (qué está desfasado en
   la memoria), `docs/basys2_frente_basys3.md`; **memoria: apéndice D**,
   Basys 2 frente a Basys 3 (EN y ES).

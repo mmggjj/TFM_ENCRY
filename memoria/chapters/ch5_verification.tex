@@ -368,9 +368,9 @@ entropy is an AES with a fixed seed, not a measurement.
 % anillos", "El motor entero con el ESP32", "Colocación fija", "19-11-2026"),
 % docs/decisiones_pendientes.md, results/basys3_o5_consola_*.txt,
 % results/basys3_esquema, results/basys3_plano. Utilization and timing of the
-% final bitstream (19-11): synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/
-% util_hier.rpt and timing.rpt (local Vivado reports, not versioned; the
-% .bit there has the SHA-256 3affc2f5...9659 that docs/basys3.md gives for
+% final bitstream (19-11): results/basys3_final_1911/util_hier.rpt and
+% timing.rpt (copied from synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/,
+% whose .bit has the SHA-256 3affc2f5...9659 that docs/basys3.md gives for
 % the final bitstream).
 The complete engine runs on a Digilent Basys~3 board, whose \ac{FPGA} is
 an Artix-7 XC7A35T, with the ESP32 of Section~\ref{sec:firmware} on its

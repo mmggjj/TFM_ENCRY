@@ -155,7 +155,7 @@ raise \texttt{busy} and sets \texttt{DIAG.rejected}.
 \item \texttt{seed} and \texttt{reseed} are refused with
   \texttt{CFG\_KD} below the minimum divider, $n = 25$ by default and 19
   on the Basys~3. The clock-domain crossing alone would only ask for
-  $n \ge 7$ with the 13-stage RO2. The minimum is set by entropy: on the
+  $n \ge 8$ with the 13-stage RO2 at its fastest corner. The minimum is set by entropy: on the
   board the health tests raise no alarm even at \kd{8}, where SP~800-90B
   assigns 0.186 to bits that alternate \meas{}
   (Section~\ref{sec:campaign}), so the minimum is the only protection
