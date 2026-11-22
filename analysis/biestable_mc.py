@@ -37,7 +37,7 @@ def cola(mu: float, s: float) -> float:
     return float(np.clip(mu - 3 * s if mu < 0.5 else mu + 3 * s, 0.0, 1.0))
 
 
-LINEA = re.compile(r"^(\S+) uno_buf \d+ etapas rep \d+:.*; ([0-9.]+)/[0-9.]+$")
+LINEA = re.compile(r"^(\S+) uno_buf \d+ etapas rep \d+:.*hueco de fase max ([0-9.]+),.*; ([0-9.]+)/[0-9.]+$")
 
 
 def filas_log(p: Path):
@@ -46,8 +46,8 @@ def filas_log(p: Path):
     for lin in p.open():
         m = LINEA.match(lin.strip())
         if m:
-            yield {"caso": m.group(1), "montaje": "uno_buf",
-                   "mismatch": "1" if m.group(1).endswith("_mm") else "0", "p1w_ff": m.group(2)}
+            yield {"caso": m.group(1), "montaje": "uno_buf", "hueco_fase": m.group(2),
+                   "mismatch": "1" if m.group(1).endswith("_mm") else "0", "p1w_ff": m.group(3)}
 
 
 def main() -> int:
@@ -55,6 +55,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fuentes", default="", help="CSV o log de results/, separados por comas")
     ap.add_argument("--salida", default="", help="markdown en results/")
+    ap.add_argument("--hueco-max", type=float, default=0.0,
+                    help="lectura de sensibilidad sin los chips con hueco de fase mayor "
+                         "(0,025 desde el 22-11, results/revision_hueco_20261122.md); "
+                         "la oficial es siempre la de todos los chips")
     a = ap.parse_args()
     if a.fuentes:
         FUENTES = a.fuentes.split(",")
@@ -69,9 +73,13 @@ def main() -> int:
         for fila in (filas_log(p) if p.suffix == ".log" else csv.DictReader(p.open())):
             if fila["montaje"] != "uno_buf" or fila["mismatch"] != "1":
                 continue
+            if a.hueco_max and float(fila.get("hueco_fase", 0)) > a.hueco_max:
+                continue
             datos.setdefault(fila["caso"], []).append((f, float(fila["p1w_ff"])))
     lin = ["# Monte Carlo del biestable sg13g2 (analysis/biestable_mc.py)", "",
            "SIMULADO, sin ruido; P(1) ponderada por fase, montaje uno_buf. Fuentes: " + ", ".join(FUENTES) + ".",
+           (f"**Lectura de sensibilidad, no oficial:** sin los chips con hueco de fase > {a.hueco_max}."
+            if a.hueco_max else "**Lectura oficial:** todos los chips."),
            "Criterio fijado antes de simular (docs/basys2.md, 16-11-2026).", "",
            "| Esquina | n | μ | σ | σ IC 95 % | Shapiro-Wilk p | μ ∓ 3σ | H | H con σ alta | peor chip | H peor |",
            "|---|---|---|---|---|---|---|---|---|---|---|"]

@@ -61,6 +61,59 @@ y después ff y tt a 125 °C (`--mm-casos ff125_v132,tt125 --casos tt27
 noche `biestable_ihp.py` escribe además `<csv>.parcial.csv` fila a fila.
 Mejora pendiente: rechazar o repetir los chips con hueco de fase > 0,05.
 
+### Regla para leer los 24 chips del Monte Carlo (fijada el 22-11-2026, antes del resultado)
+
+Propuesta de un revisor independiente (`results/revision_hueco_20261122.md`,
+sin mirar P(1) de ningún chip), **aprobada por Mario el 22-11 a mediodía**,
+con la tanda `mc24_e11_criticas_b` aún en marcha (15 de 39 chips):
+
+1. **Muestra:** por esquina crítica, los 24 chips de `mc24_e11_criticas` (11)
+   y `mc24_e11_criticas_b` (13), ni más ni menos; un chip que falle sin dar
+   fila se repone y se anota. ff y tt a 125 °C, cuando se lancen, igual.
+2. **Cifra oficial:** el criterio del 16-11 sin cambios, con todos los chips
+   (`biestable_mc.py --fuentes ...` sin `--hueco-max`). Decide "≥ 0,60 o
+   corregir el circuito".
+3. **Sensibilidad** (se da siempre al lado, nunca decide sola): el mismo
+   cálculo sin los chips con hueco de fase > **0,025**
+   (`--hueco-max 0.025`), con el n que queda. El umbral sale del error de
+   `p1_ponderada` (≈ hueco/√6 de desviación; ≤ 0,01 con 0,025, la resolución
+   ya aceptada para la ventana de apertura), no de los datos. El 0,05 que se
+   escribió arriba antes de esta regla queda sustituido.
+4. **Discrepancia:** si una lectura da ≥ 0,60 y la otra < 0,60 en una
+   esquina, no decide ninguna: se simulan chips nuevos de esa esquina hasta
+   tener 24 con hueco ≤ 0,025, y esos deciden.
+5. El Monte Carlo de 5 etapas se queda como está; se le añade la misma
+   lectura de sensibilidad para comparar.
+6. Esta campaña no cambia cómo se elige `T_CLK`; para las siguientes, reloj
+   con intervalos al azar (validarlo antes sin desapareamiento). Indicio, sin
+   comprobar, de enganche del anillo al reloj en algunos chips (otra razón para
+   que ninguna cifra dependa de ellos).
+
+### Revisión independiente del RTL del 19-11 (22-11-2026)
+
+Agente sin las conclusiones de la sesión; informe, bancos propios, mutante y
+logs en `results/revision_rtl_20261122/`. **El requisito se cumple**
+[SIMULADO]: la ventana es 2^`CFG_KD` periodos de ro2 (medida de 4 a 19;
+de 20 a 26 por la máscara del contador) y nada siembra por debajo de
+`G_KD_MIN`. Hallazgos y qué se hizo:
+
+| # | Gravedad | Hallazgo | Hecho |
+|---|---|---|---|
+| 1 | medio | el medidor escribía `CFG_KD` 24 antes de sembrar: con `G_KD_MIN` 25 no sembraba nunca en el integrado (falla cerrado) | el medidor siembra con el `CFG_KD` de reset (`G_KD_RESET`, el mínimo de cada versión); banco en PC 0 fallos |
+| 2 | medio | `CFG_KD` ≥ 32 se truncaba a 5 bits (32 → 0) sin `rechazada` | se compara el byte entero |
+| 3 | medio | `CFG_KD` 0-3 se aceptaba con ventana real 2^4 | se rechaza por debajo de `G_PRESC_RO2`, con `rechazada`; modelo en PC igual |
+| 4 | menor | una escritura válida de `CFG_KD` no baja `rechazada` | documentado en `mapa_registros.md` |
+| 5 | menor | el límite del cruce de dominio pasa a `CFG_KD` ≥ 7 | `mapa_registros.md` y cabecera de `bit_cdc` |
+| 6 | menor | ningún banco medía la ventana (un mutante con la mitad pasaba `tb_motor_top`, que además se colgaba en 9c) | banco nuevo `tb_ventana_ero` (2^`CFG_KD` exacto de 4 a 14 y rechazos, 47/47); plazo en el bucle de 9c; `tb_motor_top` comprueba 32, 255 y < preescalador (con `G_PRESC_RO2` = 2 solo en ese banco) |
+| 7-8 | nota | restos del máximo 24 en `crudoq`, `campana_motor.py` y comentarios | corregidos |
+| 9 | nota | sin SDC del reloj dividido (los 1,53 ns siguen sin STA); la cadena de biestables T añade ruido de muestreo no simulado; `kd_ero` entra sin sincronizar al dominio dividido (solo cambia con el motor libre) | abierto, para la implementación física |
+| 10 | nota (previo) | la primera ventana tras cambiar `CFG_KD` es más corta (afecta a lo sumo a un bit); `CFG_KD` se puede cambiar con una captura en curso | abierto |
+
+La comparación nueva de `CFG_KD` también está en `basys3_top` (sin
+preescalador solo cambia el rechazo de ≥ 32); el bitstream de la placa es el
+del 19-11, anterior a este cambio: sus medidas no se ven afectadas (solo
+difiere ante escrituras fuera de rango).
+
 Una página para decidir las tareas 6-10 de `docs/basys3.md` ("Tareas
 pendientes"). Cada punto: qué hay que decidir, opciones, coste, lo que dicen
 los datos y una recomendación. Las cifras llevan su origen; nada de aquí está
