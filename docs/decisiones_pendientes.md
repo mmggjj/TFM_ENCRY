@@ -151,8 +151,11 @@ error de estimación de una sola realización (con solo ruido, 24 chips darían
 ~1,24, p95 1,40), así que no mide desapareamiento puro; "Q mínima ÷ 1,175"
 cuenta dos veces ese error (conservador); **la dispersión del 10,5 % entre
 las 8 realizaciones nominales de 11 etapas no está explicada** (el doble de
-√(2/N) = 5,3 % con 704 periodos; IC 95 % 7-21 %), y se puede mirar con los
-datos que ya hay. Se declara en la memoria tal cual.
+√(2/N) = 5,3 % con 704 periodos; IC 95 % 7-21 %). Mirada el mismo día con
+los datos que hay (`docs/anillo_ihp.md` §4.4, `results/dispersion_q.md`):
+exceso real (p 0,001 frente al blanco; p 0,01 descontando el 1,16 que dan
+en conjunto las tandas de 5 etapas), causa sin separar sin los cruces, sin
+efecto en el divisor. Se declara en la memoria tal cual.
 
 ### Revisión independiente del RTL del 19-11 (22-11-2026)
 

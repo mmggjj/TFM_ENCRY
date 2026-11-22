@@ -411,6 +411,21 @@ arranque (1 024 bits) 20-50 s, siembra (512-1 535 bits) 10-75 s. Con
 lo alarga algo: en ro1, el biestable con su búfer sube el periodo un ~3 %
 (580 frente a 561 ps en ff a 125 °C).
 
+**Dispersión de Q entre las 8 realizaciones (22-11, `analysis/dispersion_q.py`
+→ `results/dispersion_q.md`)** [SIMULADO]. Es del 10,5 %. El mismo estimador
+(`jitter_desde_cruces`) con jitter blanco iid y 704 cruces da un 5,6 %: el
+cociente es 1,88 (p 0,001). No es exclusivo de 11 etapas: las 18 tandas de 5
+etapas guardadas dan juntas un exceso medio de 1,16 sobre el blanco (χ² 148
+con 110 gl, p 0,009), y una de ellas (ff, −40 °C, 4 realizaciones) llega a
+2,5. Descontado ese 1,16, la de 11 etapas queda en p 0,01, uno de 19 grupos
+mirados. Los exponentes (0,85-1,03, media 0,96) caben en los del blanco con
+este estimador (0,98 ± 0,10). Sin los cruces guardados no se puede separar la
+causa (no estacionariedad, arranque, la fuente `trnoise`); haría falta repetir
+alguna realización guardándolos (~2 h cada una). **No cambia el divisor:** la
+Q media es 3,00 ± 0,26·10⁻⁸ (IC 95 %, ya con la dispersión observada) y el
+divisor se calcula con la mínima, 2,65·10⁻⁸, con un factor 2,3 de margen
+hasta perder `CFG_KD` 24.
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
 Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
