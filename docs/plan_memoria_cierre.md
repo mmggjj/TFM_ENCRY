@@ -442,3 +442,7 @@ los bancos y la síntesis, que pueden esperar a que acaben las simulaciones)
 Lo de la Fase 2 no depende de la Fase 3: se puede escribir ya y dejar las
 frases del integrado (divisor, caudal, H) como están, con su nota no
 impresa, hasta el paso 19-20.
+
+## Hecho el 22-11-2026
+
+- Apéndice D, "The Two FPGA Boards: Basys 2 and Basys 3" (`memoria/chapters/app_fpga.tex` y `memoria/chapters_es/app_fpga.tex`), a partir de `docs/basys2_frente_basys3.md`, a petición de Mario. Sin referencias desde el texto principal todavía; las cifras de la Basys 2 en los caps. 4, 7 y 8 siguen pendientes (tabla de `docs/basys2_frente_basys3.md` §6).

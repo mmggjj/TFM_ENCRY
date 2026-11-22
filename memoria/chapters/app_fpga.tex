@@ -1,0 +1,146 @@
+% Apéndice D: Basys 2 frente a Basys 3. Fuente: docs/basys2_frente_basys3.md
+% (cada cifra lleva allí su fichero de origen en docs/ o results/).
+
+\chapter{The Two FPGA Boards: Basys~2 and Basys~3}
+\label{app:fpga}
+
+The entropy source was taken to two \ac{FPGA} boards. The board available
+first (14--16 November 2026) was a Digilent Basys~2 with a Spartan-3E
+XC3S100E (90\,nm); the design had been prepared for a Basys~3 with an
+Artix-7 XC7A35T (28\,nm), which arrived on 17 November and on which almost
+everything was repeated. The results of this work are those of the
+Basys~3. The Basys~2 results are kept as a preliminary run: what they
+taught was applied to the Basys~3, and one experiment (the sampling
+flip-flop with and without clock enable) exists only there. In this
+appendix the two ring oscillators are named as in the \ac{RTL}: RO1 is the
+sampled ring and RO2 the sampling ring, and the divider is
+$K_D = 2^{n}$ periods of RO2 (register \texttt{CFG\_KD} $= n$). $Q$ is the
+variance of the relative phase between the rings accumulated per RO2
+period, in RO1 cycles squared. All values are \meas{} on the board unless
+marked otherwise.
+
+\begin{table}[htbp]
+\centering\small
+\caption{The two platforms.}
+\label{tab:app_fpga_plat}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}p{0.35\linewidth}>{\raggedright\arraybackslash}p{0.35\linewidth}@{}}
+\toprule
+ & Basys~2 & Basys~3 \\
+\midrule
+Device & XC3S100E, Spartan-3E, 90\,nm, 1\,920 LUT4 & XC7A35T, Artix-7, 28\,nm \\
+What fits & entropy source only (rings, \ac{ERO}, health tests, \acs{I2C},
+  stream FIFO); the cryptography alone needs about 6\,800 LUT4 \est{},
+  3.5 times the device & complete engine: 4\,011 LUT (19\,\%) and 4\,561
+  flip-flops (11\,\%) \\
+Tools & ISE 14.7; XST does not read \acs{VHDL}-2008, so GHDL translates
+  the design to Verilog first & Vivado 2025.2 \\
+System clock & 50\,MHz & 100\,MHz \\
+Ring stages (RO2/RO1) & 7/9 & 11/13 \\
+RO2/RO1 frequency & 143.8/108.7\,MHz & 207.2/167.2\,MHz \\
+Delay per stage (LUT and routing, $1/(2Nf)$) & 0.50--0.51\,ns & 0.22--0.23\,ns \\
+Ring placement & area groups at opposite edges, then LOC/BEL of every
+  stage taken from the implemented netlist & one region per ring, and one
+  LUT6 per stage fixed by LOC/BEL (without it Vivado merged inverters of
+  RO2 into one LUT6 and the ring ran at 130\,MHz) \\
+Sampling flip-flop & with and without clock enable & without clock enable \\
+Health-test cut-offs & 22/596, then 39/683 and 51/766 & 51/766 \\
+Minimum divider (\texttt{G\_KD\_MIN}) & 7 & 19 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{Results side by side. ``Quiet'' is the wrapper without display and
+frequency meter, the one closest to the integrated circuit; on the Basys~3
+``free'' is without fixed stage placement and ``fixed'' with it.}
+\label{tab:app_fpga_res}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}p{0.35\linewidth}>{\raggedright\arraybackslash}p{0.35\linewidth}@{}}
+\toprule
+ & Basys~2 & Basys~3 \\
+\midrule
+$Q$, fit of the autocorrelation $c(M)$ & $1.0$--$4.9\times10^{-5}$
+  (quiet, $n = 7$--$9$, depending on the implementation; three captures
+  within $\pm3$--$5\,\%$) & $1.42\times10^{-5}$ (quiet, fixed, $n = 2$);
+  $0.32$--$2.75\times10^{-5}$ over variants (three captures within
+  $\pm0.3\,\%$) \\
+White-noise floor of $Q$ (spectrum of the instantaneous frequency) &
+  not measured (no capture buffer, no $n \le 2$) & $0.6$--$1.1\times10^{-6}$
+  ($\sigma \approx 4$--$5$\,ps per 4.9\,ns period; calibration \simu{}) \\
+Logic hanging from the rings & changes $Q$ by $\times2.5$ & changes $Q$
+  by $\times3$--$4.4$, also with the stages fixed \\
+SP~800-90B, $10^6$ consecutive bits & $n = 12$: 0.760; $n = 13$--$16$:
+  0.82--0.86 & $n = 12$--$19$: 0.815--0.879, saturated; final bitstream
+  at $n = 19$: 0.853 \\
+SP~800-90B, 8\,378\,368 bits & 0.890 ($n = 14$) & 0.932 (free, $n = 16$),
+  0.880 (fixed, $n = 16$) \\
+Fraction of ones & 0.496--0.498 (quiet), 0.519 (with display) &
+  0.495--0.497 (free and final), 0.505--0.506 (fixed), 0.513--0.519 (with
+  display): the sign changes with the implementation \\
+Lag-1 correlation $\rho_1$ & 0.003--0.006 ($z$ up to 13) with clock
+  enable; $\le 0.0005$ ($z \le 1$) without & $|z| \le 2.1$ (no clock
+  enable) \\
+Health tests on the board & repetition test at $n = 8$, 11 and 12, and
+  proportion test at $n = 8$ (22/596); repetition test at $n = 10$ only
+  (51/766) & repetition test at $n = 8$ (free); none even at $n = 8$
+  (fixed, where SP~800-90B gives 0.186) \\
+Restart test (SP~800-90B \S3.1.4, 1\,000 reconfigurations) & passes at
+  $n = 14$ ($H_r$ 0.855, $H_c$ 0.873, $H_I$ 0.845) & passes at $n = 16$
+  (0.843, 0.892, 0.819) and at $n = 19$ (0.854, 0.830, 0.857) \\
+Complete engine with the ESP32 as oracle & does not fit & 40/40 \acs{CMAC}
+  tags equal to mbedTLS, in three sessions \\
+Working divisor & $n \ge 16$, provisional (from the $c(M)$ fit) &
+  $n = 19$ (from the white-noise floor) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{What is common.} On two families and two process nodes the
+picture is the same. The $c(M)$ fit gives a relative phase noise of
+$10^{-6}$--$10^{-5}$ per RO2 period, and the \ac{ERO} model leaves
+residuals of several to tens of times the binomial noise: part of the
+phase is a deterministic modulation, not jitter. $Q$ depends on the logic
+attached to the rings and on the implementation, in the same direction on
+both boards (without the frequency meter $Q$ is larger). SP~800-90B
+saturates at 0.82--0.88 with $10^6$ bits and separates neither the
+\ac{FPGA} from the ESP32 and from ideal bits, nor, on the Basys~3, a
+divider with $H_\infty = 0.47$ from one with 0.9996. The bias is
+0.2--1.9\,\% and its sign changes between implementations on both boards.
+The health tests do not see the low-jitter regime, so only the minimum
+divider protects it. The restart test passes on both.
+
+\paragraph{What changed the divider.} Not the board but the method. The
+$c(M)$ fit counts the modulation as jitter and overestimates $Q$; the
+spectral method, available only on the Basys~3 because it needs the
+capture buffer at small dividers, separates the white floor, 13--24 times
+below the fit in the same variant. With it the \ac{FPGA} divider went from
+$n \ge 16$ to $n = 19$. The Basys~2 bound of $n \ge 16$ can be neither
+confirmed nor ruled out. The same $n$ is not the same time on both boards:
+$n = 16$ at 143.8\,MHz is 456\,$\mu$s per bit, and $n = 19$ at 205\,MHz
+is 2.56\,ms.
+
+\paragraph{What the Basys~2 alone shows.} Only there was the sampling
+flip-flop compared with and without clock enable, with the rings and the
+flip-flop at the same sites: with it, $\rho_1 \approx 0.005$; without it,
+nothing. This is why the engine samples without clock enable by default
+(Chapter~\ref{ch:ch4_engine}). The Basys~3 has no variant with clock enable,
+so the cause rests on one family; the absence of correlation without it is
+confirmed on both.
+
+\paragraph{Lessons carried over.} The Basys~2 showed that a ring can vanish
+in the implementation (the mapper collapsed the inverter chain), that
+placed rings run faster than the counter of the \ac{ERO} closes, that the
+multiplexed display modulates the rings, and that repeatability has to be
+measured before a difference is read. On the Basys~3 the build script lists
+every ring cell after routing and stops if a ring is missing, the stage
+count and the RO2 timing constraint follow the measured frequency, the
+campaigns use the quiet wrapper, and every $Q$ comes from three captures.
+
+\paragraph{90\,nm against 28\,nm.} Placed, the Artix-7 rings are about
+2--2.3 times faster per stage. The phase noise is of the same order on
+both boards, but with different frequencies, dividers, fit ranges and
+wrappers, and with a model that does not describe its shape on either; no
+conclusion is drawn about which node has more jitter. The only figure that
+aims to be thermal, the white floor of the Basys~3 ($\sigma \approx
+4$--$5$\,ps per 4.9\,ns period), is of the order of the 2--4\,ps per
+period reported for ring oscillators in 28\,nm~\cite{petura_2016_survey}.
