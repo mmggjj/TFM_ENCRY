@@ -1,0 +1,67 @@
+sf125_mm uno_buf 11 etapas rep 0: periodo 823.2 ps, modulacion 0.01 ps, hueco de fase max 0.0050, 1920 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5036; 0.4595/0.5036
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 11 etapas rep 0: periodo 1013.4 ps, modulacion 0.00 ps, hueco de fase max 0.0086, 2323 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4571/0.4990; 0.4571/0.4990
+ffm40_v132_mm uno_buf 11 etapas rep 0: periodo 526.6 ps, modulacion 0.01 ps, hueco de fase max 0.0046, 2279 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5023; 0.4773/0.5023
+  AVISO nudo 11: bordes ff 18, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 1: periodo 811.9 ps, modulacion 0.01 ps, hueco de fase max 0.0038, 2008 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4686/0.5071; 0.4686/0.5071
+sf125_v108_mm uno_buf 11 etapas rep 1: periodo 1028.8 ps, modulacion 0.00 ps, hueco de fase max 0.0034, 2228 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4983; 0.4374/0.4983
+  AVISO nudo 11: bordes ff 12, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 1: periodo 524.8 ps, modulacion 0.01 ps, hueco de fase max 0.0034, 2116 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4941; 0.4890/0.4941
+  AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 2: periodo 811.6 ps, modulacion 0.00 ps, hueco de fase max 0.0042, 1828 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4629/0.5074; 0.4629/0.5074
+sf125_v108_mm uno_buf 11 etapas rep 2: periodo 1000.7 ps, modulacion 0.00 ps, hueco de fase max 0.0067, 2139 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5000; 0.4584/0.5000
+  AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 2: periodo 524.3 ps, modulacion 0.01 ps, hueco de fase max 0.0030, 2195 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4930; 0.4714/0.4930
+  AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 3: periodo 825.0 ps, modulacion 0.00 ps, hueco de fase max 0.0050, 1900 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4626/0.5050; 0.4626/0.5050
+sf125_v108_mm uno_buf 11 etapas rep 3: periodo 1022.5 ps, modulacion 0.00 ps, hueco de fase max 0.0053, 2089 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4713/0.5087; 0.4713/0.5087
+ffm40_v132_mm uno_buf 11 etapas rep 3: periodo 520.9 ps, modulacion 0.01 ps, hueco de fase max 0.0647, 2078 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4644/0.5000; 0.4644/0.5000
+sf125_mm uno_buf 11 etapas rep 4: periodo 832.7 ps, modulacion 0.00 ps, hueco de fase max 0.0120, 1887 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4580/0.4987; 0.4580/0.4987
+sf125_v108_mm uno_buf 11 etapas rep 4: periodo 1036.7 ps, modulacion 0.00 ps, hueco de fase max 0.0050, 1733 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4320/0.5032; 0.4320/0.5032
+ffm40_v132_mm uno_buf 11 etapas rep 4: periodo 521.0 ps, modulacion 0.01 ps, hueco de fase max 0.0034, 2152 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4706/0.5017; 0.4706/0.5017
+sf125_mm uno_buf 11 etapas rep 5: periodo 829.0 ps, modulacion 0.00 ps, hueco de fase max 0.0031, 1786 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5074; 0.4772/0.5074
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 11 etapas rep 5: periodo 1000.4 ps, modulacion 0.00 ps, hueco de fase max 0.0053, 2353 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5034; 0.4647/0.5034
+  AVISO nudo 11: bordes ff 6, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 5: periodo 519.9 ps, modulacion 0.01 ps, hueco de fase max 0.0044, 2085 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4978; 0.4699/0.4978
+  AVISO nudo 11: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 6: periodo 839.9 ps, modulacion 0.00 ps, hueco de fase max 0.0070, 1872 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4355/0.5035; 0.4355/0.5035
+sf125_v108_mm uno_buf 11 etapas rep 6: periodo 1028.4 ps, modulacion 0.00 ps, hueco de fase max 0.0032, 2252 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4791/0.5132; 0.4791/0.5132
+ffm40_v132_mm uno_buf 11 etapas rep 6: periodo 528.4 ps, modulacion 0.01 ps, hueco de fase max 0.0041, 2256 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.4968; 0.4752/0.4968
+  AVISO nudo 11: bordes ff 16, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 7: periodo 830.4 ps, modulacion 0.00 ps, hueco de fase max 0.0035, 1969 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5050; 0.4532/0.5050
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 11 etapas rep 7: periodo 1020.2 ps, modulacion 0.00 ps, hueco de fase max 0.0032, 2220 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5016; 0.4477/0.5016
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 7: periodo 520.3 ps, modulacion 0.01 ps, hueco de fase max 0.0031, 2115 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5015; 0.4872/0.5015
+  AVISO nudo 11: bordes ff 14, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 8: periodo 834.4 ps, modulacion 0.00 ps, hueco de fase max 0.0031, 1747 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4652/0.4985; 0.4652/0.4985
+sf125_v108_mm uno_buf 11 etapas rep 8: periodo 1027.3 ps, modulacion 0.00 ps, hueco de fase max 0.0129, 2066 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5086; 0.4420/0.5086
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 8: periodo 528.0 ps, modulacion 0.01 ps, hueco de fase max 0.0053, 1975 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4783/0.4940; 0.4783/0.4940
+sf125_mm uno_buf 11 etapas rep 9: periodo 812.1 ps, modulacion 0.01 ps, hueco de fase max 0.0028, 1665 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4611/0.5070; 0.4611/0.5070
+sf125_v108_mm uno_buf 11 etapas rep 9: periodo 1016.3 ps, modulacion 0.01 ps, hueco de fase max 0.0217, 2003 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4857/0.5043; 0.4857/0.5043
+ffm40_v132_mm uno_buf 11 etapas rep 9: periodo 519.7 ps, modulacion 0.01 ps, hueco de fase max 0.0139, 2051 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5094; 0.4803/0.5094
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 10: periodo 819.4 ps, modulacion 0.01 ps, hueco de fase max 0.0035, 1523 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4554/0.4992; 0.4554/0.4992
+sf125_v108_mm uno_buf 11 etapas rep 10: periodo 1011.7 ps, modulacion 0.00 ps, hueco de fase max 0.0063, 1822 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4550/0.5075; 0.4550/0.5075
+ffm40_v132_mm uno_buf 11 etapas rep 10: periodo 523.2 ps, modulacion 0.01 ps, hueco de fase max 0.0087, 1767 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4890/0.5035; 0.4890/0.5035
+sf125_mm uno_buf 11 etapas rep 11: periodo 827.3 ps, modulacion 0.00 ps, hueco de fase max 0.0033, 1629 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4570/0.4967; 0.4570/0.4967
+sf125_v108_mm uno_buf 11 etapas rep 11: periodo 1005.9 ps, modulacion 0.00 ps, hueco de fase max 0.0037, 1917 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5005; 0.4582/0.5005
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+ffm40_v132_mm uno_buf 11 etapas rep 11: periodo 514.6 ps, modulacion 0.01 ps, hueco de fase max 0.0043, 1657 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5022; 0.4887/0.5022
+  AVISO nudo 11: bordes ff 6, ideal 2 (deberian ser 2)
+sf125_mm uno_buf 11 etapas rep 12: periodo 810.0 ps, modulacion 0.00 ps, hueco de fase max 0.0050, 1445 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 nan/0.5000; 0.4539/0.5000
+  AVISO nudo 11: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 11 etapas rep 12: periodo 1013.9 ps, modulacion 0.00 ps, hueco de fase max 0.0133, 1606 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4642/0.5070; 0.4642/0.5070
+ffm40_v132_mm uno_buf 11 etapas rep 12: periodo 521.8 ps, modulacion 0.01 ps, hueco de fase max 0.0035, 1408 s; P(1) biestable / ideal por nudo (bordes; ponderada): n11 0.4711/0.4965; 0.4711/0.4965
+
+CSV: /home/mmggjj/workspace/TFM_ENCRY/results/biestable_ihp_mc24_e11_criticas_b.csv
+
+P(1) ponderada por el tramo de fase de cada muestra (no necesita bordes limpios)
+
+| caso | montaje | n | periodo ps | modulacion ps | P(1) biestable (min-max) | ideal VDD/2 (min-max) | biestable - ideal (min-max) | H cota peor (biestable) | bordes ff max |
+|---|---|---|---|---|---|---|---|---|---|
+| sf125_mm | uno_buf 11 et. | 13 | 823.6 | 0.01 | 0.4355-0.4772 | 0.4967-0.5074 | -0.0679--0.0302 | 0.8251 | 4 |
+| sf125_v108_mm | uno_buf 11 et. | 13 | 1017.4 | 0.01 | 0.4320-0.4857 | 0.4983-0.5132 | -0.0712--0.0186 | 0.8161 | 12 |
+| ffm40_v132_mm | uno_buf 11 et. | 13 | 522.6 | 0.01 | 0.4644-0.4890 | 0.4930-0.5094 | -0.0356--0.0051 | 0.9007 | 18 |

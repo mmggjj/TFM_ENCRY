@@ -30,6 +30,11 @@ entropia + 128 de nonce). El biestable real de sg13g2 sesga el bit hasta
 P(1) 0,372 a 125 C con desapareamiento [SIMULADO, analysis/biestable_ihp.py;
 docs/basys2.md]: con 0,80 cinco de ocho chips quedaban por debajo, y con
 384 bits y H 0,60 la regla de la semilla no se cumple (161 < 192).
+
+22-11-2026: el integrado lleva anillos de 11/13 etapas y el Monte Carlo de
+24 chips por esquina critica (results/biestable_mc_e11.md) da H declarable
+0,757 (sf 125 C 1,08 V, mu - 3 sigma de P(1) 0,4081) y peor chip P(1)
+0,4166. H 0,60 queda cerrada; los cortes no cambian.
 """
 from __future__ import annotations
 
@@ -46,8 +51,9 @@ RTL_APT_C = 766
 ALFA = 2.0 ** -30        # tasa de falsa alarma por muestra (la norma: 2^-20 a 2^-40)
 H_OBJ = 0.60             # min-entropia por bit de diseno
 BITS_SEMILLA = 512       # entrada fija del CTR_DRBG (384 + 128)
-# Peor chip simulado: ff, 125 C, 1,32 V, con desapareamiento, P(1) 0,372
-P_PEOR_CHIP = 1 - 0.372
+# Monte Carlo de 24 chips, anillos de 11 etapas, sf 125 C 1,08 V [SIMULADO]
+P_PEOR_CHIP = 1 - 0.4166          # peor chip
+P_MU_3SIGMA = 1 - 0.4081          # mu - 3 sigma: la H declarable
 ENTROPIA_DRBG = 192      # AES-128: 128 de entropia + nonce de 64
 
 
@@ -118,13 +124,19 @@ def main() -> int:
     chk(BITS_SEMILLA * h_lim >= ENTROPIA_DRBG,
         f"{BITS_SEMILLA * h_lim:.0f} >= {ENTROPIA_DRBG} bits que pide el CTR_DRBG AES-128")
 
-    print("6) El peor chip simulado del biestable sg13g2 [SIMULADO]")
+    print("6) Biestable sg13g2, Monte Carlo de 24 chips, 11 etapas [SIMULADO]")
     h_peor = -math.log2(P_PEOR_CHIP)
     fa = falsa_alarma_apt(RTL_APT_C, h_peor, complemento=True)
     print(f"      p = {P_PEOR_CHIP:.3f} -> H = {h_peor:.3f}; "
           f"falsa alarma APT por ventana {fa:.2e}")
     chk(h_peor >= H_OBJ, f"H del peor chip {h_peor:.3f} >= H declarada {H_OBJ}")
     chk(fa <= ALFA, f"falsa alarma del APT con el peor chip {fa:.2e} <= 2^-{a:g}")
+    h_dec = -math.log2(P_MU_3SIGMA)
+    fa = falsa_alarma_apt(RTL_APT_C, h_dec, complemento=True)
+    print(f"      mu - 3 sigma: p = {P_MU_3SIGMA:.4f} -> H = {h_dec:.3f}; "
+          f"falsa alarma APT por ventana {fa:.2e}")
+    chk(h_dec >= H_OBJ, f"H declarable {h_dec:.3f} >= H declarada {H_OBJ}")
+    chk(fa <= ALFA, f"falsa alarma del APT en mu - 3 sigma {fa:.2e} <= 2^-{a:g}")
 
     print(f"\ncortes_salud: {fallos} fallos")
     return 0 if fallos == 0 else 1

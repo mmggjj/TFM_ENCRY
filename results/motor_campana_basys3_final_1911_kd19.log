@@ -1,0 +1,41 @@
+motor: ID 0xa5, VERSION 0x04, modo test
+kd 19: flujo fin bytes 125000 kd 19 ms 2564516 ok (2565 s)
+kd 19 flujo: 1000000 bits consecutivos en 2564516 ms, ro2 204.4393561982066 MHz, unos 0.495933
+--- kd19_flujo_noniid_b1: exit 0, 2 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_final_1911_kd19/entropia90b/bits/kd19_flujo.bits' (SHA-256 hash 2dae07e4d3dbd92b207ef2f2f8add53e7b9f692fe21c285e685261e41ce00fab)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 504067, p-hat = 0.50406700000000004, p_u = 0.50535487268952994
+	Most Common Value Estimate = 0.984631 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.500487595081041, sigma-hat = 0.50000038737375374, p = 0.52782963292823815
+	Collision Test Estimate = 0.921856 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50406700000000004, P_1 = 0.49593299999999996, P_0,0 = 0.5042553951268286, P_0,1 = 0.4957446048731714, P_1,0 = 0.50387653170892033, P_1,1 = 0.49612346829107967, p_max = 8.6917767349714345e-39
+	Markov Test Estimate = 0.987778 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2179411898112216, sigma-hat = 1.0151810718022769, p = 0.028827770062825664
+	Compression Test Estimate = 0.852733 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Literal LRS Estimate: u = 17, v = 38, p-hat = 0.50577463124747823, p_u = 0.50706246064575625
+	T-Tuple Test Estimate = 0.919089 / 1 bit(s)
+	LRS Test Estimate = 0.979765 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50228351603436816 (C = 500964) Plocal can't affect result (r = 19)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.993426 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50052541367958159 (C = 499237) Plocal can't affect result (r = 23)
+	Lag Prediction Test Estimate = 0.998485 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50491189000170011 (C = 503623) Plocal can't affect result (r = 23)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.985896 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50516045344674532 (C = 503864) Plocal can't affect result (r = 23)
+	LZ78Y Prediction Test Estimate = 0.985186 / 1 bit(s)
+
+H_original: 0.852733
+tiempo_s=2.00 maxrss_kB=23000
+log integro: /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_final_1911_kd19/serie.log
+resumen: /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_final_1911_kd19/resumen.csv

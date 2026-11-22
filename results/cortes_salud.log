@@ -20,9 +20,12 @@ SP 800-90B 4.4 — cortes para H = 0.6, alfa = 2^-30, W = 1024
 5) Semilla con lo peor que deja pasar el APT
       p en el corte = 0.7480 -> H = 0.4188; 512 bits x H = 214
   [ok ] 214 >= 192 bits que pide el CTR_DRBG AES-128
-6) El peor chip simulado del biestable sg13g2 [SIMULADO]
-      p = 0.628 -> H = 0.671; falsa alarma APT por ventana 1.93e-16
-  [ok ] H del peor chip 0.671 >= H declarada 0.6
-  [ok ] falsa alarma del APT con el peor chip 1.93e-16 <= 2^-30
+6) Biestable sg13g2, Monte Carlo de 24 chips, 11 etapas [SIMULADO]
+      p = 0.583 -> H = 0.777; falsa alarma APT por ventana 2.40e-28
+  [ok ] H del peor chip 0.777 >= H declarada 0.6
+  [ok ] falsa alarma del APT con el peor chip 2.40e-28 <= 2^-30
+      mu - 3 sigma: p = 0.5919 -> H = 0.757; falsa alarma APT por ventana 7.88e-26
+  [ok ] H declarable 0.757 >= H declarada 0.6
+  [ok ] falsa alarma del APT en mu - 3 sigma 7.88e-26 <= 2^-30
 
 cortes_salud: 0 fallos

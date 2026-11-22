@@ -7,7 +7,7 @@ aplicadas; `docs/basys3.md`, "Revisión de la tarde del 18-11").
 
 | Punto | Decisión | Aplicado |
 |---|---|---|
-| 6. Biestable | **ro1 de 11 etapas** | `motor_top` `G_ETAPAS_RO1` 7 → 11. Ojo: el SPICE simulaba 5 etapas y el RTL llevaba 7; la corrección es ×2,2 de periodo respecto a lo simulado. Monte Carlo con 11 etapas en marcha (`results/biestable_ihp_mc24_e11_*`), primero sf 1,08 V, sf 1,2 V y ff −40 °C 1,32 V, luego ff y tt a 125 °C |
+| 6. Biestable | **ro1 de 11 etapas** | `motor_top` `G_ETAPAS_RO1` 7 → 11. Ojo: el SPICE simulaba 5 etapas y el RTL llevaba 7; la corrección es ×2,2 de periodo respecto a lo simulado. Monte Carlo con 11 etapas: esquinas críticas a 24 chips, H declarable 0,757 ≥ 0,60 (22-11, abajo); ff y tt a 125 °C sin lanzar |
 | 9. Tiempos de ro2 en el integrado | **ro2 de 13 etapas + preescalador ÷16** (13 y no 11, como se aplicó primero: con ro1 también de 11, los dos anillos serían iguales y tienden a engancharse) | Estimación [Yosys + ABC, biblioteca típica 1,2 V 25 °C]: el contador de 26 bits tarda 1,53 ns y un biestable sg13g2 necesita ~0,37 ns para conmutar (clk→Q 0,22 + setup 0,11 + inversor), frente a 0,366 ns de ro2 con 5 etapas: no cerraba nada. Ahora ro2 de 13 etapas (~0,95 ns, el primer biestable cierra con ×2,6 de margen) y `G_PRESC_RO2` = 4: el dominio del anillo (ERO, cruce, captura) corre a ro2/16 (~13 ns). `CFG_KD` sigue contando periodos de ro2. Sin biblioteca lenta en el PDK local: la esquina 1,08 V 125 °C queda sin comprobar |
 | 7. `G_KD_MIN` | **25 integrado, 19 FPGA** | `motor_top` 25 (y `G_KD_RESET` 25, `G_KD_MAX` 26 con el contador ensanchado; un `CFG_KD` > máximo se ignora y levanta `DIAG.rechazada`); `basys3_top` 19/19 con `G_KD_MAX` 24 (con 26 el camino de ro2 subía a 4,41 ns); variante de caracterización con `GENERICOS="... G_KD_MIN=6"` |
 | `CFG_KD` de la FPGA | **19** (H_∞ ≥ 0,99 con la cota baja 0,6·10⁻⁶) | recalibración con la ν y el sesgo de cada captura: 0,59-1,13·10⁻⁶ (18-11) y 0,95-1,35·10⁻⁶ (bitstream del 19-11) por banda |
@@ -17,7 +17,7 @@ aplicadas; `docs/basys3.md`, "Revisión de la tarde del 18-11").
 95,09 kGE con la configuración anterior en la misma tanda (+0,5 %;
 `results/sintesis_19_11.log`; el CSV no se toca hasta actualizar el cap. 6).
 
-### Validación con SPICE (noche del 19-11; Monte Carlo parcial)
+### Validación con SPICE (noche del 19-11; Monte Carlo completado el 22-11)
 
 **Divisor** [SIMULADO → ESTIMADO; `docs/anillo_ihp.md` §4.4]: ro1 de 11
 etapas en ss, −40 °C, 1,08 V, 8 realizaciones: Q por periodo
@@ -26,40 +26,46 @@ etapas en ss, −40 °C, 1,08 V, 8 realizaciones: Q por periodo
 chip, `CFG_KD` 24 da H_∞ 0,9997 y 25 ≈ 1: **`G_KD_MIN` 25 tiene un factor 2
 de margen**.
 
-**Biestable** [SIMULADO, sin ruido; `results/biestable_mc_e11.md`,
-`analysis/biestable_mc.py --fuentes biestable_ihp_mc24_e11_criticas.log
---salida biestable_mc_e11.md`]: Monte Carlo de las esquinas críticas parado
-a las 22:45 con 11 chips de 24 por esquina. Con el criterio fijado (μ ∓ 3σ,
-todos los chips):
+**Biestable** [SIMULADO, sin ruido; `results/biestable_mc_e11.md` y
+`results/biestable_mc_e11_sin_hueco.md`, `analysis/biestable_mc.py --fuentes
+biestable_ihp_mc24_e11_criticas.log,biestable_ihp_mc24_e11_criticas_b.log`]:
+**Monte Carlo de las esquinas críticas completo, 24 chips por esquina**
+(tanda `mc24_e11_criticas`, 11, parada el 19-11 a las 22:45; tanda
+`mc24_e11_criticas_b`, 13, acabada el 22-11 a las 13:57). Leído con la regla
+de abajo, fijada antes del resultado:
 
-| Esquina | n | P(1) μ ± σ | H en μ − 3σ | peor chip |
-|---|---|---|---|---|
-| sf, 125 °C, 1,08 V | 11 | 0,4691 ± 0,0201 | **0,759** | 0,4166 |
-| sf, 125 °C, 1,2 V | 11 | 0,4700 ± 0,0069 | 0,861 | 0,4592 |
-| ff, −40 °C, 1,32 V | 11 | 0,4789 ± 0,0095 | 0,864 | 0,4568 |
+| Esquina | n | P(1) μ ± σ (IC 95 % de σ) | H en μ − 3σ | H con σ alta | peor chip (H) |
+|---|---|---|---|---|---|
+| sf, 125 °C, 1,08 V | 24 | 0,4631 ± 0,0183 (0,0142-0,0257) | **0,757** | 0,704 | 0,4166 (0,777) |
+| sf, 125 °C, 1,2 V | 24 | 0,4642 ± 0,0100 (0,0078-0,0140) | 0,822 | 0,791 | 0,4355 (0,825) |
+| ff, −40 °C, 1,32 V | 24 | 0,4784 ± 0,0088 (0,0068-0,0123) | 0,868 | 0,840 | 0,4568 (0,880) |
 
-H declarable 0,759 ≥ 0,60 (con 5 etapas, 0,532). **Ojo:** dos chips de sf a
-1,08 V (rep 5: 0,5000; rep 7: 0,4166) tienen huecos de fase de 0,082 y 0,068
-(~12 fases distintas, P(1) con resolución ~±0,04): con desapareamiento el
-periodo de la simulación previa es de otro chip y el reloj puede caer cerca
-de una razón racional. Son los que inflan la σ (Shapiro-Wilk p 0,00); sin
-ellos la esquina da 0,874 (9 chips). Ningún otro chip pasa de 0,05 de hueco.
-El Monte Carlo de 5 etapas también tenía huecos de hasta 0,077 y se contaron.
-Con cualquiera de las dos lecturas se pasa el 0,60; la cifra válida es la de
-24 chips.
-
-**Para seguir** (otro día): completar las críticas hasta 24 chips con otra
-etiqueta (los sorteos son independientes; `biestable_mc.py --fuentes` junta
-logs y CSV):
-
-    ~/eda/venv/bin/python analysis/biestable_ihp.py --montajes uno_buf --casos ffm40_v132 \
-      --mismatch-n 13 --mm-casos sf125_v108,sf125,ffm40_v132 --procesos 4 \
-      --etiqueta mc24_e11_criticas_b --etapas 11 > results/biestable_ihp_mc24_e11_criticas_b.log 2>&1
-
-y después ff y tt a 125 °C (`--mm-casos ff125_v132,tt125 --casos tt27
---etiqueta mc24_e11_resto`; Mario lo deja para otro momento). Desde esta
-noche `biestable_ihp.py` escribe además `<csv>.parcial.csv` fila a fila.
-Mejora pendiente: rechazar o repetir los chips con hueco de fase > 0,05.
+- **Oficial (todos los chips): H declarable 0,757 ≥ 0,60.** H 0,60 queda
+  cerrada para las esquinas críticas (con 5 etapas daba 0,532); el circuito
+  no se corrige y los cortes 51/766 no cambian (`cortes_salud.py` 11/11, con
+  el peor chip y con μ − 3σ). Ni con la σ en el extremo alto de su intervalo
+  baja de 0,70.
+- **Sensibilidad (hueco de fase ≤ 0,025):** 0,789 (sf 1,08 V, n 22; ff n 21,
+  sf 1,2 V sin cambios). Las dos lecturas pasan: no hay discrepancia y no
+  hacen falta chips nuevos (punto 4 de la regla).
+- Chips con hueco > 0,025: los dos de sf 1,08 V ya conocidos (0,082 y 0,068,
+  primera tanda) y tres de ff (0,047 y 0,031 de la primera, 0,065 de la
+  segunda). sf 1,2 V no tiene ninguno; en la segunda tanda, salvo ese de ff,
+  ninguno pasa de 0,022. El peor chip de sf 1,08 V (0,4166) es uno de los de
+  hueco: sin él, el peor es 0,4320 (H 0,816).
+- **Diferencia entre tandas:** en sf 1,2 V las dos tandas tienen medias
+  distintas (0,4700 ± 0,0069 frente a 0,4592 ± 0,0097, Welch p 0,004; en sf
+  1,08 V p 0,15 con todos y 0,01 sin huecos; en ff p 0,78). Son sorteos
+  independientes con el mismo programa; la causa no está comprobada (la
+  candidata es el `T_CLK`, que sale de la simulación previa de otro chip y
+  cambia de una tanda a otra). La cifra oficial junta las dos tandas, así que
+  esa variación ya está dentro de la σ; con una sola tanda se habría
+  infraestimado.
+- Los avisos "bordes ff N, ideal 2" del log son del recuento por bordes, que
+  no se usa: la P(1) ponderada por fase no necesita bordes limpios.
+- **Pendiente:** ff y tt a 125 °C (`--mm-casos ff125_v132,tt125 --casos tt27
+  --etiqueta mc24_e11_resto`; Mario lo deja para otro momento) y la lectura
+  de sensibilidad del Monte Carlo de 5 etapas (punto 5).
 
 ### Regla para leer los 24 chips del Monte Carlo (fijada el 22-11-2026, antes del resultado)
 

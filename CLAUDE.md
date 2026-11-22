@@ -52,16 +52,21 @@ todo. Léelo entero antes de tocar nada.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
 
-## Estado al 22-11-2026: placa cerrada con el bitstream final, revisión del RTL
+## Estado al 22-11-2026: placa cerrada, revisión del RTL y H 0,60 cerrada
 
 - **Placa, bitstream del 19-11 [MEDIDO]:** SP 800-90B a `kd 19` 0,853
   (10⁶ consecutivos), reinicios §3.1.4 pasan (H_r 0,847, H_c 0,845);
   `docs/basys3.md` "22-11-2026".
 - **SPICE:** T(ro2 13)/T(ro1 11) = 1,175 simulado (antes 13/11 estimado);
-  divisor sin cambios. Monte Carlo de las críticas completándose a 24 chips
-  (`mc24_e11_criticas_b`); **regla de lectura fijada antes del resultado**
-  (`docs/decisiones_pendientes.md`: oficial con todos los chips,
-  sensibilidad sin hueco de fase > 0,025).
+  divisor sin cambios.
+- **Monte Carlo del biestable, 11 etapas, 24 chips por esquina crítica
+  [SIMULADO]:** con la regla fijada antes del resultado
+  (`docs/decisiones_pendientes.md`), **H declarable 0,757 ≥ 0,60** (sf 125 °C
+  1,08 V; 0,704 con la σ alta del IC 95 %); sensibilidad sin hueco de fase >
+  0,025: 0,789. **H 0,60 cerrada en las críticas**, cortes 51/766 sin cambio
+  (`cortes_salud.py` 11/11). En sf 1,2 V las dos tandas difieren en media
+  (Welch p 0,004; causa sin comprobar, candidata `T_CLK`). `results/biestable_mc_e11.md`
+  y `_sin_hueco.md`. Faltan ff/tt a 125 °C (Mario: otro momento).
 - **Revisión independiente del RTL** (`results/revision_rtl_20261122/`):
   medidor que no sembraba en el integrado, `CFG_KD` ≥ 32 truncado y 0-3 con
   ventana 2^4: corregidos (`CFG_KD` fuera de [`G_PRESC_RO2`, `G_KD_MAX`] se
@@ -89,9 +94,8 @@ kGE con ro2 de 13 (+0,5 %). **SPICE de la noche** (`docs/decisiones_pendientes.m
 −40 °C 1,08 V (8 realizaciones), Q 2,65-3,41·10⁻⁸ por periodo → `CFG_KD` 24 ya da H_∞ 0,9997
 con el peor chip (T(ro2)/T(ro1) 1,175 simulada el 22-11): **`G_KD_MIN` 25 con factor 2 de
 margen**. Monte Carlo del biestable parado a 11 de 24 chips por esquina
-crítica: **H declarable 0,759 ≥ 0,60** (0,874 sin dos chips con huecos de fase
-de 0,07-0,08). **Pendiente**: completar las críticas a 24 chips (orden en
-`decisiones_pendientes.md`; relanzadas el 22-11 como `mc24_e11_criticas_b`), ff/tt a 125 °C (Mario: otro momento); memoria y PR a `main`.
+crítica: H declarable 0,759 (completado a 24 el 22-11: **0,757**, sección de
+arriba). **Pendiente**: ff/tt a 125 °C (Mario: otro momento); memoria y PR a `main`.
 
 ## Estado al 17-11-2026: la Basys 3 llegó, el motor entero en placa
 
