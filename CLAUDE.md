@@ -69,13 +69,23 @@ todo. Léelo entero antes de tocar nada.
   un chip de tt 125 °C con P(1) 0,5278 (único > 0,5). Monte Carlo de 5 etapas
   con la lectura de sensibilidad: 0,530 (oficial 0,532). `results/biestable_mc_e11.md`,
   `_e11_sin_hueco.md`, `biestable_mc_sin_hueco.md`.
+- **Caudal y falsas alarmas del integrado** (`analysis/caudal_integrado.py`
+  → `results/caudal_integrado.md`): ro2 de 13 etapas 594-1 459 ps [SIMULADO;
+  la esquina rápida es ff −40 °C 1,32 V, simulada hoy] → con `CFG_KD` 25
+  **20-50 bit/s**, arranque 20-50 s, siembra 10-75 s [ESTIMADO]. Falsas
+  alarmas [ESTIMADO, iid, tasas exactas del RTL] a 50 bit/s: peor chip 8·10⁻⁴
+  al año, chip en H 0,60 0,33 al año; Basys 3 a `kd 19` ~6·10⁻⁶. Detalle en
+  `docs/mapa_registros.md` ("Rearme").
+- **Síntesis repetida el 22-11** (`results/sintesis_22_11.log`, CSV reescrito,
+  `docs/sintesis_resultados.md`): `motor_top` **95,46 kGE**, 8 425 FF (95,53 el
+  19-11: el rechazo de `CFG_KD` no cuesta área medible).
 - **Revisión independiente del RTL** (`results/revision_rtl_20261122/`):
   medidor que no sembraba en el integrado, `CFG_KD` ≥ 32 truncado y 0-3 con
   ventana 2^4: corregidos (`CFG_KD` fuera de [`G_PRESC_RO2`, `G_KD_MAX`] se
   ignora con `rechazada`). Banco nuevo `tb_ventana_ero` (47/47); **trece
   bancos en verde** (`results/run_tb_todos.log`), banco en PC 0 fallos. El
   bitstream de la placa es anterior a este cambio (solo difiere ante
-  escrituras fuera de rango); síntesis sin repetir.
+  escrituras fuera de rango).
 - **Documentos nuevos:** `docs/plan_memoria_cierre.md` (qué está desfasado en
   la memoria), `docs/basys2_frente_basys3.md`; **memoria: apéndice D**,
   Basys 2 frente a Basys 3 (EN y ES).

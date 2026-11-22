@@ -38,8 +38,8 @@ en una sola tanda) y el área del motor (tras regenerar la tabla por bloque).
 el periodo de ro2 y `cortes_salud.py` ya están cerrados (0,757 con 24 chips
 en las cinco esquinas; T(ro2)/T(ro1) 1,175 simulado; peor chip de 11
 etapas). Queda el factor de peor chip del divisor, heredado del Monte Carlo
-de 5 etapas, y el caudal y las falsas alarmas del integrado (E16, E17)
-escritos en la memoria.
+de 5 etapas. El caudal, las falsas alarmas (E16, E17) y el área (E18) se
+calcularon también el 22-11 y faltan en la memoria.
 
 **Hallazgos que no estaban en la lista de tareas:**
 
@@ -99,9 +99,9 @@ Las filas del §2 remiten a estas claves.
 | E13 | SPICE de ro1 de 11 etapas | ss −40 °C 1,08 V, 8 realizaciones: T 1 240,9 ps, σ 214,9 ± 4,0 fs, Q 2,65-3,41·10⁻⁸; `CFG_KD` 24 → H_∞ 0,99973 peor chip, 25 ≈ 1 (`docs/anillo_ihp.md` §4.4, `results/anillo_ihp_divisor_e11.txt`) | **P**: T(ro2)/T(ro1) = 13/11 estimado (hoy, 22-11, corren `anillo_ihp_periodo_*_e11/e13` en tt27, ff125 y ss −40: sin documentar); factor de peor chip 1,175 del Monte Carlo de 5 etapas; solo la peor esquina |
 | E14 | Monte Carlo del biestable, 11 etapas | 24 chips en cada esquina: sf 125 °C 1,08 V / 1,2 V, ff −40 °C 1,32 V, ff 125 °C 1,32 V, tt 125 °C: H 0,757 / 0,822 / 0,868 / 0,838 / 0,851; **H declarable 0,757** (oficial, todos los chips; 0,704 con σ alta); sensibilidad sin hueco > 0,025: 0,789 (`results/biestable_mc_e11.md`, `_sin_hueco.md`; regla en `docs/decisiones_pendientes.md`) | **C** (22-11). Decirlo: las tandas de sf 1,2 V difieren en media (Welch p 0,004) y un chip de tt 125 °C sale con P(1) 0,5278 |
 | E15 | Monte Carlo del biestable, 5 etapas | H declarable 0,532 (sf 1,08 V, 24 chips), 0,568 (sf 1,2 V, 28), 0,653 (ff), 0,803 (tt) (`results/biestable_mc.md`); sin huecos > 0,025, 0,530 (`results/biestable_mc_sin_hueco.md`) | C. Es lo que obligó a alargar ro1; la memoria no lo recoge |
-| E16 | Caudal y tiempos del integrado con `CFG_KD` 25 | no está en `docs/`. Cuenta mía [ESTIMADO]: 2²⁵ periodos de ro2 de 13 etapas = 49 ms en ss −40 °C 1,08 V (T(ro2) ≈ 13/11 × 1 240,9 ps) → ~20 bit/s; tt 27 °C ≈ 33 bit/s y ff 125 °C ≈ 45 bit/s con los periodos sin ruido de las tandas de hoy. Siembra de 512 bits 11-25 s; test de arranque (1 024 bits) 23-50 s. Frente a 0,20-0,41 kbit/s y 2,6 s que dice la memoria | **H + P**: calcularlo en `docs/anillo_ihp.md` §4.4 con los periodos simulados de ro2 de 13 etapas cuando acaben |
-| E17 | Falsas alarmas con 51/766 | memoria: peor chip ~8/año a 8,7 kbit/s (P(1) 0,372) | **H + P**: rehacer con el Monte Carlo de 11 etapas, la Basys 3 a `kd 19` (~0,39 kbit/s) y E16; actualizar `cortes_salud.py` y `docs/mapa_registros.md` "Rearme" |
-| E18 | Área | `motor_top` **95,53 kGE** (ro2 13), `motor_top_aes11` 104,60, con FIFO 119,10; antes del 19-11 95,09 (+0,5 %) (`results/sintesis_19_11_ro2_13.log`) | C para el motor. **H**: regenerar la tabla por bloque y `results/sintesis_sg13g2.csv` con el RTL actual (semilla de 512, contador de 26 bits, ÷16); el CSV no se tocó a propósito |
+| E16 | Caudal y tiempos del integrado con `CFG_KD` 25 | `results/caudal_integrado.md` (`analysis/caudal_integrado.py`, 22-11): T(ro2) de 13 etapas [SIMULADO, sin ruido, 1 fF] 594-1 459 ps de ff −40 °C 1,32 V a ss −40 °C 1,08 V → **20-50 bit/s** [ESTIMADO]; arranque (1 024 bits) 20-50 s; siembra 512-1 535 bits, 10-75 s (1 024 bits, 20-50 s, si se ordena al acabar el arranque); con `CFG_KD` 26, 10-25 bit/s. La esquina más rápida es ff a −40 °C, no a 125 °C. Frente a 0,20-0,41 kbit/s y 2,6 s que dice la memoria | C. Incertidumbre: carga real de ro2 (+3 % visto en ro1 con el biestable) y desapareamiento (σ 1,3 %) |
+| E17 | Falsas alarmas con 51/766 | `results/caudal_integrado.md` [ESTIMADO, bits iid, tasas exactas para la lógica del RTL, fórmula del RCT comprobada con bits simulados]: cota a 50 bit/s; peor chip de 120 (P(1) 0,4166) 7,6·10⁻⁴ al año; μ − 3σ de la peor esquina (0,4081) 1,6·10⁻³; chip justo en H 0,60, 0,33 al año; bits ideales 7·10⁻⁷. Basys 3 a `kd 19` (390 bit/s, sesgo medido 0,4959) 6·10⁻⁶ al año. P(≥ 4 en 24 h, agota el rearme) ≤ 3·10⁻¹⁴. El RCT domina; APT < 10⁻²⁵ por ventana con el biestable. La memoria dice ~8/año con P(1) 0,372 a 8,7 kbit/s (Basys 2, 5 etapas) | C. Las cifras viejas de `docs/basys2.md` usaban (1 − q)·q^(C−1), cota ×1/q (~1,5) de la tasa exacta |
+| E18 | Área | Síntesis completa del 22-11 (`results/sintesis_22_11.log`, CSV reescrito, `docs/sintesis_resultados.md`): `motor_top` **95,46 kGE**, 8 425 FF; `aes11` 105,24; con FIFO 119,27; el 19-11 95,53 (el rechazo de `CFG_KD` no cuesta área medible) | C |
 | E19 | Tiempos del dominio de ro2 en el integrado | contador de 26 bits 1,53 ns; biestable sg13g2 ~0,37 ns frente a 0,366 ns de ro2 de 5 etapas; con 13 etapas (~0,95 ns) ×2,6 de margen [ESTIMADO, Yosys + ABC, biblioteca típica] | P: sin biblioteca lenta, 1,08 V 125 °C sin comprobar; se dice como estimación |
 | E20 | Bancos | 12 bancos, 255 comprobaciones [ok] (motor 88, solo fuente 21, ERO 12, Basys 2 7, Basys 3 4...), PSL 14/14 y 8/8 (motor), 4/4 y 2/2 (solo fuente), 1/1 (I2C) | **H**: repetir los 12 en una tanda (`tb_basys3_top` falló por reanálisis en `run_tb_todos.log`) |
 | E21 | Esquemático y plano | `results/basys3_esquema/`, `results/basys3_plano/` (18-11, antes de los cambios del 19-11) | C con la fecha; mejor regenerarlos del bitstream del 19-11 (`esquema.tcl` necesita `-mode gui`). Foto del montaje: la hace Mario |
@@ -187,9 +187,9 @@ y estado. Las equivalencias en español van en §5.
 
 | Dónde | Dice | Debe decir | Ev. | Estado |
 |---|---|---|---|---|
-| `:39-55` | motor digital ≈ 46 kGE; el búfer "occupies a block RAM at no logic cost" en la FPGA | recalcular con la tabla nueva (≈ 95,53 − 46,76 ≈ 48,8 [ESTIMADO hasta regenerar]); en Vivado `trng_capture` va a RAM distribuida (156 LUT / 44 FF), sin BRAM | E1, E18 | H |
-| `:57-81` (tabla `tab:synth`) | filas del 28-10: motor 92,53, ERO "24-bit divider" 0,33 | regenerar todas con el RTL actual: motor 95,53, `aes11` 104,60, ERO con contador de 26 bits y ÷16 | E18 | **H** |
-| `:102-107` | "The table predates the 512-bit seed ... 95.1 kGE" | desaparece al regenerar; decir el +0,5 % del 19-11 (95,09 → 95,53) | E18 | H |
+| `:39-55` | motor digital ≈ 46 kGE; el búfer "occupies a block RAM at no logic cost" en la FPGA | recalcular con la tabla nueva (95,46 − 46,81 ≈ 48,7, resta de bloques); en Vivado `trng_capture` va a RAM distribuida (156 LUT / 44 FF), sin BRAM | E1, E18 | H |
+| `:57-81` (tabla `tab:synth`) | filas del 28-10: motor 92,53, ERO "24-bit divider" 0,33 | regenerar todas con la síntesis del 22-11: motor 95,46, `aes11` 105,24, ERO 0,34 (contador de 26 bits y ÷16) | E18 | **H** |
+| `:102-107` | "The table predates the 512-bit seed ... 95.1 kGE" | desaparece al regenerar; decir el +0,5 % del 19-11 (95,09 → 95,53; 95,46 el 22-11) | E18 | H |
 | `:142-147` | 2355 (2483) biestables del generador | de la tabla nueva | E18 | H |
 | `:150-162` | 69 → 46 → ≈ 42 kGE; "0.72 mm² ... fits several times over" (M3: el bloque mínimo de IHP es 0,8 mm²) | rehacer con las cifras nuevas | E18 | H |
 | §`sec:ro_silicon` `:164-192` | tres puntos de la bibliografía | añadir lo que el diseño ya aplica o pide: ro1 de 11 y ro2 de 13 (distintos para que no se enganchen), ÷16 y los tiempos del contador [ESTIMADO, sin esquina lenta], buffer a la salida del anillo (el biestable tira del nudo 2-3 ps), `ro_mon` sin carga, alimentación o anillo de guarda propios (en la FPGA la lógica colgada cambia el ruido de fase ×4,4 y hay una raya de ~39,4 kHz que viene de fuera) | E11, E12, E19 | C (decisiones) / P (tiempos, como estimación) |
@@ -226,7 +226,7 @@ y estado. Las equivalencias en español van en §5.
 | `:4-6` | comentario [DRAFT] con [PENDING] | quitar | — | al final |
 | `:18-32` (O1-O3) | anillo de 5 etapas; "a fixed divider of 2²³ ... 0.20-0.41 kbit/s" | los 176,7 fs de 5 etapas se quedan como caracterización; divisor del integrado con ro1 11 / ro2 13: `CFG_KD` 24 basta, mínimo 25; caudal nuevo | E13, E16 | **P** |
 | `:34-44` | la batería no sustituye al modelo (simulado) | añadir la confirmación en placa (`kd 16` frente a `kd 19`) | E6 | C |
-| `:59-65` (O7) | 92,5 / 46 / 23 / 42 kGE | 95,5 y el resto con la tabla nueva | E18 | H |
+| `:59-65` (O7) | 92,5 / 46 / 23 / 42 kGE | 95,5 (95,46) y el resto con la tabla del 22-11 | E18 | H |
 | `:76-83` | nota no impresa de la Basys 2 | sustituir según la decisión de la tarea 11 | E22 | D |
 | `:84-91` (O5, O6) | [PENDING] | O5: 40/40 en tres sesiones, dos claves, zeroización, rechazos del divisor en placa; O6: jitter (por método, residuo, suelo blanco, raya), SP 800-90B, salud, reinicios, divisor 2¹⁹ | E1-E11 | C |
 | `:93-97` (O8) | [PENDING]; "the informative points are the low dividers, where the battery can contradict it" | la H asignada no separa FPGA, ESP32 ni ideal; los estimadores sensibles al sesgo sí separan la FPGA; en divisores bajos la batería **sobreestima** (como predecía la simulación); lo que separa las fuentes es el modelo y el test de reinicios | E6-E8 | C |
@@ -392,8 +392,8 @@ los bancos y la síntesis, que pueden esperar a que acaben las simulaciones)
    calibración y comprobar que da las Q revisadas.
 9. Bancos: los doce en una tanda (`python rtl/run_tb.py`), log limpio;
    `verifica_top.py`; CI en verde.
-10. Síntesis completa por bloque (`synth/sintetiza.py`), actualizar
-    `results/sintesis_sg13g2.csv` y `docs/sintesis_resultados.md`.
+10. ~~Síntesis completa por bloque~~ (22-11: `results/sintesis_22_11.log`,
+    CSV y `docs/sintesis_resultados.md` al día).
 11. Vivado: releer utilización y tiempos del bitstream del 19-11; regenerar
     esquemático y plano de ese bitstream (o fechar los del 18-11).
 12. Cuentas M6 (Fischer y Lubicz) y M7 (tiempos de siembra), y ciclos del

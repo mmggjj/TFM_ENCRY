@@ -384,7 +384,8 @@ realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
 - La ventana es 2^`CFG_KD` periodos de ro2 (el preescalador no la cambia).
   **T(ro2)/T(ro1) = 1,1754** [SIMULADO, 22-11, sin ruido, 98-101 cruces:
   1 458,6 / 1 241,0 ps; tt 27 °C 904,8 / 770,2 = 1,1747; ff 125 °C 1,32 V
-  658,7 / 560,9 = 1,1742; `results/anillo_ihp_periodo_*`], algo menos que
+  658,7 / 560,9 = 1,1742; ff −40 °C 1,32 V, la esquina más rápida, 594,4 /
+506,1 = 1,1744; `results/anillo_ihp_periodo_*`], algo menos que
   13/11 = 1,1818 (la carga de la última etapa no escala con N); el jitter de
   ro2 no se cuenta (conservador); peor chip = Q mínima ÷ 1,175 (cociente peor/medio de
   los 23 chips de 5 etapas de §4.3).
@@ -400,6 +401,15 @@ realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
 basta `CFG_KD` 24; el `G_KD_MIN` = 25 del integrado deja un factor 2 de
 margen y el contador de 26 bits otro factor 2 por encima. Pendiente:
 desapareamiento con 11 etapas (aquí se usa el factor del Monte Carlo de 5).
+
+**Caudal con `CFG_KD` 25** (22-11, `analysis/caudal_integrado.py` →
+`results/caudal_integrado.md`; periodos SIMULADOS sin ruido con 1 fF de
+carga, caudal ESTIMADO): T(ro2) de 594,4 ps (ff, −40 °C, 1,32 V) a 1 458,6
+ps (ss, −40 °C, 1,08 V) → un bit cada 19,9-48,9 ms, **20-50 bit/s**;
+arranque (1 024 bits) 20-50 s, siembra (512-1 535 bits) 10-75 s. Con
+`CFG_KD` 26, la mitad. La carga real de ro2 (prescalador y lo que cuelga)
+lo alarga algo: en ro1, el biestable con su búfer sube el periodo un ~3 %
+(580 frente a 561 ps en ff a 125 °C).
 
 ## 5. Del jitter al divisor [simulado → estimado]
 

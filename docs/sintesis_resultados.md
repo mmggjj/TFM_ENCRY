@@ -16,6 +16,9 @@ mayor, y para un AES en esta misma biblioteca el factor publicado es
 
 ## Resultados por bloque
 
+Tabla de la síntesis completa del 10-11-2026 (caminos de herramienta
+mezclados); la vigente es la del 22-11-2026, más abajo.
+
 | Bloque | Celdas | Biestables | Área (µm²) | kGE |
 |---|---|---|---|---|
 | aes_enc, una ronda por ciclo (20 S-boxes, con `borrar`) | 10.571 | 262 | 116.550 | 16,06 |
@@ -158,6 +161,46 @@ del 16-11-2026"). Síntesis comparada con el plugin de GHDL, copia de HEAD
 uno), y +2,3 kGE en el motor (+2,5 %): este cambio sí es medible. El CSV y
 la tabla del capítulo 6 siguen con la síntesis completa anterior; el
 capítulo lo dice en un párrafo (EN y ES).
+
+## Síntesis completa del 22-11-2026
+
+Todos los bloques en una tanda, con el plugin de GHDL (OSS CAD Suite, Linux),
+sobre el RTL de hoy: ro1 de 11 y ro2 de 13 etapas, preescalador ÷16,
+`G_KD_MIN`/`G_KD_RESET`/`G_KD_MAX` 25/25/26, semilla de 512, cortes 51/766,
+`health_tests` sin restas y `CFG_KD` fuera de rango rechazado
+(`results/sintesis_22_11.log`; **`results/sintesis_sg13g2.csv` reescrito
+entero**; el anterior era del 10-11 con caminos de herramienta mezclados).
+
+| Bloque | Celdas | Biestables | Área (µm²) | kGE | 10-11 (kGE) |
+|---|---|---|---|---|---|
+| aes_enc | 10 549 | 262 | 114 677 | 15,80 | 16,06 |
+| aes_enc_32 | 3 771 | 265 | 48 175 | 6,64 | 6,67 |
+| aes_cmac | 13 239 | 909 | 169 426 | 23,35 | 23,34 |
+| ctr_drbg | 20 614 | 2 483 | 287 513 | 39,62 | 38,21 |
+| health_tests | 530 | 86 | 8 487 | 1,17 | 1,26 |
+| ero_core | 139 | 28 | 2 442 | 0,34 | 0,33 |
+| bit_cdc | 11 | 7 | 408 | 0,06 | 0,06 |
+| reset_sync | 3 | 3 | 147 | 0,02 | 0,02 |
+| trng_capture | 12 592 | 4 140 | 339 698 | 46,81 | 46,76 |
+| flujo_crudo | 6 387 | 2 103 | 171 786 | 23,67 | 23,67 |
+| i2c_slave | 431 | 85 | 7 408 | 1,02 | 1,07 |
+| **motor_top** | 34 179 | 8 425 | 692 782 | **95,46** | 92,53 |
+| motor_top_aes11 | 42 010 | 8 422 | 763 818 | 105,24 | 101,83 |
+| motor_top_flujo | 41 112 | 10 531 | 865 617 | 119,27 | 116,63 |
+| motor_top_antes1911 | 34 509 | 8 420 | 693 831 | 95,60 | — |
+
+Lectura:
+- **El rechazo de `CFG_KD` fuera de rango no cuesta área medible:**
+  `motor_top` 95,53 kGE el 19-11 (`results/sintesis_19_11_ro2_13.log`,
+  misma herramienta) → 95,46 hoy, mismos 8 425 biestables (−0,1 %, dentro
+  del 0,2 % que abc mueve por los nombres). `motor_top_antes1911` (los
+  genéricos de antes del 19-11 sobre el RTL de hoy) sube de 95,09 a 95,60
+  (+0,5 %): también cerca del ruido de abc, sin cambio de biestables.
+- Frente al CSV del 10-11 el motor sube +2,9 kGE: la semilla de 512 (+2,3,
+  16-11, `ctr_drbg` +126 biestables), ro2 de 13 etapas y el preescalador
+  (+0,5 %, 19-11) y el cambio de camino de herramienta; `health_tests`
+  baja un 7 % por las comparaciones sin restas del APT (17-11).
+- Sigue siendo área de celdas sin rutar: cota inferior.
 
 ## Comprobación de coherencia
 

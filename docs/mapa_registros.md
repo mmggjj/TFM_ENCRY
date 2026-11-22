@@ -71,9 +71,10 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
    ventana completa del APT. Borrar las alarmas reinicia la ventana, así que
    esa ventana solo contiene muestras posteriores al borrado. El maestro
    sondea `DIAG.arrancado` antes de sembrar. En el integrado (`CFG_KD` 25,
-   ro2 de 13 etapas a 0,66-1,46 ns por periodo [SIMULADO, ff 125 °C a ss
-   −40 °C, `results/anillo_ihp_periodo_*`]) el bit sale cada 22-49 ms
-   (20-45 bit/s) y la ventana de 1024 tarda 23-50 s; en la Basys 3
+   ro2 de 13 etapas a 0,59-1,46 ns por periodo [SIMULADO, ff −40 °C 1,32 V
+   a ss −40 °C 1,08 V, `results/anillo_ihp_periodo_*`]) el bit sale cada
+   20-49 ms (20-50 bit/s [ESTIMADO], `results/caudal_integrado.md`) y la
+   ventana de 1024 tarda 20-50 s; en la Basys 3
    (`CFG_KD` 19, ro2 a 207 MHz [MEDIDO]) unos 2,6 s.
 2. **La semilla se valida entera.** El APT solo da veredicto al cerrar su
    ventana de 1024 muestras y la semilla son 512 bits, así que antes la
@@ -82,9 +83,10 @@ continua. Tres reglas, impuestas por hardware desde el 27-10-2026:
    ventana que contiene el último y solo instancia el DRBG si se cierra sin
    alarma. Una alarma, o un `borrar_alarmas`, durante la recogida o la
    espera aborta la siembra: el DRBG queda como estaba y `DIAG.rechazada`
-   sube. Una siembra tarda como mucho 512 + 1024 bits: 34-75 s en el
-   integrado con `CFG_KD` 25 [ESTIMADO con los periodos de arriba], ~4 s en
-   la Basys 3 a `CFG_KD` 19.
+   sube. Una siembra tarda de 512 a 512 + 1023 bits según dónde caiga en la
+   ventana (1024 si se ordena justo al acabar el arranque): 10-75 s en el
+   integrado con `CFG_KD` 25 [ESTIMADO con los periodos de arriba], 1,3-4 s
+   en la Basys 3 a `CFG_KD` 19.
 3. **Alarma bloquea la salida**, ver STATUS arriba.
 
 **Cortes (desde el 16-11-2026):** RCT C = 51 y APT C = 766 (W = 1024),
@@ -112,15 +114,18 @@ política va en el maestro (`motor_rearmar()` de
 `firmware/componentes/motor_i2c`): borrar las alarmas, esperar el test de
 arranque y volver a sembrar (resembrar si el DRBG tenía estado), como
 mucho 3 veces en 24 h; a la cuarta, fallo permanente hasta reiniciar el
-ESP32. Con estos cortes y bits iid [ESTIMADO, `cortes_salud.py` y
-`docs/basys2.md`], a 8,7 kbit/s (Basys 2, `kd 14`): con bits ideales,
-ninguna en la vida del equipo; con el peor chip simulado (P(1) 0,372), ~8
-al año del RCT; con un chip justo en H = 0,60, ~89 al año (0,24 al día). Al
-ritmo del integrado con `CFG_KD` 25 y ro2 de 13 etapas (≤ 45 bit/s; hasta el
-19-11, 2²³ con 5 etapas, ≤ 0,41 kbit/s), ≤ 0,05 y ≤ 0,5 al año (las tasas
-escalan con el caudal). El peor chip de 0,372 es del biestable con ro1 de 5
-etapas; con 11 etapas el Monte Carlo (en curso, `docs/decisiones_pendientes.md`)
-da P(1) ≥ 0,41. Tres en un día no son azar.
+ESP32. Con estos cortes y bits iid [ESTIMADO, tasas exactas para la lógica
+del RTL, `analysis/caudal_integrado.py` → `results/caudal_integrado.md`,
+22-11-2026], al ritmo del integrado (cota: 50 bit/s, la esquina más rápida
+con el sesgo de la peor): con el peor de los 120 chips del Monte Carlo de 11
+etapas (P(1) 0,4166) ~8·10⁻⁴ alarmas al año; con μ − 3σ de la peor esquina
+(0,4081) ~2·10⁻³; con un chip justo en H = 0,60, ~0,3 al año; con bits
+ideales, ~10⁻⁶. En la Basys 3 a `kd 19` (390 bit/s, sesgo medido 0,4959),
+~6·10⁻⁶ al año. Domina el RCT; el APT queda por debajo de 10⁻²⁵ por
+ventana con el sesgo del biestable. Cuatro alarmas en un día (lo que agota
+el rearme) tienen probabilidad ≤ 3·10⁻¹⁴ incluso con H = 0,60. Las cifras
+anteriores (~8 al año con el biestable de 5 etapas a 8,7 kbit/s, Basys 2)
+usaban una cota ×1,5 de la tasa y el sesgo de 5 etapas. Tres en un día no son azar.
 
 ## CONTROL (0x03)
 
