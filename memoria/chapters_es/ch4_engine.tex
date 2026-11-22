@@ -1,8 +1,9 @@
 \chapter{Motor digital}
 \label{ch:ch4_engine}
 
-% [BORRADOR v1] Material de partida: docs/arquitectura.md (sec. 9), docs/mapa_registros.md,
-% docs/estado_del_arte_cripto.md, rtl/ (aes, drbg, trng, io, top).
+% Material de partida: docs/arquitectura.md (sec. 9), docs/mapa_registros.md,
+% docs/estado_del_arte_cripto.md, docs/decisiones_pendientes.md,
+% results/caudal_integrado.md, rtl/ (aes, drbg, trng, io, top).
 
 El motor digital convierte los bits en bruto de la fuente de entropía en
 claves y las usa, y está escrito de forma que el mismo \ac{RTL} funcione
@@ -22,7 +23,11 @@ tests de salud, el colector de semilla del generador determinista y un
 búfer de captura que solo se usa para la caracterización. Las claves
 salen de un \ac{CTRDRBG}; la clave actual se carga en un bloque AES-CMAC
 que responde a retos; y un esclavo \ac{I2C} lo expone todo como un
-mapa de registros.
+mapa de registros. Dos bloques de la figura existen solo en uno de los
+destinos: en el circuito integrado RO2 pasa por un preescalador que
+divide por 16 antes de servir de reloj al muestreador
+(Sección~\ref{sec:cdc}), y en la \ac{FPGA} una cola de bytes entrega los
+bits en bruto como un flujo continuo para la evaluación de la entropía.
 
 \begin{figure}[htbp]
 \centering
@@ -31,24 +36,32 @@ mapa de registros.
   bloque/.style={draw, rounded corners=2pt, minimum height=8mm, minimum width=19mm, align=center, font=\small},
   flecha/.style={->, thick}]
 \node[bloque] (ro) {RO1, RO2\\(LUT / transistor)};
-\node[bloque, right=of ro] (ero) {ERO\\muestreador $\div K_D$};
+\node[bloque, dashed, right=of ro] (presc) {RO2 $\div 16$\\(solo integrado)};
+\node[bloque, right=of presc] (ero) {ERO\\muestreador $\div K_D$};
 \node[bloque, right=of ero] (cdc) {CDC de bit};
 \node[bloque, above right=of cdc] (ht) {Tests de salud\\RCT, APT};
+\node[bloque, dashed, above=of ht] (str) {Cola del flujo\\(solo FPGA)};
 \node[bloque, right=of cdc] (seed) {Colector de semilla\\512 bits};
 \node[bloque, below right=of cdc] (cap) {Captura\\4096 bits};
 \node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
 \node[bloque, right=of drbg] (cmac) {AES-CMAC};
 \node[bloque, below=12mm of drbg] (i2c) {Esclavo I2C\\mapa de registros};
-\draw[flecha] (ro) -- (ero); \draw[flecha] (ero) -- (cdc);
+\draw[flecha] (ro) -- (presc); \draw[flecha] (presc) -- (ero);
+\draw[flecha] (ero) -- (cdc);
 \draw[flecha] (cdc) -- (ht); \draw[flecha] (cdc) -- (seed);
 \draw[flecha] (ero) |- (cap);
+\draw[flecha] (cdc) |- (str);
 \draw[flecha] (seed) -- (drbg) node[midway, above, font=\scriptsize] {entropía, nonce};
 \draw[flecha] (drbg) -- (cmac) node[midway, above, font=\scriptsize] {clave};
 \draw[flecha, <->] (i2c) -- (drbg); \draw[flecha, <->] (i2c) -| (cmac);
 \draw[flecha, <->] (i2c) -| (cap); \draw[flecha] (ht) -| (i2c);
 \end{tikzpicture}}
 \caption{Ruta de datos del motor. Solo los osciladores en anillo dependen
-de la tecnología; todos los demás bloques son RTL portable.}
+de la tecnología; todos los demás bloques son RTL portable. Los bloques
+a trazos existen solo en uno de los destinos: el preescalador de RO2 en
+el circuito integrado, y en la FPGA la cola del flujo, instrumentación
+de caracterización que se lee por el esclavo I2C como el búfer de
+captura.}
 \label{fig:engine}
 \end{figure}
 
@@ -60,16 +73,19 @@ Capítulo~\ref{ch:ch6_asic} mostraron que ocuparía casi la mitad del área
 digital, y SP~800-90B incluye construcciones basadas en AES --- CMAC,
 CBC-MAC y la función de derivación basada en cifrado de bloque de
 SP~800-90A --- entre sus componentes de acondicionamiento
-\emph{aprobados}~\cite{turan_2018_sp80090b}. Prescindir del hash lleva el
-motor de un valor estimado de $\sim$25 a $\sim$13~\acp{GE} (miles), a
-costa de pasar de un \ac{CTRDRBG} \emph{sin} función de derivación, que
+\emph{aprobados}~\cite{turan_2018_sp80090b}. En su momento se estimó que
+prescindir del hash llevaba el motor de $\sim$25 a $\sim$13~kGE \est{};
+la síntesis mostró después que las dos cifras se quedaban cortas
+(Capítulo~\ref{ch:ch6_asic}), pero no el argumento, porque el hash se
+habría sumado a todo lo que allí se mide. El precio es pasar de un
+\ac{CTRDRBG} \emph{sin} función de derivación, que
 necesita una entrada con entropía completa, a uno \emph{con} ella, que es
 la configuración habitual en la práctica y admite directamente entradas
 sin entropía completa. El núcleo AES solo cifra: el modo contador y CMAC
 nunca descifran, y ofrecer el descifrado como servicio al ESP32 no
 tendría sentido, ya que el ESP32 tiene su propio acelerador. La
-verificación cruzada no se ve afectada: el motor cifra y el ESP32
-descifra con mbedtls.
+verificación cruzada no se ve afectada: el ESP32 recalcula las etiquetas
+de autenticación con mbedTLS, y CMAC solo cifra en los dos lados.
 
 \section{Núcleo de cifrado AES-128}
 \label{sec:aes}
@@ -83,7 +99,9 @@ ronda. Un segundo núcleo con el mismo interfaz y ruta de datos de 32 bits
 ciclo, 51 ciclos por bloque) se escribió después para el capítulo del
 circuito integrado y es el que el motor instancia ahora por defecto; el
 de una ronda sigue siendo la referencia contra la que el banco lo compara
-(Capítulo~\ref{ch:ch6_asic}). A 100~MHz eso supone 1,16~Gbit/s de tasa de bits del núcleo, muy
+(Capítulo~\ref{ch:ch6_asic}). A 100~MHz el núcleo de una ronda entrega
+128 bits cada 11 ciclos, una tasa de bits de 1,16~Gbit/s, y el de 32
+bits 0,25~Gbit/s, las dos muy
 por encima de lo que puede transportar cualquier enlace \ac{I2C}, así que
 segmentar el núcleo (pipelining) sería área desperdiciada; en su lugar se
 elige la forma iterativa porque una ronda es una función combinacional
@@ -129,8 +147,13 @@ y 128~bits de nonce, de modo que $S = L\,\|\,N\,\|\,E\,\|\,\mathit{nonce}\,\|\,\
 ocupa exactamente cinco bloques y la función de derivación se convierte
 en una secuencia cerrada de dieciséis cifrados; una entrada de longitud
 variable costaría una ruta de datos orientada a bytes sin ningún
-beneficio. La instanciación (o el resembrado) cuesta 16~operaciones AES,
-209~ciclos; generar 256~bits cuesta cuatro, 53~ciclos. El estado (Key, V)
+beneficio. La instanciación (o el resembrado) cuesta 16~operaciones AES
+y generar 256~bits cuesta cuatro: 209 y 53~ciclos en el banco propio del
+generador, que usa el núcleo de una ronda (11 ciclos por cifrado). En el
+motor cada cifrado tarda los 51 ciclos del núcleo de 32 bits, que sigue
+siendo despreciable frente al tiempo que tarda en recogerse una semilla.
+% PENDIENTE: ciclos de siembra/generación con el AES de 32 bits (M1), sin cifra en docs/
+El estado (Key, V)
 nunca se expone; el contador de resembrados es legible para que el
 anfitrión pueda imponer una política de resembrado muy por debajo del
 límite de $2^{48}$ de la norma.
@@ -157,20 +180,33 @@ Proportion Test}) cuenta, en una ventana de $W = 1024$ muestras (el valor
 para fuentes binarias; 512 es para fuentes no binarias), cuántas repiten
 la primera, y falla al llegar a
 $C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. El
-% PROVISIONAL (16-11-2026): H = 0,60, los cortes 51/766 y la semilla de 512 bits se
-% apoyan en ocho chips SPICE sin ruido (cuatro por esquina). Pendiente del Monte
-% Carlo de docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); no cerrar
-% la memoria con esto. No se imprime.
-objetivo de diseño es $H = 0{,}60$ y $\alpha = 2^{-30}$, que dan
+objetivo de diseño es la min-entropía declarada $\Hdecl = 0{,}60$ y
+$\alpha = 2^{-30}$, que dan
 $C_{\mathrm{RCT}} = 51$ y $C_{\mathrm{APT}} = 766$. Hasta noviembre de 2026
 era $H = 0{,}98$ y $\alpha = 2^{-20}$ (22 y 596). Se bajó por dos motivos.
-Con $2^{-20}$ el prototipo en FPGA daba una falsa alarma del test de
-repeticiones cada pocos minutos, y cada una bloquea el motor. Y el bit
+Con $2^{-20}$ una fuente sana da falsas alarmas demasiado a menudo: a la
+tasa de bits de la primera placa de prototipo (la Basys~2 del
+Apéndice~\ref{app:fpga}) el test de repeticiones habría saltado cada
+ocho minutos aproximadamente \est{}, cifra obtenida de las rachas de una
+captura de $8{,}4\times10^6$ bits y no de alarmas observadas, y cada
+alarma bloquea el motor. Y el bit
 muestreado está sesgado: el ciclo de trabajo del anillo de IHP deja en
 0,85--0,90 la cota de primer orden, y el biestable de muestreo real de la
-biblioteca, simulado a nivel de transistor sin ruido, lleva el peor de ocho
-chips a 125~$^\circ$C a 0,67 \simu{} (Sección~\ref{sec:ihp_ring}). Una primera revisión a
-$H = 0{,}80$, con 39 y 683, no cubría cinco de esos ocho chips. El
+biblioteca, simulado a nivel de transistor sin ruido, lo sesga más
+(Sección~\ref{sec:ff_mc}). Una primera revisión a
+$H = 0{,}80$, con 39 y 683, no cubría cinco de los ocho primeros chips
+simulados. El valor 0,60 se sometió después a una prueba cuyo criterio
+se fijó antes de simular: un Monte Carlo sobre el desapareamiento de los
+dispositivos, con la entropía declarable definida como la de
+$\mu - 3\sigma$ de la probabilidad de un uno, mínimo sobre esquinas, y
+la regla de que a un resultado por debajo de 0,60 se responde
+corrigiendo el circuito, no bajando $\Hdecl$ otra vez. Con el anillo
+muestreado de cinco etapas dio 0,532 sobre 24 a 28 chips por esquina
+\simu{}, así que RO1 se alargó a once etapas, lo que hace el anillo más
+lento frente a la asimetría fija del biestable. Con once etapas y 24
+chips en cada una de cinco esquinas la entropía declarable es 0,757
+\simu{} (0,789 sin los chips cuya fase de muestreo deja un hueco mayor
+de 0,025), y $\Hdecl = 0{,}60$ se mantiene (Tabla~\ref{tab:ff_mc}). El
 objetivo más bajo se paga en la semilla, que pasó de 384 a 512 bits:
 incluso con la peor proporción que deja pasar el test
 ($p \approx 0{,}748$, $H \approx 0{,}42$), los 512 bits de la semilla
@@ -213,9 +249,27 @@ antes. Una orden de borrado total pone a cero la clave, el estado y el
 contador del generador, el reto, el registro aleatorio y la semilla
 recogida, y carga la clave nula en el autenticador; se atiende incluso
 con alarma, y después hay que volver a sembrar. Y el divisor de muestreo
-se reinicia a su máximo y no a un valor pequeño, de modo que un
-anfitrión que olvide configurarlo siembra a la tasa más lenta y con más
-entropía por bit, nunca por debajo del ajuste caracterizado.
+se reinicia al valor caracterizado y no a uno pequeño: \kd{25}
+(\texttt{CFG\_KD} $= 25$) en el circuito integrado, con un máximo de
+$2^{26}$, y \kd{19} en la \ac{FPGA}, con un máximo de $2^{24}$. Un
+anfitrión que olvide configurarlo siembra con ese ajuste, y una
+escritura fuera del rango admitido se ignora y se señala en el bit de
+rechazo.
+
+Una quinta regla salió de la placa. El valor de reinicio es también el
+\emph{divisor mínimo}: la siembra, el resembrado y el flujo continuo se
+rechazan por debajo de $2^{25}$ ($2^{19}$ en la \ac{FPGA}). La primera
+versión de ese mínimo solo protegía el cruce de dominios de reloj
+(Sección~\ref{sec:cdc}); la medida mostró que tiene que proteger la
+entropía. En la Basys~3 con las etapas de los anillos en sitios fijos
+los tests de salud no dan ninguna alarma ni siquiera con \kd{8}, donde
+la batería de SP~800-90B da 0,186 y los bits alternan
+($\rho_1 = -0{,}54$) \meas{} (Sección~\ref{sec:campaign}): un test de
+repeticiones busca rachas y uno de proporción busca desequilibrio, y
+los bits anticorrelados no muestran ni lo uno ni lo otro. El divisor lo
+escribe el anfitrión, así que el mínimo es la única protección frente a
+un anfitrión que escriba uno bajo, por error o a propósito. Para
+caracterizar por debajo se compila una variante con el mínimo rebajado.
 
 El motor nunca se rearma solo tras una alarma. Como los anillos y los
 tests funcionan siempre, una fuente sana acabará dando alguna falsa alarma
@@ -223,19 +277,36 @@ en la vida de un equipo, así que la política de rearme corresponde al
 anfitrión y está acotada: borrar las alarmas, esperar el test de arranque
 y volver a sembrar, como mucho tres veces en 24~horas, y a la cuarta
 fallo permanente hasta reiniciar el anfitrión. Con los cortes de arriba y
-bits independientes a 8,7~kbit/s, la tasa de la FPGA, una fuente sin sesgo
-no daría prácticamente ninguna, el peor chip simulado unas ocho alarmas
-del test de repeticiones al año, y un chip justo en $H = 0{,}60$ unas
-0,24 al día; a los 0,2--0,4~kbit/s del integrado, de veinte a cuarenta
-veces menos \est{}. Tres en un día no son azar.
+bits independientes, las tasas son pequeñas \est{}. Para el circuito
+integrado se acotan a 50~bit/s, la tasa de bits de su esquina más rápida
+(Sección~\ref{sec:ihp_ring11}), combinada con el sesgo de la peor: el
+peor de los 120 chips del Monte Carlo del biestable
+($P(1) = 0{,}4166$) daría $7{,}6\times10^{-4}$ alarmas al año, el chip
+en $\mu - 3\sigma$ de la peor esquina $1{,}6\times10^{-3}$, un chip
+justo en $H = 0{,}60$ unas 0,33, y bits ideales $7\times10^{-7}$. En la
+Basys~3 con \kd{19}, 390~bit/s con una fracción de unos medida de 0,4959
+\meas{}, la cifra es $6\times10^{-6}$ al año. Domina en todos los casos
+el test de repeticiones, y cuatro alarmas en 24~horas, que es lo que
+agota el rearme, tienen una probabilidad de $3\times10^{-14}$ como
+mucho incluso con $H = 0{,}60$. Tres en un día no son azar.
 
 El biestable de muestreo ya no usa habilitación. Antes solo capturaba RO1
 en el pulso del divisor, así que entre muestras conservaba el bit
-anterior. En la FPGA los bits en bruto salían entonces correlados con el
+anterior. En la primera placa de prototipo (Basys~2, una Spartan-3E;
+Apéndice~\ref{app:fpga}) los bits en bruto salían entonces correlados
+con el
 anterior ($\rho_1 \approx 0{,}005$, $z$ hasta 13), y la correlación
 desapareció al hacer que el biestable muestree en cada flanco de RO2 y el
 pulso solo elija qué muestra se queda ($z \le 1$ en dos implementaciones
-con la misma colocación). Los bits son idénticos en simulación; el
+con la misma colocación) \meas{}. Es el único experimento con y sin
+habilitación. La Basys~3, una Artix-7, muestrea siempre sin ella y
+confirma la ausencia en una segunda familia: en flujos de $10^6$ bits
+consecutivos, $|z| \le 1{,}4$ con divisores de $2^{12}$ a $2^{16}$ y
+colocación libre de las etapas de los anillos; con colocación fija,
+$|z| \le 0{,}8$ de $2^{17}$ a $2^{19}$, y de $2^{13}$ a $2^{16}$ uno de
+cuatro flujos llega a $z = 2{,}1$; en las dos capturas de
+$8{,}4\times10^6$ bits $|z|$ vale 1,1 \meas{}. Los bits son idénticos
+en simulación; el
 mecanismo dentro del biestable no se ha identificado.
 
 El banco de pruebas inyecta los modos de fallo para los que existen los
@@ -260,10 +331,22 @@ tests de salud y el colector de semilla usa un sincronizador por
 conmutación (toggle): el origen registra el bit e invierte una bandera;
 el destino sincroniza la bandera a través de tres flip-flops y lee el bit
 en el flanco de la bandera. Requiere que cada bit dure al menos ocho
-ciclos del sistema, es decir, $K_D \ge 64$ para un anillo de muestreo de
-$\sim$700~MHz a 100~MHz, lo que el modo generador cumple por órdenes de
-magnitud. La ruta de caracterización no cruza bit a bit: el búfer de
-captura se escribe en el dominio del anillo a plena velocidad en una
+ciclos del sistema, 80~ns a 100~MHz: con el RO2 de trece etapas del
+circuito integrado (periodo de 0,59~ns en su esquina más rápida
+\simu{}) son como mucho 135 periodos, que cubre $K_D \ge 2^{8}$. El
+divisor mínimo de la Sección~\ref{sec:health} lo fija la entropía y
+queda órdenes de magnitud por encima, así que el cruce ya no limita
+nada. En el circuito integrado el dominio del anillo no corre a RO2 sino
+a RO2 dividido por 16: un contador con el periodo del propio anillo como
+reloj no cierra tiempos en la biblioteca \est{}
+(Sección~\ref{sec:ro_silicon}), así que antes va una cadena de cuatro
+biestables de conmutación. El registro del divisor sigue contando
+periodos de RO2; el muestreador cuenta $K_D/16$ flancos del reloj
+preescalado, que es la misma ventana, y los divisores por debajo de
+$2^{4}$ se rechazan. La \ac{FPGA} no tiene preescalador. La ruta de
+caracterización no cruza bit a bit: el búfer de
+captura se escribe en el dominio del anillo, a RO2 en la \ac{FPGA} y a
+RO2/16 en el circuito integrado, en una
 memoria de 4096 bits y se lee después en el dominio del sistema, con las
 dos direcciones del protocolo de acuerdo (handshake) transportadas por
 banderas de conmutación. La escritura y la lectura nunca se solapan, así
@@ -284,12 +367,18 @@ lectura no se pierde, y un byte que encuentra la cola llena para el flujo
 con una bandera de desbordamiento en lugar de pisar: un hueco no puede
 pasar inadvertido. El flujo sigue las reglas del búfer de captura ---
 solo en modo de prueba, nunca mientras se recoge una semilla, y sin
-siembra mientras corre --- y congela el divisor. Sirve donde el bus da
-abasto, con divisores de unos $2^{13}$ en adelante \est{}, que cubre los
-puntos de trabajo; por debajo quedan los fragmentos. La cola es
+siembra mientras corre --- y congela el divisor. Sirve donde el enlace
+serie del anfitrión da abasto: con RO2 a 205~MHz, desde \kd{13} en
+adelante; con $2^{12}$ el enlace a 115\,200 baudios no vacía la cola y
+el flujo desborda tras 1285 bytes, mientras que con RO2 a 130~MHz
+$2^{12}$ todavía cabía \meas{}. Por debajo quedan los fragmentos. El
+flujo obedece también al divisor mínimo, así que en la placa cualquier
+flujo por debajo de $2^{19}$ pide la variante de caracterización con el
+mínimo rebajado. La cola es
 instrumentación para la \ac{FPGA}: un genérico la quita, y no forma parte
 del área del Capítulo~\ref{ch:ch6_asic}, donde sus 256 bytes en
-biestables sumarían 23,5~kGE \simu{}.
+biestables sumarían 23,7~kGE \simu{} (119,3 frente a 95,5~kGE para el
+motor entero).
 
 \section{Interfaz de registros I2C y secuenciador de órdenes}
 \label{sec:i2c}
@@ -342,5 +431,6 @@ son \emph{correctas}, porque la clave procede del ruido de los
 osciladores en anillo; el banco vuelca la clave, los retos y las
 etiquetas a un fichero y un script de Python recalcula los CMAC con el
 AES independiente. Coinciden. Es la misma comprobación cruzada que el
-ESP32 hará en hardware con mbedtls, y que ya hace frente al modelo del
-motor en el PC (Capítulo~\ref{ch:ch5_verification}).
+ESP32 hace con mbedTLS, primero frente al modelo del motor en el PC y
+después en la placa, donde coincidieron 40 etiquetas de 40 en cada una
+de tres sesiones \meas{} (Sección~\ref{sec:bringup}).

@@ -1,8 +1,9 @@
 \chapter{Digital Engine}
 \label{ch:ch4_engine}
 
-% [DRAFT v1] Source material: docs/arquitectura.md (sec. 9), docs/mapa_registros.md,
-% docs/estado_del_arte_cripto.md, rtl/ (aes, drbg, trng, io, top).
+% Source material: docs/arquitectura.md (sec. 9), docs/mapa_registros.md,
+% docs/estado_del_arte_cripto.md, docs/decisiones_pendientes.md,
+% results/caudal_integrado.md, rtl/ (aes, drbg, trng, io, top).
 
 The digital engine turns raw bits from the entropy source into keys and
 uses them, and it is written so that the same \ac{RTL} runs on the FPGA
@@ -20,7 +21,11 @@ clock one bit at a time, and feed three consumers: the health tests, the
 seed collector of the deterministic generator, and a capture buffer used
 only for characterization. Keys come out of a \ac{CTRDRBG}; the current
 key is loaded into an AES-CMAC block that answers challenges; and an
-\ac{I2C} slave exposes everything as a register map.
+\ac{I2C} slave exposes everything as a register map. Two blocks of the
+figure exist in one target only: in the integrated circuit RO2 passes
+through a divide-by-16 prescaler before it clocks the sampler
+(Section~\ref{sec:cdc}), and on the \ac{FPGA} a byte queue delivers the
+raw bits as a continuous stream for the entropy assessment.
 
 \begin{figure}[htbp]
 \centering
@@ -29,24 +34,31 @@ key is loaded into an AES-CMAC block that answers challenges; and an
   bloque/.style={draw, rounded corners=2pt, minimum height=8mm, minimum width=19mm, align=center, font=\small},
   flecha/.style={->, thick}]
 \node[bloque] (ro) {RO1, RO2\\(LUT / transistor)};
-\node[bloque, right=of ro] (ero) {ERO\\sampler $\div K_D$};
+\node[bloque, dashed, right=of ro] (presc) {RO2 $\div 16$\\(IC only)};
+\node[bloque, right=of presc] (ero) {ERO\\sampler $\div K_D$};
 \node[bloque, right=of ero] (cdc) {bit CDC};
 \node[bloque, above right=of cdc] (ht) {Health tests\\RCT, APT};
 \node[bloque, right=of cdc] (seed) {Seed collector\\512 bits};
 \node[bloque, below right=of cdc] (cap) {Capture\\4096 bits};
+\node[bloque, dashed, above=of ht] (str) {Stream queue\\(FPGA only)};
 \node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
 \node[bloque, right=of drbg] (cmac) {AES-CMAC};
 \node[bloque, below=12mm of drbg] (i2c) {I2C slave\\register map};
-\draw[flecha] (ro) -- (ero); \draw[flecha] (ero) -- (cdc);
+\draw[flecha] (ro) -- (presc); \draw[flecha] (presc) -- (ero);
+\draw[flecha] (ero) -- (cdc);
 \draw[flecha] (cdc) -- (ht); \draw[flecha] (cdc) -- (seed);
 \draw[flecha] (ero) |- (cap);
+\draw[flecha] (cdc) |- (str);
 \draw[flecha] (seed) -- (drbg) node[midway, above, font=\scriptsize] {entropy, nonce};
 \draw[flecha] (drbg) -- (cmac) node[midway, above, font=\scriptsize] {key};
 \draw[flecha, <->] (i2c) -- (drbg); \draw[flecha, <->] (i2c) -| (cmac);
 \draw[flecha, <->] (i2c) -| (cap); \draw[flecha] (ht) -| (i2c);
 \end{tikzpicture}}
 \caption{Data path of the engine. Only the ring oscillators are technology
-dependent; every other block is portable RTL.}
+dependent; every other block is portable RTL. Dashed blocks exist in one
+target only: the prescaler of RO2 in the integrated circuit, and on the
+FPGA the stream queue, characterization instrumentation that is read
+through the I2C slave like the capture buffer.}
 \label{fig:engine}
 \end{figure}
 
@@ -58,15 +70,19 @@ Chapter~\ref{ch:ch6_asic} showed that it would take almost half the
 digital area, and SP~800-90B lists AES-based constructions --- CMAC,
 CBC-MAC and the block-cipher derivation function of SP~800-90A --- among
 its \emph{vetted} conditioning components~\cite{turan_2018_sp80090b}.
-Dropping the hash brings the engine from an estimated $\sim$25 to
-$\sim$13~\acp{GE} (thousands), at the price of moving from a
+Dropping the hash was estimated at the time to take the engine from
+$\sim$25 to $\sim$13~kGE \est{}; the synthesis later showed both figures
+too low (Chapter~\ref{ch:ch6_asic}), but not the argument, since the hash
+would have come on top of everything measured there. The price is moving
+from a
 \ac{CTRDRBG} \emph{without} derivation function, which needs full-entropy
 input, to one \emph{with} it, which is the common configuration in
 practice and accepts non-full-entropy input directly. The AES core is
 encryption-only: counter mode and CMAC never decrypt, and offering
 decryption as a service to the ESP32 would be pointless since the ESP32
-has its own accelerator. Cross-verification is unaffected: the engine
-encrypts and the ESP32 decrypts with mbedtls.
+has its own accelerator. Cross-verification is unaffected: the ESP32
+recomputes the authentication tags with mbedTLS, and CMAC only encrypts
+on both sides.
 
 \section{AES-128 encryption core}
 \label{sec:aes}
@@ -79,8 +95,9 @@ with the same interface and a 32-bit datapath (four S-boxes shared with
 the key schedule, one column per cycle, 51 cycles per block) was written
 later for the integrated-circuit chapter and is the one the engine now
 instantiates by default; the one-round core remains the reference the
-bench compares it against (Chapter~\ref{ch:ch6_asic}). At 100~MHz that
-is 1.16~Gbit/s of core throughput, far above what any \ac{I2C} link can
+bench compares it against (Chapter~\ref{ch:ch6_asic}). At 100~MHz the
+one-round core delivers 128 bits every 11 cycles, 1.16~Gbit/s, and the
+32-bit one 0.25~Gbit/s, both far above what any \ac{I2C} link can
 carry, so pipelining would be wasted area; the iterative form is chosen
 instead because one round is a pure combinational function that can be
 checked directly against the standard~\cite{nist_2023_fips197}. The
@@ -123,7 +140,12 @@ nonce, so that $S = L\,\|\,N\,\|\,E\,\|\,\mathit{nonce}\,\|\,\texttt{0x80}\,\|\,
 is exactly five blocks and the derivation function becomes a closed
 sequence of sixteen encryptions; a variable-length input would cost a
 byte-oriented datapath for no benefit. Instantiation (or reseed) costs
-16~AES operations, 209~cycles; generating 256~bits costs four, 53~cycles.
+16~AES operations and generating 256~bits costs four: 209 and 53~cycles
+in the generator's own bench, which uses the one-round core (11 cycles
+per encryption). In the engine each encryption takes the 51 cycles of the
+32-bit core, which remains negligible against the time a seed takes to
+collect.
+% PENDIENTE: ciclos de siembra/generación con el AES de 32 bits (M1), sin cifra en docs/
 The state (Key, V) is never exposed; the reseed counter is readable so
 that the host can enforce a reseed policy far below the $2^{48}$ limit of
 the standard.
@@ -147,20 +169,32 @@ arrive in a row; the Adaptive Proportion Test counts, in a window of
 $W = 1024$ samples (the binary-source value; 512 is for non-binary
 sources), how many repeat the first one, and fails at
 $C_{\mathrm{APT}} = 1 + \mathrm{CRITBINOM}(W, 2^{-H}, 1-\alpha)$. The
-% PROVISIONAL (16-11-2026): H = 0.60, cut-offs 51/766 and the 512-bit seed rest on
-% eight noiseless SPICE dies (four per corner). Pending the Monte Carlo of
-% docs/basys2.md ("H 0,60: provisional hasta el Monte Carlo"); do not close the
-% memoria on this. Not printed.
-design target is $H = 0.60$ and $\alpha = 2^{-30}$, which give
+design target is the declared min-entropy $\Hdecl = 0.60$ and
+$\alpha = 2^{-30}$, which give
 $C_{\mathrm{RCT}} = 51$ and $C_{\mathrm{APT}} = 766$. Until November 2026
 it was $H = 0.98$ and $\alpha = 2^{-20}$ (22 and 596). It was lowered for
-two reasons. At $2^{-20}$ the FPGA prototype raised a repetition false
-alarm every few minutes, each of which blocks the engine. And the sampled
+two reasons. At $2^{-20}$ a healthy source raises false alarms too often:
+at the bit rate of the first prototype board (the Basys~2 of
+Appendix~\ref{app:fpga}) the repetition test would have fired about every
+eight minutes \est{}, a figure obtained from the runs of an
+$8.4\times10^6$-bit capture and not from observed alarms, and each alarm
+blocks the engine. And the sampled
 bit is biased: the duty cycle of the IHP ring leaves a first-order bound of
 0.85--0.90, and the real sampling flip-flop of the library, simulated at
-transistor level without noise, takes the worst of eight dies at
-125~$^\circ$C down to 0.67 \simu{} (Section~\ref{sec:ihp_ring}). A first revision to $H = 0.80$, with
-39 and 683, did not cover five of those eight dies. The lower target is
+transistor level without noise, biases it further
+(Section~\ref{sec:ff_mc}). A first revision to $H = 0.80$, with
+39 and 683, did not cover five of the first eight simulated dies. The
+value 0.60 was then put to a test whose criterion was fixed before
+simulating: a Monte Carlo over device mismatch, with the declarable
+entropy defined as that of $\mu - 3\sigma$ of the probability of a one,
+minimum over corners, and the rule that a result below 0.60 is answered
+by correcting the circuit, not by lowering $\Hdecl$ again. With the
+five-stage sampled ring it gave 0.532 over 24 to 28 dies per corner
+\simu{}, so RO1 was lengthened to eleven stages, which slows the ring
+against the fixed asymmetry of the flip-flop. With eleven stages and 24
+dies in each of five corners the declarable entropy is 0.757 \simu{}
+(0.789 without the dies whose sampling phase leaves a gap above 0.025),
+and $\Hdecl = 0.60$ stands (Table~\ref{tab:ff_mc}). The lower target is
 paid for in the seed, which grew from 384 to 512 bits: even at the worst
 proportion the test lets through ($p \approx 0.748$, $H \approx 0.42$),
 the 512 seed bits carry 214 bits of entropy, more than the 192 that an
@@ -199,9 +233,27 @@ that. A zeroization command clears the key, the generator state and
 counter, the challenge, the random register and the collected seed, and
 loads the null key into the authenticator; it is honoured even under
 alarm, and the engine must be seeded again afterwards. And the sampling
-divider resets to its maximum rather than to a small value, so a host
-that forgets to configure it seeds at the slowest rate and the most
-entropy per bit, never below the characterized setting.
+divider resets to the characterized value rather than to a small one:
+\kd{25} (\texttt{CFG\_KD} $= 25$) in the integrated circuit, with a
+maximum of $2^{26}$, and \kd{19} on the \ac{FPGA}, with a maximum of
+$2^{24}$. A host that forgets to configure it seeds at that setting,
+and a write outside the admitted range is ignored and flagged in the
+rejection bit.
+
+A fifth rule came from the board. The reset value is also the
+\emph{minimum divider}: seeding, reseeding and the continuous stream are
+refused below $2^{25}$ ($2^{19}$ on the \ac{FPGA}). The first version of
+this minimum only protected the clock-domain crossing
+(Section~\ref{sec:cdc}); the measurement showed that it has to protect
+the entropy. On the Basys~3 with the ring stages at fixed sites the
+health tests raise no alarm even at \kd{8}, where the SP~800-90B battery
+gives 0.186 and the bits alternate ($\rho_1 = -0.54$) \meas{}
+(Section~\ref{sec:campaign}): a repetition test looks for runs and a
+proportion test for imbalance, and anticorrelated bits show neither. The
+divider is written by the host, so the minimum is the only protection
+against a host that writes a low one, by mistake or on purpose. For
+characterization below it, a variant is compiled with the minimum
+lowered.
 
 The engine never re-arms itself after an alarm. Because the rings and the
 tests run continuously, a healthy source will still raise the occasional
@@ -209,19 +261,36 @@ false alarm over the life of a device, so the re-arm policy belongs to the
 host and is bounded: clear the alarms, wait for the start-up test and
 seed again, at most three times in 24~hours, and fail permanently on the
 fourth until the host is restarted. With the cut-offs above and
-independent bits at 8.7~kbit/s, the FPGA rate, an unbiased source would
-practically never raise one, the worst simulated die about eight
-repetition alarms a year, and a die exactly at $H = 0.60$ about 0.24 a
-day; at the integrated circuit's 0.2--0.4~kbit/s, twenty to forty times
-fewer \est{}. Three in a day are not chance.
+independent bits, the rates are small \est{}. For the integrated circuit
+they are bounded at 50~bit/s, the rate of its fastest corner
+(Section~\ref{sec:ihp_ring11}), combined with the bias of its worst: the
+worst of the 120 dies of the flip-flop Monte Carlo
+($P(1) = 0.4166$) would raise $7.6\times10^{-4}$ alarms a year, the
+$\mu - 3\sigma$ die of the worst corner $1.6\times10^{-3}$, a die exactly
+at $H = 0.60$ about 0.33, and ideal bits $7\times10^{-7}$. On the Basys~3
+at \kd{19}, 390~bit/s with a measured fraction of ones of 0.4959
+\meas{}, the figure is $6\times10^{-6}$ a year. The repetition test
+dominates in every case, and four alarms in 24~hours, which is what
+exhausts the re-arm, have a probability of at most $3\times10^{-14}$
+even at $H = 0.60$. Three in a day are not chance.
 
 The sampling flip-flop no longer uses an enable. It used to capture RO1
 only on the divider's tick, so between samples it held the previous bit.
-On the FPGA the raw bits then came out correlated with the previous one
+On the first prototype board (Basys~2, a Spartan-3E;
+Appendix~\ref{app:fpga}) the raw bits then came out correlated with the
+previous one
 ($\rho_1 \approx 0.005$, $z$ up to 13), and the correlation vanished when
 the flip-flop was made to sample on every RO2 edge with the tick only
 selecting which sample is kept ($z \le 1$ in two implementations with the
-same placement). The bits are identical in simulation; the mechanism inside
+same placement) \meas{}. That is the only experiment with and without
+the enable. The Basys~3, an Artix-7, always samples without it and
+confirms the absence on a second family: over streams of $10^6$
+consecutive bits, $|z| \le 1.4$ at dividers $2^{12}$ to $2^{16}$ with
+free placement of the ring stages; with fixed placement, $|z| \le 0.8$
+at $2^{17}$ to $2^{19}$, and at $2^{13}$ to $2^{16}$ one stream of four
+reaches $z = 2.1$; on the two $8.4\times10^6$-bit captures $|z|$ is 1.1
+\meas{}. The bits are
+identical in simulation; the mechanism inside
 the flip-flop was not identified.
 
 The testbench injects the failure modes the tests exist for: a healthy
@@ -243,10 +312,21 @@ system domain. The bit-serial path to the health tests and the seed
 collector uses a toggle synchronizer: the source registers the bit and
 inverts a flag; the destination synchronizes the flag through three
 flip-flops and reads the bit on the flag's edge. It requires each bit to
-last at least eight system cycles, i.e.\ $K_D \ge 64$ for a $\sim$700~MHz
-sampling ring at 100~MHz, which the generator mode satisfies by orders of
-magnitude. The characterization path does not cross bit by bit: the
-capture buffer is written in the ring domain at full rate into a 4096-bit
+last at least eight system cycles, 80~ns at 100~MHz: with the
+thirteen-stage RO2 of the integrated circuit (period 0.59~ns at its
+fastest corner \simu{}) that is at most 135 periods, covered by
+$K_D \ge 2^{8}$. The minimum divider of
+Section~\ref{sec:health} is set by entropy and lies orders of magnitude
+above, so the crossing no longer constrains anything. In the integrated
+circuit the ring domain does not run at RO2 but at RO2 divided by 16: a
+counter clocked at the ring's own period does not close timing on the
+library \est{} (Section~\ref{sec:ro_silicon}), so a chain of four toggle
+flip-flops comes first. The divider register still counts periods of
+RO2; the sampler counts $K_D/16$ edges of the prescaled clock, which is
+the same window, and dividers below $2^{4}$ are refused. The \ac{FPGA}
+has no prescaler. The characterization path does not cross bit by bit:
+the capture buffer is written in the ring domain, at RO2 on the
+\ac{FPGA} and at RO2/16 in the integrated circuit, into a 4096-bit
 memory and read out in the system domain afterwards, with the two
 directions of the handshake carried by toggle flags. Writing and reading
 never overlap, so no asynchronous FIFO is needed, and the buffer size
@@ -265,12 +345,17 @@ arrives during the read is not lost, and a byte that finds the queue full
 stops the stream with an overflow flag instead of overwriting: a gap
 cannot go unnoticed. The stream obeys the rules of the capture buffer ---
 test mode only, never while a seed is collected, and no seeding while it
-runs --- and freezes the divider. It is usable where the bus keeps up, at
-dividers of about $2^{13}$ and above \est{}, which covers the operating
-points; below that the chunks remain. The queue is instrumentation for
+runs --- and freezes the divider. It is usable where the serial link of
+the host keeps up: with RO2 at 205~MHz, from \kd{13} upwards; at
+$2^{12}$ the 115\,200-baud link does not empty the queue and the stream
+overflows after 1285 bytes, whereas with RO2 at 130~MHz $2^{12}$ still
+fitted \meas{}. Below that the chunks remain. The stream also obeys the
+minimum divider, so on the board any stream below $2^{19}$ needs the
+characterization variant with the minimum lowered. The queue is
+instrumentation for
 the \ac{FPGA}: a generic removes it, and it is not part of the area of
 Chapter~\ref{ch:ch6_asic}, where its 256 bytes in flip-flops would add
-23.5~kGE \simu{}.
+23.7~kGE \simu{} (119.3 against 95.5~kGE for the whole engine).
 
 \section{I2C register interface and command sequencer}
 \label{sec:i2c}
@@ -318,6 +403,6 @@ the refusals, the zeroization and the continuous stream described above
 \emph{correct}, because the key came from ring-oscillator noise; the
 bench dumps key, challenges and tags to a file and a Python script
 recomputes the CMACs with the independent AES. They match. That is the
-same cross-check the ESP32 will perform on hardware with mbedtls, and
-already performs against the host model of the engine
-(Chapter~\ref{ch:ch5_verification}).
+same cross-check the ESP32 performs with mbedTLS, first against the host
+model of the engine and then on the board, where 40 tags of 40 matched
+in each of three sessions \meas{} (Section~\ref{sec:bringup}).
