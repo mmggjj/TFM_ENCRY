@@ -7,7 +7,7 @@ aplicadas; `docs/basys3.md`, "Revisión de la tarde del 18-11").
 
 | Punto | Decisión | Aplicado |
 |---|---|---|
-| 6. Biestable | **ro1 de 11 etapas** | `motor_top` `G_ETAPAS_RO1` 7 → 11. Ojo: el SPICE simulaba 5 etapas y el RTL llevaba 7; la corrección es ×2,2 de periodo respecto a lo simulado. Monte Carlo con 11 etapas: esquinas críticas a 24 chips, H declarable 0,757 ≥ 0,60 (22-11, abajo); ff y tt a 125 °C sin lanzar |
+| 6. Biestable | **ro1 de 11 etapas** | `motor_top` `G_ETAPAS_RO1` 7 → 11. Ojo: el SPICE simulaba 5 etapas y el RTL llevaba 7; la corrección es ×2,2 de periodo respecto a lo simulado. Monte Carlo con 11 etapas, cinco esquinas a 24 chips: H declarable 0,757 ≥ 0,60 (22-11, abajo) |
 | 9. Tiempos de ro2 en el integrado | **ro2 de 13 etapas + preescalador ÷16** (13 y no 11, como se aplicó primero: con ro1 también de 11, los dos anillos serían iguales y tienden a engancharse) | Estimación [Yosys + ABC, biblioteca típica 1,2 V 25 °C]: el contador de 26 bits tarda 1,53 ns y un biestable sg13g2 necesita ~0,37 ns para conmutar (clk→Q 0,22 + setup 0,11 + inversor), frente a 0,366 ns de ro2 con 5 etapas: no cerraba nada. Ahora ro2 de 13 etapas (~0,95 ns, el primer biestable cierra con ×2,6 de margen) y `G_PRESC_RO2` = 4: el dominio del anillo (ERO, cruce, captura) corre a ro2/16 (~13 ns). `CFG_KD` sigue contando periodos de ro2. Sin biblioteca lenta en el PDK local: la esquina 1,08 V 125 °C queda sin comprobar |
 | 7. `G_KD_MIN` | **25 integrado, 19 FPGA** | `motor_top` 25 (y `G_KD_RESET` 25, `G_KD_MAX` 26 con el contador ensanchado; un `CFG_KD` > máximo se ignora y levanta `DIAG.rechazada`); `basys3_top` 19/19 con `G_KD_MAX` 24 (con 26 el camino de ro2 subía a 4,41 ns); variante de caracterización con `GENERICOS="... G_KD_MIN=6"` |
 | `CFG_KD` de la FPGA | **19** (H_∞ ≥ 0,99 con la cota baja 0,6·10⁻⁶) | recalibración con la ν y el sesgo de cada captura: 0,59-1,13·10⁻⁶ (18-11) y 0,95-1,35·10⁻⁶ (bitstream del 19-11) por banda |
@@ -28,29 +28,34 @@ de margen**.
 
 **Biestable** [SIMULADO, sin ruido; `results/biestable_mc_e11.md` y
 `results/biestable_mc_e11_sin_hueco.md`, `analysis/biestable_mc.py --fuentes
-biestable_ihp_mc24_e11_criticas.log,biestable_ihp_mc24_e11_criticas_b.log`]:
-**Monte Carlo de las esquinas críticas completo, 24 chips por esquina**
-(tanda `mc24_e11_criticas`, 11, parada el 19-11 a las 22:45; tanda
-`mc24_e11_criticas_b`, 13, acabada el 22-11 a las 13:57). Leído con la regla
-de abajo, fijada antes del resultado:
+biestable_ihp_mc24_e11_criticas.log,biestable_ihp_mc24_e11_criticas_b.log,biestable_ihp_mc24_e11_resto.log`]:
+**Monte Carlo completo, cinco esquinas, 24 chips por esquina**: críticas
+en dos tandas (`mc24_e11_criticas`, 11, parada el 19-11 a las 22:45;
+`mc24_e11_criticas_b`, 13, acabada el 22-11 a las 13:57) y ff/tt a 125 °C en
+una (`mc24_e11_resto`, 22-11, 14:57-18:51). Leído con la regla de abajo,
+fijada antes del resultado:
 
 | Esquina | n | P(1) μ ± σ (IC 95 % de σ) | H en μ − 3σ | H con σ alta | peor chip (H) |
 |---|---|---|---|---|---|
 | sf, 125 °C, 1,08 V | 24 | 0,4631 ± 0,0183 (0,0142-0,0257) | **0,757** | 0,704 | 0,4166 (0,777) |
 | sf, 125 °C, 1,2 V | 24 | 0,4642 ± 0,0100 (0,0078-0,0140) | 0,822 | 0,791 | 0,4355 (0,825) |
 | ff, −40 °C, 1,32 V | 24 | 0,4784 ± 0,0088 (0,0068-0,0123) | 0,868 | 0,840 | 0,4568 (0,880) |
+| ff, 125 °C, 1,32 V | 24 | 0,4700 ± 0,0098 (0,0076-0,0137) | 0,838 | 0,808 | 0,4447 (0,849) |
+| tt, 125 °C, 1,2 V | 24 | 0,4811 ± 0,0119 (0,0093-0,0167) | 0,851 | 0,814 | 0,4673 (0,909) |
 
-- **Oficial (todos los chips): H declarable 0,757 ≥ 0,60.** H 0,60 queda
-  cerrada para las esquinas críticas (con 5 etapas daba 0,532); el circuito
+- **Oficial (todos los chips): H declarable 0,757 ≥ 0,60**, mínimo de las
+  cinco esquinas. **H 0,60 queda cerrada** (con 5 etapas daba 0,532); el circuito
   no se corrige y los cortes 51/766 no cambian (`cortes_salud.py` 11/11, con
   el peor chip y con μ − 3σ). Ni con la σ en el extremo alto de su intervalo
   baja de 0,70.
-- **Sensibilidad (hueco de fase ≤ 0,025):** 0,789 (sf 1,08 V, n 22; ff n 21,
-  sf 1,2 V sin cambios). Las dos lecturas pasan: no hay discrepancia y no
+- **Sensibilidad (hueco de fase ≤ 0,025):** 0,789 (sf 1,08 V, n 22; ff
+  −40 °C n 21, ff 125 °C 0,837 con n 23, tt 125 °C 0,848 con n 22, sf 1,2 V
+  sin cambios). Las dos lecturas pasan: no hay discrepancia y no
   hacen falta chips nuevos (punto 4 de la regla).
 - Chips con hueco > 0,025: los dos de sf 1,08 V ya conocidos (0,082 y 0,068,
   primera tanda) y tres de ff (0,047 y 0,031 de la primera, 0,065 de la
-  segunda). sf 1,2 V no tiene ninguno; en la segunda tanda, salvo ese de ff,
+  segunda); en la tanda de 125 °C, uno de ff (0,0253) y dos de tt (0,039 y
+  0,036). sf 1,2 V no tiene ninguno; en la segunda tanda de las críticas, salvo ese de ff,
   ninguno pasa de 0,022. El peor chip de sf 1,08 V (0,4166) es uno de los de
   hueco: sin él, el peor es 0,4320 (H 0,816).
 - **Diferencia entre tandas:** en sf 1,2 V las dos tandas tienen medias
@@ -61,11 +66,16 @@ de abajo, fijada antes del resultado:
   cambia de una tanda a otra). La cifra oficial junta las dos tandas, así que
   esa variación ya está dentro de la σ; con una sola tanda se habría
   infraestimado.
+- **tt a 125 °C tiene un chip con el sesgo al revés** (rep 1, P(1) 0,5278,
+  hueco 0,0025): el único de los 120 chips por encima de 0,5 (otro, de sf
+  1,08 V con hueco 0,082, da 0,5000). Hace que
+  Shapiro-Wilk rechace la normalidad (p 0,00) e infla la σ, lo que hace la
+  cifra de esa esquina más conservadora, no menos. Causa sin mirar.
 - Los avisos "bordes ff N, ideal 2" del log son del recuento por bordes, que
   no se usa: la P(1) ponderada por fase no necesita bordes limpios.
-- **Pendiente:** ff y tt a 125 °C (`--mm-casos ff125_v132,tt125 --casos tt27
-  --etiqueta mc24_e11_resto`; Mario lo deja para otro momento) y la lectura
-  de sensibilidad del Monte Carlo de 5 etapas (punto 5).
+- **Monte Carlo de 5 etapas con la misma lectura de sensibilidad** (punto 5,
+  `results/biestable_mc_sin_hueco.md`): 0,530 frente a 0,532 oficial. Quitar
+  los chips con hueco no habría cambiado aquella decisión.
 
 ### Regla para leer los 24 chips del Monte Carlo (fijada el 22-11-2026, antes del resultado)
 

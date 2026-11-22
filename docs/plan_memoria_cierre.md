@@ -34,12 +34,12 @@ ro2 de 13 etapas, ÷16, `G_KD_MIN`/`G_KD_RESET`/`G_KD_MAX` 25/25/26 y
 19/19/24 en la FPGA), el apéndice A, el recuento de bancos (tras repetirlos
 en una sola tanda) y el área del motor (tras regenerar la tabla por bloque).
 
-**No se puede cerrar todavía:** H 0,60 en ff/tt a 125 °C (las críticas,
-cerradas el 22-11 con 24 chips: 0,757), el divisor y el caudal del
-integrado (ro2 de 13 etapas estimado como 13/11 de ro1; factor de peor chip
-heredado de 5 etapas; el caudal con `CFG_KD` 25 ni siquiera está calculado
-en `docs/`), los cortes de falsa alarma (dependen de los dos anteriores y de
-`cortes_salud.py`, que aún usa el chip de 5 etapas).
+**No se puede cerrar todavía** (actualizado el 22-11 por la noche): H 0,60,
+el periodo de ro2 y `cortes_salud.py` ya están cerrados (0,757 con 24 chips
+en las cinco esquinas; T(ro2)/T(ro1) 1,175 simulado; peor chip de 11
+etapas). Queda el factor de peor chip del divisor, heredado del Monte Carlo
+de 5 etapas, y el caudal y las falsas alarmas del integrado (E16, E17)
+escritos en la memoria.
 
 **Hallazgos que no estaban en la lista de tareas:**
 
@@ -97,8 +97,8 @@ Las filas del §2 remiten a estas claves.
 | E11 | Raya de ~39,4 kHz | línea estrecha, no es el tráfico I2C durante la captura (`crudoq`), la carga no cambia su amplitud y la mueve 0,9 %; portadora ~480 kHz ± 39,5 kHz; origen sin identificar | C como medida; origen abierto (se dice así) |
 | E12 | Decisiones del 19-11 en el RTL | ro1 11, ro2 13, `G_PRESC_RO2` 4 (÷16), `G_KD_MIN/RESET/MAX` 25/25/26 (`basys3_top` 19/19/24); bancos y FPGA en verde (`docs/decisiones_pendientes.md`) | C. Los bancos del motor fijan ro2 en 5 etapas (tiempo de simulación): decirlo |
 | E13 | SPICE de ro1 de 11 etapas | ss −40 °C 1,08 V, 8 realizaciones: T 1 240,9 ps, σ 214,9 ± 4,0 fs, Q 2,65-3,41·10⁻⁸; `CFG_KD` 24 → H_∞ 0,99973 peor chip, 25 ≈ 1 (`docs/anillo_ihp.md` §4.4, `results/anillo_ihp_divisor_e11.txt`) | **P**: T(ro2)/T(ro1) = 13/11 estimado (hoy, 22-11, corren `anillo_ihp_periodo_*_e11/e13` en tt27, ff125 y ss −40: sin documentar); factor de peor chip 1,175 del Monte Carlo de 5 etapas; solo la peor esquina |
-| E14 | Monte Carlo del biestable, 11 etapas | 24 chips en sf 125 °C 1,08 V / 1,2 V y ff −40 °C 1,32 V: H 0,757 / 0,822 / 0,868; **H declarable 0,757** (oficial, todos los chips; 0,704 con σ alta); sensibilidad sin hueco > 0,025: 0,789 (`results/biestable_mc_e11.md`, `_sin_hueco.md`; regla en `docs/decisiones_pendientes.md`) | **C** para las críticas (22-11); **P**: ff/tt a 125 °C (Mario: otro momento). Las tandas de sf 1,2 V difieren en media (Welch p 0,004): decirlo |
-| E15 | Monte Carlo del biestable, 5 etapas | H declarable 0,532 (sf 1,08 V, 24 chips), 0,568 (sf 1,2 V, 28), 0,653 (ff), 0,803 (tt) (`results/biestable_mc.md`) | C. Es lo que obligó a alargar ro1; la memoria no lo recoge |
+| E14 | Monte Carlo del biestable, 11 etapas | 24 chips en cada esquina: sf 125 °C 1,08 V / 1,2 V, ff −40 °C 1,32 V, ff 125 °C 1,32 V, tt 125 °C: H 0,757 / 0,822 / 0,868 / 0,838 / 0,851; **H declarable 0,757** (oficial, todos los chips; 0,704 con σ alta); sensibilidad sin hueco > 0,025: 0,789 (`results/biestable_mc_e11.md`, `_sin_hueco.md`; regla en `docs/decisiones_pendientes.md`) | **C** (22-11). Decirlo: las tandas de sf 1,2 V difieren en media (Welch p 0,004) y un chip de tt 125 °C sale con P(1) 0,5278 |
+| E15 | Monte Carlo del biestable, 5 etapas | H declarable 0,532 (sf 1,08 V, 24 chips), 0,568 (sf 1,2 V, 28), 0,653 (ff), 0,803 (tt) (`results/biestable_mc.md`); sin huecos > 0,025, 0,530 (`results/biestable_mc_sin_hueco.md`) | C. Es lo que obligó a alargar ro1; la memoria no lo recoge |
 | E16 | Caudal y tiempos del integrado con `CFG_KD` 25 | no está en `docs/`. Cuenta mía [ESTIMADO]: 2²⁵ periodos de ro2 de 13 etapas = 49 ms en ss −40 °C 1,08 V (T(ro2) ≈ 13/11 × 1 240,9 ps) → ~20 bit/s; tt 27 °C ≈ 33 bit/s y ff 125 °C ≈ 45 bit/s con los periodos sin ruido de las tandas de hoy. Siembra de 512 bits 11-25 s; test de arranque (1 024 bits) 23-50 s. Frente a 0,20-0,41 kbit/s y 2,6 s que dice la memoria | **H + P**: calcularlo en `docs/anillo_ihp.md` §4.4 con los periodos simulados de ro2 de 13 etapas cuando acaben |
 | E17 | Falsas alarmas con 51/766 | memoria: peor chip ~8/año a 8,7 kbit/s (P(1) 0,372) | **H + P**: rehacer con el Monte Carlo de 11 etapas, la Basys 3 a `kd 19` (~0,39 kbit/s) y E16; actualizar `cortes_salud.py` y `docs/mapa_registros.md` "Rearme" |
 | E18 | Área | `motor_top` **95,53 kGE** (ro2 13), `motor_top_aes11` 104,60, con FIFO 119,10; antes del 19-11 95,09 (+0,5 %) (`results/sintesis_19_11_ro2_13.log`) | C para el motor. **H**: regenerar la tabla por bloque y `results/sintesis_sg13g2.csv` con el RTL actual (semilla de 512, contador de 26 bits, ÷16); el CSV no se tocó a propósito |
@@ -155,7 +155,7 @@ y estado. Las equivalencias en español van en §5.
 |---|---|---|---|---|
 | `:31-46` (fig. `fig:engine`) | RO1, RO2 → ERO ÷K_D; sin flujo | añadir el preescalador ÷16 de RO2 (integrado) y la cola del flujo continuo (instrumentación) | E12 | C |
 | `:56-69`, `:82-84`, `:125-126` | restos de M1 (SHA "~25 to ~13", "the ESP32 decrypts", 1,16 Gbit/s con el núcleo de 51 ciclos, ciclos 209/53 sin verificar con el AES de 32 bits) | según la revisión del 10-11 | — | H (comprobar ciclos) |
-| `:150-153` | nota no impresa PROVISIONAL (H 0,60 sobre 8 chips) | se quita cuando el Monte Carlo de 11 etapas cierre (24 chips + ff/tt 125 °C) con H ≥ 0,60 | E14 | **P** |
+| `:150-153` | nota no impresa PROVISIONAL (H 0,60 sobre 8 chips) | se quita: el Monte Carlo de 11 etapas cerró el 22-11 (24 chips, cinco esquinas, H 0,757) | E14 | C |
 | `:157-158` | "At 2⁻²⁰ the FPGA prototype raised a repetition false alarm every few minutes" | atribuirlo a la Basys 2 (`kd 14`, ~8 min) o quitar "FPGA" genérico | E22 | D |
 | `:159-163` | sesgo del biestable: "worst of eight dies at 125 °C down to 0.67 [SIM]", "A first revision to H = 0.80 ... five of those eight dies" | Monte Carlo de 5 etapas (24-28 chips por esquina) → H declarable 0,532 < 0,60 → criterio fijado → se alarga ro1 a 11 etapas → Monte Carlo de 11 etapas H 0,757 (24 chips, críticas) | E14, E15 | **P** |
 | `:164-172` | semilla de 512 bits, 214 bits de entropía al límite del APT | sigue valiendo (depende solo de los cortes) | — | C |
@@ -231,7 +231,7 @@ y estado. Las equivalencias en español van en §5.
 | `:84-91` (O5, O6) | [PENDING] | O5: 40/40 en tres sesiones, dos claves, zeroización, rechazos del divisor en placa; O6: jitter (por método, residuo, suelo blanco, raya), SP 800-90B, salud, reinicios, divisor 2¹⁹ | E1-E11 | C |
 | `:93-97` (O8) | [PENDING]; "the informative points are the low dividers, where the battery can contradict it" | la H asignada no separa FPGA, ESP32 ni ideal; los estimadores sensibles al sesgo sí separan la FPGA; en divisores bajos la batería **sobreestima** (como predecía la simulación); lo que separa las fuentes es el modelo y el test de reinicios | E6-E8 | C |
 | `:101-116` (aportaciones) | cuatro | añadir: suelo de jitter blanco del Artix-7 medido dentro del chip (hueco 1 del cap. 2, con su salvedad); tests de salud ciegos al régimen anticorrelado → divisor mínimo en hardware; Monte Carlo del biestable → longitud del anillo; reinicios de la FPGA frente al ESP32 | E4, E8, E9, E14 | C / P |
-| `:121-139` (trabajo futuro) | "Continuous capture on the board ... not yet run" | hecho; añadir: origen de la raya, modelo de la forma de c(M), ro2 de 13 etapas y esquina lenta, Monte Carlo ff/tt 125 °C, medidor con el motor real | E11, E13, E14, E23 | C |
+| `:121-139` (trabajo futuro) | "Continuous capture on the board ... not yet run" | hecho; añadir: origen de la raya, modelo de la forma de c(M), ro2 de 13 etapas y esquina lenta, `T_CLK` al azar en el Monte Carlo del biestable, medidor con el motor real | E11, E13, E14, E23 | C |
 
 ### Apéndices (`appendices.tex`)
 
@@ -418,9 +418,9 @@ los bancos y la síntesis, que pueden esperar a que acaben las simulaciones)
 
 **Fase 3: lo que espera al SPICE** (cuando acaben las tandas en marcha)
 
-19. ~~Monte Carlo de 11 etapas a 24 chips en las críticas~~ (22-11: H
-    declarable 0,757, sensibilidad 0,789; `cortes_salud.py` al día); falta
-    ff/tt a 125 °C (cuando Mario quiera). Con H
+19. ~~Monte Carlo de 11 etapas a 24 chips en las cinco esquinas~~ (22-11: H
+    declarable 0,757, sensibilidad 0,789; `cortes_salud.py` al día; 5 etapas
+    con sensibilidad, 0,530). Con H
     declarable ≥ 0,60 en todas: H 0,60 cerrada, se quitan las notas
     PROVISIONAL de los caps. 4 y 7 y se escribe la historia 5 → 11 etapas.
     Si saliera < 0,60, según el criterio, se corrige el circuito otra vez.

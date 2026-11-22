@@ -59,14 +59,16 @@ todo. Léelo entero antes de tocar nada.
   `docs/basys3.md` "22-11-2026".
 - **SPICE:** T(ro2 13)/T(ro1 11) = 1,175 simulado (antes 13/11 estimado);
   divisor sin cambios.
-- **Monte Carlo del biestable, 11 etapas, 24 chips por esquina crítica
-  [SIMULADO]:** con la regla fijada antes del resultado
+- **Monte Carlo del biestable, 11 etapas, 24 chips en cada una de las cinco
+  esquinas [SIMULADO]:** con la regla fijada antes del resultado
   (`docs/decisiones_pendientes.md`), **H declarable 0,757 ≥ 0,60** (sf 125 °C
-  1,08 V; 0,704 con la σ alta del IC 95 %); sensibilidad sin hueco de fase >
-  0,025: 0,789. **H 0,60 cerrada en las críticas**, cortes 51/766 sin cambio
-  (`cortes_salud.py` 11/11). En sf 1,2 V las dos tandas difieren en media
-  (Welch p 0,004; causa sin comprobar, candidata `T_CLK`). `results/biestable_mc_e11.md`
-  y `_sin_hueco.md`. Faltan ff/tt a 125 °C (Mario: otro momento).
+  1,08 V; 0,704 con la σ alta del IC 95 %; ff/tt a 125 °C 0,838/0,851);
+  sensibilidad sin hueco de fase > 0,025: 0,789. **H 0,60 cerrada**, cortes
+  51/766 sin cambio (`cortes_salud.py` 11/11). En sf 1,2 V las dos tandas
+  difieren en media (Welch p 0,004; causa sin comprobar, candidata `T_CLK`);
+  un chip de tt 125 °C con P(1) 0,5278 (único > 0,5). Monte Carlo de 5 etapas
+  con la lectura de sensibilidad: 0,530 (oficial 0,532). `results/biestable_mc_e11.md`,
+  `_e11_sin_hueco.md`, `biestable_mc_sin_hueco.md`.
 - **Revisión independiente del RTL** (`results/revision_rtl_20261122/`):
   medidor que no sembraba en el integrado, `CFG_KD` ≥ 32 truncado y 0-3 con
   ventana 2^4: corregidos (`CFG_KD` fuera de [`G_PRESC_RO2`, `G_KD_MAX`] se
@@ -95,7 +97,7 @@ kGE con ro2 de 13 (+0,5 %). **SPICE de la noche** (`docs/decisiones_pendientes.m
 con el peor chip (T(ro2)/T(ro1) 1,175 simulada el 22-11): **`G_KD_MIN` 25 con factor 2 de
 margen**. Monte Carlo del biestable parado a 11 de 24 chips por esquina
 crítica: H declarable 0,759 (completado a 24 el 22-11: **0,757**, sección de
-arriba). **Pendiente**: ff/tt a 125 °C (Mario: otro momento); memoria y PR a `main`.
+arriba; ff/tt a 125 °C, también el 22-11). **Pendiente**: memoria y PR a `main`.
 
 ## Estado al 17-11-2026: la Basys 3 llegó, el motor entero en placa
 
