@@ -30,9 +30,11 @@ Dirección & Nombre & Acceso & Contenido \\
 0x01 & VERSION & R & 0x04 \\
 0x02 & STATUS & R & Tabla~\ref{tab:app_status} \\
 0x03 & CONTROL & W & órdenes, Tabla~\ref{tab:app_control}; se autolimpian \\
-0x04 & CFG\_KD & R/W & exponente del divisor, $K_D = 2^{\text{valor}}$, rango
-  efectivo 0--24 (los valores mayores equivalen a 24). Tras el reset vale
-  24. Solo con el motor libre y el flujo parado: si no, la escritura se
+0x04 & CFG\_KD & R/W & exponente $n$ del divisor: $K_D = 2^{n}$ periodos de
+  RO2 entre dos muestras. Rango admitido 4--26 en el circuito integrado y
+  0--24 en la \ac{FPGA}; un valor fuera de él se ignora y levanta
+  \texttt{DIAG.rechazada}. Tras el reset vale 25 (19 en la \ac{FPGA}).
+  Solo con el motor libre y el flujo parado: si no, la escritura se
   ignora \\
 0x05 & CFG\_PAG & R/W & página del búfer de captura, 0--3 \\
 0x06--0x07 & RCT\_MAX & R & racha más larga vista por el \ac{RCT}, byte bajo
@@ -98,6 +100,9 @@ Bit & Nombre & Significado \\
   siembra, se abortó. Se baja con la siguiente orden aceptada \\
 2 & agotado & el contador de peticiones está en $2^{32}-1$;
   \texttt{generar} y \texttt{aleatorio} se rechazan hasta resembrar \\
+3 & solo\_fuente & constante: 1 en la variante sintetizada sin
+  criptografía para la Basys~2 (Apéndice~\ref{app:fpga}), donde las
+  órdenes criptográficas se rechazan; 0 en el motor completo \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,11 +148,26 @@ subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
   el \ac{DRBG} cuando se cierra sin alarma la ventana del \ac{APT} que
   contiene su último bit; una alarma o un \texttt{borrar\_alarmas} durante
   la recogida aborta la siembra y deja el estado anterior intacto. Una
-  siembra tarda como mucho $512 + 1024$ bits crudos.
+  siembra tarda entre 512 y $512 + 1023$ bits crudos, según dónde caiga
+  en la ventana: de 10 a 75~s en el circuito integrado con \kd{25} \est{},
+  tras un test de arranque (1024 bits) de 20 a 50~s
+  (Sección~\ref{sec:ihp_ring11}); de 1,3 a 4~s y unos 2,6~s en la Basys~3
+  con \kd{19}.
 \item \texttt{sembrar} y \texttt{resembrar} se rechazan con
-  \texttt{CFG\_KD} por debajo del mínimo (genérico \texttt{G\_KD\_MIN}, 6
-  por defecto), por debajo del cual el cruce de dominio de reloj del bit
-  pierde bits en silencio sin que los tests de salud puedan notarlo.
+  \texttt{CFG\_KD} por debajo del divisor mínimo, $n = 25$ por defecto y
+  19 en la Basys~3. El cruce de dominio de reloj solo pediría $n \ge 7$
+  con el RO2 de 13 etapas. El mínimo lo fija la entropía: en placa los
+  tests de salud no dan alarma ni con \kd{8}, donde SP~800-90B asigna
+  0,186 a unos bits que alternan \meas{} (Sección~\ref{sec:campaign}), así
+  que el mínimo es la única protección frente a un maestro que escriba un
+  divisor bajo.
+\item Una escritura en \texttt{CFG\_KD} fuera del rango admitido se ignora
+  y levanta \texttt{DIAG.rechazada}; se compara el byte entero. En el
+  circuito integrado RO2 pasa por un preescalador que divide por 16 y el
+  muestreador cuenta $2^{n-4}$ periodos del reloj preescalado, que son los
+  mismos $2^{n}$ periodos de RO2, así que los valores por debajo de 4 se
+  rechazan. Una escritura válida posterior no baja \texttt{rechazada}, que
+  solo bajan las órdenes.
 \item Una captura y una siembra se excluyen, así que el búfer de captura
   nunca contiene bits de una semilla. Lo mismo vale para el flujo
   continuo: solo arranca en modo test, con el motor libre, sin captura en
@@ -159,6 +179,37 @@ subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
   niega a generar hasta resembrar (\texttt{DIAG.agotado}). La política de
   resembrado por debajo de ese tope es del maestro.
 \end{itemize}
+El motor nunca se rearma solo tras una alarma: borrar las alarmas, esperar
+el test de arranque y volver a sembrar es política del maestro, como mucho
+tres veces en 24~horas (Sección~\ref{sec:health}).
+
+\paragraph{Notación y genéricos.} En todo este documento el divisor se
+escribe $K_D = 2^{n}$, con $n$ el valor de \texttt{CFG\_KD}; cuenta
+siempre periodos de RO2. Los límites de $n$ son genéricos del nivel
+superior, que solo se nombran aquí (Tabla~\ref{tab:app_generics}). Para
+caracterizar por debajo del divisor mínimo, el envoltorio de la \ac{FPGA}
+se compila con \texttt{G\_KD\_MIN} bajado a 6; la captura por trozos no
+está sujeta al mínimo.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Genéricos que fijan el divisor y la instrumentación, en la
+configuración del circuito integrado (los valores por defecto del nivel
+superior) y en el envoltorio de la Basys~3.}
+\label{tab:app_generics}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.44\linewidth}cc@{}}
+\toprule
+Genérico & Significado & Circuito integrado & Basys~3 \\
+\midrule
+\texttt{G\_KD\_MIN} & $n$ mínimo para sembrar, resembrar y el flujo & 25 & 19 \\
+\texttt{G\_KD\_RESET} & $n$ tras el reset & 25 & 19 \\
+\texttt{G\_KD\_MAX} & $n$ máximo; anchura del contador del muestreador & 26 & 24 \\
+\texttt{G\_PRESC\_RO2} & $\log_2$ del preescalador de RO2; menor $n$ admitido & 4 & no hay \\
+\texttt{G\_FLUJO\_BYTES} & bytes de la cola del flujo & 0 & 256 \\
+Etapas de los anillos & RO1 (muestreado) / RO2 (de muestreo) & 11 / 13 & 13 / 11 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Prioridad.} Si llegan varios bits de orden en una misma
 escritura, solo se atiende el de mayor prioridad: \texttt{borrar\_todo},
@@ -206,7 +257,9 @@ para, de modo que un hueco nunca pasa inadvertido. Quitar el modo test o
 \ac{FPGA} y por defecto no existe (genérico \texttt{G\_FLUJO\_BYTES}
 $= 0$): es instrumentación de caracterización y no forma parte del área
 del Capítulo~\ref{ch:ch6_asic}; sin ella FLUJO se lee 0 y arrancarlo se
-rechaza.
+rechaza. Por el enlace serie a 115\,200 baudios del ESP32 el flujo da
+abasto desde \kd{13} con RO2 a 205~MHz \meas{}; con $2^{12}$ la cola se
+desborda.
 
 \chapter{Vectores de prueba oficiales utilizados}
 \label{app:vectors}
@@ -223,8 +276,10 @@ independiente del \ac{VHDL}.
 \centering\small
 \caption{Valores de referencia y su origen. Las cuentas son las
 comprobaciones superadas en la última ejecución
-(\nolinkurl{results/run_tb_todos.log}, 212 en total en nueve bancos, con
-14 de 14 aserciones \acs{PSL} y 8 de 8 coberturas).}
+(\nolinkurl{results/run_tb_todos.log}, 306 en total en trece bancos;
+\acs{PSL}: 14 de 14 aserciones y 8 de 8 coberturas en el banco del motor
+completo, 4 de 4 y 2 de 2 en la variante de solo fuente, 1 de 1 y 1 de 1
+en el esclavo \acs{I2C}).}
 \label{tab:app_vectors}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
@@ -252,6 +307,10 @@ Bloque & Origen de los valores esperados & Dónde se comprueba \\
 Motor completo & la clave sale del ruido del anillo, así que el banco
   vuelca clave, reto y etiqueta y el \ac{CMAC} se recalcula con el modelo en
   Python & \nolinkurl{analysis/verifica_top.py}, 5 de 5 \\
+Ventana de muestreo & sin vector: el banco cuenta los periodos de RO2
+  entre dos muestras y exige exactamente $2^{n}$ para $n$ de 4 a 14, y el
+  rechazo de los valores fuera de rango & \texttt{tb\_ventana\_ero}, 47
+  comprobaciones \\
 Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
   del objetivo, compilado para el PC; las lecturas firmadas se verifican
   con la biblioteca \texttt{cryptography} & \texttt{run\_host.py}, 0 fallos;
@@ -259,8 +318,10 @@ Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
 Cortes de los tests de salud & fórmulas de
   SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}60$ y
   $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$, $C = 766$;
-  semilla de 512 bits $\ge 192$ bits de entropía en el límite del \ac{APT} &
-  \nolinkurl{analysis/cortes_salud.py}; comportamiento en
+  semilla de 512 bits $\ge 192$ bits de entropía en el límite del \ac{APT};
+  peor chip y $\mu - 3\sigma$ del Monte Carlo del biestable por encima de
+  $\Hdecl$ &
+  \nolinkurl{analysis/cortes_salud.py}, 11 de 11; comportamiento en
   \texttt{tb\_health\_tests}, 15 comprobaciones \\
 \bottomrule
 \end{tabular}
@@ -279,7 +340,8 @@ cambios.
 Todo lo que en este trabajo no necesita las placas se vuelve a ejecutar en
 cada push mediante un flujo de integración continua
 (\nolinkurl{.github/workflows/verifica.yml}) en una máquina Ubuntu limpia que
-no es la del autor: siete trabajos, sin credenciales. El repositorio es
+no es la del autor: seis trabajos, uno de ellos ejecutado dos veces (los
+dos proyectos de firmware), sin credenciales. El repositorio es
 público: \url{https://github.com/mmggjj/TFM_ENCRY}. Las órdenes de abajo
 son las que ejecuta el flujo, así que una ejecución en verde las
 reproduce. Las salidas nunca se filtran: los scripts imprimen la salida
@@ -299,7 +361,7 @@ Modelo y estimadores & \texttt{python} \nolinkurl{analysis/ero_model.py},
   \texttt{verifica\_lecturas.py} sobre el log de la placa & autopruebas, 960
   casos del \ac{CAVP}, lecturas de la placa válidas \\
 Bancos \ac{VHDL} & \texttt{python} \nolinkurl{rtl/run_tb.py} y después
-  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 9 bancos, informe \acs{PSL}
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 13 bancos, informe \acs{PSL}
   como artefacto \\
 Síntesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} & área por bloque en
   kGE (Capítulo~\ref{ch:ch6_asic}) \\
@@ -337,16 +399,43 @@ el flujo no tiene:
   para esquinas, alimentación y desapareamiento. ngspice no deja fijar la
   realización del ruido, así que cada ejecución es una nueva y la
   incertidumbre sale de repetir. Una realización de 400~ns tarda unos 30
-  minutos.
+  minutos. El anillo de once etapas es \texttt{--etapas 11} con
+  \texttt{--tstop 900n}, unas 2~h~10~min por realización, y
+  \nolinkurl{analysis/anillo_ihp_divisor.py} convierte sus resultados en
+  $H_\infty$ por divisor. El biestable de muestreo es
+  \nolinkurl{analysis/biestable_ihp.py}; su Monte Carlo se lee con
+  \nolinkurl{analysis/biestable_mc.py} (\texttt{--fuentes} para los logs,
+  \texttt{--hueco-max} para la lectura de sensibilidad), y
+  \nolinkurl{analysis/caudal_integrado.py} da la tasa de bits, los tiempos
+  de siembra y las tasas de falsa alarma del circuito integrado.
 \item \emph{Estimaciones SP~800-90B del ESP32.} La herramienta del
   \ac{NIST}~\cite{nist_ea_github} compilada desde el fuente;
   \texttt{python} \nolinkurl{analysis/entropia_90b.py} y después
   \texttt{resumen\_90b.py}, sobre las capturas guardadas en
   \nolinkurl{results/}; la prueba de reinicios con \texttt{reinicios\_90b.py}.
   Las capturas nuevas necesitan un ESP32 y \nolinkurl{analysis/campana_rng.py}.
-\item \emph{\ac{FPGA}.} Vivado (nivel gratuito, con el Artix-7 incluido) y
-  \nolinkurl{synth/basys3/build.tcl}; la instalación y la grabación se
-  describen en \nolinkurl{docs/instalacion_vivado_windows.md}.
+\item \emph{\ac{FPGA}.} Vivado~2025.2 en Linux, en modo por lotes con
+  \nolinkurl{synth/basys3/build.tcl}; en Ubuntu~26.04, que la herramienta
+  no soporta, necesita las variables de entorno \texttt{LOCPATH} y
+  \texttt{LD\_LIBRARY\_PATH} puestas como describe
+  \nolinkurl{docs/basys3.md}. La variable \texttt{GENERICOS} elige la
+  variante del envoltorio, la colocación fija de las etapas
+  (\texttt{ro\_bel.xdc}) se carga por defecto y \texttt{SIN\_BEL=1} la
+  quita. La placa se graba con \texttt{openFPGALoader -b basys3} o con
+  \texttt{djtgcfg} de Digilent. La campaña de la
+  Sección~\ref{sec:campaign} necesita la placa y el ESP32 con el
+  verificador: \nolinkurl{analysis/campana_motor.py} (\texttt{--flujo}
+  para bits consecutivos, \texttt{--90b} para pasar la batería,
+  \texttt{--callado} para no tocar el bus durante una captura),
+  \texttt{reinicios\_fpga.py} para la prueba de reinicios,
+  \texttt{jitter\_autocorrelacion.py} y \texttt{espectro\_fase.py}
+  (\texttt{--valida}, \texttt{--calibra}) para el jitter,
+  \texttt{sesgo\_correlacion.py}, y \texttt{tabla\_o8.py} para la
+  comparación de la Sección~\ref{sec:o8}. El análisis se repite sin la
+  placa a partir de las capturas guardadas en
+  \nolinkurl{results/motor_campana} y \nolinkurl{results/fpga_reinicios}.
+  La Basys~2 del Apéndice~\ref{app:fpga} se compila con ISE~14.7 mediante
+  \nolinkurl{synth/basys2/build.sh}.
 \end{itemize}
 
 \paragraph{Primera campaña del ESP32.} El análisis de la primera campaña

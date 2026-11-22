@@ -32,10 +32,12 @@ Address & Name & Access & Content \\
 0x01 & VERSION & R & 0x04 \\
 0x02 & STATUS & R & Table~\ref{tab:app_status} \\
 0x03 & CONTROL & W & commands, Table~\ref{tab:app_control}; self-clearing \\
-0x04 & CFG\_KD & R/W & divider exponent, $K_D = 2^{\text{value}}$, effective
-  range 0--24 (larger values act as 24). Resets to 24. Written only while
-  the engine is idle and the stream is stopped; otherwise the write is
-  ignored \\
+0x04 & CFG\_KD & R/W & divider exponent $n$: $K_D = 2^{n}$ periods of RO2
+  between two samples. Accepted range 4--26 on the integrated circuit and
+  0--24 on the \ac{FPGA}; a value outside it is ignored and sets
+  \texttt{DIAG.rejected}. Resets to 25 (19 on the \ac{FPGA}). Written only
+  while the engine is idle and the stream is stopped; otherwise the write
+  is ignored \\
 0x05 & CFG\_PAG & R/W & page of the capture buffer, 0--3 \\
 0x06--0x07 & RCT\_MAX & R & longest run seen by the \ac{RCT}, low byte first \\
 0x08--0x09 & APT\_MAX & R & largest count seen by the \ac{APT}, low byte first \\
@@ -97,6 +99,9 @@ Bit & Name & Meaning \\
   seeding, aborted. Cleared by the next accepted command \\
 2 & exhausted & the request counter is at $2^{32}-1$; \texttt{generate} and
   \texttt{random} are refused until the engine is reseeded \\
+3 & source\_only & constant: 1 in the variant synthesized without
+  cryptography for the Basys~2 (Appendix~\ref{app:fpga}), where the
+  cryptographic commands are refused; 0 in the complete engine \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,11 +147,25 @@ raise \texttt{busy} and sets \texttt{DIAG.rejected}.
   \ac{DRBG} only after the \ac{APT} window that contains its last bit
   closes without alarm; an alarm or a \texttt{clear\_alarms} during
   collection aborts the seeding and leaves the previous state untouched.
-  A seeding takes at most $512 + 1024$ raw bits.
+  A seeding takes between 512 and $512 + 1023$ raw bits, depending on
+  where it falls in the window: 10 to 75~s on the integrated circuit at
+  \kd{25} \est{}, after a start-up test (1024 bits) of 20 to 50~s
+  (Section~\ref{sec:ihp_ring11}); 1.3 to 4~s and about 2.6~s on the
+  Basys~3 at \kd{19}.
 \item \texttt{seed} and \texttt{reseed} are refused with
-  \texttt{CFG\_KD} below the minimum (generic \texttt{G\_KD\_MIN}, 6 by
-  default), below which the bit-level clock-domain crossing loses bits
-  silently and the health tests cannot tell.
+  \texttt{CFG\_KD} below the minimum divider, $n = 25$ by default and 19
+  on the Basys~3. The clock-domain crossing alone would only ask for
+  $n \ge 7$ with the 13-stage RO2. The minimum is set by entropy: on the
+  board the health tests raise no alarm even at \kd{8}, where SP~800-90B
+  assigns 0.186 to bits that alternate \meas{}
+  (Section~\ref{sec:campaign}), so the minimum is the only protection
+  against a host that writes a low divider.
+\item A write to \texttt{CFG\_KD} outside the accepted range is ignored
+  and sets \texttt{DIAG.rejected}; the whole byte is compared. On the
+  integrated circuit RO2 goes through a divide-by-16 prescaler and the
+  sampler counts $2^{n-4}$ periods of the prescaled clock, which are the
+  same $2^{n}$ periods of RO2, so values below 4 are refused. A later
+  valid write does not clear \texttt{rejected}, which only commands do.
 \item A capture and a seeding exclude each other, so the capture buffer
   never holds bits of a seed. The same holds for the continuous stream:
   it starts only in test mode, with the engine idle, no capture in
@@ -157,6 +176,37 @@ raise \texttt{busy} and sets \texttt{DIAG.rejected}.
   refuses to generate until reseeded (\texttt{DIAG.exhausted}). The
   reseeding policy below that ceiling is the host's.
 \end{itemize}
+The engine never re-arms itself after an alarm: clearing the alarms,
+waiting for the start-up test and seeding again is the host's policy, at
+most three times in 24~hours (Section~\ref{sec:health}).
+
+\paragraph{Notation and generics.} Throughout this document the divider
+is written $K_D = 2^{n}$, with $n$ the value of \texttt{CFG\_KD}; it
+always counts periods of RO2. The limits of $n$ are generics of the top
+level, named only here (Table~\ref{tab:app_generics}). For
+characterization below the minimum divider the \ac{FPGA} wrapper is built
+with \texttt{G\_KD\_MIN} lowered to 6; the chunk capture is not subject
+to the minimum.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Generics that fix the divider and the instrumentation, in the
+integrated-circuit configuration (the defaults of the top level) and in
+the Basys~3 wrapper.}
+\label{tab:app_generics}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.44\linewidth}cc@{}}
+\toprule
+Generic & Meaning & Integrated circuit & Basys~3 \\
+\midrule
+\texttt{G\_KD\_MIN} & minimum $n$ for seeding, reseeding and the stream & 25 & 19 \\
+\texttt{G\_KD\_RESET} & $n$ after reset & 25 & 19 \\
+\texttt{G\_KD\_MAX} & maximum $n$; width of the sampler counter & 26 & 24 \\
+\texttt{G\_PRESC\_RO2} & $\log_2$ of the RO2 prescaler; lowest $n$ accepted & 4 & none \\
+\texttt{G\_FLUJO\_BYTES} & bytes of the stream queue & 0 & 256 \\
+Ring stages & RO1 (sampled) / RO2 (sampling) & 11 / 13 & 13 / 11 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Priority.} If several command bits arrive in one write, only
 the highest-priority one is served: \texttt{clear\_all}, then
@@ -201,7 +251,9 @@ it. The queue holds 256 bytes on the \ac{FPGA} and is absent by default
 (generic \texttt{G\_FLUJO\_BYTES} $= 0$): it is characterization
 instrumentation and is not part of the area reported in
 Chapter~\ref{ch:ch6_asic}; without it STREAM reads 0 and starting it is
-refused.
+refused. Over the 115\,200-baud serial link of the ESP32 the stream keeps
+up from \kd{13} upwards with RO2 at 205~MHz \meas{}; at $2^{12}$ the queue
+overflows.
 
 \chapter{Official Test Vectors Used}
 \label{app:vectors}
@@ -216,9 +268,10 @@ vectors first, and written independently of the \ac{VHDL}.
 \begin{table}[htbp]
 \centering\small
 \caption{Reference values and their origin. Counts are checks passed in
-the last run (\nolinkurl{results/run_tb_todos.log}, 212 in total over
-nine benches, with 14 of 14 \acs{PSL} assertions and 8 of 8 cover
-points).}
+the last run (\nolinkurl{results/run_tb_todos.log}, 306 in total over
+thirteen benches; \acs{PSL}: 14 of 14 assertions and 8 of 8 cover points
+in the whole-engine bench, 4 of 4 and 2 of 2 in the source-only variant,
+1 of 1 and 1 of 1 in the \acs{I2C} slave).}
 \label{tab:app_vectors}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
@@ -246,14 +299,18 @@ Block & Source of the expected values & Where checked \\
 Whole engine & the key comes from ring noise, so the bench dumps key,
   challenge and tag, and the \ac{CMAC} is recomputed with the Python model
   & \nolinkurl{analysis/verifica_top.py}, 5 of 5 \\
+Sampling window & no vector: the bench counts the RO2 periods between two
+  samples and requires exactly $2^{n}$ for $n = 4$ to 14, and the refusal
+  of values outside the range & \texttt{tb\_ventana\_ero}, 47 checks \\
 Firmware against the engine model & \ac{CMAC} and ECDSA of the target's
   mbedtls 3.6, compiled for the PC; signed readings checked with the
   \texttt{cryptography} library & \texttt{run\_host.py}, 0 failures;
   \texttt{verifica\_lecturas.py} \\
 Health-test cut-offs & SP~800-90B~\S4.4~\cite{turan_2018_sp80090b}
   formulas for $H = 0.60$ and $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$,
-  $C = 766$; seed of 512 bits $\ge 192$ bits of entropy at the \ac{APT} limit
-  & \nolinkurl{analysis/cortes_salud.py}; behaviour in
+  $C = 766$; seed of 512 bits $\ge 192$ bits of entropy at the \ac{APT} limit;
+  worst die and $\mu - 3\sigma$ of the flip-flop Monte Carlo above $\Hdecl$
+  & \nolinkurl{analysis/cortes_salud.py}, 11 of 11; behaviour in
   \texttt{tb\_health\_tests}, 15 checks \\
 \bottomrule
 \end{tabular}
@@ -271,7 +328,8 @@ Chapter~\ref{ch:ch7_results} are not test vectors: they come from the
 Everything in this work that does not need the boards is rerun on every
 push by a continuous-integration workflow
 (\nolinkurl{.github/workflows/verifica.yml}) on a clean Ubuntu machine that
-is not the author's: seven jobs, no credentials. The repository is
+is not the author's: six jobs, one of them run twice (the two firmware
+projects), no credentials. The repository is
 public: \url{https://github.com/mmggjj/TFM_ENCRY}. The commands below are
 the ones the workflow runs, so a green run reproduces them. Outputs are
 never filtered: the scripts print the full tool output and fail on any
@@ -291,7 +349,7 @@ Model and estimators & \texttt{python} \nolinkurl{analysis/ero_model.py},
   \texttt{verifica\_lecturas.py} on the board log & self-checks, 960
   \ac{CAVP} cases, board readings valid \\
 \ac{VHDL} benches & \texttt{python} \nolinkurl{rtl/run_tb.py}, then
-  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 9 benches, \acs{PSL}
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 13 benches, \acs{PSL}
   report as artefact \\
 Synthesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} &
   area per block in kGE (Chapter~\ref{ch:ch6_asic}) \\
@@ -329,16 +387,42 @@ the workflow does not have:
   \texttt{--mismatch} for corners, supply and mismatch. ngspice cannot
   fix the noise realization, so every run is a new one and the
   uncertainty comes from repeating. One 400~ns realization takes about
-  30 minutes.
+  30 minutes. The eleven-stage ring is \texttt{--etapas 11} with
+  \texttt{--tstop 900n}, about 2~h~10~min per realization, and
+  \nolinkurl{analysis/anillo_ihp_divisor.py} turns its results into
+  $H_\infty$ per divider. The sampling flip-flop is
+  \nolinkurl{analysis/biestable_ihp.py}; its Monte Carlo is read with
+  \nolinkurl{analysis/biestable_mc.py} (\texttt{--fuentes} for the logs,
+  \texttt{--hueco-max} for the sensitivity reading), and
+  \nolinkurl{analysis/caudal_integrado.py} gives the throughput, the
+  seeding times and the false-alarm rates of the integrated circuit.
 \item \emph{SP~800-90B estimates of the ESP32.} The \ac{NIST}
   tool~\cite{nist_ea_github} built from source;
   \texttt{python} \nolinkurl{analysis/entropia_90b.py}, then
   \texttt{resumen\_90b.py}, on the captures kept in \nolinkurl{results/};
   the restart test with \texttt{reinicios\_90b.py}. New captures need an
   ESP32 and \nolinkurl{analysis/campana_rng.py}.
-\item \emph{\ac{FPGA}.} Vivado (free tier, Artix-7 included) and
-  \nolinkurl{synth/basys3/build.tcl}; installation and programming are
-  described in \nolinkurl{docs/instalacion_vivado_windows.md}.
+\item \emph{\ac{FPGA}.} Vivado~2025.2 on Linux, in batch mode with
+  \nolinkurl{synth/basys3/build.tcl}; on Ubuntu~26.04, which the tool does
+  not support, it needs the environment variables \texttt{LOCPATH} and
+  \texttt{LD\_LIBRARY\_PATH} set as described in
+  \nolinkurl{docs/basys3.md}. The variable \texttt{GENERICOS} selects the
+  wrapper variant, the fixed stage placement (\texttt{ro\_bel.xdc}) is
+  loaded by default and \texttt{SIN\_BEL=1} removes it. The board is
+  programmed with \texttt{openFPGALoader -b basys3} or with Digilent's
+  \texttt{djtgcfg}. The campaign of Section~\ref{sec:campaign} needs the
+  board and the ESP32 with the verifier:
+  \nolinkurl{analysis/campana_motor.py} (\texttt{--flujo} for consecutive
+  bits, \texttt{--90b} to run the battery, \texttt{--callado} to keep the
+  bus silent during a capture), \texttt{reinicios\_fpga.py} for the
+  restart test, \texttt{jitter\_autocorrelacion.py} and
+  \texttt{espectro\_fase.py} (\texttt{--valida}, \texttt{--calibra}) for
+  the jitter, \texttt{sesgo\_correlacion.py}, and \texttt{tabla\_o8.py}
+  for the comparison of Section~\ref{sec:o8}. The analysis reruns without
+  the board from the captures kept in \nolinkurl{results/motor_campana}
+  and \nolinkurl{results/fpga_reinicios}. The Basys~2 of
+  Appendix~\ref{app:fpga} is built with ISE~14.7 through
+  \nolinkurl{synth/basys2/build.sh}.
 \end{itemize}
 
 \paragraph{First ESP32 campaign.} The analysis of the first campaign
