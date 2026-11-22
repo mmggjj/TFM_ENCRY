@@ -77,6 +77,13 @@ TRNG basado en osciladores en anillos}
 \newcommand{\meas}{\textsc{[measured]}}
 \newcommand{\simu}{\textsc{[simulated]}}
 \newcommand{\est}{\textsc{[estimated]}}
+% Divider notation (Section sec:kd): K_D = 2^n periods of RO2 between two
+% samples, n being the value of register CFG_KD. \kd{19} prints K_D = 2^19.
+\newcommand{\kd}[1]{$K_D = 2^{#1}$}
+% The three entropies that must not be confused (math mode): H_\infty of
+% the stochastic model, the SP 800-90B figure and the declared value.
+\newcommand{\Hnb}{\hat{H}_{\mathrm{90B}}}
+\newcommand{\Hdecl}{H_{\mathrm{decl}}}
 
 \begin{document}
 

@@ -83,6 +83,13 @@ TRNG basado en osciladores en anillos}
 \newcommand{\meas}{\textsc{[medido]}}
 \newcommand{\simu}{\textsc{[simulado]}}
 \newcommand{\est}{\textsc{[estimado]}}
+% Notacion del divisor (Seccion sec:kd): K_D = 2^n periodos de RO2 entre dos
+% muestras, con n el valor del registro CFG_KD. \kd{19} imprime K_D = 2^19.
+\newcommand{\kd}[1]{$K_D = 2^{#1}$}
+% Las tres entropias que no deben confundirse (modo matematico): H_\infty
+% del modelo estocastico, la cifra de SP 800-90B y el valor declarado.
+\newcommand{\Hnb}{\hat{H}_{\mathrm{90B}}}
+\newcommand{\Hdecl}{H_{\mathrm{decl}}}
 
 \begin{document}
 
