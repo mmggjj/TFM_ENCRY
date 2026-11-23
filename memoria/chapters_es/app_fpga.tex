@@ -14,9 +14,10 @@ que enseñaron se aplicó en la Basys~3, y un experimento (el biestable de
 muestreo con y sin habilitación de reloj) solo existe allí. En este
 apéndice los dos osciladores en anillo se nombran como en el \ac{RTL}: RO1
 es el anillo muestreado y RO2 el de muestreo, y el divisor es
-$K_D = 2^{n}$ periodos de RO2 (registro \texttt{CFG\_KD} $= n$). $Q$ es la
-varianza de la fase relativa entre los anillos acumulada por periodo de
-RO2, en ciclos de RO1 al cuadrado. Todos los valores son \meas{} en placa
+$K_D = 2^{n}$ periodos de RO2 (registro \texttt{CFG\_KD} $= n$). $q_2$ es, como
+en el Capítulo~\ref{ch:ch3_entropy}, la varianza de la fase relativa
+entre los anillos acumulada por periodo de RO2, en ciclos de RO1 al
+cuadrado. Todos los valores son \meas{} en placa
 salvo que se indique otra cosa.
 
 \begin{table}[htbp]
@@ -30,8 +31,8 @@ salvo que se indique otra cosa.
 Dispositivo & XC3S100E, Spartan-3E, 90\,nm, 1\,920 LUT4 & XC7A35T, Artix-7, 28\,nm \\
 Qué cabe & solo la fuente de entropía (anillos, \ac{ERO}, tests de salud,
   \acs{I2C}, FIFO del flujo); la criptografía sola pide unas 6\,800 LUT4
-  \est{}, 3,5 veces el dispositivo & el motor entero: 4\,011 LUT (19\,\%) y
-  4\,561 biestables (11\,\%) \\
+  \est{}, 3,5 veces el dispositivo & el motor entero: 3\,886 LUT (19\,\%) y
+  4\,392 biestables (11\,\%) en el bitstream final \\
 Herramientas & ISE 14.7; XST no lee \acs{VHDL}-2008, así que antes GHDL
   pasa el diseño a Verilog & Vivado 2025.2 \\
 Reloj del sistema & 50\,MHz & 100\,MHz \\
@@ -60,16 +61,17 @@ fijándola.}
 \toprule
  & Basys~2 & Basys~3 \\
 \midrule
-$Q$, ajuste de la autocorrelación $c(M)$ & $1{,}0$--$4{,}9\times10^{-5}$
+$q_2$, ajuste de la autocorrelación $c(M)$ & $1{,}0$--$4{,}9\times10^{-5}$
   (silenciosa, $n = 7$--$9$, según la implementación; tres capturas
   dentro de $\pm3$--$5$\,\%) & $1{,}42\times10^{-5}$ (silenciosa, fija,
   $n = 2$); $0{,}32$--$2{,}75\times10^{-5}$ entre variantes (tres capturas
-  dentro de $\pm0{,}3$\,\%) \\
-Suelo de ruido blanco de $Q$ (espectro de la frecuencia instantánea) &
+  dentro de $\pm0{,}3$\,\% sin colocación fija, dos dentro de $\pm1$\,\%
+  con ella) \\
+Suelo de ruido blanco de $q_2$ (espectro de la frecuencia instantánea) &
   no medido (sin buffer de captura, sin $n \le 2$) &
-  $0{,}6$--$1{,}1\times10^{-6}$ ($\sigma \approx 4$--$5$\,ps por periodo
-  de 4,9\,ns; calibración \simu{}) \\
-Lógica colgada de los anillos & cambia $Q$ $\times2{,}5$ & cambia $Q$
+  $0{,}6$--$1{,}1\times10^{-6}$ ($\sqrt{q_2}\,T_2 \approx 4$--$5$\,ps con
+  $T_2 = 4{,}9$\,ns; dos capturas; calibración \simu{}) \\
+Lógica colgada de los anillos & cambia $q_2$ $\times2{,}5$ & cambia $q_2$
   $\times3$--$4{,}4$, también con las etapas fijadas \\
 SP~800-90B, $10^6$ bits consecutivos & $n = 12$: 0,760; $n = 13$--$16$:
   0,82-0,86 & $n = 12$--$19$: 0,815-0,879, saturada; bitstream final a
@@ -80,8 +82,8 @@ Fracción de unos & 0,496-0,498 (silenciosa), 0,519 (con display) &
   0,495-0,497 (libre y final), 0,505-0,506 (fija), 0,513-0,519 (con
   display): el signo cambia con la implementación \\
 Correlación a retardo 1, $\rho_1$ & 0,003-0,006 ($z$ hasta 13) con
-  habilitación; $\le 0{,}0005$ ($z \le 1$) sin ella & $|z| \le 2{,}1$ (sin
-  habilitación) \\
+  habilitación; $\le 0{,}0005$ ($z \le 1$) sin ella & $|z| \le 2{,}1$ en flujos (sin
+  habilitación); $z = 4{,}5$ en los trozos a $n = 12$, fija \\
 Tests de salud en placa & test de repetición a $n = 8$, 11 y 12, y de
   proporción a $n = 8$ (22/596); solo el de repetición a $n = 10$
   (51/766) & test de repetición a $n = 8$ (libre); ninguno ni a $n = 8$
@@ -99,12 +101,12 @@ Divisor de trabajo & $n \ge 16$, provisional (del ajuste de $c(M)$) &
 \end{table}
 
 \paragraph{Lo común.} En dos familias y dos nodos el cuadro es el mismo. El
-ajuste de $c(M)$ da un ruido de fase relativo de $10^{-6}$--$10^{-5}$ por
-periodo de RO2, y el modelo del \ac{ERO} deja residuos de varias a decenas
+ajuste de $c(M)$ da un ruido de fase relativo de $3\times10^{-6}$ a $5\times10^{-5}$ por
+periodo de RO2 (Tabla~\ref{tab:app_fpga_res}), y el modelo del \ac{ERO} deja residuos de varias a decenas
 de veces el ruido binomial: parte de la fase es una modulación
-determinista, no jitter. $Q$ depende de la lógica colgada de los anillos y
+determinista, no jitter. $q_2$ depende de la lógica colgada de los anillos y
 de la implementación, en el mismo sentido en las dos placas (sin el
-frecuencímetro $Q$ es mayor). SP~800-90B se satura en 0,82-0,88 con
+frecuencímetro $q_2$ es mayor). SP~800-90B se satura en 0,82-0,88 con
 $10^6$ bits y no separa la \ac{FPGA} del ESP32 ni de bits ideales, ni, en
 la Basys~3, un divisor con $H_\infty = 0{,}47$ de otro con 0,9996. El
 sesgo es del 0,2-1,9\,\% y su signo cambia entre implementaciones en las
@@ -112,7 +114,7 @@ dos placas. Los tests de salud no ven el régimen de poco jitter, así que
 solo lo protege el divisor mínimo. La prueba de reinicios pasa en las dos.
 
 \paragraph{Qué cambió el divisor.} No la placa, sino el método. El ajuste
-de $c(M)$ cuenta la modulación como jitter y sobreestima $Q$; el método
+de $c(M)$ cuenta la modulación como jitter y sobreestima $q_2$; el método
 espectral, posible solo en la Basys~3 porque necesita el buffer de captura
 a divisores pequeños, separa el suelo blanco, entre 13 y 24 veces por
 debajo del ajuste en la misma variante. Con él, el divisor de la \ac{FPGA}
@@ -127,7 +129,8 @@ el biestable en los mismos sitios: con ella, $\rho_1 \approx 0{,}005$; sin
 ella, nada. Por eso el motor muestrea sin habilitación por defecto
 (Capítulo~\ref{ch:ch4_engine}). La Basys~3 no tiene variante con
 habilitación, así que la causa descansa en una sola familia; la ausencia
-de correlación sin ella se confirma en las dos.
+de correlación sin ella se confirma en las dos, en flujos de bits
+consecutivos.
 
 \paragraph{Lecciones aplicadas.} La Basys~2 mostró que un anillo puede
 desaparecer en la implementación (el mapeador colapsó la cadena de
@@ -137,14 +140,17 @@ que la repetibilidad hay que medirla antes de leer una diferencia. En la
 Basys~3 el script de implementación lista cada celda de los anillos tras
 rutar y se para si falta un anillo, el número de etapas y la restricción de
 tiempos de RO2 siguen a la frecuencia medida, las campañas usan el
-envoltorio silencioso y cada $Q$ sale de tres capturas.
+envoltorio silencioso y las capturas se repiten: tres en el primer
+bitstream, sin colocación fija, dos en los de colocación fija, de las
+que salen los valores que se usan aquí, y una en el bitstream final.
 
 \paragraph{90\,nm frente a 28\,nm.} Colocados, los anillos de la Artix-7
 son unas 2-2,3 veces más rápidos por etapa. El ruido de fase es del mismo
 orden en las dos placas, pero con frecuencias, divisores, alcances del
 ajuste y envoltorios distintos, y con un modelo que no describe su forma en
 ninguna; no se concluye qué nodo tiene más jitter. La única cifra que
-aspira a ser térmica, el suelo blanco de la Basys~3 ($\sigma \approx
-4$--$5$\,ps por periodo de 4,9\,ns), es del orden de los 2-4\,ps por
-periodo que se publican para osciladores en anillo en
+aspira a ser térmica, el suelo blanco de la Basys~3
+($\sqrt{q_2}\,T_2 \approx 4$--$5$\,ps), es el jitter relativo de los dos
+anillos con un estimador que yerra hacia arriba, y es del orden de los
+2-4\,ps por periodo que se publican para un oscilador en anillo en
 28\,nm~\cite{petura_2016_survey}.
