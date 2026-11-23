@@ -335,7 +335,8 @@ begin
     variable t_lim : time;
     variable pet1, pet2 : std_logic_vector(31 downto 0);
     variable clave1, clave2, reto, etiqueta1, etiqueta2 : std_logic_vector(127 downto 0);
-    variable aleatorio : std_logic_vector(255 downto 0);
+    variable aleatorio, aleatorio1 : std_logic_vector(255 downto 0);
+    variable semilla1 : std_logic_vector(511 downto 0);
     variable captura : std_logic_vector(127 downto 0);
     variable ack : boolean;
     variable distintos : natural;
@@ -445,6 +446,9 @@ begin
     comprobar(status(2) = '0' and status(3) = '0', "sin alarmas de salud");
     leer_reg(x"0E", b);
     comprobar(b(1) = '0', "DIAG.rechazada a 0 tras una siembra completa");
+    -- La semilla con la que se instancio el DRBG: verifica_top.py recalcula
+    -- con ella clave1, aleatorio1 y clave2 en el modelo de referencia.
+    semilla1 := semilla;
 
     report "3) Generar clave";
     escribir_reg(x"03", x"02");
@@ -462,6 +466,7 @@ begin
     comprobar(aleatorio /= (255 downto 0 => '0'), "ALEATORIO no nulo");
     comprobar(aleatorio(255 downto 128) /= clave1 and aleatorio(127 downto 0) /= clave1,
               "ALEATORIO no contiene la clave en ninguna de sus mitades");
+    aleatorio1 := aleatorio;                    -- el paso 8 reutiliza la variable
 
     report "4) Reto-respuesta";
     reto := x"00112233445566778899aabbccddeeff";
@@ -758,7 +763,8 @@ begin
     write(l, string'("reto2 ") & hex(x"FF" & reto(119 downto 0))); writeline(f, l);
     write(l, string'("etiqueta2 ") & hex(etiqueta2)); writeline(f, l);
     write(l, string'("clave2 ") & hex(clave2)); writeline(f, l);
-    write(l, string'("aleatorio1 ") & hex(aleatorio)); writeline(f, l);
+    write(l, string'("aleatorio1 ") & hex(aleatorio1)); writeline(f, l);
+    write(l, string'("semilla1 ") & hex(semilla1)); writeline(f, l);
     file_close(f);
     report "  volcado en results/tb_motor_top.txt";
 

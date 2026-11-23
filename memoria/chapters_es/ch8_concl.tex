@@ -96,17 +96,21 @@ de una misma secuencia fija, y dos chips distintos producen la misma
 su siembra, que depende de que la radio, el \ac{ADC} o el cargador de
 arranque estén activos.
 
-% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
 \paragraph{El motor entero funciona en una FPGA con un verificador
 independiente (O5).} El motor se implementó completo en una Basys~3 y lo
 gobernó un ESP32 por \ac{I2C}. En tres sesiones, con tres
 implementaciones distintas, el ESP32 recalculó con mbedTLS 40 de 40
 etiquetas de autenticación, con dos claves por sesión separadas por una
 zeroización \meas{}; en la placa se ejercitó también el rechazo de un
-divisor por debajo del mínimo y de uno por encima del máximo. Los
-vectores de respuesta conocida no se pueden cargar por el mapa de
-registros, que no admite ni clave ni semilla, y siguen cubiertos en
-simulación. Llegar ahí costó correcciones que ninguna simulación había
+divisor por debajo del mínimo y de uno por encima del máximo. El
+objetivo se cumple con una salvedad: en la placa esto verifica el núcleo
+\ac{AES}, el \ac{CMAC}, el registro de clave y el bus, pero no el
+CTR\_DRBG, cuya clave el ESP32 lee en lugar de predecirla. Los vectores
+de respuesta conocida no se pueden cargar por el mapa de registros, que
+a propósito no admite ni clave ni semilla; el generador se verifica en
+simulación, donde el modelo de referencia validado con los vectores del
+\ac{CAVP} reproduce la clave, la salida aleatoria y la segunda clave a
+partir de la semilla que recogió el motor. Llegar ahí costó correcciones que ninguna simulación había
 pedido --- un anillo que no se rutaba, un dominio del anillo y una
 comparación de los tests de salud que no cerraban tiempos, e inversores
 que la herramienta había fundido --- y la regla aprendida en la primera

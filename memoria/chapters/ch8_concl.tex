@@ -91,16 +91,21 @@ produces after every reset is a window of one fixed sequence, and two
 different chips produce the same one \meas{}. Its output is as good as its seeding, which
 depends on the radio, the \ac{ADC} or the bootloader being active.
 
-% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
 \paragraph{The whole engine works on an FPGA with an independent verifier
 (O5).} The engine was implemented complete on a Basys~3 and driven by an
 ESP32 over \ac{I2C}. In three sessions, on three different
 implementations, the ESP32 recomputed with mbedTLS 40 of 40
 authentication tags, under two keys per session separated by a
 zeroization \meas{}; the rejection of a divider below the minimum and of
-one above the maximum was also exercised on the board. Known-answer
-vectors cannot be loaded through the register map, which accepts neither
-a key nor a seed, and remain covered in simulation. Getting there took
+one above the maximum was also exercised on the board. The objective is
+met with a caveat: on the board this verifies the \ac{AES} core, the
+\ac{CMAC}, the key register and the bus, but not the CTR\_DRBG, whose
+key the ESP32 reads rather than predicts. Known-answer vectors cannot be
+loaded through the register map, which by design accepts neither a key
+nor a seed; the generator is verified in simulation, where the
+reference model validated on the \ac{CAVP} vectors reproduces the key,
+the random output and the second key from the seed the engine
+collected. Getting there took
 corrections that no simulation had asked for --- a ring that would not
 route, a ring domain and a health-test comparison that did not close
 timing, and inverters that the tool had merged --- and the rule

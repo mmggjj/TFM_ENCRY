@@ -638,8 +638,9 @@ metodología, entre una fuente de caja blanca en FPGA y una comercial de
 caja negra.
 \item El uso de un microcontrolador de uso común, con sus propios
 aceleradores criptográficos, como oráculo independiente de un motor en
-FPGA, sobre un bus real, con pruebas de respuesta conocida, de
-interoperabilidad y de reto-respuesta.
+FPGA, sobre un bus real, con pruebas de interoperabilidad y de
+reto-respuesta; las pruebas de respuesta conocida quedan en simulación,
+porque el motor no admite ni clave ni semilla externas.
 \item Un motor de generación de claves de una sola primitiva --- AES para
 el acondicionamiento, la generación y la autenticación --- escrito como
 RTL portable, verificado contra vectores oficiales, sintetizado sobre una

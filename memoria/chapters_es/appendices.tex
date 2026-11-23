@@ -276,7 +276,7 @@ independiente del \ac{VHDL}.
 \centering\small
 \caption{Valores de referencia y su origen. Las cuentas son las
 comprobaciones superadas en la última ejecución
-(\nolinkurl{results/run_tb_todos.log}, 306 en total en trece bancos;
+(\nolinkurl{results/run_tb_todos.log}, 307 en total en trece bancos;
 \acs{PSL}: 14 de 14 aserciones y 8 de 8 coberturas en el banco del motor
 completo, 4 de 4 y 2 de 2 en la variante de solo fuente, 1 de 1 y 1 de 1
 en el esclavo \acs{I2C}).}
@@ -302,11 +302,14 @@ Bloque & Origen de los valores esperados & Dónde se comprueba \\
 \ac{CTRDRBG}, \ac{RTL} & el modelo de referencia anterior, con la
   disposición de entrada del hardware (entropía de 384 bits, nonce de 128,
   sin personalización): \nolinkurl{analysis/gen_drbg_vectores.py} escribe
-  \texttt{drbg\_vectores\_pkg.vhd} & \texttt{tb\_ctr\_drbg}, 18
-  comprobaciones, incluidas la zeroización y la saturación del contador \\
+  \texttt{drbg\_vectores\_pkg.vhd}, 52 semillas & \texttt{tb\_ctr\_drbg}, 19
+  comprobaciones (una de ellas sobre las 150 salidas de 50 semillas),
+  incluidas la zeroización y la saturación del contador \\
 Motor completo & la clave sale del ruido del anillo, así que el banco
-  vuelca clave, reto y etiqueta y el \ac{CMAC} se recalcula con el modelo en
-  Python & \nolinkurl{analysis/verifica_top.py}, 5 de 5 \\
+  vuelca la semilla recogida, la clave, la salida aleatoria, los retos y
+  las etiquetas; el modelo recalcula desde la semilla las tres
+  generaciones, y el \ac{CMAC} de las etiquetas &
+  \nolinkurl{analysis/verifica_top.py}, 9 de 9 \\
 Ventana de muestreo & sin vector: el banco cuenta los periodos de RO2
   entre dos muestras y exige exactamente $2^{n}$ para $n$ de 4 a 14, y el
   rechazo de los valores fuera de rango & \texttt{tb\_ventana\_ero}, 47

@@ -41,14 +41,18 @@ O3 & met    & Stochastic model closed: exact wrapped-Gaussian computation,
               design point $Q \ge 0.2286$ (Section~\ref{sec:opoint}) \\
 O4 & met    & Engine written in portable VHDL-2008; thirteen testbenches
               pass, against FIPS-197, SP 800-38B and RFC 4493 vectors and
-              a reference model validated on the \ac{CAVP} vectors \\
-% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
-O5 & partial& The whole engine runs on a Basys~3 and the ESP32 recomputed
+              a reference model validated on the \ac{CAVP} vectors (52
+              seeds for the generator; at system level, the key
+              recomputed from the seed the engine collected) \\
+O5 & met$^{*}$ & The whole engine runs on a Basys~3 and the ESP32 recomputed
               40 of 40 \ac{CMAC} tags with mbedTLS in each of three
               sessions, with two keys per session \meas{}
-              (Section~\ref{sec:bringup}). Known-answer tests were not run
-              on the board: the register map loads neither a key nor a
-              seed, and they are covered in simulation \\
+              (Section~\ref{sec:bringup}). $^{*}$Caveat: on the board this
+              verifies \ac{AES}, \ac{CMAC}, key register and bus, not the
+              CTR\_DRBG, and no known-answer test runs there, because the
+              register map loads neither a key nor a seed; the generator
+              is verified in simulation from the collected seed
+              (Section~\ref{sec:testbenches}) \\
 O6 & met    & Jitter, SP~800-90B estimates, health tests and restart test
               measured on the \ac{FPGA} rings (Sections~\ref{sec:campaign}
               and~\ref{sec:o8}); the stochastic model does not describe
@@ -65,9 +69,9 @@ O8 & met    & Structural comparison (Section~\ref{sec:se_comparison}); both
 \end{table}
 
 The minimum defensible result declared in Chapter~\ref{ch:ch1_intro} ---
-O1--O3 together with O5 --- is reached: the source is dimensioned from the
-transistor and the engine built around it answers an independent
-implementation over a real bus.
+O1--O3 together with O5 --- is reached, with the caveat on O5 stated in
+the table: the source is dimensioned from the transistor and the engine
+built around it answers an independent implementation over a real bus.
 
 \section{Transistor-level noise of the ring}
 \label{sec:spice_results}
@@ -561,7 +565,7 @@ Suite & What it checks & Result \\
 VHDL testbenches (GHDL) & rings, \ac{ERO} and its sampling window,
   capture, health tests, \ac{I2C}, \ac{AES}, \ac{CMAC}, \ac{CTRDRBG}, top
   level with and without cryptography, board wrappers and frequency
-  meter; 306 checks (Table~\ref{tab:tb}) & 13/13 pass \\
+  meter; 307 checks (Table~\ref{tab:tb}) & 13/13 pass \\
 \texttt{ctr\_drbg\_ref.py} & \ac{CAVP} vectors, with and without
   derivation function & 960/960 \\
 \texttt{ero\_model.py} & stochastic model, exactness and bounds & 26/26 \\
@@ -570,7 +574,8 @@ VHDL testbenches (GHDL) & rings, \ac{ERO} and its sampling window,
 \texttt{cortes\_salud.py} & health-test cutoffs against SP 800-90B
   formulas, the seed rule and the flip-flop Monte Carlo & 11/11 \\
 \texttt{verifica\_top.py} & cross-check of the top-level bench with an
-  independent \ac{AES} & 5/5 \\
+  independent \ac{AES}: tags, and key and random output recomputed from
+  the collected seed & 9/9 \\
 \bottomrule
 \end{tabular}
 \end{table}

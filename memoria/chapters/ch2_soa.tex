@@ -577,7 +577,9 @@ operating states, and a controlled comparison between a white-box FPGA
 source and a black-box commercial one under the same methodology.
 \item The use of a commodity microcontroller with its own cryptographic
 accelerators as an independent oracle for an FPGA engine, over a real
-bus, with known-answer, interoperability and challenge-response tests.
+bus, with interoperability and challenge-response tests; the known-answer
+tests stay in simulation, because the engine admits no external key or
+seed.
 \item A single-primitive key-generation engine --- AES for conditioning,
 generation and authentication --- written as portable RTL, verified
 against official vectors, synthesized on an open 130~nm library with the

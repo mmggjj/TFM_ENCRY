@@ -89,8 +89,17 @@ todo. Léelo entero antes de tocar nada.
 - **Memoria escrita** (fases 2-4 de `docs/plan_memoria_cierre.md`, un agente
   Fable, commits f0bce5a-ade2d66; EN 145 páginas, ES 150): todo lo cerrado,
   notación K_D = 2^n, H 0,60 cerrada, campaña FPGA y O8. Quedan notas no
-  impresas: O5/KAT (decisión de Mario), ciclos con el AES de 32 bits (M1),
+  impresas: ciclos con el AES de 32 bits (M1),
   foto del montaje. Tareas de la semana del 23-11: `docs/tareas_pendientes.md`.
+- **23-11, O5 cumplido con salvedad** (decisión de Mario tras una revisión
+  independiente): las 40/40 en placa verifican AES, CMAC, registro de clave
+  y bus, no el CTR_DRBG (la clave se lee, no se predice); los 960 casos CAVP
+  los pasa el modelo Python, no el VHDL. Añadido: `tb_motor_top` vuelca la
+  semilla y `verifica_top.py` (9/9) recalcula clave1, aleatorio1 y clave2
+  con el modelo (mutante de un bit en la semilla: 3 fallos); `tb_ctr_drbg`
+  con 50 semillas más (19/19, mutante cazado); trece bancos, 307
+  comprobaciones. Arreglado de paso: `aleatorio1` se volcaba a ceros. Memoria
+  EN/ES corregida en los caps. 1, 2, 5, 7 y 8 y apéndice B.
 - **Documentos nuevos:** `docs/plan_memoria_cierre.md` (qué está desfasado en
   la memoria), `docs/basys2_frente_basys3.md`; **memoria: apéndice D**,
   Basys 2 frente a Basys 3 (EN y ES).

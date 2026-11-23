@@ -8,6 +8,8 @@
 -- Se comprueba: instanciar y generar dos veces (dos salidas distintas y
 -- ambas correctas), resembrar y generar, el contador de peticiones, y que
 -- instanciar de nuevo borra el estado y reproduce la primera salida.
+-- Paso 8 (23-11-2026): 50 semillas mas del modelo (C_LOTE), cada una con
+-- instanciar, dos generaciones, resembrar y otra generacion.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -74,6 +76,12 @@ begin
   principal : process
     variable fallos : natural := 0;
     variable ciclos : natural;
+    variable mal : natural := 0;
+
+    function bool_n(b : boolean) return natural is
+    begin
+      if b then return 1; else return 0; end if;
+    end function;
 
     procedure orden(signal s : out std_logic; n : out natural) is
       variable c : natural := 0;
@@ -194,6 +202,29 @@ begin
     generar2 <= '0';
     wait for 300 * C_T;
     comprobar(peticiones2 = 3 and ocupado2 = '0', "agotado: generar se ignora y el contador no da la vuelta");
+
+    report "8) Lote de " & integer'image(C_LOTE'length) &
+           " semillas: instanciar, dos generaciones, resembrar y otra";
+    rst_n <= '0';
+    wait for 3 * C_T;
+    rst_n <= '1';
+    wait until rising_edge(clk);
+    for i in C_LOTE'range loop
+      entropia <= C_LOTE(i).e;
+      nonce    <= C_LOTE(i).n;
+      orden(instanciar, ciclos);
+      orden(generar, ciclos);
+      mal := mal + 1 - bool_n(salida = C_LOTE(i).a);
+      orden(generar, ciclos);
+      mal := mal + 1 - bool_n(salida = C_LOTE(i).b);
+      entropia <= C_LOTE(i).er;
+      nonce    <= C_LOTE(i).nr;
+      orden(resembrar, ciclos);
+      orden(generar, ciclos);
+      mal := mal + 1 - bool_n(salida = C_LOTE(i).c);
+    end loop;
+    comprobar(mal = 0, integer'image(3 * C_LOTE'length - mal) & " de " &
+              integer'image(3 * C_LOTE'length) & " salidas = referencia");
 
     if fallos = 0 then
       report "tb_ctr_drbg: 0 fallos" severity note;

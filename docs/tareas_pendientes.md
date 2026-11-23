@@ -16,15 +16,16 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
 
 ## Decisiones de Mario
 
-2. **O5 y los KAT del DRBG en placa.** Opciones: (a) anotar que el DRBG se
-   cubre en simulación (960 vectores CAVP) y AES/CMAC en placa contra mbedTLS
-   (40/40 con la clave leída en modo test); (b) variante solo para la FPGA
-   (genérico desactivado en el integrado) que en modo test deje cargar la
-   semilla por I2C, comparar con `analysis/ctr_drbg_ref.py`, demostrar con
-   `synth/equivalencia.sh` que el integrado queda igual, bitstream y prueba
-   en placa: 4-6 h [ESTIMADO]; añade una vía de inyección de semilla que
-   habría que defender. En la memoria hay una nota no impresa
-   `% PENDIENTE DE MARIO: KAT en placa`.
+2. ~~**O5 y los KAT del DRBG en placa.**~~ Decidido el 23-11 (Mario, tras
+   una revisión independiente): O5 **cumplido con salvedad**, sin tocar el
+   enunciado. Las 40/40 cubren AES, CMAC, registro de clave, I2C y
+   secuenciador, pero no el CTR_DRBG (la clave es un dato leído, no una
+   predicción). Los 960 casos CAVP los pasa el modelo Python; el VHDL se
+   compara con el modelo. Añadido en simulación: `tb_motor_top` vuelca la
+   semilla y `verifica_top.py` recalcula clave1, aleatorio1 y clave2 con el
+   modelo (cadena semilla → clave de extremo a extremo), y `tb_ctr_drbg`
+   pasa de 2 a 52 semillas. La variante de FPGA con carga de semilla
+   (6-10 h) queda descartada; la de simular la netlist de Vivado, también.
 3. **Aislamiento de los anillos en el integrado** (tarea 10 de
    `docs/basys3.md`, "Tareas pendientes (18-11-2026)"): búfer a la salida,
    alimentación o anillo de guarda propios, `ro_mon` sin carga. Propuesta:

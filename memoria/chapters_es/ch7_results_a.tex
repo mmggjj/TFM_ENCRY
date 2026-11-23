@@ -41,14 +41,18 @@ O3 & cumplido  & Modelo estocástico cerrado: cálculo exacto con la gaussiana e
               punto de diseño $Q \ge 0{,}2286$ (Sección~\ref{sec:opoint}) \\
 O4 & cumplido  & Motor escrito en VHDL-2008 portable; trece bancos de pruebas
               pasan, con los vectores de FIPS-197, SP 800-38B y RFC 4493 y
-              un modelo de referencia validado con los vectores \ac{CAVP} \\
-% PENDIENTE DE MARIO: KAT en placa (reformular O5 o anotar)
-O5 & parcial   & El motor entero funciona en una Basys~3 y el ESP32 recalculó
+              un modelo de referencia validado con los vectores \ac{CAVP} (52
+              semillas para el generador; en el banco de sistema, la clave
+              recalculada desde la semilla que recogió el motor) \\
+O5 & cumplido$^{*}$ & El motor entero funciona en una Basys~3 y el ESP32 recalculó
               con mbedTLS 40 de 40 etiquetas \ac{CMAC} en cada una de tres
               sesiones, con dos claves por sesión \meas{}
-              (Sección~\ref{sec:bringup}). Las pruebas de respuesta conocida
-              no se hicieron en placa: el mapa de registros no carga ni
-              clave ni semilla, y se cubren en simulación \\
+              (Sección~\ref{sec:bringup}). $^{*}$Salvedad: en la placa esto
+              verifica \ac{AES}, \ac{CMAC}, registro de clave y bus, no el
+              CTR\_DRBG, y allí no hay pruebas de respuesta conocida,
+              porque el mapa de registros no carga ni clave ni semilla; el
+              generador se verifica en simulación desde la semilla recogida
+              (Sección~\ref{sec:testbenches}) \\
 O6 & cumplido  & Jitter, estimaciones SP~800-90B, tests de salud y prueba de
               reinicios medidos en los anillos de la \ac{FPGA}
               (Secciones~\ref{sec:campaign} y~\ref{sec:o8}); el modelo
@@ -65,9 +69,10 @@ O8 & cumplido  & Comparación estructural (Sección~\ref{sec:se_comparison}); la
 \end{table}
 
 El resultado mínimo defendible declarado en el Capítulo~\ref{ch:ch1_intro} ---
-O1--O3 junto con O5 --- se alcanza: la fuente se dimensiona desde el
-transistor y el motor construido a su alrededor responde a una
-implementación independiente por un bus real.
+O1--O3 junto con O5 --- se alcanza, con la salvedad de O5 que recoge la
+tabla: la fuente se dimensiona desde el transistor y el motor construido
+a su alrededor responde a una implementación independiente por un bus
+real.
 
 \section{Ruido del anillo a nivel de transistor}
 \label{sec:spice_results}
@@ -575,7 +580,7 @@ Batería & Qué comprueba & Resultado \\
 Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO} y su ventana de
   muestreo, captura, tests de salud, \ac{I2C}, \ac{AES}, \ac{CMAC},
   \ac{CTRDRBG}, nivel superior con y sin criptografía, envoltorios de
-  placa y frecuencímetro; 306 comprobaciones (Tabla~\ref{tab:tb}) & 13/13 pasan \\
+  placa y frecuencímetro; 307 comprobaciones (Tabla~\ref{tab:tb}) & 13/13 pasan \\
 \texttt{ctr\_drbg\_ref.py} & vectores \ac{CAVP}, con y sin
   función de derivación & 960/960 \\
 \texttt{ero\_model.py} & modelo estocástico, exactitud y cotas & 26/26 \\
@@ -585,7 +590,8 @@ Bancos de pruebas VHDL (GHDL) & anillos, \ac{ERO} y su ventana de
   fórmulas de SP 800-90B, la regla de la semilla y el Monte Carlo del
   biestable & 11/11 \\
 \texttt{verifica\_top.py} & verificación cruzada del banco de nivel
-  superior con un \ac{AES} independiente & 5/5 \\
+  superior con un \ac{AES} independiente: etiquetas, y clave y salida
+  aleatoria recalculadas desde la semilla recogida & 9/9 \\
 \bottomrule
 \end{tabular}
 \end{table}

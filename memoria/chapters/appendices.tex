@@ -268,7 +268,7 @@ vectors first, and written independently of the \ac{VHDL}.
 \begin{table}[htbp]
 \centering\small
 \caption{Reference values and their origin. Counts are checks passed in
-the last run (\nolinkurl{results/run_tb_todos.log}, 306 in total over
+the last run (\nolinkurl{results/run_tb_todos.log}, 307 in total over
 thirteen benches; \acs{PSL}: 14 of 14 assertions and 8 of 8 cover points
 in the whole-engine bench, 4 of 4 and 2 of 2 in the source-only variant,
 1 of 1 and 1 of 1 in the \acs{I2C} slave).}
@@ -294,11 +294,13 @@ Block & Source of the expected values & Where checked \\
 \ac{CTRDRBG}, \ac{RTL} & the reference model above, with the hardware's
   input layout (384-bit entropy, 128-bit nonce, no personalization):
   \nolinkurl{analysis/gen_drbg_vectores.py} writes
-  \texttt{drbg\_vectores\_pkg.vhd} & \texttt{tb\_ctr\_drbg}, 18 checks,
-  including zeroization and counter saturation \\
-Whole engine & the key comes from ring noise, so the bench dumps key,
-  challenge and tag, and the \ac{CMAC} is recomputed with the Python model
-  & \nolinkurl{analysis/verifica_top.py}, 5 of 5 \\
+  \texttt{drbg\_vectores\_pkg.vhd}, 52 seeds & \texttt{tb\_ctr\_drbg}, 19
+  checks (one of them over the 150 outputs of 50 seeds), including
+  zeroization and counter saturation \\
+Whole engine & the key comes from ring noise, so the bench dumps the
+  collected seed, key, random output, challenges and tags; the model
+  recomputes the three generations from the seed, and the \ac{CMAC} of the
+  tags & \nolinkurl{analysis/verifica_top.py}, 9 of 9 \\
 Sampling window & no vector: the bench counts the RO2 periods between two
   samples and requires exactly $2^{n}$ for $n = 4$ to 14, and the refusal
   of values outside the range & \texttt{tb\_ventana\_ero}, 47 checks \\
