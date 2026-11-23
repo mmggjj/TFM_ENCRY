@@ -39,9 +39,10 @@ con 24 chips en cada una de cinco esquinas: 0,757 \simu{}, así que la
 entropía declarada de 0,60 se mantiene, con una semilla de 512 bits. La
 fuente final tiene anillos de once y trece etapas y un divisor mínimo de
 \kd{25}, el doble de lo que pide la simulación de su peor esquina, y
-entrega de 20 a 50~bit/s \est{}. Es cien veces más lenta que las primeras
-estimaciones, y es el coste honesto del sesgo, la peor esquina y el
-margen juntos.
+entrega de 20 a 50~bit/s \est{}. Es de uno a dos órdenes de magnitud más
+lenta que las primeras estimaciones, de 0,35 a 3,9~kbit/s para un anillo
+de \ac{FPGA} \est{} (Sección~\ref{sec:kd}), y es el coste honesto del
+sesgo, la peor esquina y el margen juntos.
 
 \paragraph{Una batería de estimadores estadísticos no sustituye al
 modelo.} Bits sacados del modelo con el jitter de IHP, y bits uniformes
@@ -63,7 +64,7 @@ independientes (O4).} El motor ---muestreador \ac{ERO}, tests de salud
 con test de arranque, CTR\_DRBG con función de derivación, AES-CMAC,
 zeroización y un mapa de registros por I2C--- está en VHDL-2008 portable.
 Sus trece bancos de pruebas reproducen los vectores oficiales de
-FIPS-197, SP~800-38B y RFC~4493 y las salidas de un modelo de referencia
+FIPS-197, SP~800-38A y RFC~4493 y las salidas de un modelo de referencia
 validado con los vectores \ac{CAVP}, y las reglas de seguridad del
 secuenciador se comprueban como propiedades \ac{PSL} en toda la
 simulación, no solo en los pasos que las provocan. Tres revisiones
@@ -71,7 +72,9 @@ independientes encontraron defectos que los bancos no habían cazado
 ---salida habilitada con una alarma de salud levantada, la semilla
 llegando al buffer de captura, valores intermedios que sobrevivían a la
 zeroización, un valor del divisor fuera de rango aceptado en silencio---;
-todos se corrigieron y cada uno tiene ahora su prueba. La
+todos se corrigieron en el \ac{RTL} y cada uno tiene ahora su prueba. El
+bitstream medido en placa es anterior a la última de esas correcciones y
+solo difiere del diseño corregido ante escrituras fuera de rango. La
 lección es de método: un diseño verificado por su autor contra su propio
 banco no está verificado.
 
@@ -86,9 +89,18 @@ estimó al principio para un motor de este tipo, y está identificado el
 camino hasta unos 45~kGE.
 
 \paragraph{El generador del ESP32 no es una referencia en la que confiar
-a ciegas (O8, lado del ESP32).} Treinta y ocho capturas de tres chips en
-cuatro condiciones de radio y \ac{ADC} no muestran efecto medible de la
-condición ni del chip bajo SP~800-90B \meas{}. La prueba de reinicios
+a ciegas (O8, lado del ESP32).} Treinta y seis capturas de tres chips en
+cuatro condiciones de radio y \ac{ADC}, y dos largas sin radio, no
+muestran efecto medible de la condición ni del chip bajo SP~800-90B
+\meas{}. Para la radio esa comparación lleva una salvedad: en esas
+treinta y seis el firmware no mantenía despierta la radio, que pudo
+estar dormida la mayor parte de cada captura (leído en el código, sin
+medir). Lo que se afirma de la radio se apoya en una repetición con el
+firmware corregido, doce capturas en un chip, tres por condición, que
+tampoco muestra efecto (análisis de varianza $p = 0{,}41$; con radio
+frente a sin radio $p = 0{,}80$) \meas{}; tampoco allí se midió el
+estado de la radio, y una diferencia menor que unos 0,04 pasaría
+inadvertida. La prueba de reinicios
 enseña lo que la estadística esconde: sin el ruido que mete el cargador de
 arranque, lo que el generador produce tras cada reinicio es una ventana
 de una misma secuencia fija, y dos chips distintos producen la misma
@@ -124,16 +136,21 @@ $8\times10^{-5}$ por periodo del anillo de muestreo \meas{} según el
 método y según la lógica que cuelga de los anillos, cada uno repetible
 dentro de un pequeño tanto por ciento: el modelo estocástico no describe
 la forma de lo medido, y el exponente de acumulación es de 1,6 a 2,1. Un
-espectro explica la mayor parte: una raya estrecha cerca de 39,4~kHz, de
-origen externo y sin identificar, modula la fase relativa. Lejos de la
+espectro muestra una raya estrecha a 38-40~kHz que modula la fase
+relativa, fija en tiempo, no ligada a la frecuencia del anillo y de
+origen sin identificar \meas{}. Es candidata a explicar parte de ese
+desacuerdo, no una explicación demostrada: no se ha ajustado a la forma
+medida ningún modelo que la incluya. Lejos de la
 raya el suelo blanco es de 0,6 a $1{,}1\times10^{-6}$ \meas{}, con un
 estimador que se equivoca por arriba, y su borde inferior pone el divisor
 de la \ac{FPGA} en \kd{19}, para $H_\infty \ge 0{,}99$ en el modelo a
 unos 390~bit/s. El divisor deducido primero de los ajustes, $2^{16}$,
-habría dado 0,47. Dos hallazgos afectan al diseño más que a la placa. Los
-tests de salud de SP~800-90B no saltan cuando se baja el divisor hasta
-que los bits simplemente alternan, así que un divisor mínimo impuesto por
-hardware es la única protección de ese régimen. Y la lógica que cuelga de
+habría dado 0,47. Dos hallazgos afectan al diseño más que a la placa. Con
+la colocación fija de las etapas los tests de salud de SP~800-90B no
+saltan cuando se baja el divisor hasta que los bits simplemente alternan
+(con la colocación libre el test de repetición sí saltó con $2^{8}$, así
+que depende de la implementación), y un divisor mínimo impuesto por
+hardware es la única protección que no depende de ella. Y la lógica que cuelga de
 un anillo cambia varias veces su ruido de fase aparente, que es por lo
 que el circuito integrado pide anillos aislados. Tres pasos del protocolo
 fijado de antemano no se siguieron como estaban escritos, y la
@@ -141,7 +158,11 @@ Sección~\ref{sec:campaign} declara cada uno.
 
 \paragraph{Comparación de las dos fuentes (O8).} Bajo la batería
 SP~800-90B la cifra asignada no separa la fuente de la \ac{FPGA} (0,857),
-el ESP32 (0,848) y los bits ideales (0,847) con $10^6$ bits \meas{}. Los
+el ESP32 (0,848) y los bits ideales (0,847) con $10^6$ bits \meas{},
+medianas entre las secuencias de cada una. La cifra de la \ac{FPGA} es
+la de tres flujos con $2^{17}$ a $2^{19}$ del bitstream del 18 de
+noviembre, dos de ellos por debajo del divisor de trabajo; el flujo del
+bitstream final con \kd{19} da 0,853. Los
 estimadores sensibles al sesgo sí separan la \ac{FPGA}, por un sesgo de
 medio punto porcentual que sigue a la implementación, de modo que la
 batería da mejor nota al generador que, sin ruido de arranque, repite su
@@ -171,14 +192,15 @@ de 0,9 a las longitudes de secuencia habituales y no distinguen en ese
 rango una fuente sana de una más débil.
 \item El suelo blanco del ruido de fase relativo de dos anillos en una
 Artix-7, medido dentro del dispositivo y separado de una modulación
-determinista que los ajustes habituales cuentan como jitter, con los
+determinista de origen sin identificar, con los
 límites del estimador declarados; y la observación de que los tests de
 salud de la norma son ciegos al régimen anticorrelado de poco jitter, que
 es el argumento a favor de un divisor mínimo impuesto por hardware.
 \item Una prueba de reinicios de la fuente de la \ac{FPGA} puesta junto a
 la del generador del ESP32.
 \item Una caracterización del generador del ESP32 bajo SP~800-90B con tres
-chips y cuatro condiciones, y una prueba de reinicios que muestra que, sin
+chips y cuatro condiciones (la comparación de radio, con una repetición
+con la radio despierta), y una prueba de reinicios que muestra que, sin
 ruido externo en el arranque, chips distintos producen la misma
 secuencia. No se ha encontrado este resultado en la literatura
 consultada.
@@ -200,9 +222,10 @@ desapareamiento con once etapas y el jitter del anillo de trece; los
 tiempos del dominio preescalado con una biblioteca lenta; y un reloj de
 muestreo sorteado al azar en el Monte Carlo del biestable, para resolver
 la diferencia entre sus tandas.
-\item \emph{La raya cercana a 39,4~kHz.} Identificar su origen, con un
+\item \emph{La raya a 38-40~kHz.} Identificar su origen, con un
 osciloscopio en las alimentaciones de la placa o con el ESP32 aislado, y
-un modelo de la forma de la autocorrelación medida que la incluya.
+ajustar un modelo de la forma de la autocorrelación medida que la
+incluya, para saber cuánto del desacuerdo entre estimadores explica.
 \item \emph{Lo que la campaña no hizo.} Un registro largo con el divisor
 de funcionamiento, los anillos en regiones adyacentes, y la temperatura y
 la alimentación en la placa. Al flujo lo limita el enlace serie del

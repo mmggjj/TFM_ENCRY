@@ -39,9 +39,10 @@ repeated on 24 dies in each of five corners: 0.757 \simu{}, so the
 declared entropy of 0.60 stands, with a 512-bit seed. The final source
 has rings of eleven and thirteen stages and a minimum divider of \kd{25},
 twice what the simulation of its worst corner asks for, and delivers 20
-to 50~bit/s \est{}. That is a hundred times slower than the first
-estimates, and it is the honest cost of the bias, the worst corner and
-the margin together.
+to 50~bit/s \est{}. That is one to two orders of magnitude slower than
+the first estimates, 0.35 to 3.9~kbit/s for an \ac{FPGA} ring \est{}
+(Section~\ref{sec:kd}), and it is the honest cost of the bias, the worst
+corner and the margin together.
 
 \paragraph{A battery of statistical estimators cannot replace the model.}
 Bits drawn from the model with the IHP jitter, and ideal uniform bits,
@@ -62,15 +63,17 @@ model.
 (O4).} The engine --- \ac{ERO} sampler, health tests with start-up test,
 CTR\_DRBG with derivation function, AES-CMAC, zeroization and an I2C
 register map --- is portable VHDL-2008. Its thirteen testbenches
-reproduce the official FIPS-197, SP~800-38B and RFC~4493 vectors and the
+reproduce the official FIPS-197, SP~800-38A and RFC~4493 vectors and the
 outputs of a reference model validated on the \ac{CAVP} vectors, and the
 security rules of the sequencer are checked as \ac{PSL} properties over
 the whole simulation, not only in the steps that exercise them. Three
 independent reviews found defects that the testbenches had not caught ---
 output still enabled with a health alarm raised, the seed reaching the
 capture buffer, intermediate values surviving zeroization, a divider
-setting out of range accepted in silence ---; all were fixed and each now
-has a test. The lesson is methodological: a design
+setting out of range accepted in silence ---; all were fixed in the
+\ac{RTL} and each now has a test. The bitstream measured on the board
+predates the last of those fixes and differs from the corrected design
+only for out-of-range writes. The lesson is methodological: a design
 verified by its own author against its own testbench is not verified.
 
 \paragraph{The engine fits a small integrated circuit (O7).} Synthesized
@@ -83,9 +86,17 @@ estimated for an engine of this kind are not reached, and the path to
 about 45~kGE is identified.
 
 \paragraph{The ESP32 generator is not a reference to be trusted blindly
-(O8, ESP32 side).} Thirty-eight captures from three chips under four radio
-and \ac{ADC} conditions show no measurable effect of condition or chip
-under SP~800-90B \meas{}. The restart test shows what the statistics
+(O8, ESP32 side).} Thirty-six captures from three chips under four radio
+and \ac{ADC} conditions, and two long ones without radio, show no
+measurable effect of condition or chip under SP~800-90B \meas{}. For the
+radio that comparison carries a caveat: in those thirty-six the firmware
+did not keep the radio awake, and it may have slept for most of each
+capture (read in the code, not measured). The statement about the radio
+rests on a repeat with the corrected firmware, twelve captures on one
+chip, three per condition, which again shows no effect (analysis of
+variance $p = 0.41$; radio against no radio $p = 0.80$) \meas{}; the
+state of the radio was not measured there either, and a difference
+smaller than about 0.04 would go unnoticed. The restart test shows what the statistics
 hide: without the noise that the bootloader injects, what the generator
 produces after every reset is a window of one fixed sequence, and two
 different chips produce the same one \meas{}. Its output is as good as its seeding, which
@@ -118,17 +129,22 @@ relative phase noise give between $3\times10^{-6}$ and $8\times10^{-5}$
 per period of the sampling ring \meas{} depending on the method and on
 the logic attached to the rings, each repeatable within a few per cent:
 the stochastic model does not describe the shape of what was measured,
-and the accumulation exponent is 1.6 to 2.1. A spectrum explains most of
-it: a narrow line near 39.4~kHz, of external and unidentified origin,
-modulates the relative phase. Away from the line the white floor is 0.6
+and the accumulation exponent is 1.6 to 2.1. A spectrum shows a narrow
+line at 38 to 40~kHz that modulates the relative phase, fixed in time,
+not tied to the ring frequency and of unidentified origin \meas{}. It is
+a candidate explanation for part of that disagreement, not a
+demonstrated one: no model with the line in it was fitted to the
+measured shape. Away from the line the white floor is 0.6
 to $1.1\times10^{-6}$ \meas{}, with an estimator that errs upwards, and
 its lower edge puts the \ac{FPGA} divider at \kd{19}, for
 $H_\infty \ge 0.99$ in the model at about 390~bit/s. The divider first
 derived from the fits, $2^{16}$, would have given 0.47. Two findings bear
-on the design rather than on the board. The health tests of SP~800-90B do
-not fire when the divider is lowered until the bits simply alternate, so
-a minimum divider enforced in hardware is the only protection of that
-regime. And the logic attached to a ring changes its apparent phase noise
+on the design rather than on the board. With the fixed stage placement
+the health tests of SP~800-90B do not fire when the divider is lowered
+until the bits simply alternate (with the free placement the repetition
+test did fire at $2^{8}$, so it depends on the implementation), and a
+minimum divider enforced in hardware is the only protection that does
+not depend on it. And the logic attached to a ring changes its apparent phase noise
 several times over, which is why the integrated circuit asks for
 isolated rings. Three steps of the protocol fixed beforehand were not
 followed as written, and Section~\ref{sec:campaign} declares each.
@@ -136,7 +152,10 @@ followed as written, and Section~\ref{sec:campaign} declares each.
 \paragraph{Comparison of the two sources (O8).} Under the SP~800-90B
 battery the assigned figure does not separate the \ac{FPGA} source
 (0.857), the ESP32 (0.848) and ideal bits (0.847) at $10^6$ bits
-\meas{}. The estimators sensitive to bias do separate the \ac{FPGA}, by a
+\meas{}, medians over the sequences of each. The \ac{FPGA} figure is
+that of three streams at $2^{17}$ to $2^{19}$ of the bitstream of 18
+November, two of them below the working divider; the stream of the
+final bitstream at \kd{19} gives 0.853. The estimators sensitive to bias do separate the \ac{FPGA}, by a
 bias of half a per cent that follows the implementation, and so the
 battery gives the better marks to the generator that, without boot
 noise, repeats its sequence. At low dividers the battery overestimates,
@@ -165,14 +184,15 @@ sequence lengths and cannot tell a sound source from a weaker one in that
 range.
 \item The white floor of the relative phase noise of two rings in an
 Artix-7, measured inside the device and separated from a deterministic
-modulation that the usual fits count as jitter, with the limits of the
+modulation of unidentified origin, with the limits of the
 estimator stated; and the observation that the standard health tests are
 blind to the anticorrelated low-jitter regime, which is the case for a
 minimum divider enforced in hardware.
 \item A restart test of the \ac{FPGA} source set beside that of the ESP32
 generator.
 \item A characterization of the ESP32 generator under SP~800-90B with
-three chips and four conditions, and a restart test showing that, without
+three chips and four conditions (the radio comparison on a repeat with
+the radio kept awake), and a restart test showing that, without
 external noise at boot, different chips produce the same sequence. This
 result was not found in the literature consulted.
 \item A key-generation engine in portable RTL with its security rules
@@ -193,9 +213,11 @@ with eleven stages and the jitter of the thirteen-stage ring; the timing
 of the prescaled domain with a slow library; and a sampling clock drawn
 at random in the flip-flop Monte Carlo, to settle the difference between
 its batches.
-\item \emph{The line near 39.4~kHz.} Identify its origin, with an
+\item \emph{The line at 38 to 40~kHz.} Identify its origin, with an
 oscilloscope on the supplies of the board or with the ESP32 isolated, and
-a model of the shape of the measured autocorrelation that includes it.
+fit a model of the shape of the measured autocorrelation that includes
+it, to find out how much of the disagreement between estimators it
+explains.
 \item \emph{What the campaign did not do.} A long record at the operating
 divider, the rings in adjacent regions, and temperature and supply on the
 board. The stream is limited by the serial link of the ESP32; storing the
