@@ -34,8 +34,11 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
 
 ## Cierre (después de la memoria)
 
-4. **Revisión independiente de la memoria** (paso 22 del plan): agente sin
-   las conclusiones de la sesión, con código y datos; aplicar correcciones.
+4. ~~**Revisión independiente de la memoria**~~: hecha el 23-11
+   (`results/revision_memoria_20261123/informe.md`: 12 graves, 47 medios,
+   46 menores; cifras y tablas principales rehechas desde los datos,
+   coinciden). Aplicada el mismo día (fb02735-61791f0; EN 156 páginas, ES
+   163). Quedan los puntos 13-15.
 5. ~~**Subir los commits locales** y comprobar la CI~~: subido el 22-11
    (b433571), CI en verde.
 6. **PR de `feat/lecturas-firmadas` a `main`** con la CI en verde (paso 23).
@@ -63,3 +66,26 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
     a `docs/` y al cap. 4.
 12. **Foto del montaje** (Basys 3 + ESP32): la hace Mario; hueco comentado
     en el cap. 5.
+
+## Lo que dejó la revisión del 23-11 (apuntado el 23-11)
+
+13. **Para Mario:** agradecimientos (nombran a la empresa) y "Tutores"
+    vacío, sin tocar; cotejar con los PDF originales lo que el repositorio no
+    sostiene (Petura 2016, ec. 1 y columna de viabilidad; Bayon 2012,
+    potencia del campo; BER 3-8 % de las SRAM; fecha de Blanco-Romero;
+    Kuon y Rose "27-49×"). El factor 2,35 se sustituyó por un rango de
+    utilización de `docs/via_asic.md`; si aparece su fuente, se cita.
+14. **Fuera de `memoria/`:** el comentario de `rtl/trng/health_tests.vhd`
+    (15-17) dice que la norma permite el complemento del APT (es una
+    adición propia); el autotest de `analysis/nist_sp800_22.py` aborta ~38 %
+    de las veces (cuenta como fallos las excursiones no aplicables);
+    `docs/modelo_ero_resultados.md` (157-161) arrastra el rango erróneo de la
+    estimación previa del divisor.
+15. **Solo se cierran midiendo o simulando** (la memoria ya no los afirma):
+    la RF en A y B del ESP32; si la raya reproduce b ≈ 2; el espectro del
+    bitstream de campaña (`espectro_fase.py --lista` sobre
+    `basys3_jitter_kd02_quieto_bel`); los ciclos con el AES de 32 bits (hoy
+    849 y 213 [ESTIMADO] en la memoria; punto 11); QEMU y placa del medidor
+    con el firmware 0x04; por qué salen 2 o 3 bloques por clave; la
+    diferencia entre tandas del Monte Carlo; el margen del primer biestable
+    en la esquina rápida; los 774 grupos de `radio_sin_ruido`.
