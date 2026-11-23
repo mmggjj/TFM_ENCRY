@@ -314,12 +314,13 @@ pattern \texttt{0x55} must be rejected by the runs or the
 approximate-entropy test. The zeros fail all fifteen tests,
 and the alternating pattern fails all but the frequency, block-frequency
 and cumulative-sums tests, which a perfectly balanced sequence must pass.
-The first condition is stricter than intended: the two random-excursion
-tests count as two failures when they are not applicable (next
-paragraph), which happens to good data of this length with probability
-0.38, so the self-test stops on about that fraction of its runs for a
-reason that is not a defect (one of six runs repeated for this revision
-stopped that way, with 13 of 15) and passes on the others.
+In the first condition the self-test counts only the tests that apply:
+the two random-excursion tests are not applicable to good data of this
+length with probability 0.38 (next paragraph). Until the review of this
+document they were counted as two failures, and the self-test stopped on
+about that fraction of its runs for a reason that is not a defect; with
+that corrected, twelve consecutive runs passed, six of them with the
+excursion tests not applicable.
 
 % SP 800-22 Rev. 1a 2.5.7 (n >= 38 MQ), 2.9.7 (L = 7 from n = 904960),
 % 2.14.7 (J >= 500); E[J] and P(J < 500) calculated

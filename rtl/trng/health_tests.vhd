@@ -12,9 +12,10 @@
 -- cuantas repiten la primera. Corte C = 1 + CRITBINOM(W, 2^-H, 1-alfa).
 -- Detecta perdidas grandes de entropia (sesgo). Para fuente binaria la
 -- norma fija W = 1024 (no 512, ese es el valor para fuentes no binarias).
--- Aqui se mira tambien el complemento, que la norma permite para fuentes
--- binarias: una fuente pegada al valor contrario al primero de la ventana
--- daria cuenta cero y pasaria el test de la letra pero no el del espiritu.
+-- Aqui se mira tambien el complemento, adicion propia (la norma solo cuenta
+-- las repeticiones del primer valor): una fuente pegada al valor contrario
+-- al primero de la ventana daria cuenta cero y pasaria el test de la letra
+-- pero no el del espiritu. Coste en falsa alarma: analysis/cortes_salud.py.
 --
 -- Valores por defecto para H = 0,60 bit/bit y alfa = 2^-30: RCT C = 51,
 -- APT C = 766 (decision del 16-11-2026: el biestable real de sg13g2 sesga

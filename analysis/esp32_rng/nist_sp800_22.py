@@ -544,8 +544,13 @@ def self_test():
     import os
     print("[self-test] os.urandom(125000):")
     good = run_all_nist_tests(os.urandom(125000), "urandom")
-    n_fail = sum(1 for r in good if not r.passed)
-    print(f"  -> {15 - n_fail}/15 passed")
+    # Excursions with J < 500 are recorded as FAIL (so a short walk cannot
+    # pass unnoticed), but here they are not applicable, not failures: with
+    # 10^6 good bits that happens with probability ~0.38 (23-11-2026).
+    aplicables = [r for r in good if "not applicable" not in r.detail.get("note", "")]
+    n_fail = sum(1 for r in aplicables if not r.passed)
+    print(f"  -> {len(aplicables) - n_fail}/{len(aplicables)} applicable passed"
+          f" ({15 - len(aplicables)} not applicable)")
     assert n_fail <= 1, "good RNG failed too many tests"
 
     print("[self-test] constant zeros:")

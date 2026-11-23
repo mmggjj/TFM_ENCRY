@@ -331,14 +331,14 @@ y el patrón alternado \texttt{0x55} debe ser rechazado por la prueba de
 rachas o por la de entropía aproximada. Los ceros fallan las
 quince pruebas, y el patrón alternado falla todas salvo las de
 frecuencia, frecuencia por bloques y sumas acumuladas, que una secuencia
-perfectamente equilibrada tiene que pasar. La primera condición es más
-estricta de lo que se pretendía: las dos pruebas de excursiones
-aleatorias cuentan como dos fallos cuando no son aplicables (párrafo
-siguiente), lo que les ocurre a datos buenos de esta longitud con
-probabilidad 0,38, así que la autocomprobación se detiene en más o menos
-esa fracción de sus ejecuciones por una razón que no es un defecto (una
-de seis ejecuciones repetidas para esta revisión se detuvo así, con 13
-de 15) y pasa en las demás.
+perfectamente equilibrada tiene que pasar. En la primera condición la
+autocomprobación cuenta solo las pruebas que se aplican: las dos de
+excursiones aleatorias no son aplicables a datos buenos de esta longitud
+con probabilidad 0,38 (párrafo siguiente). Hasta la revisión de este
+documento se contaban como dos fallos, y la autocomprobación se detenía
+en más o menos esa fracción de sus ejecuciones por una razón que no es un
+defecto; con eso corregido, doce ejecuciones seguidas pasaron, seis de
+ellas con las pruebas de excursiones no aplicables.
 
 % SP 800-22 Rev. 1a 2.5.7 (n >= 38 MQ), 2.9.7 (L = 7 desde n = 904960),
 % 2.14.7 (J >= 500); E[J] y P(J < 500) calculados

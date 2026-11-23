@@ -75,7 +75,7 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
     potencia del campo; BER 3-8 % de las SRAM; fecha de Blanco-Romero;
     Kuon y Rose "27-49×"). El factor 2,35 se sustituyó por un rango de
     utilización de `docs/via_asic.md`; si aparece su fuente, se cita.
-14. **Fuera de `memoria/`:** el comentario de `rtl/trng/health_tests.vhd`
+14. ~~**Fuera de `memoria/`:**~~ arreglados el 23-11 (comentario corregido, autotest 12/12 contando solo las pruebas aplicables, rango corregido en el documento y en el cap. del ESP32 de la memoria): el comentario de `rtl/trng/health_tests.vhd`
     (15-17) dice que la norma permite el complemento del APT (es una
     adición propia); el autotest de `analysis/nist_sp800_22.py` aborta ~38 %
     de las veces (cuenta como fallos las excursiones no aplicables);
