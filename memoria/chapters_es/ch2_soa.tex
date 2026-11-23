@@ -56,18 +56,22 @@ con un modelo completo que va de lo físico a lo
 estocástico~\cite{bernard_2019_physical}; el \textbf{anillo
 autotemporizado} (STR) hace circular varios eventos por un anillo
 asíncrono para obtener fases separadas del orden del
-jitter~\cite{cherkaoui_2013_very}, y alcanza 154~Mbit/s; y el
-\textbf{ES-TRNG} de Yang \emph{et al.} usa la cadena de acarreo como
-convertidor de tiempo a digital para codificar la posición del flanco con
-10~LUT y 5~flip-flops~\cite{yang_2018_estrng, rozic_2015_highly}.
+jitter~\cite{cherkaoui_2013_very}, y alcanza 154~Mbit/s en la
+implementación de Petura~\cite{petura_2016_survey}; y los diseños de
+Lovaina digitalizan la posición del flanco: el DC-TRNG usa la cadena de
+acarreo como convertidor de tiempo a digital~\cite{rozic_2015_highly}, y
+el \textbf{ES-TRNG} de Yang \emph{et al.} la codifica con precisión
+variable y muestreo repetido en 10~LUT y
+5~flip-flops~\cite{yang_2018_estrng}.
 
 La Tabla~\ref{tab:petura} reproduce la comparación que hicieron Petura
 \emph{et al.} de los núcleos conformes a AIS sobre un mismo
 dispositivo~\cite{petura_2016_survey}. La columna de entropía es una
-estimación estadística (el test T8 de AIS~31), no una cota del modelo; la
-columna de viabilidad es la valoración cualitativa de los autores, en la
-que COSO y TERO puntúan peor porque necesitan un ajuste manual por
-dispositivo. No existe una tabla comparable para Artix-7; el proyecto
+estimación estadística (el test T8 de AIS~31), no una cota del modelo.
+Los autores clasifican además los núcleos por viabilidad; esa columna no
+se reproduce porque el sentido de su escala no pudo confirmarse con las
+notas de trabajo, y solo se conserva su observación de que COSO y TERO
+necesitan un ajuste manual por dispositivo. No existe una tabla comparable para Artix-7; el proyecto
 abierto OpenTRNG implementa ERO, multianillo y COSO en una Arty~A7 con el
 mismo dado XC7A35T que la Basys~3, pero no publica cifras ni de entropía
 ni de tasa de bits~\cite{opentrng_2025_docs}.
@@ -76,19 +80,18 @@ ni de tasa de bits~\cite{opentrng_2025_docs}.
 \centering
 \caption{Núcleos TRNG compatibles con AIS en Xilinx Spartan-6 (45~nm),
 según Petura \emph{et al.}~\cite{petura_2016_survey}, tabla~II. La
-entropía es la estimación T8; la ``viabilidad'' es la clasificación de los
-autores (cuanto más alta, más fácil).}
+entropía es la estimación T8.}
 \label{tab:petura}
-\begin{tabular}{@{}lrrrrl@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Núcleo & LUT/reg. & Potencia (mW) & Tasa (Mbit/s) & Entropía/bit & Viab. \\
+Núcleo & LUT/reg. & Potencia (mW) & Tasa (Mbit/s) & Entropía/bit \\
 \midrule
-ERO  & 46/19   & 2,16  & 0,0042 & 0,999 & 5 \\
-COSO & 18/3    & 1,22  & 0,54   & 0,999 & 1 \\
-MURO & 521/131 & 54,72 & 2,57   & 0,999 & 4 \\
-PLL  & 34/14   & 10,6  & 0,44   & 0,981 & 3 \\
-TERO & 39/12   & 3,31  & 0,625  & 0,999 & 1 \\
-STR  & 346/256 & 65,9  & 154    & 0,998 & 2 \\
+ERO  & 46/19   & 2,16  & 0,0042 & 0,999 \\
+COSO & 18/3    & 1,22  & 0,54   & 0,999 \\
+MURO & 521/131 & 54,72 & 2,57   & 0,999 \\
+PLL  & 34/14   & 10,6  & 0,44   & 0,981 \\
+TERO & 39/12   & 3,31  & 0,625  & 0,999 \\
+STR  & 346/256 & 65,9  & 154    & 0,998 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -111,9 +114,16 @@ fase anterior, la probabilidad de cualquier vector de salida y una cota
 inferior de la tasa de entropía de Shannon,
 $H \ge 1 - \frac{4}{\pi^2\ln 2}e^{-4\pi^2 Q}$, cuyo alcance exacto se
 examina en el Capítulo~\ref{ch:ch3_entropy}. Petura \emph{et al.} la
-reescriben en magnitudes de diseño, $H = 1 - \frac{4}{\pi^2\ln2}\exp(-\pi^2
-\sigma_{th}^2 K T_2/T_1^3)$, y Fischer y Lubicz la invierten para obtener
+reescriben en magnitudes de diseño --- el jitter térmico por periodo, el
+divisor y los dos periodos~\cite{petura_2016_survey} ---, y Fischer y
+Lubicz la invierten para obtener
 el divisor $K_D$ a partir de un jitter medido~\cite{fischer_2014_embedded}.
+La forma que se usa en este trabajo es $Q = K_D\,\sigma^2 T_2/T_1^3$ en
+el exponente $-4\pi^2 Q$ de Baudet, que es la que reproduce el divisor
+publicado por Fischer y Lubicz (Sección~\ref{sec:kd}); la expresión tal
+como la imprimen Petura \emph{et al.} se transcribió en las notas de
+trabajo con $\pi^2$ en el exponente, que no lo reproduce, y no se ha
+cotejado con el artículo si responde a otro convenio para $\sigma$.
 Ma \emph{et al.} proponen un modelo alternativo que usa el grupo de
 Lovaina~\cite{ma_2014_entropy}; Haddad \emph{et al.} cuestionan la
 independencia mutua de las realizaciones del jitter en la que se apoyan
@@ -305,8 +315,9 @@ fuente (``Enabling\slash Disabling RNG early entropy source''), lo que también
 ha desconcertado a usuarios~\cite{espressif_issue_7598}. La frontera
 entre el funcionamiento verdaderamente aleatorio y el pseudoaleatorio es,
 en suma, sutil incluso para los propios usuarios del fabricante; la
-prueba de reinicios de la Sección~\ref{sec:esp32_90b} mide cuánto aporta
-el ruido del arranque.\par}
+prueba de reinicios de la Sección~\ref{sec:esp32_90b} muestra que sin el
+ruido del arranque la salida se repite, y solo acota por abajo lo que ese
+ruido aporta.\par}
 
 \paragraph{El ESP32 original y sus sucesores.} Las guías de los chips
 posteriores, ESP32-S2, -C3 y -H2, documentan una fuente de entropía
@@ -420,8 +431,8 @@ entropía completa~\cite{vanderleest_2012_efficient}. El patrón se
 describe por su uniformidad (fracción de unos, idealmente la mitad), su
 unicidad (distancia entre dispositivos, idealmente la mitad de la
 longitud) y su fiabilidad, cuyo complemento, la tasa de bits erróneos
-intradispositivo entre encendidos de un mismo chip, se sitúa en un
-intervalo de un 3 a un 8\,\% aproximadamente en condiciones
+intradispositivo entre encendidos de un mismo chip, no es nula ni
+siquiera en condiciones
 nominales~\cite{holcomb_2009_powerup, vanderleest_2012_efficient}. El uso
 como identidad corrige esos errores con un extractor difuso y datos de
 ayuda públicos; el uso como entropía los busca, y debe recordar que la
@@ -488,7 +499,7 @@ Para AES-128 (diez rondas~\cite{nist_2023_fips197}), el espacio de diseño
 va desde cauces segmentados totalmente desenrollados, orientados a la
 tasa de bits, hasta rutas de datos de 8 bits, orientadas al área: Good y
 Benaissa publican 124 slices y dos block RAM a 2,2~Mbit/s en una
-Spartan-II en un extremo y 25~Gbit/s en el
+Spartan-II en un extremo y 25~Gbit/s en una Spartan-III en el
 otro~\cite{good_2005_fastest}; el diseño compacto de Chodowiec y Gaj usa
 222 slices y tres block RAM~\cite{chodowiec_2003_compact}; y las
 realizaciones ASIC más pequeñas llegan a 2,4~kGE con una ruta de datos de
@@ -545,9 +556,16 @@ ATECC608B, a 0,90~\$ por unidad suelta~\cite{digikey_prices_2026}, ofrece
 AES-128, SHA-256/HMAC, ECDSA/ECDH sobre P-256, dieciséis ranuras de clave
 y una interfaz I2C, y su fuente de entropía cuenta con una validación del
 NIST según SP~800-90B, obtenida precisamente con osciladores en
-anillo~\cite{nist_esv_e46}. Dos de sus competidores no hacen ninguna
-referencia a SP~800-90 en sus hojas de datos; el tercero afirma que su
-generador está ``diseñado para cumplir'' la norma. La lección para este
+anillo~\cite{nist_esv_e46}; su propia hoja de datos solo dice que el
+generador está ``diseñado para cumplir'' SP~800-90A, B y C, y es ese
+certificado, no la hoja de datos, lo que cubre la
+fuente~\cite{microchip_atecc608b_ds}. El SE050 declara en su hoja de
+datos un generador conforme a SP~800-90B y SP~800-90A, y tiene una
+validación de algoritmo de su generador determinista pero ninguna de su
+fuente de entropía~\cite{nxp_se050_ds, nist_cmvp_3840}. Los otros dos no
+hacen ninguna referencia a SP~800-90 en sus hojas de
+datos~\cite{infineon_optiga_trustm_ds,
+st_stsafe_a110_ds}. La lección para este
 trabajo es dónde puede competir un diseño académico y dónde no: no en
 precio, donde un componente certificado cuesta menos de un euro, sino en
 la transparencia de la entropía, que es justo lo que un componente de
@@ -576,24 +594,29 @@ muestran por qué un dispositivo de seguridad no puede ignorar su entorno:
 una frecuencia inyectada en la alimentación engancha los anillos y
 eliminó el jitter de un microcontrolador seguro comercial, con lo que su
 espacio de claves pasó de $2^{64}$ a 3300~\cite{markettos_2009_frequency},
-y unos pocos cientos de microvatios de campo radiado sesgaron un
-generador de cincuenta anillos hasta que falló todos los
-tests~\cite{bayon_2012_contactless}; la defensa publicada combina el
+y un campo electromagnético aplicado sin contacto enganchó los cincuenta
+anillos de un generador en FPGA y controló el sesgo de su
+salida~\cite{bayon_2012_contactless}; la defensa publicada combina el
 filtrado de la alimentación con el mismo lazo de
-calibración~\cite{yang_2016_jssc}, y el envejecimiento del dispositivo
+calibración~\cite{yang_2016_jssc}. El envejecimiento del dispositivo
 por inestabilidad por polarización y temperatura y por inyección de
-portadores calientes degrada con los años los generadores mal
-temporizados, mientras deja intactos los bien temporizados.
+portadores calientes, que desplaza la frecuencia de un anillo y con ella
+un punto de funcionamiento calibrado en fábrica, es otra diferencia con
+la FPGA que este trabajo no aborda.
 
 El acceso al silicio es más abierto de lo que parece. La Universidad de
 Sevilla y el IMSE-CNM son miembros de Europractice~\cite{europractice_memberlist},
 cuya lista de precios académicos es pública: un bloque mini@sic cuesta
 3\,430~\texteuro{} en UMC~180~nm y 3\,691~\texteuro{} en TSMC~65~nm, y el
-SG13G2 de IHP se ofrece a 5\,110~\texteuro{}/mm$^2$, con una tirada
-gratuita para diseños de código abierto de menos de 2~mm$^2$~\cite{europractice_prices2026, europractice_minisic,
-ihp_openpdk}. El área de seguridad hardware del instituto ya ha llevado
+SG13G2 de IHP se ofrece a
+5\,110~\texteuro{}/mm$^2$~\cite{europractice_prices2026,
+europractice_minisic}; IHP anuncia además tiradas multiproyecto gratuitas
+para diseños de código abierto, sin publicar sus condiciones ni sus
+límites de área~\cite{ihp_openpdk}. El área de seguridad hardware del
+instituto ya ha llevado
 primitivas de osciladores en anillo desde FPGA Xilinx de la serie 7,
-evaluadas con SP~800-22 y SP~800-90B, hasta silicio de 65~nm
+evaluadas con SP~800-22 y
+SP~800-90B~\cite{rojas2022trngcapability}, hasta silicio de 65~nm
 caracterizado~\cite{imse_area_hwsec,
 martinez2022efficientropuf, ortega2024vlsi65nm, ortega2026ropuf65nm}, y
 ha fabricado antes circuitos criptográficos~\cite{mora2020trivium}. Las
@@ -602,9 +625,12 @@ síntesis --- IHP SG13G2, SkyWater SKY130, GlobalFoundries GF180MCU y la
 predictiva Nangate 45~nm --- vienen con vistas liberty, LEF y GDS, y la
 literatura compara este tipo de diseños en puertas equivalentes
 normalizadas a la NAND2 mínima de la biblioteca~\cite{ihp_openpdk_repo, skywater_pdk_cells, gf180mcu_pdk,
-nangate45, kaps2019lwc}, con la advertencia de que el área de síntesis
-lógica es una cota inferior que crece en un factor de 1,7 a 4,6 al pasar
-al área de núcleo tras el rutado.
+nangate45}, con la advertencia de que el área de síntesis
+lógica es una cota inferior: la propia documentación de SKY130 da una
+densidad de puertas tras el rutado de 160~kGates/mm$^2$ frente a una
+bruta de 266, una utilización de 0,60~\cite{skywater_pdk_cells}, de modo
+que en esa biblioteca el núcleo rutado ocupa unas 1,7 veces el área de
+las celdas.
 
 \section{Hueco que aborda este trabajo}
 \label{sec:gap}
@@ -623,15 +649,19 @@ aportar de forma modesta pero verificable, es lo siguiente.
 \begin{enumerate}
 \item Una cifra de jitter por periodo para la Artix-7 XC7A35T en
 unidades absolutas, obtenida dentro del dispositivo con un método
-diferencial, con las componentes térmica y de parpadeo separadas y con su
+diferencial y con su
 incertidumbre declarada, dado que los coeficientes publicados para
-Artix-7 están en unidades del contador.
+Artix-7 están en unidades del contador. Lo obtenido es un rango para el
+suelo blanco del ruido de fase relativo de dos anillos, separado de una
+modulación determinista y no del ruido de parpadeo, con un estimador que
+yerra por arriba (Capítulo~\ref{ch:ch8_concl}).
 \item La cadena completa \emph{jitter medido $\to$ factor de calidad $\to$
 cota de min-entropía $\to$ divisor $\to$ umbrales de los tests de salud},
 aplicada a una plataforma y contrastada con los diez estimadores no
-i.i.d.\ de SP~800-90B y con los requisitos PTG.2 de AIS~20/31
+i.i.d.\ de SP~800-90B y con el umbral de min-entropía de la clase PTG.2
+de AIS~20/31
 \emph{versión~3.0}, que la mayor parte de la literatura anterior no pudo
-usar.
+usar; los demás requisitos de PTG.2 no se evalúan.
 \item Una caracterización según SP~800-90B del generador del ESP32 en sus
 estados de funcionamiento, y una comparación controlada, con la misma
 metodología, entre una fuente de caja blanca en FPGA y una comercial de

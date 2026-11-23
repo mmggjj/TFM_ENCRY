@@ -52,17 +52,21 @@ bistable structure oscillates before settling~\cite{varchola_2010_new},
 with a full physical-to-stochastic model~\cite{bernard_2019_physical};
 the \textbf{self-timed ring} (STR) circulates several events in an
 asynchronous ring to obtain phases spaced by the order of the
-jitter~\cite{cherkaoui_2013_very}, reaching 154~Mbit/s; and the
-\textbf{ES-TRNG} of Yang \emph{et al.} uses the carry chain as a
-time-to-digital converter to encode the edge position with 10~LUTs and
-5~flip-flops~\cite{yang_2018_estrng, rozic_2015_highly}.
+jitter~\cite{cherkaoui_2013_very}, reaching 154~Mbit/s in Petura's
+implementation~\cite{petura_2016_survey}; and the Leuven designs digitize
+the position of the edge: the DC-TRNG uses the carry chain as a
+time-to-digital converter~\cite{rozic_2015_highly}, and the
+\textbf{ES-TRNG} of Yang \emph{et al.} encodes it with variable precision
+and repeated sampling in 10~LUTs and
+5~flip-flops~\cite{yang_2018_estrng}.
 
 Table~\ref{tab:petura} reproduces the comparison Petura \emph{et al.}
 made of the AIS-compliant cores on one device~\cite{petura_2016_survey}.
 The entropy column is a statistical estimate (the AIS~31 T8 test), not a
-model bound; the feasibility column is the authors' qualitative note,
-where COSO and TERO score worst because they need manual adjustment per
-device. No comparable table exists for Artix-7; the open OpenTRNG project
+model bound. The authors also rank the cores by feasibility; that column
+is not reproduced because the sense of its scale could not be confirmed
+from the working notes, and only their remark that COSO and TERO need
+manual adjustment per device is kept. No comparable table exists for Artix-7; the open OpenTRNG project
 implements ERO, multi-ring and COSO on an Arty~A7 with the same XC7A35T
 die as the Basys~3 but publishes neither entropy nor throughput
 figures~\cite{opentrng_2025_docs}.
@@ -71,18 +75,18 @@ figures~\cite{opentrng_2025_docs}.
 \centering
 \caption{AIS-compatible TRNG cores on Xilinx Spartan-6 (45~nm), after
 Petura \emph{et al.}~\cite{petura_2016_survey}, Table~II. Entropy is the
-T8 estimate; ``feasibility'' is the authors' rank (higher is easier).}
+T8 estimate.}
 \label{tab:petura}
-\begin{tabular}{@{}lrrrrl@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Core & LUT/reg. & Power (mW) & Rate (Mbit/s) & Entropy/bit & Feasib. \\
+Core & LUT/reg. & Power (mW) & Rate (Mbit/s) & Entropy/bit \\
 \midrule
-ERO  & 46/19   & 2.16  & 0.0042 & 0.999 & 5 \\
-COSO & 18/3    & 1.22  & 0.54   & 0.999 & 1 \\
-MURO & 521/131 & 54.72 & 2.57   & 0.999 & 4 \\
-PLL  & 34/14   & 10.6  & 0.44   & 0.981 & 3 \\
-TERO & 39/12   & 3.31  & 0.625  & 0.999 & 1 \\
-STR  & 346/256 & 65.9  & 154    & 0.998 & 2 \\
+ERO  & 46/19   & 2.16  & 0.0042 & 0.999 \\
+COSO & 18/3    & 1.22  & 0.54   & 0.999 \\
+MURO & 521/131 & 54.72 & 2.57   & 0.999 \\
+PLL  & 34/14   & 10.6  & 0.44   & 0.981 \\
+TERO & 39/12   & 3.31  & 0.625  & 0.999 \\
+STR  & 346/256 & 65.9  & 154    & 0.998 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,9 +108,16 @@ gives the bit probability conditioned on the previous phase, the
 probability of any output vector, and a lower bound on the Shannon
 entropy rate, $H \ge 1 - \frac{4}{\pi^2\ln 2}e^{-4\pi^2 Q}$, whose exact
 status is examined in Chapter~\ref{ch:ch3_entropy}. Petura \emph{et al.}
-rewrite it in design quantities, $H = 1 - \frac{4}{\pi^2\ln2}\exp(-\pi^2
-\sigma_{th}^2 K T_2/T_1^3)$, and Fischer and Lubicz invert it to obtain
-the divider $K_D$ from a measured jitter~\cite{fischer_2014_embedded}. Ma
+rewrite it in design quantities --- the thermal jitter per period, the
+divider and the two periods~\cite{petura_2016_survey} --- and Fischer and
+Lubicz invert it to obtain
+the divider $K_D$ from a measured jitter~\cite{fischer_2014_embedded}.
+The form used in this work is $Q = K_D\,\sigma^2 T_2/T_1^3$ in Baudet's
+exponent $-4\pi^2 Q$, which is the one that reproduces the published
+divider of Fischer and Lubicz (Section~\ref{sec:kd}); the expression as
+printed by Petura \emph{et al.} was transcribed in the working notes with
+$\pi^2$ in the exponent, which does not reproduce it, and whether that is
+a different convention for $\sigma$ was not checked against the paper. Ma
 \emph{et al.} give an alternative model used by the Leuven
 group~\cite{ma_2014_entropy}; Haddad \emph{et al.} question the mutual
 independence of jitter realizations on which these cancellations
@@ -278,7 +289,8 @@ of that source in its log (``Enabling\slash Disabling RNG early entropy
 source''), which has itself puzzled users~\cite{espressif_issue_7598}. The
 boundary between true and pseudo-random operation is, in short, subtle
 even for the manufacturer's own users; the restart test of
-Section~\ref{sec:esp32_90b} measures how much the boot noise contributes.\par}
+Section~\ref{sec:esp32_90b} shows that without the boot noise the output
+repeats, and bounds what that noise contributes only from below.\par}
 
 \paragraph{The original ESP32 and its successors.} The guides of the
 later chips, ESP32-S2, -C3 and -H2, document a secondary entropy source
@@ -385,7 +397,7 @@ seeds~\cite{vanderleest_2012_efficient}. The pattern is described by its
 uniformity (fraction of ones, ideally one half), its uniqueness
 (inter-device distance, ideally half the length) and its reliability, whose
 complement, the intra-device bit error rate between power-ups of one chip,
-is reported in a range of about 3 to 8\,\% at nominal
+is not zero even at nominal
 conditions~\cite{holcomb_2009_powerup, vanderleest_2012_efficient}. The
 identity use corrects those errors away with a fuzzy extractor and public
 helper data; the entropy use seeks them out, and must remember that the
@@ -444,7 +456,7 @@ The engine needs a block cipher and, if it uses one, a hash. For AES-128
 (ten rounds~\cite{nist_2023_fips197}) the design space runs from
 fully unrolled pipelines for throughput to 8-bit datapaths for area:
 Good and Benaissa report 124 slices and two block RAMs at 2.2~Mbit/s on
-a Spartan-II at one extreme and 25~Gbit/s at the
+a Spartan-II at one extreme and 25~Gbit/s on a Spartan-III at the
 other~\cite{good_2005_fastest}; Chodowiec and Gaj's compact design uses 222
 slices and three block RAMs~\cite{chodowiec_2003_compact}; and the
 smallest ASIC realizations reach 2.4~kGE with an 8-bit datapath at 226
@@ -494,9 +506,15 @@ nxp_se050_ds, infineon_optiga_trustm_ds, st_stsafe_a110_ds}. The
 ATECC608B, at 0.90~\$ in single units~\cite{digikey_prices_2026}, offers
 AES-128, SHA-256/HMAC, ECDSA/ECDH on P-256, sixteen key slots and an I2C
 interface, and its entropy source holds a NIST validation under
-SP~800-90B, obtained precisely with ring oscillators~\cite{nist_esv_e46}.
-Two of its competitors make no reference to SP~800-90 in their datasheets;
-the third states that its generator is ``designed to meet'' the standard.
+SP~800-90B, obtained precisely with ring oscillators~\cite{nist_esv_e46};
+its own datasheet says only that the generator is ``designed to meet''
+SP~800-90A, B and C, and it is that certificate, not the datasheet, that
+covers the source~\cite{microchip_atecc608b_ds}. The SE050 claims in its
+datasheet a generator compliant with SP~800-90B and SP~800-90A, and holds
+an algorithm validation of its deterministic generator but no validation
+of its entropy source~\cite{nxp_se050_ds, nist_cmvp_3840}. The other two make no reference
+to SP~800-90 in their datasheets~\cite{infineon_optiga_trustm_ds,
+st_stsafe_a110_ds}.
 The lesson for this work is where an academic design can and cannot
 compete: not on price, where a certified part costs less than a euro, but
 on the transparency of the entropy, which is exactly what a black-box part
@@ -522,23 +540,28 @@ $-40$ to 120~$^\circ$C and 0.6 to 0.9~V~\cite{yang_2016_jssc}. And two
 attacks show why a security device cannot ignore its environment: a
 frequency injected on the supply locks the rings and removed the jitter
 of a commercial secure microcontroller, reducing its key space from
-$2^{64}$ to 3300~\cite{markettos_2009_frequency}, and a few hundred
-microwatts of radiated field biased a fifty-ring generator until it
-failed every test~\cite{bayon_2012_contactless}; the published defence
-combines supply filtering with the same calibration loop~\cite{yang_2016_jssc},
-and device aging under bias-temperature instability and hot-carrier
-injection degrades poorly-timed generators over years while leaving
-well-timed ones intact.
+$2^{64}$ to 3300~\cite{markettos_2009_frequency}, and a contactless
+electromagnetic field locked the fifty rings of an FPGA generator
+and controlled the bias of its output~\cite{bayon_2012_contactless}; the
+published defence
+combines supply filtering with the same calibration loop~\cite{yang_2016_jssc}.
+Device aging under bias-temperature instability and hot-carrier
+injection, which shifts the frequency of a ring and with it an operating
+point calibrated at the factory, is a further difference from the
+FPGA that this work does not address.
 
 Access to silicon is more open than it appears. The University of Sevilla
 and IMSE-CNM are members of Europractice~\cite{europractice_memberlist},
 whose academic price list is public: a mini@sic block costs 3\,430~\texteuro{}
 in UMC~180~nm and 3\,691~\texteuro{} in TSMC~65~nm, and IHP's SG13G2 is
-offered at 5\,110~\texteuro{}/mm$^2$ with a free run for open-source designs
-under 2~mm$^2$~\cite{europractice_prices2026, europractice_minisic,
-ihp_openpdk}. The institute's hardware-security area has already taken
+offered at 5\,110~\texteuro{}/mm$^2$~\cite{europractice_prices2026,
+europractice_minisic}; IHP also announces free multi-project runs for
+open-source designs, without publishing their conditions or area
+limits~\cite{ihp_openpdk}. The institute's hardware-security area has
+already taken
 ring-oscillator primitives from Xilinx 7-series FPGAs, evaluated with
-SP~800-22 and SP~800-90B, to characterized 65~nm silicon~\cite{imse_area_hwsec,
+SP~800-22 and SP~800-90B~\cite{rojas2022trngcapability}, to characterized
+65~nm silicon~\cite{imse_area_hwsec,
 martinez2022efficientropuf, ortega2024vlsi65nm, ortega2026ropuf65nm}, and
 has fabricated cryptographic circuits before~\cite{mora2020trivium}. The
 open standard-cell libraries that make a synthesis chapter possible ---
@@ -546,8 +569,11 @@ IHP SG13G2, SkyWater SKY130, GlobalFoundries GF180MCU and the predictive
 Nangate 45~nm --- come with liberty, LEF and GDS views, and the literature
 compares such designs in gate equivalents normalized to the minimum NAND2
 of the library~\cite{ihp_openpdk_repo, skywater_pdk_cells, gf180mcu_pdk,
-nangate45, kaps2019lwc}, with the caution that logic-synthesis area is a
-lower bound that grows by a factor of 1.7 to 4.6 to routed core area.
+nangate45}, with the caution that logic-synthesis area is a
+lower bound: the SKY130 documentation itself gives a routed gate density
+of 160~kGates/mm$^2$ against a raw one of 266, a utilization of
+0.60~\cite{skywater_pdk_cells}, so that in that library the routed core
+is some 1.7 times the area of the cells.
 
 \section{Gap addressed by this work}
 \label{sec:gap}
@@ -564,14 +590,18 @@ to provide in a modest but verifiable way, is the following.
 
 \begin{enumerate}
 \item A per-period jitter figure for the Artix-7 XC7A35T in absolute
-units, obtained inside the device with a differential method, with the
-thermal and flicker components separated and with stated uncertainty ---
-the published Artix-7 coefficients being in counter units.
+units, obtained inside the device with a differential method and with
+stated uncertainty --- the published Artix-7 coefficients being in
+counter units. What was obtained is a range for the white floor of the
+relative phase noise of two rings, separated from a deterministic
+modulation rather than from flicker noise, with an estimator that errs
+upwards (Chapter~\ref{ch:ch8_concl}).
 \item The complete chain \emph{measured jitter $\to$ quality factor $\to$
 min-entropy bound $\to$ divider $\to$ health-test cutoffs}, applied to one
 platform and confronted with the ten non-i.i.d.\ estimators of SP~800-90B
-and with the PTG.2 requirements of AIS~20/31 \emph{version~3.0}, which
-most of the earlier literature could not use.
+and with the min-entropy threshold of class PTG.2 of AIS~20/31
+\emph{version~3.0}, which most of the earlier literature could not use;
+the other PTG.2 requirements are not assessed.
 \item An SP~800-90B characterization of the ESP32 generator in its
 operating states, and a controlled comparison between a white-box FPGA
 source and a black-box commercial one under the same methodology.
