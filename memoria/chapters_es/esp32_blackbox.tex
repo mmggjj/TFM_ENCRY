@@ -12,8 +12,9 @@ Este capítulo es la primera parte del trabajo. Trata el generador hardware
 de números aleatorios del ESP32 tal como se lo encuentra un integrador: un
 registro que devuelve palabras de 32 bits, detrás del cual el fabricante
 nombra dos fuentes de ruido y no cuantifica ninguna. El generador se hace
-funcionar en cuatro condiciones de operación en cuatro campañas de captura sobre tres chips;
-su salida pasa por una batería SP~800-22 validada con una
+funcionar en cuatro condiciones de operación en cuatro campañas de captura sobre tres chips,
+y en una quinta, sobre un chip, que las repite con la radio mantenida
+despierta; su salida pasa por una batería SP~800-22 validada con una
 autocomprobación, por métricas de Shannon y espectrales y por los
 estimadores de SP~800-90B; se construye a su alrededor un recolector de
 claves; y una prueba de reinicios abre la caja hasta donde puede abrirse
@@ -51,8 +52,10 @@ pueda entrar ruido nuevo, o mediante \texttt{esp\_fill\_random()}, que
 llena un búfer con él. En el ESP32 la espera es de 16~ciclos de APB, un
 techo de 5~millones de palabras por segundo (\texttt{hw\_random.c}, sin
 cambios en este punto desde ESP-IDF 5.2.1 hasta 5.5.2, entre las que
-queda la 5.3.2 usada aquí); los 15--75~kHz que cita la guía corresponden a las
-esperas más largas programadas para chips posteriores.
+queda la 5.3.2 usada aquí). La guía de esa versión no da ninguna tasa de
+lectura; los 45 a 75~kHz que aparecen en los comentarios de ese mismo
+fichero corresponden a las esperas más largas programadas para chips
+posteriores (ESP32-S3, C6 y P4).
 % hw_random.c: APB_CYCLE_WAIT_NUM = 16 para el ESP32, 1778 (unos 45 kHz)
 % para el ESP32-S3; comprobado en ~/esp/v5.5.2 y en los árboles
 % framework-espidf 5.2.1 y 4.4.7 de platformio, y el texto de la guía, el 2026-10-13.
@@ -94,6 +97,25 @@ una fuente. El firmware espera 500~ms tras cada cambio, y 200~ms más tras
 arrancar la radio, para que cada secuencia pertenezca a una única
 condición estacionaria.
 
+% docs/esp32_linea_base_90b.md, "Aviso del 10-11-2026"; git diff 6db5911
+% HEAD -- firmware/esp32_rng (rng_sampler.c, tres líneas de código)
+Un límite de ese ``Wi-Fi encendido'' se encontró después de las cuatro
+campañas, leyendo el código, y no se midió. El firmware de esas campañas
+arrancaba la estación con los ajustes de ahorro de energía de serie de
+ESP-IDF, y con ellos una estación sin asociar puede apagar la RF mientras
+no escanea ni conecta. La radio está encendida mientras
+\texttt{esp\_wifi\_start()} calibra la PHY, unos 85~ms
+(Sección~\ref{sec:esp32_90b}), pero pudo estar dormida durante la mayor
+parte de la generación de las secuencias de las condiciones A y B, una
+fracción del tiempo que no se conoce: A pudo ser casi C, y B casi D. El
+firmware se corrigió el 10 de noviembre de 2026 para que la radio no
+pueda dormir (\texttt{sta\_disconnected\_pm = false} en la configuración
+del controlador y \texttt{esp\_wifi\_set\_ps(WIFI\_PS\_NONE)} tras el
+arranque), y una quinta campaña repitió con él las cuatro condiciones en
+un chip. Lo que este capítulo diga sobre el efecto de la radio en un
+flujo continuo se apoya en esa repetición, como indica cada pasaje; las
+condiciones C y D y la prueba de reinicios no se ven afectadas.
+
 Cada condición produce 125\,000 bytes, $10^6$ bits, la longitud mínima que
 SP~800-22 recomienda para su batería completa~\cite{bassham_2010_sp80022} y
 el número mínimo de muestras de SP~800-90B~\cite{turan_2018_sp80090b}. La
@@ -112,7 +134,9 @@ fiable (unos 25~s por condición), con el registro de mensajes en nivel
 tramas. Antes del ciclo, \texttt{app\_main} copia un búfer de 4~KiB de la
 sección sin inicializar \texttt{.noinit}, el patrón de SRAM de la
 Sección~\ref{sec:esp32_harvester}. El firmware está en
-\path{firmware/esp32_rng}, y las herramientas, en \path{analysis/esp32_rng}
+\path{firmware/esp32_rng}, en su forma corregida, que difiere de la de
+las cuatro primeras campañas en los dos ajustes de arriba; las
+herramientas, en \path{analysis/esp32_rng}
 y \path{analysis/campana_rng.py}.
 
 % firmware/esp32_rng/sdkconfig.defaults (240 MHz, FREERTOS_HZ 1000);
@@ -222,9 +246,11 @@ condiciones C y D necesitan la radio apagada.
 % capture_log.csv de cada campaña: crc_ok = 1 en las 24 filas
 \begin{table}[htbp]
 \centering
-\caption{Las cuatro campañas de captura \meas{}. Cada ciclo es un arranque en
+\caption{Las cinco campañas de captura \meas{}. Cada ciclo es un arranque en
 frío seguido de las cuatro condiciones en el orden D, C, B, A, de $10^6$
-bits cada una.}
+bits cada una. En las cuatro primeras la RF pudo estar dormida en las
+condiciones A y B; la quinta usa el firmware que la mantiene despierta
+(véase el texto).}
 \label{tab:esp32_campaigns}
 \footnotesize
 \begin{tabular}{@{}lllll@{}}
@@ -235,11 +261,12 @@ Primera & 2026-08-04 & ec:e3:34:9a:d1:18 & ESP-IDF 5.3   & 1 \\
 Segunda & 2026-09-19 & ec:e3:34:9a:d1:18 & ESP-IDF 5.3.2 & 2 \\
 Tercera & 2026-10-12 & a0:dd:6c:0e:fb:4c & ESP-IDF 5.3.2 & 3 \\
 Cuarta  & 2026-10-20/21 & f8:b3:b7:2a:09:28 & ESP-IDF 5.3.2 & 3 + 3 \\
+Quinta  & 2026-11-10 & f8:b3:b7:2a:09:28 & ESP-IDF 5.3.2 & 3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Se hicieron cuatro campañas (Tabla~\ref{tab:esp32_campaigns}). La primera
+Se hicieron cinco campañas (Tabla~\ref{tab:esp32_campaigns}). La primera
 capturó un ciclo y los patrones de SRAM en el chip de dirección MAC
 ec:e3:34:9a:d1:18, que el firmware notifica en el arranque y que se anotó
 con los resultados; su registro de captura no tiene columna de MAC.
@@ -247,7 +274,10 @@ con los resultados; su registro de captura no tiene columna de MAC.
 Después, el mismo firmware, recompilado sin cambios, ejecutó dos ciclos
 más en ese chip, tres en un segundo chip, a0:dd:6c:0e:fb:4c, y dos tandas
 de tres en un tercero, f8:b3:b7:2a:09:28, la primera con el mismo binario
-exacto usado en el segundo chip. En el tercer chip el enlace serie con el
+exacto usado en el segundo chip. La quinta campaña, en el tercer chip,
+es la única cuyo firmware difiere: es el corregido, con la radio
+mantenida despierta, y sus doce secuencias, todas con el CRC correcto,
+se analizan aparte de las demás (Sección~\ref{sec:esp32_90b}). En el tercer chip el enlace serie con el
 anfitrión estropeó de vez en cuando un bloque, del lado del anfitrión; el
 CRC rechazó los tres bloques así, dos se tomaron de nuevo del ciclo
 siguiente del mismo arranque, y un ciclo incompleto se apartó y se
@@ -257,9 +287,10 @@ correctos. Los datos están en \path{results/esp32_rng_agosto} y en
 con un registro de las temperaturas, las tasas y los veredictos del CRC.
 La batería SP~800-22 de primer nivel, las métricas de Shannon y el
 recolector de las tres secciones siguientes usan la primera campaña; el
-análisis de segundo nivel de SP~800-22 usa las cuatro, y los estimadores
-de SP~800-90B de la Sección~\ref{sec:esp32_90b}, todas menos la segunda
-tanda de la cuarta, que se reserva para una comprobación.
+análisis de segundo nivel de SP~800-22 usa las cuatro primeras, y los
+estimadores de SP~800-90B de la Sección~\ref{sec:esp32_90b}, esas cuatro
+sin la segunda tanda de la cuarta, que se reserva para una comprobación,
+y la quinta por separado.
 
 % docs/esp32_linea_base_90b.md 1: en el tercer chip los bloques repetidos
 % fueron de la condición A, del segundo ciclo; D, C y B, siempre del primero.
@@ -268,7 +299,7 @@ radio parada pero habiendo funcionado, y el primer diseño pretendía
 comparar esas D posteriores con la del arranque en frío, para ver si el
 estado residual de la radio cambia la salida. No se capturó ninguna.
 Todas las secuencias de la condición~D conservadas, en las cuatro
-campañas, vienen del primer ciclo tras un arranque en frío; los dos
+primeras campañas, vienen del primer ciclo tras un arranque en frío; los dos
 bloques tomados de un segundo ciclo en el tercer chip eran de la
 condición~A. La prueba de reinicios de la Sección~\ref{sec:esp32_90b}
 responde a la pregunta más directamente de lo que habría podido una D
@@ -297,10 +328,17 @@ longitud~9 que enumera la norma. Una autocomprobación ejecuta la batería
 sobre tres entradas de 125\,000 bytes: los datos de \texttt{os.urandom}
 deben pasar con un fallo como máximo, un búfer todo a ceros debe fallar,
 y el patrón alternado \texttt{0x55} debe ser rechazado por la prueba de
-rachas o por la de entropía aproximada. La supera: los ceros fallan las
+rachas o por la de entropía aproximada. Los ceros fallan las
 quince pruebas, y el patrón alternado falla todas salvo las de
 frecuencia, frecuencia por bloques y sumas acumuladas, que una secuencia
-perfectamente equilibrada tiene que pasar.
+perfectamente equilibrada tiene que pasar. La primera condición es más
+estricta de lo que se pretendía: las dos pruebas de excursiones
+aleatorias cuentan como dos fallos cuando no son aplicables (párrafo
+siguiente), lo que les ocurre a datos buenos de esta longitud con
+probabilidad 0,38, así que la autocomprobación se detiene en más o menos
+esa fracción de sus ejecuciones por una razón que no es un defecto (una
+de seis ejecuciones repetidas para esta revisión se detuvo así, con 13
+de 15) y pasa en las demás.
 
 % SP 800-22 Rev. 1a 2.5.7 (n >= 38 MQ), 2.9.7 (L = 7 desde n = 904960),
 % 2.14.7 (J >= 500); E[J] y P(J < 500) calculados
@@ -462,10 +500,15 @@ mayor y es el objeto de la Sección~\ref{sec:esp32_90b}.
 % y 12559 us (B).
 El firmware cronometra la tasa con el temporizador del sistema de
 1~$\mu$s sobre 64~KiB, unos 12,6~ms, así que su resolución es mejor que el
-0,01\,\% (calculado). En las cuatro campañas, las veinticuatro secuencias
+0,01\,\% (calculado). En las cuatro primeras campañas, las veinticuatro secuencias
 sin la tarea del ADC se generaron a entre 5,21 y 5,22~MB/s ($10^6$~bytes
 por segundo), y las veinticuatro con ella a 2,77~MB/s en las dos primeras
-campañas y a 2,70~MB/s en las dos últimas; la radio cambia la tasa en menos del 0,1\,\%. La
+campañas y a 2,70~MB/s en las dos últimas. Con el Wi-Fi arrancado la
+tasa es de un 0,06 a un 0,07\,\% mayor sin la tarea del ADC, y entre un
+0,02\,\% menor y un 0,11\,\% mayor con ella, dentro del 0,17\,\% de
+dispersión entre repeticiones de una misma condición; la quinta campaña,
+con la radio mantenida despierta, da las mismas tasas y diferencias
+dentro de esos rangos. La
 tarea del ADC reduce la tasa a la mitad, por una causa que no se aisló.
 Frente al manual, 1,30~millones de palabras por segundo sin la tarea está
 por debajo de los 5~MHz del camino de la radio, y de 0,68 a 0,69~millones
@@ -474,8 +517,9 @@ y C leen de 21,6 a 22,2~Mbit/s mientras que el camino SAR inyecta como
 mucho 16~Mbit/s, así que aunque las conversiones de la condición~C
 llegaran al generador y cada bit inyectado fuera completamente aleatorio,
 detrás de cada bit de salida no podría haber más de 0,72 a 0,74~bit de
-ruido nuevo (calculado). El camino de la radio, a 160~Mbit/s, supera casi
-cuatro veces la mayor tasa de lectura, 41,7~Mbit/s.
+ruido nuevo (calculado). El camino de la radio, a los 160~Mbit/s del
+manual mientras la RF está encendida, supera casi
+cuatro veces la mayor tasa de lectura, 41,7~Mbit/s (calculado).
 
 % firmware/esp32_rng/main/temp_monitor.c convierte (F - 32)/1.8 a partir de
 % un uint8_t de la ROM; results/esp32_rng_agosto/capture_log.csv solo tiene
@@ -495,8 +539,10 @@ Figura~\ref{fig:esp32_temp} muestra los datos en la unidad del propio
 sensor: una secuencia leyó 126~$^\circ$F de principio a fin, dos leyeron
 127~$^\circ$F, una pasó del primer valor al segundo mientras se generaba,
 y las cuatro entropías quedan a menos de dos desviaciones típicas de una
-fuente perfecta de la misma longitud. Los tres chips identificados
-leyeron después de 49,4 a 51,7, de 61,7 a 64,4 y de 42,8 a 45,0~$^\circ$C
+fuente perfecta de la misma longitud. En las campañas posteriores el
+primer chip leyó de 49,4 a 51,7~$^\circ$C, el segundo de 61,7 a 64,4 y
+el tercero de 41,1 a 45,0 (de 40,6 a 48,3 en la quinta campaña, con la
+radio despierta)
 en la misma escala sin calibrar, así que chip y temperatura están confundidos. Un
 estudio de temperatura necesita un sensor calibrado y un barrido
 controlado, y no se hizo ninguno.
@@ -527,7 +573,7 @@ que añade dos fuentes del mismo chip cuya disponibilidad complementa la
 del generador: el patrón de arranque de la SRAM, presente en cada
 encendido antes de que arranque ningún periférico~\cite{holcomb_2009_powerup},
 y los bits menos significativos del ADC leyendo una entrada flotante.
-Estas pasan por la corrección de Von
+Los bits del ADC, y solo ellos, pasan por la corrección de Von
 Neumann~\cite{vonneumann_1951_various}, que descarta los pares 00 y 11 y
 convierte 01 en 0 y 10 en 1, de modo que bits independientes salen sin
 sesgo a costa de al menos tres cuartas partes de ellos. Las aportaciones
@@ -803,7 +849,8 @@ de SP 800-90B se aplican aquí a las tres primeras y a la primera tanda
 de la cuarta, que en conjunto dan nueve repeticiones de $10^6$ bits por
 condición, tres en cada uno de los tres chips del mismo modelo
 (ESP32-D0WD-V3). Otras dos capturas con la radio
-apagada, de $3{,}52\times10^6$ y $8{,}38\times10^6$ bits, se tomaron con
+apagada, de $3{,}52\times10^6$ y $8{,}38\times10^6$ bits, se tomaron en
+el primer chip, ec:e3:34:9a:d1:18, con
 el firmware verificador del Capítulo~\ref{ch:ch5_verification}. Las
 treinta y ocho se pasaron por la implementación de referencia del \ac{NIST} de
 los estimadores de SP 800-90B~\cite{nist_ea_github, turan_2018_sp80090b}
@@ -816,7 +863,8 @@ Tabla~\ref{tab:esp32_90b} recoge el resultado.
 \caption{El generador del ESP32 frente a los estimadores de SP 800-90B \meas{}.
 Condiciones A--D: nueve repeticiones de $10^6$ bits cada una, tres en cada
 uno de los tres chips, media y rango sobre las repeticiones; E y F:
-capturas únicas de $3{,}5\times10^6$ y $8{,}4\times10^6$ bits. El techo es
+capturas únicas de $3{,}5\times10^6$ y $8{,}4\times10^6$ bits en el
+primer chip. En A y B la RF pudo estar dormida (véase el texto). El techo es
 el valor más alto que el estimador del valor más común (MCV) puede
 devolver para una fuente perfectamente uniforme de esa longitud con un
 99\,\% de confianza; la cifra no IID es el mínimo de los diez estimadores
@@ -913,7 +961,7 @@ comportamiento de los estimadores y no una propiedad de las condiciones.
 La estimación por compresión tiene una desviación típica de 0,03 a 0,04
 \emph{dentro} de una condición, mayor que el 0,013 que separa las medias
 de las cuatro condiciones, y un análisis de la varianza de un factor
-sobre cada uno de los once estimadores no encuentra diferencia entre
+sobre cada uno de los diez estimadores y sobre su mínimo no encuentra diferencia entre
 condiciones: el $p$ más pequeño es 0,045, para el predictor MultiMCW,
 cuyas medias por condición no siguen ningún orden físico, y un valor por
 debajo de 0,05 entre once pruebas es lo que da el azar; queda muy por
@@ -930,8 +978,38 @@ prueba de $t$-tupla con $t = 2$, que devuelve 7,39 bits por byte porque
 $10^6$ bytes contienen demasiado pocos de los 65\,536 pares posibles para
 que el más frecuente sea representativo, exactamente como le ocurre al
 techo del MCV con $t = 1$. Ningún estimador resuelve con nueve
-repeticiones diferencia alguna entre Wi-Fi encendido, ADC encendido y
-ninguno de los dos, y no se afirma ninguna.
+repeticiones diferencia alguna entre las cuatro condiciones, y no se
+afirma ninguna.
+
+% docs/esp32_linea_base_90b.md, "Aviso del 10-11-2026" y "Repetición con
+% la radio despierta"; results/entropia_90b.csv, filas 0928rd_*;
+% results/esp32_campana_rng/mac_f8b3b72a0928_radio_despierta/capture_log.csv
+Para la radio, esas treinta y seis capturas no pueden sostener solas esa
+afirmación. Como explica la Sección~\ref{sec:esp32_setup}, su firmware
+dejaba dormir a una estación sin asociar, así que la RF pudo estar
+apagada durante la mayor parte de las condiciones A y B, y un análisis
+de la varianza que no encuentra efecto de condición no dice entonces
+nada sobre la radio. La comparación se apoya en la quinta campaña: tres
+ciclos en el tercer chip con el firmware corregido, doce capturas de
+$10^6$ bits que quedan fuera de los análisis anteriores. Su mínimo no
+IID es 0,862 en A, 0,834 en B, 0,845 en C y 0,858 en D (medias de tres,
+rango de 0,818 a 0,892 en las doce) \meas{}. Un análisis de la varianza
+entre las cuatro condiciones da $F(3, 8) = 1{,}09$, $p = 0{,}41$; las
+seis capturas con radio frente a las seis sin ella, $p = 0{,}80$
+(Welch); y las seis con radio frente a las doce capturas A y B de
+octubre en el mismo chip, $p = 0{,}91$. La vía IID pasa en las doce, en
+los dos formatos. Con la radio mantenida despierta la batería sigue sin
+separar las condiciones, y las cifras quedan en el techo que la propia
+batería da a bits ideales de esta longitud ($0{,}839 \pm 0{,}021$,
+Sección~\ref{sec:sim_90b}). Los límites de esa repetición son tres. Con
+tres capturas por condición y una dispersión de 0,01 a 0,03, una
+diferencia entre condiciones menor que unos 0,04 pasaría inadvertida. Es
+un solo chip. Y la RF en sí no se midió: el único indicio de que estaba
+encendida es el sensor del chip, con su paso de 0,56~$^\circ$C, que leyó
+la condición~B 2,2, 1,1 y 1,2~$^\circ$C por encima de la C precedente en
+los tres ciclos, frente a 0,0~$^\circ$C en los tres ciclos de octubre en
+el mismo chip. Es compatible con una radio que ahora disipa y entonces
+no; no lo demuestra.
 
 La prueba de reinicios de la Sección~3.1.4 de la norma responde a lo que
 la estadística anterior no puede: si un generador no tiene ruido propio,
@@ -948,7 +1026,13 @@ confirma el desensamblado. Otras tres variantes hacen una segunda lectura
 tras arrancar el Wi-Fi como en las condiciones A y B, sin asociarse a
 ninguna red, y esperar 200~ms, con cada uno de los dos bootloaders; la
 tercera es un control que espera el mismo tiempo sin tocar la radio, de
-modo que la lectura cae en el mismo tick del planificador. La
+modo que la lectura cae en el mismo tick del planificador. Estas
+variantes arrancan la estación con los ajustes de ahorro de energía de
+serie, como las cuatro primeras campañas; aquí eso no debilita el
+resultado, porque la calibración de la PHY dentro de
+\texttt{esp\_wifi\_start} mantiene la radio encendida antes de la
+segunda lectura, y el firmware de la Tabla~\ref{tab:esp32_fuentes}, que
+sí mantiene la radio despierta, muestra que esa exposición basta. La
 Tabla~\ref{tab:esp32_restart} recoge el resultado.
 
 \begin{table}[htbp]
@@ -984,7 +1068,8 @@ Con el bootloader de serie el generador pasa en ambos formatos, y las
 aleatorios: la distancia de Hamming media entre dos reinicios es de 4096,0
 bits de 8192, frente a $4096 \pm 45$ esperados. Sin el ruido de arranque
 falla de forma tajante, y los datos muestran por qué. Cada reinicio es una
-ventana sobre una única secuencia fija, leída desde un punto de partida
+ventana sobre una secuencia fija (una de 87, según la fase del reloj en
+que empieza la lectura, como se muestra más abajo), leída desde un punto de partida
 ligeramente distinto: dondequiera que el comienzo de la salida de un
 reinicio aparece dentro de la de otro, desplazado unas pocas palabras de
 32 bits, todo el solape coincide palabra por palabra, 5424 veces sin una
@@ -993,7 +1078,8 @@ la aplicación empieza a leer, que varía en unos pocos miles de ciclos de
 reloj de un arranque al siguiente. Eso vale entre 6,5 bits por reinicio,
 la cota de la norma a partir de la salida más repetida, y 10,8 bits si
 todos los puntos de partida fueran igual de probables, de 8192 bits leídos.
-Con la radio y el ADC apagados el generador no tiene ruido propio, y la
+Con la radio y el ADC apagados el generador no muestra ruido propio en
+esta lectura, y la
 afirmación de Espressif de que entonces su salida es solo
 pseudoaleatoria~\cite{espressif_idf_random} queda confirmada directamente,
 cosa que ninguna prueba estadística sobre un flujo continuo podría hacer.
@@ -1019,7 +1105,7 @@ tanto (3824 frente a 5260 ciclos de reloj entre los reinicios que
 comparten el tick), y se repite exactamente como en el arranque: 760
 salidas distintas, 5632 solapes idénticos, unos 1700 estados. Con tan
 pocos estados, los 797 reinicios que comparten un tick en la variante con
-radio mostrarían unas 180 repeticiones solo por temporización; no muestran
+radio mostrarían unas 180 repeticiones solo por temporización (calculado); no muestran
 ninguna. Sin la radio, el generador no recibe ruido en sus primeros
 350~ms de funcionamiento; con la radio, sí. Lo que la prueba no da es
 cuánta entropía por bit aporta la radio: los 0,83 bit por bit validados
@@ -1036,9 +1122,18 @@ aún, los dos chips se repiten \emph{entre sí}. 256 salidas distintas de
 1024 bytes aparecen en los dos, y cubren 352 y 347 de sus 1000 reinicios;
 988 salidas del tercer chip empiezan, a un número entero de palabras de
 32 bits, dentro de una salida del otro, en 8369 solapes sin una sola
-palabra distinta; y las 3000 salidas sin ruido de ambos chips y de otra
-compilación del firmware caen en los mismos 87 grupos, cada uno con
-salidas de las tres. Con el bootloader de serie ninguna salida se alinea
+palabra distinta; y las 3000 salidas sin ruido de ambos chips y de la
+primera lectura de otra compilación del firmware (el control de la
+Tabla~\ref{tab:esp32_restart}) caen en los mismos 87 grupos, cada uno con
+salidas de las tres. No todas las capturas sin ruido se unen a ellos.
+Las primeras lecturas del control de la Tabla~\ref{tab:esp32_fuentes},
+una tercera compilación, caen en 86 de los 87; pero las primeras
+lecturas de la variante con radio sin ruido de arranque, tomadas antes
+de arrancar la radio, forman 774 grupos propios que no se alinean con
+ninguno de los otros, y en algunas compilaciones las lecturas sin ruido
+se repiten exactas pero nunca desplazadas. Una palabra que en esas
+compilaciones no durase un número entero de ciclos de APB lo produciría
+en el modelo del párrafo siguiente; no se midió, y queda sin explicar. Con el bootloader de serie ninguna salida se alinea
 con otra, ni dentro de un chip ni entre chips. Sin el ruido de arranque,
 la salida de los dos chips probados es por tanto una función
 determinista de un punto de partida pequeño, y la misma función en
@@ -1046,7 +1141,9 @@ ambos: quien tenga un chip y el firmware puede precalcular lo que
 devuelve otro. Dos chips de una misma revisión no bastan para afirmarlo
 de todos los ESP32.
 
-Un firmware dedicado mostró qué elige ese punto de partida. Sin el ruido
+Un firmware dedicado mostró qué elige ese punto de partida. Los firmwares
+de reinicios, a diferencia del de captura, hacen funcionar la CPU a los
+160~MHz de serie, dos ciclos de CPU por ciclo del reloj APB de 80~MHz. Sin el ruido
 de arranque y con las interrupciones apagadas, lee 1024~bytes, espera un
 número fijo de instrucciones y vuelve a leer, con la espera elegida en
 cada reinicio entre cuatro valores. En las 204 parejas de reinicios cuya
@@ -1055,11 +1152,18 @@ cuando la espera era la misma, desplazadas exactamente una palabra de 32
 bits cuando era 174~ciclos de CPU más larga (lo que tarda
 \texttt{esp\_fill\_random} por palabra), exactamente 100 palabras cuando
 era 17\,400 ciclos más larga, y sin relación cuando era 2 ciclos más
-larga, un ciclo de APB, en todas las parejas. Sin ruido, el generador
-avanza con el reloj APB desde un estado de reset fijo, se lea o no, y su
+larga, un ciclo de APB, en todas las parejas. La lectura que encaja con
+las 204 parejas es que, sin ruido, el generador
+avanza con el reloj APB desde un estado de reset fijo, se lea o no, de
+modo que su
 salida solo depende del instante en que empieza la lectura: los 87 grupos
-son las 87 fases de un ciclo de APB en una palabra de 174 ciclos, una
-propiedad de este firmware y de este reloj, no del chip.
+serían las 87 fases de un ciclo de APB en una palabra de 174 ciclos, una
+propiedad de este firmware y de este reloj, no del chip. Es una
+inferencia a partir de la salida, no una observación del estado:
+\texttt{esp\_random()} devuelve el XOR de varias lecturas del registro,
+y la prueba se hizo en un chip, con un binario y solo a 160~MHz. A los
+240~MHz del firmware de captura el número de fases sería otro, y no se
+midió.
 
 \begin{table}[htbp]
 \centering
@@ -1069,7 +1173,10 @@ lectura en un instante fijo de 800~ms. Una fuente inyecta ruido si las
 segundas lecturas dejan de ser ventanas de la secuencia fija (solapes) y
 no se repiten nunca. 300 reinicios por variante, 1000 para el ADC y la
 fuente de arranque, que además pasan la prueba de reinicios de la norma
-($H_r$ / $H_c$ 0,864 / 0,877 y 0,840 / 0,842).}
+($H_r$ / $H_c$ 0,864 / 0,877 y 0,840 / 0,842). Un ``sí'' es una cota
+inferior, no una cantidad: que no haya repetición en 300 reinicios
+excluye, con un 95\,\% de confianza, menos de unos $1{,}5\times10^4$
+estados igual de probables, unos 14 bits (calculado).}
 \label{tab:esp32_fuentes}
 \footnotesize
 \begin{tabular}{@{}lrrl@{}}
@@ -1112,7 +1219,10 @@ compresión quedan donde quedaría una fuente perfecta con esta longitud;
 la vía IID de SP~800-90B, leída con su calibración, encuentra la salida
 indistinguible de una fuente binaria de entropía completa; y la vía no
 IID acredita de 0,81 a 0,92~bit por bit, sin ninguna diferencia entre
-condiciones o entre chips que resuelva algún estimador. Ninguna de estas
+condiciones o entre chips que resuelva algún estimador; para la radio,
+apoyado en la quinta campaña, doce capturas en un chip con la RF
+mantenida despierta, porque en las otras treinta y seis pudo estar
+dormida. Ninguna de estas
 cifras distingue la condición~D, en la que Espressif dice que el
 generador es pseudoaleatorio, de la condición~A, en la que están activas
 las dos fuentes documentadas.
@@ -1122,7 +1232,9 @@ pregunta física y no estadística: ¿se repite la salida cuando el
 generador vuelve a arrancar desde el mismo estado? Sin el ruido de
 arranque y con la radio apagada se repite, palabra por palabra, y repite
 la misma secuencia en dos chips distintos; con la radio, la fuente del
-arranque o el ADC convirtiendo, no. El generador no tiene ruido propio con la radio y el
+arranque o el ADC convirtiendo, no. En los dos chips probados, ambos
+ESP32-D0WD-V3, y en los 0,35 a 0,8~s tras el arranque que cubren las
+pruebas, el generador no muestra ruido propio con la radio y el
 ADC apagados, y la radio sí le inyecta ruido. Las cifras de SP~800-90B de
 la condición~D son, por tanto, el veredicto de los estimadores sobre la
 continuación determinista de una semilla de arranque: una cifra
@@ -1146,8 +1258,8 @@ sensor calibrado y una cámara climática, de $-20$ a $+85$~$^\circ$C. Las
 semillas producidas en el dispositivo deberían capturarse y analizarse, y
 no solo reproducirse fuera de línea. Y la prueba de reinicios, la única
 medida que separó las condiciones, debería repetirse en un chip posterior
-como el ESP32-S3, cuyo generador documenta la guía de software con otras
-tasas de lectura (Sección~\ref{sec:esp32_periph}).
+como el ESP32-S3, para cuyo generador el código del controlador programa
+una tasa de lectura mucho menor (Sección~\ref{sec:esp32_periph}).
 
 Lo que falta no es una prueba mejor sino un tipo distinto de
 conocimiento: un modelo de la fuente --- qué proceso físico produce la

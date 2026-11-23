@@ -2385,9 +2385,9 @@
 @misc{espressif_idf_random,
   organization = {Espressif Systems},
   title = {{ESP-IDF} Programming Guide: Random Number Generation ({ESP32})},
-  url = {https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/random.html},
+  url = {https://docs.espressif.com/projects/esp-idf/en/v5.3.2/esp32/api-reference/system/random.html},
   year = {2026},
-  annote = {[VERIFICADO] Condiciones RF / bootloader\_random\_enable / bootloader; ``pseudo-random only'' en caso contrario; esp\_random() busy-wait}
+  annote = {[VERIFICADO] Condiciones RF / bootloader\_random\_enable / bootloader; ``pseudo-random only'' en caso contrario; esp\_random() busy-wait. URL fijada a la v5.3.2 el 23-11-2026 (antes latest); el texto de esa version (docs/en/api-reference/system/random.rst del arbol local) no da tasas de lectura en kHz: las cifras de 45--75 kHz estan en comentarios de components/esp\_hw\_support/hw\_random.c para S3, C6 y P4}
 }
 
 
@@ -2420,9 +2420,8 @@
   title = {Entropy Bootstrapping for Wireless Embedded Systems},
   howpublished = {arXiv:2607.08865},
   year = {2026},
-  month        = sep,
   url = {https://arxiv.org/abs/2607.08865},
-  annote = {[VERIFICADO] p{\'a}gina abs; ESP32 RNG pseudoaleatorio con RF apagada pasa cribados estad{\'i}sticos}
+  annote = {[VERIFICADO] p{\'a}gina abs; ESP32 RNG pseudoaleatorio con RF apagada pasa cribados estad{\'i}sticos. Mes quitado el 23-11-2026: el identificador es de julio y la entrada dec{\'i}a septiembre (docs/estado\_del\_arte\_trng.md: jul.--sep. 2026); confirmar la fecha de la versi{\'o}n citada}
 }
 
 
