@@ -28,24 +28,33 @@ The \ac{ERO} was chosen over higher-throughput alternatives (multi-ring
 XOR, coherent sampling, transition-effect rings) for one reason: it is
 the architecture for which a stochastic model with a provable entropy
 bound exists and for which an embedded jitter measurement method has
-been published and validated~\cite{petura_2016_survey}. Throughput is
+been published and validated~\cite{fischer_2014_embedded,
+petura_2016_survey}. Throughput is
 not a requirement here --- the engine consumes entropy only to seed a
 deterministic generator --- whereas a demonstrable bound is.
 
 A design decision that follows from the platform is that \emph{the board
 oscillator is never used as a reference}. The Basys~3 clock source is a
-MEMS oscillator with a fractional \ac{PLL} whose datasheet specifies a
-cycle-to-cycle jitter of up to 95~ps \est{}~\cite{digilent_2014_basys3rm},
-one to two orders of magnitude above the per-period jitter of a ring
-oscillator in a 28~nm process (2--4~ps \est{}~\cite{petura_2016_survey}).
+MEMS oscillator with a fractional \ac{PLL} whose datasheet tabulates a
+cycle-to-cycle jitter of 95~ps at 100~MHz~\cite{micrel_dsc1033,
+digilent_2014_basys3rm}, a datasheet figure that was not measured here.
+A cycle-to-cycle figure is not the same quantity as the r.m.s.\ period
+jitter of a ring oscillator in a 28~nm process (2--4~ps as
+published~\cite{petura_2016_survey}), but it is more than an order of
+magnitude above it.
 Sampling RO1 with that clock would measure the phase noise of the PLL,
 a global and potentially inducible component, rather than the thermal
 noise of the ring. RO2 therefore samples RO1, and the 100~MHz system
-clock only drives the synchronous logic. The campaign of this work
-places its own rings in that range: the white floor of the relative phase
-variance of the two rings on the Basys~3 is $0.6$--$1.1\times10^{-6}$ per
-RO2 period, $\sigma \approx 4$--$5$~ps per 4.9~ns period \meas{}, with a
-calibration that is \simu{} (Section~\ref{sec:campaign}).
+clock only drives the synchronous logic. The campaign of this work finds
+a jitter of that order in its own rings: the white floor of the relative
+phase variance of the two rings on the Basys~3 is
+$q_2 = 0.6$--$1.1\times10^{-6}$ per RO2 period \meas{}, with a
+calibration that is \simu{} (Section~\ref{sec:campaign}). Quoted as
+$\sqrt{q_2}\,T_2$ that is 4 to 5~ps per 4.9~ns period of RO2, the
+convention used in the rest of the document; through
+equation~\eqref{eq:q2}, which credits it all to RO1, it is 5 to 7~ps per
+6.0~ns period \est{}. In both readings it is the relative jitter of two
+rings, not that of one, and it comes from an estimator that errs upwards.
 
 \paragraph{Notation.} Four symbols are fixed here and used unchanged in
 the rest of the document. $K_D$ is the number of RO2 periods between two
@@ -119,7 +128,9 @@ $A = (2/\pi)e^{-2\pi^2 Q}$, gives
   \label{eq:orden2}
 \end{equation}
 All omitted terms are negative, so \emph{any} truncation overestimates
-the entropy; the next term decays as $e^{-8\pi^2 Q}$, not $e^{-6\pi^2 Q}$.
+the entropy; the next term decays as $e^{-8\pi^2 Q}$, so the remainder
+$O(e^{-6\pi^2 Q})$ of equation~\eqref{eq:baudet14} is correct but looser
+than necessary.
 Table~\ref{tab:exact} compares the exact value computed from
 \eqref{eq:puno} on a grid of 8192 phases with the first- and second-order
 expansions. Adding the second-order term reduces the error of
@@ -167,6 +178,16 @@ target is $Q \ge 0.23$, with a set point of $Q = 0.30$} ($H_\infty =
 temperature, which is the standard adversarial test of Fischer and
 Lubicz~\cite{fischer_2014_embedded}.
 
+Only that threshold is taken from PTG.2. The class also requires
+$P(1)\in(0.493, 0.507)$ (Section~\ref{sec:soa_standards}), and the target
+on $Q$ covers the jitter, not the bias of the sampler. On the integrated
+circuit the sampling flip-flop gives a mean $P(1)$ of 0.46 to 0.48
+depending on the corner, and 0.408 at the $\mu \mp 3\sigma$ point of the
+worst one \simu{} (Section~\ref{sec:ff_mc}): its raw bits fall outside
+that band and are not claimed to meet PTG.2. That is why the engine
+declares $\Hdecl = 0.60$ for them and conditions them before use
+(Section~\ref{sec:health}).
+
 \section{Embedded jitter estimator and its two corrections}
 \label{sec:estimator}
 
@@ -185,7 +206,7 @@ $Q$ and corrected:
 it is a \emph{triangular} wave of period one and slope $\pm2$. When the
 deterministic phase $M\nu \bmod 1$ falls near a vertex the distribution
 straddles it and the variance collapses --- to 0.38 of its nominal value
-in one measured case. The vertex is detected from the measured mean
+in one simulated case. The vertex is detected from the measured mean
 itself ($\bar c \approx 0$ or $1$ is a vertex, $\bar c \approx \tfrac12$
 the middle of the ramp), so distances $M$ with $\bar c$ outside
 $[0.15, 0.85]$, or for which $3\sqrt{MQ}$ reaches the vertex, are
@@ -204,7 +225,9 @@ independent seeds for $K=20\,000$ blocks. The fitted accumulation
 exponent is $1.009$ for a simulator without flicker noise; measured on
 hardware, the same exponent separates the thermal component ($b=1$, which
 counts as entropy) from flicker and global jitter ($b=2$, which does not).
-On the board the free exponent came out between 1.6 and 2.1 \meas{} and
+On the board, where the chunks used were captured at $K_D = 2^2$
+and not at $K_D = 1$, the free exponent came out between 1.6 and 2.1
+\meas{} and
 the model did not describe the shape of the pair statistic, so the white
 part was separated in the frequency domain instead
 (Section~\ref{sec:campaign}).
@@ -259,7 +282,8 @@ disabled, the residual jitter is the numerical noise of the simulator.
 The first attempt gave 0.33~ps, of the same order as the jitter to be
 measured; it was entirely the start-up transient of the oscillator, and
 discarding the first twenty cycles brings the floor to \textbf{1.38~fs},
-three orders of magnitude below the signal. Only then was noise injected.
+about 870 times below the smallest signal measured. Only then was noise
+injected.
 Jitter scales with the square root of the injected spectral density
 ($\times2.01$ measured for $\times4$ in density, against $\times2.00$
 expected) up to the point where the r.m.s.\ noise current reaches
@@ -300,21 +324,28 @@ With $q_2$ known, from $\sigma/T$ per period and equation~\eqref{eq:q2}
 or measured directly, the divider follows from
 $K_D \ge Q_{\mathrm{target}} / q_2$, rounded up to the next power of two.
 Before any measurement, the jitter expected in a 28~nm process (2--4~ps
-per period of 3--5~ns) put the divider between $3\times10^4$ and
-$5\times10^5$ and the throughput per ring between 1 and 20~kbit/s with
-RO2 at 500~MHz \est{}. The same inversion reproduces the published design
+per period of 3--5~ns, that is, $q_2$ from $1.6\times10^{-7}$ to
+$1.8\times10^{-6}$ with equal rings) put the divider between
+$1.3\times10^5$ and $1.4\times10^6$ and the throughput per ring between
+0.35 and 3.9~kbit/s with RO2 at 500~MHz \est{}. The same inversion
+reproduces the published design
 point of Fischer and Lubicz~\cite{fischer_2014_embedded}: with
 $T_1 = 8.9$~ns, $T_2 = 8.7$~ns, $\sigma = 5.01$~ps and their target, a
 Shannon entropy of 0.997 through equation~\eqref{eq:baudet14}, it gives
-$K_D = 431\,153$ against their $K_D \approx 430\,000$. That target
+$K_D = 431\,153$ against their $K_D \approx 430\,000$. Those periods are
+the ones of their design example; the 7.81~ns of
+Section~\ref{sec:soa_jitter} is the ring on which they measured that
+$\sigma$. That target
 corresponds to $Q \approx 0.13$; the min-entropy target adopted here,
 $Q \ge 0.2286$, would ask for about $738\,000$ with the same rings.
 
-What was measured falls at the upper end of the estimated range. On the
-\ac{FPGA} the lower edge of the measured white floor,
+What was measured on the \ac{FPGA} falls inside the estimated range. The
+lower edge of the measured white floor,
 $q_2 = 0.6\times10^{-6}$, gives $K_D \ge 0.2286 / q_2 \approx
 3.8\times10^{5}$, hence \kd{19} (\texttt{CFG\_KD} $= 19$) and about
-390~bit/s with RO2 at 205~MHz \meas{} (Section~\ref{sec:campaign}). On
+390~bit/s \meas{} (Section~\ref{sec:campaign}); the throughput sits at
+the low end of the estimate because RO2 runs at 205~MHz, not 500, and
+the divider is rounded up to a power of two. On
 the integrated circuit the divider is \kd{25}, at 20 to 50~bit/s \est{}
 (Section~\ref{sec:ihp_ring11}). Such rates are sufficient here. A seed is
 512 raw bits, 384 of entropy input and 128 of nonce, dimensioned for
