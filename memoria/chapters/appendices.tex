@@ -37,10 +37,13 @@ Address & Name & Access & Content \\
   0--24 on the \ac{FPGA}; a value outside it is ignored and sets
   \texttt{DIAG.rejected}. Resets to 25 (19 on the \ac{FPGA}). Written only
   while the engine is idle and the stream is stopped; otherwise the write
-  is ignored \\
+  is ignored. A chunk capture in progress does not block the write \\
 0x05 & CFG\_PAG & R/W & page of the capture buffer, 0--3 \\
-0x06--0x07 & RCT\_MAX & R & longest run seen by the \ac{RCT}, low byte first \\
-0x08--0x09 & APT\_MAX & R & largest count seen by the \ac{APT}, low byte first \\
+0x06--0x07 & RCT\_MAX & R & longest run seen by the \ac{RCT} since reset
+  or the last \texttt{clear\_alarms}, low byte first \\
+0x08--0x09 & APT\_MAX & R & largest count (or complement) of a closed
+  \ac{APT} window since reset or the last \texttt{clear\_alarms}, low
+  byte first \\
 0x0A--0x0D & REQUESTS & R & reseed counter of the \ac{DRBG}, 32 bits, low byte
   first. Saturates at $2^{32}-1$ \\
 0x0E & DIAG & R & Table~\ref{tab:app_diag} \\
@@ -123,8 +126,8 @@ Bit & Command & Action \\
 3 & clear\_alarms & clear the health alarms; restarts the start-up window \\
 4 & capture & fill the capture buffer with raw bits. Test mode only, engine
   idle, no capture in progress \\
-5 & reseed & as \texttt{seed}, but on top of the current state; requires a
-  seeded \ac{DRBG} \\
+5 & reseed & as \texttt{seed}, but on top of the current state; alone it
+  requires a seeded \ac{DRBG} \\
 6 & random & draw 256 bits into RANDOM \\
 7 & clear\_all & zeroization: KEY, the whole \ac{DRBG} state and its
   intermediates (including the \ac{AES} core), CHALLENGE, RANDOM, TAG and
@@ -151,7 +154,7 @@ raise \texttt{busy} and sets \texttt{DIAG.rejected}.
   where it falls in the window: 10 to 75~s on the integrated circuit at
   \kd{25} \est{}, after a start-up test (1024 bits) of 20 to 50~s
   (Section~\ref{sec:ihp_ring11}); 1.3 to 4~s and about 2.6~s on the
-  Basys~3 at \kd{19}.
+  Basys~3 at \kd{19} \est{}, computed from the measured 205~MHz of RO2.
 \item \texttt{seed} and \texttt{reseed} are refused with
   \texttt{CFG\_KD} below the minimum divider, $n = 25$ by default and 19
   on the Basys~3. The clock-domain crossing alone would only ask for
@@ -200,7 +203,8 @@ Generic & Meaning & Integrated circuit & Basys~3 \\
 \midrule
 \texttt{G\_KD\_MIN} & minimum $n$ for seeding, reseeding and the stream & 25 & 19 \\
 \texttt{G\_KD\_RESET} & $n$ after reset & 25 & 19 \\
-\texttt{G\_KD\_MAX} & maximum $n$; width of the sampler counter & 26 & 24 \\
+\texttt{G\_KD\_MAX} & maximum $n$; the sampler counter has
+  \texttt{G\_KD\_MAX} $-$ \texttt{G\_PRESC\_RO2} bits (22 and 24) & 26 & 24 \\
 \texttt{G\_PRESC\_RO2} & $\log_2$ of the RO2 prescaler; lowest $n$ accepted & 4 & none \\
 \texttt{G\_FLUJO\_BYTES} & bytes of the stream queue & 0 & 256 \\
 Ring stages & RO1 (sampled) / RO2 (sampling) & 11 / 13 & 13 / 11 \\
@@ -211,7 +215,11 @@ Ring stages & RO1 (sampled) / RO2 (sampling) & 11 / 13 & 13 / 11 \\
 \paragraph{Priority.} If several command bits arrive in one write, only
 the highest-priority one is served: \texttt{clear\_all}, then
 \texttt{seed}/\texttt{reseed} (\texttt{reseed} if both), \texttt{generate},
-\texttt{random}, \texttt{authenticate}, \texttt{capture}.
+\texttt{random}, \texttt{authenticate}, \texttt{capture}. With both
+\texttt{seed} and \texttt{reseed} set the check for a seeded \ac{DRBG} is
+not applied: on an engine without state the write is accepted and the
+state is derived from the collected seed over the all-zero one, which is
+harmless.
 \texttt{clear\_alarms} is served alongside any of them, but it must not
 share a write with a seeding: it restarts the start-up window, so the
 seeding is accepted and aborted on the next cycle.
@@ -273,6 +281,7 @@ thirteen benches; \acs{PSL}: 14 of 14 assertions and 8 of 8 cover points
 in the whole-engine bench, 4 of 4 and 2 of 2 in the source-only variant,
 1 of 1 and 1 of 1 in the \acs{I2C} slave).}
 \label{tab:app_vectors}
+\footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
 Block & Source of the expected values & Where checked \\
@@ -294,8 +303,9 @@ Block & Source of the expected values & Where checked \\
 \ac{CTRDRBG}, \ac{RTL} & the reference model above, with the hardware's
   input layout (384-bit entropy, 128-bit nonce, no personalization):
   \nolinkurl{analysis/gen_drbg_vectores.py} writes
-  \texttt{drbg\_vectores\_pkg.vhd}, 52 seeds & \texttt{tb\_ctr\_drbg}, 19
-  checks (one of them over the 150 outputs of 50 seeds), including
+  \texttt{drbg\_vectores\_pkg.vhd}, 51 sequences (one and a batch of 50),
+  153 outputs & \texttt{tb\_ctr\_drbg}, 19
+  checks (one of them over the 150 outputs of the batch), including
   zeroization and counter saturation \\
 Whole engine & the key comes from ring noise, so the bench dumps the
   collected seed, key, random output, challenges and tags; the model
@@ -310,7 +320,9 @@ Firmware against the engine model & \ac{CMAC} and ECDSA of the target's
   \texttt{verifica\_lecturas.py} \\
 Health-test cut-offs & SP~800-90B~\S4.4~\cite{turan_2018_sp80090b}
   formulas for $H = 0.60$ and $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$,
-  $C = 766$; seed of 512 bits $\ge 192$ bits of entropy at the \ac{APT} limit;
+  $C = 766$; seed of 512 bits $\ge 192$ bits of entropy at the \ac{APT}
+  limit (memoryless biased source); \ac{APT} with its complement, an
+  addition of this design, still below $2^{-30}$;
   worst die and $\mu - 3\sigma$ of the flip-flop Monte Carlo above $\Hdecl$
   & \nolinkurl{analysis/cortes_salud.py}, 11 of 11; behaviour in
   \texttt{tb\_health\_tests}, 15 checks \\
@@ -374,7 +386,9 @@ author's machine) for the benches, which must be run with \acs{VHDL}-2008; Yosys
 IHP SG13G2 standard-cell library of the open
 \ac{PDK}~\cite{ihp_openpdk_repo}; mbedtls~3.6.2 from its release tarball
 (a git clone lacks the generated sources); ESP-IDF~5.3.5, the workflow
-using the \nolinkurl{espressif/idf:v5.3.5} container; tectonic~0.15. The
+using the \nolinkurl{espressif/idf:v5.3.5} container; tectonic, 0.15.0
+on the author's machine, while the workflow installs the current release
+without fixing a version. The
 GHDL~7.0 development build with the LLVM back-end crashes on the
 \acs{PSL} properties of \texttt{tb\_motor\_top} that use external names,
 and should not be used.

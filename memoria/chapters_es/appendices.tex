@@ -35,12 +35,13 @@ Dirección & Nombre & Acceso & Contenido \\
   0--24 en la \ac{FPGA}; un valor fuera de él se ignora y levanta
   \texttt{DIAG.rechazada}. Tras el reset vale 25 (19 en la \ac{FPGA}).
   Solo con el motor libre y el flujo parado: si no, la escritura se
-  ignora \\
+  ignora. Una captura por trozos en marcha no la impide \\
 0x05 & CFG\_PAG & R/W & página del búfer de captura, 0--3 \\
-0x06--0x07 & RCT\_MAX & R & racha más larga vista por el \ac{RCT}, byte bajo
-  primero \\
-0x08--0x09 & APT\_MAX & R & cuenta más alta vista por el \ac{APT}, byte bajo
-  primero \\
+0x06--0x07 & RCT\_MAX & R & racha más larga vista por el \ac{RCT} desde el
+  reset o el último \texttt{borrar\_alarmas}, byte bajo primero \\
+0x08--0x09 & APT\_MAX & R & cuenta (o complemento) más alta de una ventana
+  cerrada del \ac{APT} desde el reset o el último
+  \texttt{borrar\_alarmas}, byte bajo primero \\
 0x0A--0x0D & PETICIONES & R & contador de resembrado del \ac{DRBG}, 32 bits,
   byte bajo primero. Se satura en $2^{32}-1$ \\
 0x0E & DIAG & R & Tabla~\ref{tab:app_diag} \\
@@ -125,8 +126,8 @@ Bit & Orden & Qué hace \\
   arranque \\
 4 & capturar & llena el búfer de captura con bits crudos. Solo en modo test,
   con el motor libre y sin otra captura en marcha \\
-5 & resembrar & como \texttt{sembrar}, pero sobre el estado actual; exige un
-  \ac{DRBG} sembrado \\
+5 & resembrar & como \texttt{sembrar}, pero sobre el estado actual; sola,
+  exige un \ac{DRBG} sembrado \\
 6 & aleatorio & pide 256 bits y los deja en ALEATORIO \\
 7 & borrar\_todo & zeroización: CLAVE, todo el estado del \ac{DRBG} y sus
   intermedios (también el núcleo \ac{AES}), RETO, ALEATORIO, ETIQUETA y la
@@ -152,7 +153,7 @@ subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
   en la ventana: de 10 a 75~s en el circuito integrado con \kd{25} \est{},
   tras un test de arranque (1024 bits) de 20 a 50~s
   (Sección~\ref{sec:ihp_ring11}); de 1,3 a 4~s y unos 2,6~s en la Basys~3
-  con \kd{19}.
+  con \kd{19} \est{}, calculados con los 205~MHz medidos de RO2.
 \item \texttt{sembrar} y \texttt{resembrar} se rechazan con
   \texttt{CFG\_KD} por debajo del divisor mínimo, $n = 25$ por defecto y
   19 en la Basys~3. El cruce de dominio de reloj solo pediría $n \ge 8$
@@ -203,7 +204,8 @@ Genérico & Significado & Circuito integrado & Basys~3 \\
 \midrule
 \texttt{G\_KD\_MIN} & $n$ mínimo para sembrar, resembrar y el flujo & 25 & 19 \\
 \texttt{G\_KD\_RESET} & $n$ tras el reset & 25 & 19 \\
-\texttt{G\_KD\_MAX} & $n$ máximo; anchura del contador del muestreador & 26 & 24 \\
+\texttt{G\_KD\_MAX} & $n$ máximo; el contador del muestreador tiene
+  \texttt{G\_KD\_MAX} $-$ \texttt{G\_PRESC\_RO2} bits (22 y 24) & 26 & 24 \\
 \texttt{G\_PRESC\_RO2} & $\log_2$ del preescalador de RO2; menor $n$ admitido & 4 & no hay \\
 \texttt{G\_FLUJO\_BYTES} & bytes de la cola del flujo & 0 & 256 \\
 Etapas de los anillos & RO1 (muestreado) / RO2 (de muestreo) & 11 / 13 & 13 / 11 \\
@@ -215,7 +217,11 @@ Etapas de los anillos & RO1 (muestreado) / RO2 (de muestreo) & 11 / 13 & 13 / 11
 escritura, solo se atiende el de mayor prioridad: \texttt{borrar\_todo},
 después \texttt{sembrar}/\texttt{resembrar} (\texttt{resembrar} si van los
 dos), \texttt{generar}, \texttt{aleatorio}, \texttt{autenticar},
-\texttt{capturar}. \texttt{borrar\_alarmas} se atiende junto con
+\texttt{capturar}. Con \texttt{sembrar} y \texttt{resembrar} a la vez no
+se aplica la comprobación de \ac{DRBG} sembrado: en un motor sin estado
+la escritura se acepta y el estado se deriva de la semilla recogida
+sobre el estado todo ceros, lo que es inocuo.
+\texttt{borrar\_alarmas} se atiende junto con
 cualquiera de ellas, pero no debe compartir escritura con una siembra:
 reinicia la ventana de arranque, así que la siembra se acepta y se aborta
 en el ciclo siguiente.
@@ -281,6 +287,7 @@ comprobaciones superadas en la última ejecución
 completo, 4 de 4 y 2 de 2 en la variante de solo fuente, 1 de 1 y 1 de 1
 en el esclavo \acs{I2C}).}
 \label{tab:app_vectors}
+\footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
 \toprule
 Bloque & Origen de los valores esperados & Dónde se comprueba \\
@@ -302,8 +309,9 @@ Bloque & Origen de los valores esperados & Dónde se comprueba \\
 \ac{CTRDRBG}, \ac{RTL} & el modelo de referencia anterior, con la
   disposición de entrada del hardware (entropía de 384 bits, nonce de 128,
   sin personalización): \nolinkurl{analysis/gen_drbg_vectores.py} escribe
-  \texttt{drbg\_vectores\_pkg.vhd}, 52 semillas & \texttt{tb\_ctr\_drbg}, 19
-  comprobaciones (una de ellas sobre las 150 salidas de 50 semillas),
+  \texttt{drbg\_vectores\_pkg.vhd}, 51 secuencias (una y un lote de 50),
+  153 salidas & \texttt{tb\_ctr\_drbg}, 19
+  comprobaciones (una de ellas sobre las 150 salidas del lote),
   incluidas la zeroización y la saturación del contador \\
 Motor completo & la clave sale del ruido del anillo, así que el banco
   vuelca la semilla recogida, la clave, la salida aleatoria, los retos y
@@ -321,7 +329,9 @@ Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
 Cortes de los tests de salud & fórmulas de
   SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}60$ y
   $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$, $C = 766$;
-  semilla de 512 bits $\ge 192$ bits de entropía en el límite del \ac{APT};
+  semilla de 512 bits $\ge 192$ bits de entropía en el límite del
+  \ac{APT} (fuente sesgada sin memoria); \ac{APT} con su complemento,
+  adición de este diseño, aún por debajo de $2^{-30}$;
   peor chip y $\mu - 3\sigma$ del Monte Carlo del biestable por encima de
   $\Hdecl$ &
   \nolinkurl{analysis/cortes_salud.py}, 11 de 11; comportamiento en
@@ -388,7 +398,8 @@ con el plugin de GHDL, y la biblioteca de celdas estándar IHP SG13G2 del
 \ac{PDK} abierto~\cite{ihp_openpdk_repo}; mbedtls~3.6.2 del tarball de
 publicación (un clon de git no trae los fuentes generados); ESP-IDF~5.3.5,
 en la integración continua con el contenedor \nolinkurl{espressif/idf:v5.3.5};
-tectonic~0.15. La versión de desarrollo GHDL~7.0 con el motor LLVM se cae
+tectonic, 0.15.0 en la máquina del autor, mientras que la integración
+continua instala la versión publicada sin fijarla. La versión de desarrollo GHDL~7.0 con el motor LLVM se cae
 con las propiedades \acs{PSL} de \texttt{tb\_motor\_top} que usan nombres
 externos, y no debe usarse.
 
