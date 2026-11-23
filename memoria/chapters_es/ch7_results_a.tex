@@ -34,14 +34,16 @@ O1 & cumplido  & Anillo a nivel de transistor en el \ac{PDK} abierto IHP SG13G2,
               (Sección~\ref{sec:ihp_ring11}); el biestable de muestreo de
               la biblioteca simulado sin ruido en 120 chips
               (Sección~\ref{sec:ff_mc}); pendiente el \ac{PDK} de fundición \\
-O2 & cumplido  & Jitter extraído de las formas de onda; térmico y $1/f$
-              separados (banco y función de sensibilidad al impulso);
-              estimador validado sobre datos sintéticos con $Q$ conocido \\
+O2 & cumplido$^{\dagger}$ & Jitter térmico extraído de las formas de
+              onda; estimador validado sobre datos sintéticos con $Q$
+              conocido. $^{\dagger}$El $1/f$ solo queda acotado entre dos
+              límites; factor dos abierto en la varianza térmica
+              (Sección~\ref{sec:ihp_ring}) \\
 O3 & cumplido  & Modelo estocástico cerrado: cálculo exacto con la gaussiana envuelta,
               punto de diseño $Q \ge 0{,}2286$ (Sección~\ref{sec:opoint}) \\
 O4 & cumplido  & Motor escrito en VHDL-2008 portable; trece bancos de pruebas
-              pasan, con los vectores de FIPS-197, SP 800-38B y RFC 4493 y
-              un modelo de referencia validado con los vectores \ac{CAVP} (52
+              pasan, con los vectores de FIPS-197, SP 800-38A y RFC 4493 y
+              un modelo de referencia validado con los vectores \ac{CAVP} (51
               semillas para el generador; en el banco de sistema, la clave
               recalculada desde la semilla que recogió el motor) \\
 O5 & cumplido$^{*}$ & El motor entero funciona en una Basys~3 y el ESP32 recalculó
@@ -69,8 +71,8 @@ O8 & cumplido  & Comparación estructural (Sección~\ref{sec:se_comparison}); la
 \end{table}
 
 El resultado mínimo defendible declarado en el Capítulo~\ref{ch:ch1_intro} ---
-O1--O3 junto con O5 --- se alcanza, con la salvedad de O5 que recoge la
-tabla: la fuente se dimensiona desde el transistor y el motor construido
+O1--O3 junto con O5 --- se alcanza, con las salvedades de O2 y O5 que
+recoge la tabla: la fuente se dimensiona desde el transistor y el motor construido
 a su alrededor responde a una implementación independiente por un bus
 real.
 
@@ -155,7 +157,8 @@ térmico del \ac{PDK} se simuló ocho veces.
 no se supone: es el suelo blanco del propio modelo de ruido de los
 transistores en el punto de conmutación. El punto térmico es la media de
 ocho realizaciones independientes, $\pm$ una desviación típica de la
-media; las demás filas son realizaciones únicas. La potencia es la media
+media, con $\sigma$ tomada como la raíz de la media de $(\sigma/T)^2$;
+las demás filas son realizaciones únicas. La potencia es la media
 sobre periodos completos.}
 \label{tab:ihp_ring}
 \small
@@ -178,7 +181,9 @@ identifica como ruido numérico y no como un paseo aleatorio. Las ocho
 realizaciones térmicas se dispersan un 3,3\,\% en $\sigma$ (de 169,0 a
 186,5~fs), así que una ejecución suelta lleva esa incertidumbre y la media,
 un 1,2\,\%. Cuadruplicar la densidad multiplica el jitter por
-$1{,}99 \pm 0{,}06$ frente al 2 esperado, y el periodo medio no se mueve,
+$1{,}99 \pm 0{,}06$ frente al 2 esperado (el punto cuadruplicado es una
+sola realización, y el $\pm$ es la dispersión del 3,3\,\% de una
+ejecución), y el periodo medio no se mueve,
 así que el banco se mantiene en el régimen lineal que el banco provisional
 abandonaba en su punto más alto. El exponente de acumulación es 0,99 de
 media: ruido blanco, como supone el modelo estocástico. Como comprobación
@@ -236,7 +241,9 @@ sf y fs piden 1,93, 1,57 y $1{,}74\times10^6$, la mitad que ss. En el
 peor punto, $2^{22}$ todavía da $H_\infty = 0{,}9873$, pero con un
 10\,\% de margen sobre $K_D$, cerca del 7\,\% que se juzgó escaso para
 $2^{20}$ en el punto típico; $2^{23}$ da 0,9999 y de 0,20 a
-0,41~kbit/s, unos 2,6~s para los 512 bits de una siembra en el peor caso.
+0,41~kbit/s, de la esquina lenta a 1,08~V a la rápida a 1,2~V, las dos a
+$-40~^\circ$C (la esquina rápida a 1,32~V no se simuló con cinco etapas),
+unos 2,5~s para los 512 bits de una siembra en el peor caso.
 El desapareamiento, sorteado por transistor con los modelos estadísticos
 del \ac{PDK} y con una realización de ruido nueva en cada ejecución,
 dispersa el periodo un 1,3\,\% en 48 chips en el punto típico y un
@@ -255,7 +262,10 @@ cinco etapas el divisor fijo sería, por tanto, $2^{23}$: tiene que salir
 de la esquina más fría y la tensión más baja a las que deba funcionar el
 producto, no del punto típico.
 
-\paragraph{Ruido de parpadeo.} Añadir el ruido $1/f$ del \ac{PDK} no
+\paragraph{Ruido de parpadeo.} Las frecuencias de esquina y los cruces
+de este párrafo son estimaciones \est{} calculadas a partir de magnitudes
+simuladas \simu{}: la función de sensibilidad y el ruido de cada
+dispositivo. Añadir el ruido $1/f$ del \ac{PDK} no
 cambia nada en 400~ns: $\sigma$ sube un 3,8\,\%, dentro de la dispersión
 entre realizaciones, y la separación $E[D^2] = a_1 M + a_2 M^2$, validada
 antes sobre fases sintéticas (componente térmica recuperada al 0,1\,\%
@@ -321,7 +331,7 @@ El biestable de muestreo sesga el bit más que el anillo. Con el
 un \texttt{sg13g2\_\allowbreak buf\_1} (sin él, la capacidad de entrada del biestable
 tira del anillo, unos 2--3~ps de modulación del periodo), y la
 probabilidad de un uno ponderada por la fase de muestreo, tt y ss quedan a
-menos de 0,01 del umbral ideal. A 125~$^\circ$C con desapareamiento no:
+menos de unos 0,013 del umbral ideal (0,005 en tt, 0,013 en ss). A 125~$^\circ$C con desapareamiento no:
 en cuatro chips por esquina, $P(1)$ va de 0,372 a 0,461 en ff y de 0,399 a
 0,437 en sf, mientras que el umbral ideal sobre los mismos anillos da
 0,49--0,51 \simu{}. El biestable no captura en el mismo instante
@@ -336,10 +346,15 @@ declarada, $\Hdecl = 0{,}80$: cinco quedaban por debajo y el peor daba
 512 bits calculados para él (Sección~\ref{sec:health}), y se declaró
 provisional, porque ocho chips dicen poco de una cola. El criterio que lo
 cerraría se dejó escrito antes de simular nada más: un Monte Carlo de 24
-chips por esquina; la entropía declarable es $-\log_2\max(p, 1-p)$
-evaluada en $p = \mu - 3\sigma$ de $P(1)$, y la cifra es el mínimo sobre
+chips por esquina, a los que se suman los cuatro ya simulados en ff y en
+sf, y ocho chips en sf a 1,08~V, ampliados a 24 si su media sale peor
+que a 1,2~V; la entropía declarable es $-\log_2\max(p, 1-p)$
+evaluada en el punto a $3\sigma$ de $P(1)$ por el lado que se aleja de un
+medio ($p = \mu - 3\sigma$ aquí, porque todas las medias quedan por
+debajo de un medio), y la cifra es el mínimo sobre
 las esquinas; si queda por debajo de 0,60 se corrige el circuito, y
-$\Hdecl$ no se vuelve a bajar.
+$\Hdecl$ no se vuelve a bajar. La normalidad que supone el $3\sigma$
+debía darse junto con la cifra.
 
 \begin{table}[htbp]
 \centering
@@ -347,7 +362,9 @@ $\Hdecl$ no se vuelve a bajar.
 dispositivos \simu{}, sin ruido. $P(1)$ está ponderada por la fase de
 muestreo; $H$ es la cota de la entropía del bit, menos el logaritmo en
 base 2 del mayor de $p$ y $1-p$, en $p = \mu - 3\sigma$. La entropía
-declarable de cada anillo es la menor $H$ de sus filas.}
+declarable de cada anillo es la menor $H$ de sus filas. Las filas de 28
+chips son 24 más los cuatro de la primera tanda; la primera fila son 8
+chips ampliados a 24.}
 \label{tab:ff_mc}
 \small
 \begin{tabular}{@{}llrcccc@{}}
@@ -375,31 +392,48 @@ hasta el peor chip suelto de esa esquina, con 0,596, queda por debajo.
 Según el criterio, se corrigió el circuito. De las opciones que ofrece la
 ley $1/T$, se prefirió un anillo muestreado más largo a RO1 seguido de un
 divisor por dos, cuyo biestable basculante a 2,7~GHz traería una asimetría
-propia que no se simuló: RO1 tiene ahora once etapas, 2,2 veces el
-periodo. El Monte Carlo se repitió con él, en las mismas cuatro esquinas
+propia que no se simuló: RO1 tiene ahora once etapas, de 2,0 a 2,1 veces
+el periodo \simu{}. El Monte Carlo se repitió con él, en las mismas cuatro esquinas
 más la esquina rápida a $-40~^\circ$C y 1,32~V, donde el periodo es más
 corto: 24 chips en cada una de cinco esquinas, 120 en total. La entropía
 declarable es \textbf{0,757} \simu{}, fijada otra vez por sf a
 125~$^\circ$C y 1,08~V, así que $\Hdecl = 0{,}60$ se mantiene, los
 umbrales no cambian y el circuito no se vuelve a tocar. Con $\sigma$ en el
 extremo alto de su intervalo de confianza del 95\,\% esa esquina aún da
-0,704.
+0,704. La prueba de Shapiro--Wilk no rechaza la normalidad en ocho de
+las nueve filas ($p$ de 0,06 a 0,84); sí en tt a 125~$^\circ$C con once
+etapas ($p < 0{,}01$), por el chip que se describe más abajo.
 
 Cómo se leerían los 24 chips también se fijó antes de que acabara la
-última tanda. En algunos chips las fases de muestreo dejan sin cubrir
+última tanda, pero no antes de conocer ningún resultado: cuando se
+escribió la regla ya se habían visto los once primeros chips de la
+esquina que limita, dos de ellos con un hueco grande, y se sabía que
+quitarlos subía la cifra. En algunos chips las fases de muestreo dejan
+sin cubrir
 parte del periodo, y la $P(1)$ ponderada por fase tiene entonces una
 incertidumbre de aproximadamente la anchura de ese hueco dividida por
 $\sqrt{6}$. La cifra oficial usa todos los chips; una lectura de
 sensibilidad quita los chips con un hueco mayor que 0,025 de periodo
-(error de hasta 0,01) y nunca decide sola. Da 0,789 con 22 chips en la
-esquina que limita, así que las dos lecturas pasan. La misma lectura de
+(error típico de unos 0,01, como mucho unos 0,025) y nunca decide sola;
+el umbral sale de ese presupuesto de error y no de los dos chips. Da
+0,789 con 22 chips en la
+esquina que limita, así que las dos lecturas pasan. Los dos chips que se
+quitan ahí son el peor de los 120 (0,4166, el 0,777 de la
+Sección~\ref{sec:verif_results}) y una medida degenerada que devuelve
+exactamente 0,5000; sin ellos la $\sigma$ de la esquina baja de 0,0183 a
+0,0141. La misma lectura de
 sensibilidad sobre la campaña de cinco etapas da 0,530 frente a 0,532:
 quitar esos chips tampoco habría cambiado aquella decisión.
 
 Se declaran tres límites. Son simulaciones sin ruido, con los modelos
 estadísticos de un \ac{PDK} abierto. Las esquinas críticas se simularon en
 dos tandas de 11 y 13 chips, y en sf a 1,2~V las dos tandas difieren en
-la media ($0{,}4700$ frente a $0{,}4592$, Welch $p = 0{,}004$); la causa
+la media ($0{,}4700$ frente a $0{,}4592$, Welch $p = 0{,}004$). La
+esquina que limita, sf a 1,08~V, muestra una diferencia del mismo tamaño
+y signo ($0{,}4691$ frente a $0{,}4579$, $p = 0{,}15$, y $p = 0{,}01$ sin
+los dos chips de hueco grande), así que el efecto es sistemático entre
+tandas y alcanza a la esquina que fija 0,757; en ff a $-40~^\circ$C las
+tandas coinciden ($p = 0{,}78$). La causa
 no se estableció --- la candidata es el periodo del reloj de muestreo, que
 cada tanda toma de una simulación previa de otro chip --- y la cifra
 oficial junta las dos tandas, de modo que esa variación está dentro de su
@@ -416,13 +450,15 @@ Un RO1 más largo tiene menos jitter relativo por periodo, así que el
 divisor se recalculó. El anillo de once etapas se simuló en el peor punto
 encontrado arriba, ss a $-40~^\circ$C y 1,08~V, sin desapareamiento, ocho
 realizaciones de 900~ns (unos 700 periodos cada una) \simu{}:
-$T = 1240{,}9$~ps, $\sigma = 214{,}9 \pm 4{,}0$~fs, ningún doble cruce, y
+$T = 1240{,}9$~ps, $\sigma = 214{,}9 \pm 4{,}0$~fs (la raíz de la
+varianza media, no la media de las ocho $\sigma$), ningún doble cruce, y
 una varianza por periodo de RO1
 $(\sigma/T)^2 = (3{,}00 \pm 0{,}26)\times10^{-8}$ (intervalo de confianza
 del 95\,\% de la media), con $2{,}65\times10^{-8}$ en la realización más
 baja. El anillo de cinco etapas daba unos $6{,}0\times10^{-8}$ en el mismo
-punto, y $6{,}0 \times 5/11 = 2{,}7$: se cumple la ley $1/N$ del número de
-etapas. La dispersión entre las ocho realizaciones, un 10,5\,\%, es mayor
+punto, y $6{,}0 \times 5/11 = 2{,}7$: la ley $1/N$ del número de
+etapas se cumple dentro de un 10\,\%, con su predicción en el borde
+inferior del intervalo. La dispersión entre las ocho realizaciones, un 10,5\,\%, es mayor
 que el 5,6\,\% que da el mismo estimador con jitter blanco y los mismos
 cruces; la causa no se identificó. No llega al divisor, que se calcula con
 la realización más baja y conserva un factor 2,3 antes de perder \kd{24}.
@@ -474,12 +510,15 @@ ruido de fase resultó más de diez veces menor que la aparente
 
 La columna del peor chip es conservadora, y no es un Monte Carlo del
 anillo de once etapas: el desapareamiento no se simuló con once etapas.
-El factor 1,175 viene del anillo de cinco etapas. Es un cociente de
-extremos dominado por el error de estimación de una sola realización de
+El factor 1,175 viene del anillo de cinco etapas. Es el $K_D$ del peor
+chip dividido por el $K_D$ de la varianza media,
+dominado por el error de estimación de una sola realización de
 650 a 700 periodos, no una medida pura del desapareamiento --- en
 aquellos chips la dispersión de $\sigma/T$ entre chips no superaba la que
 hay entre ejecuciones --- y aquí se aplica encima de la más baja de ocho
-realizaciones, así que ese error se cuenta dos veces. Para que \kd{24}
+realizaciones, así que ese error se cuenta dos veces. Que coincida en
+tres cifras con el cociente de periodos 1,1754 usado arriba es una
+casualidad: las dos magnitudes no tienen relación. Para que \kd{24}
 bajara de $H_\infty = 0{,}98$ la varianza por periodo tendría que ser 2,6
 veces menor que la media nominal de $3{,}00\times10^{-8}$, y 5,2 veces
 menor para el divisor mínimo \kd{25} \est{}.
@@ -494,8 +533,9 @@ esquina más rápida es la rápida en frío, no en caliente. Dos cosas mueven
 estas cifras un pequeño tanto por ciento: la carga real de RO2 (en RO1 el
 biestable con su búfer alarga el periodo alrededor de un 3\,\%) y el
 desapareamiento (1,3\,\% de dispersión del periodo en el anillo de cinco
-etapas). Son dos órdenes de magnitud menos que los kbit/s de las primeras
-estimaciones, y es lo que cuestan juntos el sesgo del biestable, la peor
+etapas). Son uno o dos órdenes de magnitud menos que los 0,35 a
+3,9~kbit/s de las primeras estimaciones (Sección~\ref{sec:kd}), y es lo
+que cuestan juntos el sesgo del biestable, la peor
 esquina y el margen; el motor siembra un generador determinista y se lo
 puede permitir.
 
@@ -512,14 +552,17 @@ de suponerse: la serie truncada de la ecuación~14
 de~\cite{baudet_2011_security} \emph{sobrestima} la entropía y, por
 tanto, no es una cota inferior, así que se usa en su lugar el cálculo
 exacto con la gaussiana envuelta; y la deducción de la min-entropía con el
-primer armónico coincide con la exacta en seis cifras en todo el rango de
-interés.
+primer armónico coincide con la exacta en cuatro cifras en $Q = 0{,}05$
+y en seis o más desde $Q = 0{,}1$, lo que incluye el punto de diseño.
 
 Como $Q = K_D\,q_2$ (Sección~\ref{sec:ero}), el divisor se deduce del
-jitter. La Tabla~\ref{tab:opoint} da los puntos de funcionamiento
-estimados antes de medir nada para el rango de jitter esperable en una
-\ac{FPGA} de 28~nm~\cite{petura_2016_survey}, con dos anillos iguales
-($q_2 = Q_{\mathrm{bruto}}$) y RO2 a 500~MHz.
+jitter. La Tabla~\ref{tab:opoint} da tres puntos de funcionamiento
+ilustrativos calculados antes de medir nada, con dos anillos iguales
+($q_2 = Q_{\mathrm{bruto}}$) y RO2 a 500~MHz. El jitter esperable en una
+\ac{FPGA} de 28~nm, de 2 a 4~ps por periodo de 3 a
+5~ns~\cite{petura_2016_survey}, es un $\sigma/T$ de $4\times10^{-4}$ a
+$1{,}3\times10^{-3}$: cubre las dos primeras filas y se extiende por
+debajo de la primera, y la tercera fila queda fuera.
 
 \begin{table}[htbp]
 \centering
@@ -546,11 +589,15 @@ sus anillos y su propio objetivo, una entropía de Shannon de 0,997
 Sección~\ref{sec:kd}); el objetivo de min-entropía que se usa aquí es más
 estricto y pediría un divisor mayor con los mismos anillos.
 
-Los dos puntos de funcionamiento de este trabajo caen fuera de la tabla,
-por el lado lento. En la \ac{FPGA} el suelo blanco medido está en la
-primera fila o por debajo, $q_2 = 0{,}6$ a $1{,}1\times10^{-6}$ con RO2 a
-205~MHz, y el divisor es \kd{19} (\texttt{CFG\_KD} $= 19$), unos
-390~bit/s \meas{} (Sección~\ref{sec:campaign}). En el circuito integrado
+Ninguno de los dos puntos de funcionamiento de este trabajo alcanza la
+tasa de bits de la tabla. En la \ac{FPGA} el suelo blanco medido cae
+entre las dos primeras filas, $q_2 = 0{,}6$ a $1{,}1\times10^{-6}$
+\meas{}; la tasa de bits sale por debajo de la tabla porque RO2 va a
+205~MHz y no a 500, y porque el divisor se toma del borde inferior y se
+redondea hacia arriba a una potencia de dos: \kd{19}
+(\texttt{CFG\_KD} $= 19$), unos 390~bit/s
+(Sección~\ref{sec:campaign}). El circuito integrado sí queda fuera de la
+tabla, por debajo de su primera fila:
 $q_2 \approx 3{,}5\times10^{-8}$ en la peor esquina y el divisor es
 \kd{25}, de 20 a 50~bit/s \est{} (Sección~\ref{sec:ihp_ring11}).
 

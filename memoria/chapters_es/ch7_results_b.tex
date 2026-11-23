@@ -66,8 +66,8 @@ las condiciones A--D \meas{}.}
 
 De ello se siguen cuatro lecturas. Primera, a $10^6$ bits la batería se
 satura: los bits uniformes puntúan $0{,}839 \pm 0{,}021$, y todo punto en
-que el modelo da $H_\infty \ge 0{,}97$ puntúa entre 0,82 y 0,87, siempre
-limitado por el estimador de compresión. Por encima de ese techo la
+que el modelo da $H_\infty \ge 0{,}97$ puntúa entre 0,82 y 0,87, limitado
+por el estimador de compresión en casi todas esas secuencias. Por encima de ese techo la
 batería no distingue nada, así que el ESP32, con 0,85, y la fuente
 simulada con $2^{23}$, el divisor que usaría un anillo de cinco etapas,
 con 0,84 a 0,85 en los tres casos, son indistinguibles a esta longitud; las cifras no deben compararse como si
@@ -137,7 +137,9 @@ junto a los de la primera placa de prototipo.
 El procedimiento se había fijado en cinco pasos antes de tener la placa,
 para que no pudiera ajustarse después de ver los datos: confirmar que los
 anillos oscilan; medir el jitter con $K_D = 1$ por el método de Fischer y
-Lubicz~\cite{fischer_2014_embedded}, conservando solo el término lineal
+Lubicz~\cite{fischer_2014_embedded}, ``con al menos tres anillos, para
+que la componente global se separe de la
+local''~\cite{lubicz_2024_jitter}, conservando solo el término lineal
 de un ajuste $\sigma^2(t) = at + bt^2$; fijar $K_D$ con ese jitter y
 recalcular los umbrales de los tests de salud para la entropía medida;
 recoger $10^6$ bits en bruto consecutivos con ese divisor y contrastar la
@@ -169,9 +171,13 @@ Tabla~\ref{tab:fpga_q} da los resultados.
 \centering
 \caption{$q_2$ en la Basys~3 según el estimador \meas{}, $K_D = 4$,
 colocación fija de las etapas, RO2 a 205--207~MHz. El residuo es el del
-ajuste, en unidades del ruido binomial. Repetibilidad: tres capturas
-seguidas de un bitstream sin colocación fija, y dos de cada bitstream con
-ella.}
+ajuste, en unidades del ruido binomial. Los valores son los de la
+primera de dos capturas de cada bitstream. La repetibilidad de las dos
+primeras filas es la de tres capturas seguidas del bitstream anterior,
+sin colocación fija; la de la tercera, la de las dos capturas de cada
+bitstream con ella. En el envoltorio silencioso el ajuste de la varianza
+devuelve $\kappa = -2{,}3$, un régimen en el que ese estimador no es
+fiable.}
 \label{tab:fpga_q}
 \small
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.16\linewidth}@{}}
@@ -188,7 +194,8 @@ Suelo blanco del espectro de la frecuencia instantánea & 0,6 a $1{,}1\times10^{
 
 Las tres primeras filas no miden lo mismo, y ninguna mide el jitter
 térmico. Cada estimador de autocorrelación se repite dentro de un pequeño
-tanto por ciento, así que el factor de tres a cuatro que hay entre ellos
+tanto por ciento, así que el factor que hay entre ellos, de tres a cuatro
+en el envoltorio silencioso y de quince con el frecuencímetro,
 es sistemático: depende de cuánta parte de la forma de $c(M)$ atribuye
 cada uno al jitter. El modelo no describe esa forma. En los primeros
 bitstreams, con el exponente de acumulación libre, el ajuste devuelve
@@ -207,8 +214,14 @@ etapas no lo explica.
 El espectro de la frecuencia instantánea muestra lo que los ajustes
 estaban absorbiendo. Cada trozo se demodula con su propio paso de fase
 medio, la fase se toma por bloques de 16 muestras y los espectros se
-promedian sobre los trozos. Hay una raya estrecha a unos 39,4~kHz, más
-de cien veces por encima del suelo en el envoltorio silencioso. Es fija
+promedian sobre los trozos. Hay una raya estrecha a 38--40~kHz, 150
+veces por encima del suelo en el envoltorio silencioso (88 veces en el
+bitstream final). La resolución se declara con ella: en las capturas de
+la campaña, con $K_D = 4$, los bins miden 12,56~kHz y el pico es el bin
+de 37,7~kHz; una captura con $K_D = 16$ en el bitstream de la prueba de
+carga que se describe más abajo, con bins de 3,14~kHz, reparte la raya
+entre los bins de 37,7 y 40,8~kHz y la sitúa en 39,4~kHz por
+interpolación (Figura~\ref{fig:fpga_spectrum}). Es fija
 en tiempo, no en periodos del anillo: está a 38--40~kHz con RO2 a 130 y a
 205~MHz. No está enganchada en fase al inicio de la captura. No es el
 tráfico \ac{I2C} durante la captura: una orden del firmware que mantiene
@@ -220,13 +233,78 @@ quince veces menor con el frecuencímetro puesto. Y en todos los
 bitstreams hay una portadora cerca de 480~kHz con bandas laterales a
 $\pm39{,}5$~kHz. Un regulador conmutado de la placa es una hipótesis
 compatible con todo ello; no se comprobó, y el origen de la raya sigue
-sin identificar. Lo que queda establecido es que una modulación
-determinista de origen externo entra en la fase relativa de los anillos
-\meas{}, y eso es lo que explica $b \approx 2$ y el desacuerdo entre
-estimadores.
+sin identificar. Lo que queda establecido es que en la fase relativa de
+los anillos hay una modulación determinista, fija en tiempo y no ligada
+a la frecuencia de los anillos \meas{}. Es una explicación candidata, no
+demostrada, de parte del desacuerdo, $b \approx 2$ y la diferencia entre
+estimadores: la raya nunca se metió en el modelo para ver si los
+reproduce, y tampoco está establecido que el factor 4,4 entre
+envoltorios sea solo la raya.
 
-Lejos de la raya el espectro es plano, y ese suelo es la parte blanca del
-ruido de fase. Se convirtió en $q_2$ calibrando con bits simulados de
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.86\textwidth, height=5.6cm, ymode=log,
+  xlabel={frecuencia (kHz)}, ylabel={espectro (unidades del estimador)},
+  xmin=0, xmax=400, ymin=0.03, ymax=30,
+  /pgf/number format/use comma,
+  tick label style={font=\footnotesize}, label style={font=\footnotesize}]
+\addplot[thick, mark=none] coordinates {
+(0.0, 4.795e-02) (3.1, 5.419e-01) (6.3, 4.841e-01) (9.4, 3.039e-01)
+(12.6, 2.249e-01) (15.7, 1.878e-01) (18.8, 1.633e-01) (22.0, 1.437e-01)
+(25.1, 1.295e-01) (28.3, 1.165e-01) (31.4, 1.181e-01) (34.5, 7.251e-01)
+(37.7, 1.490e+01) (40.8, 1.499e+01) (44.0, 7.582e-01) (47.1, 1.086e-01)
+(50.2, 8.883e-02) (53.4, 8.299e-02) (56.5, 7.952e-02) (59.7, 7.895e-02)
+(62.8, 8.144e-02) (65.9, 8.270e-02) (69.1, 8.246e-02) (72.2, 8.364e-02)
+(75.4, 8.641e-02) (78.5, 1.020e-01) (81.6, 9.249e-02) (84.8, 8.532e-02)
+(87.9, 8.683e-02) (91.1, 8.906e-02) (94.2, 9.021e-02) (97.4, 9.425e-02)
+(100.5, 9.679e-02) (103.6, 9.949e-02) (106.8, 1.075e-01) (109.9, 1.059e-01)
+(113.1, 1.074e-01) (116.2, 1.268e-01) (119.3, 1.333e-01) (122.5, 1.195e-01)
+(125.6, 1.222e-01) (128.8, 1.307e-01) (131.9, 1.330e-01) (135.0, 1.305e-01)
+(138.2, 1.334e-01) (141.3, 1.416e-01) (144.5, 1.486e-01) (147.6, 1.550e-01)
+(150.7, 1.508e-01) (153.9, 1.612e-01) (157.0, 1.677e-01) (160.2, 1.677e-01)
+(163.3, 1.731e-01) (166.4, 1.788e-01) (169.6, 1.825e-01) (172.7, 1.857e-01)
+(175.9, 1.891e-01) (179.0, 1.941e-01) (182.1, 1.984e-01) (185.3, 2.051e-01)
+(188.4, 2.108e-01) (191.6, 2.237e-01) (194.7, 2.273e-01) (197.8, 2.228e-01)
+(201.0, 2.220e-01) (204.1, 2.699e-01) (207.3, 2.652e-01) (210.4, 2.412e-01)
+(213.5, 2.418e-01) (216.7, 2.517e-01) (219.8, 2.576e-01) (223.0, 2.641e-01)
+(226.1, 2.622e-01) (229.2, 2.709e-01) (232.4, 2.766e-01) (235.5, 2.789e-01)
+(238.7, 2.828e-01) (241.8, 4.015e-01) (244.9, 4.834e-01) (248.1, 3.147e-01)
+(251.2, 2.922e-01) (254.4, 2.913e-01) (257.5, 3.032e-01) (260.6, 3.068e-01)
+(263.8, 3.272e-01) (266.9, 3.250e-01) (270.1, 3.191e-01) (273.2, 3.108e-01)
+(276.4, 3.128e-01) (279.5, 3.390e-01) (282.6, 4.498e-01) (285.8, 3.913e-01)
+(288.9, 3.435e-01) (292.1, 3.431e-01) (295.2, 3.464e-01) (298.3, 3.567e-01)
+(301.5, 3.681e-01) (304.6, 3.470e-01) (307.8, 3.549e-01) (310.9, 3.543e-01)
+(314.0, 3.422e-01) (317.2, 3.581e-01) (320.3, 8.049e-01) (323.5, 1.135e+00)
+(326.6, 4.472e-01) (329.7, 3.872e-01) (332.9, 3.816e-01) (336.0, 3.905e-01)
+(339.2, 3.904e-01) (342.3, 3.755e-01) (345.4, 3.850e-01) (348.6, 3.930e-01)
+(351.7, 4.099e-01) (354.9, 4.280e-01) (358.0, 4.422e-01) (361.1, 6.409e-01)
+(364.3, 5.279e-01) (367.4, 4.130e-01) (370.6, 4.244e-01) (373.7, 4.038e-01)
+(376.8, 4.044e-01) (380.0, 4.126e-01) (383.1, 4.045e-01) (386.3, 4.005e-01)
+(389.4, 4.169e-01) (392.5, 4.199e-01) (395.7, 4.267e-01) (398.8, 4.634e-01)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Espectro de la frecuencia relativa instantánea de los anillos
+en la Basys~3 \meas{}: 2000 trozos con $K_D = 16$, bins de 3,14~kHz. La
+captura es la del bitstream de la prueba de carga con la carga parada
+(envoltorio silencioso, colocación fija, 4000 biestables añadidos y
+quietos); el espectro solo se registró con esta resolución en ese
+bitstream, que no es el de la campaña. La raya cae en los bins de 37,7 y
+40,8~kHz. En este bitstream el suelo es aproximadamente el doble que el
+de la campaña y crece con la frecuencia, y hay rayas menores cerca de
+245, 283, 323 y 361~kHz, que no se examinaron; el divisor no se deduce de
+esta captura.}
+\label{fig:fpga_spectrum}
+\end{figure}
+
+Entre 100 y 400~kHz, lejos de la raya, el espectro es aproximadamente
+plano, y ese suelo se toma como la parte blanca del ruido de fase. En el
+bitstream de la campaña las tres bandas de 100~kHz difieren en un
+$\pm13$\,\%; en el bitstream final el suelo se duplica de la primera
+banda a la tercera, y el suelo de la calibración simulada sube igual con
+ese paso de fase, por lo que cada banda se calibra por separado.
+Se convirtió en $q_2$ calibrando con bits simulados de
 $q_2$ conocida y una modulación de la frecuencia y la amplitud medidas
 \simu{}. La validación con bits simulados fijó los límites del método
 antes de usar la cifra: sin modulación no aparece ninguna raya y el suelo
@@ -238,17 +316,25 @@ y la $q_2$ que se lee de él se equivoca por arriba, el lado no
 conservador. Para el envoltorio silencioso con colocación fija, tres
 modelos de calibración dan de 0,80 a $0{,}88\times10^{-6}$ y las bandas
 entre 100 y 400~kHz dan de 0,59 a $1{,}13\times10^{-6}$: \textbf{$q_2 =
-0{,}6$ a $1{,}1\times10^{-6}$} \meas{}, calibración \simu{}, es decir, un
-jitter de 4 a 5~ps por periodo de 4,9~ns, del orden de los 2 a 4~ps
-publicados para anillos en esta tecnología~\cite{petura_2016_survey}.
+0{,}6$ a $1{,}1\times10^{-6}$} \meas{}, calibración \simu{}. Expresado
+como $\sqrt{q_2}\,T_2$ son de 4 a 5~ps por periodo de 4,9~ns de RO2: el
+jitter relativo de los dos anillos, no el de uno, y de un estimador que
+se equivoca por arriba, así que solo es del orden de los 2 a 4~ps por
+anillo publicados para esta tecnología~\cite{petura_2016_survey}.
 Para el envoltorio con frecuencímetro el paso de fase medio es otro y la
 calibración no determina $q_2$.
 
-Esta es la primera desviación declarada. El protocolo pedía un ajuste
-polinómico de la varianza acumulada y conservar su término lineal; ese
-ajuste no describe estos datos, y la separación del jitter global y el
+Esta es la primera desviación declarada, y tiene tres partes. El
+protocolo pedía $K_D = 1$; solo hay capturas con $K_D = 1$ de los
+primeros bitstreams, donde el estimador por varianza tiene tres o cuatro
+distancias útiles y no es fiable, y todas las cifras de la
+Tabla~\ref{tab:fpga_q} son con $K_D = 4$. Pedía al menos tres anillos;
+la separación del jitter global y el
 local con un tercer anillo~\cite{lubicz_2024_jitter} no está al alcance
-de un motor con dos. El suelo blanco sale, en cambio, de un estimador
+de un motor con dos, así que lo que se mide es el jitter relativo de una
+pareja. Y pedía un ajuste
+polinómico de la varianza acumulada y conservar su término lineal; ese
+ajuste no describe estos datos. El suelo blanco sale, en cambio, de un estimador
 espectral introducido después de ver los datos, a propuesta de una
 revisión independiente. Se validó con bits simulados con y sin una
 modulación conocida, su sesgo va en un sentido conocido, y lo que se
@@ -280,14 +366,19 @@ $n = \log_2 K_D$ & $q_2 = 8{,}2\times10^{-7}$ & $q_2 = 6{,}6\times10^{-7}$ & $q_
 
 Con el borde inferior del suelo, $q_2 = 0{,}6\times10^{-6}$, \kd{19}
 (\texttt{CFG\_KD} $= 19$) da $H_\infty = 0{,}996$; se mantiene por encima
-de 0,99 mientras $q_2 \ge 5{,}0\times10^{-7}$ y por encima de
-$\Hdecl = 0{,}60$ mientras $q_2 \ge 1{,}3\times10^{-7}$. La compilación
+de 0,99 mientras $q_2 \ge 5{,}1\times10^{-7}$ y por encima de
+$\Hdecl = 0{,}60$ mientras $q_2 \ge 1{,}4\times10^{-7}$. La compilación
 para la \ac{FPGA} toma, por tanto, \kd{19} como valor de reset y como
 divisor mínimo: unos 390~bit/s con RO2 a 205~MHz. Un factor dos más en
 $q_2$ pediría $2^{20}$ y no se tomó; es el margen que este punto de
-funcionamiento no tiene. El bitstream final, que difiere del anterior en
-la restricción de tiempos de RO2 y en el divisor mínimo, se midió otra
-vez y da de 0,95 a $1{,}35\times10^{-6}$ por banda, por encima del borde
+funcionamiento no tiene: con la mitad del borde inferior,
+$q_2 = 0{,}3\times10^{-6}$, \kd{19} da $H_\infty = 0{,}920$ \est{}, y el
+0,974 de la última columna de la Tabla~\ref{tab:fpga_kd} corresponde a
+la mitad del centro del rango, no a la mitad de su borde. El bitstream
+final, que difiere del anterior en
+la restricción de tiempos de RO2, en los divisores mínimo, de reset y
+máximo y en la revisión del \ac{RTL}, se midió otra
+vez, en una sola captura, y da de 0,95 a $1{,}35\times10^{-6}$ por banda, por encima del borde
 usado. El divisor al que este sustituyó merece quedar anotado. El ajuste
 conjunto de la Tabla~\ref{tab:fpga_q} había sugerido $K_D \ge 2^{16}$ con
 un factor dos de margen, y la mayor parte de la primera campaña se hizo
@@ -317,7 +408,8 @@ retardo 1.
 colocación fija de las etapas, RO2 a 205~MHz. $z$ es la correlación a
 retardo 1 en desviaciones típicas. La última columna es el modelo con
 $q_2 = 8{,}2\times10^{-7}$ \est{}; no se tabuló por debajo de $2^{14}$,
-donde es aún menor. La última fila es el bitstream final.}
+donde es aún menor. La última fila es el bitstream final, con RO2 a
+204,4~MHz.}
 \label{tab:fpga_90b}
 \small
 \begin{tabular}{@{}clcrcc@{}}
@@ -359,7 +451,7 @@ funcionamiento no se puede leer de esta tabla. Sale del suelo blanco, y
 la batería solo deja de contradecirlo.
 
 Dos propiedades de los bits no dependen del divisor. La fracción de unos
-es de 0,5054 a 0,5064 con todos los divisores de este bitstream, de
+es de 0,5050 a 0,5064 con todos los divisores de este bitstream, de
 0,4951 a 0,4963 sin colocación fija y 0,4959 en el bitstream final: un
 sesgo de alrededor de medio punto porcentual que está a entre 7 y 13
 desviaciones típicas de un medio en $10^6$ bits, y cuyo signo cambia con
@@ -375,7 +467,10 @@ estimación es 0,932 sin colocación fija y 0,880 con ella, las dos con
 fracción de unos es 0,4955 y 0,5054 y $\rho_1$ queda a menos de 1,1
 desviaciones típicas de cero. Estos dos registros se tomaron antes de
 medir el suelo blanco, con un divisor en el que el modelo da
-$H_\infty \approx 0{,}47$. No hay ningún registro largo con \kd{19}. Son,
+$H_\infty \approx 0{,}47$ con el suelo blanco de la colocación fija; para
+el registro sin ella, cuyo suelo quedó peor determinado (de 0,74 a
+$1{,}47\times10^{-6}$), da de 0,43 a 0,75 \est{}. No hay ningún registro
+largo con \kd{19}. Son,
 por tanto, una afirmación sobre la batería, que los puntúa como bits
 ideales, y no sobre la fuente.
 
@@ -407,16 +502,16 @@ lo que además cambia la frecuencia de RO2 de 130 a 207~MHz), la lógica
 que cuelga de los anillos (envoltorio silencioso frente a display y
 frecuencímetro) y la carga en la alimentación del núcleo. Esas
 comparaciones respondieron a una pregunta distinta de la que se hacía: el
-ruido de fase aparente depende de lo que cuelga de los anillos y entra
-una modulación desde fuera, pero cuánto se acoplan dos anillos adyacentes
-no se midió.
+ruido de fase aparente depende de lo que cuelga de los anillos y hay una
+modulación de origen sin identificar, pero cuánto se acoplan dos anillos
+adyacentes no se midió.
 
 \paragraph{Qué establece la campaña.} Los anillos de la \ac{FPGA} tienen
 un suelo blanco de ruido de fase de 0,6 a $1{,}1\times10^{-6}$ por
 periodo de RO2, medido dentro del dispositivo con la salvedad de que el
 estimador se equivoca por arriba; con su borde inferior, \kd{19} da
 $H_\infty \ge 0{,}99$ en el modelo. Todo lo demás que contienen los bits
---- una modulación cercana a 39,4~kHz de origen sin identificar, un sesgo
+--- una modulación a 38--40~kHz de origen sin identificar, un sesgo
 de medio punto porcentual que sigue a la implementación --- no es
 entropía, y ni la batería SP~800-90B ni los tests de salud lo distinguen
 de la entropía. El modelo estocástico describe la parte blanca y no la
@@ -431,7 +526,13 @@ misma metodología. La Tabla~\ref{tab:o8} los pone lado a lado con $10^6$
 bits y los mismos binarios y opciones: las treinta y seis capturas del
 ESP32 del Capítulo~\ref{ch:esp32}, los tres flujos de la \ac{FPGA} de
 $2^{17}$ a $2^{19}$ de la Tabla~\ref{tab:fpga_90b}, bits uniformes
-ideales, y bits independientes con un sesgo del 0,2\,\% y nada más.
+ideales, y bits independientes con un sesgo del 0,2\,\% y nada más. La
+columna de la \ac{FPGA} hay que leerla sabiendo de qué se compone: los
+tres flujos son del bitstream de la campaña, no del final, y solo uno
+está en el divisor de funcionamiento; con $2^{17}$ y $2^{18}$ el modelo
+da 0,80 y 0,974. El flujo del bitstream final con \kd{19} (0,853, última
+fila de la Tabla~\ref{tab:fpga_90b}) no está en la columna y cae dentro
+de su rango.
 
 \begin{table}[htbp]
 \centering
@@ -461,8 +562,9 @@ $z$ & 0,6 (0,0--2,6) & 11,6 (11,1--12,0) & 0,7 (0,6--1,6) & 3,9 (3,8--4,3) \\
 \end{table}
 
 La cifra asignada no separa nada: 0,857 la \ac{FPGA}, 0,848 el ESP32 y
-0,847 los bits ideales, con rangos que se solapan, todas fijadas por el
-estimador de compresión en su techo para esta longitud. Los estimadores
+0,847 los bits ideales, con rangos que se solapan, fijadas en casi todas
+las secuencias por el estimador de compresión en su techo para esta
+longitud. Los estimadores
 sensibles al sesgo sí separan la \ac{FPGA}, con 0,980 a 0,983 frente a
 0,995 a 0,999, y la columna de bits independientes sesgados muestra que
 un sesgo solo los mueve en ese sentido; el sesgo de la \ac{FPGA} es mayor
@@ -479,7 +581,8 @@ cuidado todavía. La captura del ESP32 puntúa 0,911, los bits ideales de
 estimadores del valor más común, MultiMMC y LZ78Y dan de 0,983 a 0,986
 para la \ac{FPGA} frente a 0,998--0,999 para el ESP32 y para los bits
 ideales. Pero esos registros de la \ac{FPGA} son con \kd{16}, donde el
-modelo con el suelo blanco medido da $H_\infty \approx 0{,}47$
+modelo con el suelo blanco medido da $H_\infty \approx 0{,}47$ con
+colocación fija y de 0,43 a 0,75 sin ella \est{}
 (Sección~\ref{sec:campaign}). Esa columna de la comparación habla de la
 batería SP~800-90B, que no distingue un registro así de uno ideal, y no
 de la fuente con su divisor de funcionamiento.
@@ -497,7 +600,9 @@ Tabla~\ref{tab:restart_cmp} pone el resultado junto al del ESP32
 bits) \meas{}. $H_I$ es la estimación no IID de la fuente con la que se
 compara; la prueba pasa si pasa la comprobación de cordura y las
 estimaciones por filas y por columnas, $H_r$ y $H_c$, son al menos
-$H_I/2$.}
+$H_I/2$. Los chips del ESP32 se numeran como en el
+Capítulo~\ref{ch:esp32}: el segundo es a0:dd:6c:0e:fb:4c y el tercero
+f8:b3:b7:2a:09:28.}
 \label{tab:restart_cmp}
 \small
 \begin{tabular}{@{}llcccc@{}}
@@ -507,10 +612,10 @@ Fuente & Variante & $H_I$ & $H_r$ & $H_c$ & Veredicto \\
 Basys~3 & \kd{16}, sin colocación fija & 0,819 & 0,843 & 0,892 & pasa \\
 Basys~3 & \kd{19}, colocación fija            & 0,857 & 0,854 & 0,830 & pasa \\
 Basys~3 & \kd{19}, bitstream final            & 0,853 & 0,847 & 0,845 & pasa \\
-ESP32, primer chip  & bootloader de serie     & 0,838 & 0,898 & 0,854 & pasa \\
-ESP32, primer chip  & sin el ruido de arranque & 0,838 & 0,024 & 0,813 & falla \\
-ESP32, segundo chip & bootloader de serie     & 0,833 & 0,892 & 0,848 & pasa \\
-ESP32, segundo chip & sin el ruido de arranque & 0,833 & 0,016 & 0,844 & falla \\
+ESP32, segundo chip & bootloader de serie     & 0,838 & 0,898 & 0,854 & pasa \\
+ESP32, segundo chip & sin el ruido de arranque & 0,838 & 0,024 & 0,813 & falla \\
+ESP32, tercer chip  & bootloader de serie     & 0,833 & 0,892 & 0,848 & pasa \\
+ESP32, tercer chip  & sin el ruido de arranque & 0,833 & 0,016 & 0,844 & falla \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -566,9 +671,12 @@ inferior al 2\,\% y una dispersión del 4,0\,\% sobre ocho semillas con
 ajuste por recta sesga el resultado en un $-18$\,\%, así que la corrección
 no es cosmética.
 \item[Área.] Una cota inferior \simu{}: solo celdas, con el diseño aplanado,
-sin rutado, relleno ni árbol de reloj. Los factores de crecimiento
-publicados de área de celdas a área de núcleo en esta biblioteca son
-$\approx 2{,}35$ para un \ac{AES}. De los ahorros de optimización del
+sin rutado, relleno ni árbol de reloj. No se encontró ningún factor de
+crecimiento de área de celdas a área de núcleo para esta biblioteca; las
+estimaciones en milímetros cuadrados usan una utilización de 0,60 a
+0,70, un factor de 1,4 a 1,7 \est{}, cuyo extremo inferior es la relación
+entre densidad de puertas enrutada y bruta publicada para otra
+biblioteca abierta de 130~nm, no para esta. De los ahorros de optimización del
 Capítulo~\ref{ch:ch6_asic}, dos están sintetizados y el tercero es
 \est{} y explícitamente no se presenta como medido. Solo con cambiar
 nombres, la cifra del optimizador lógico se mueve alrededor de un
@@ -585,10 +693,22 @@ nominal. La cifra no IID la fijan estimadores cuyo sesgo conservador con
 datos casi uniformes supera la dispersión entre condiciones; un análisis
 de la varianza no encuentra efecto de la condición ($p \ge 0{,}045$ en
 todos los estimadores) ni efecto del chip ($p \ge 0{,}032$, frente a
-0,0045 tras la corrección). Tres dispositivos muestran que la referencia
+0,0045 tras la corrección). Ese análisis no dice nada sobre la radio: en
+las condiciones A y B de esas treinta y seis capturas la estación se
+arrancó sin asociarse y con el ahorro de energía de serie, así que la RF
+pudo estar dormida la mayor parte de cada captura (leído en el código,
+sin medir). La comparación entre radio encendida y apagada se apoya en
+una repetición con la radio mantenida despierta, doce capturas en un
+chip, tres por condición: ningún efecto de la condición ($p = 0{,}41$)
+ni diferencia entre radio y sin radio ($p = 0{,}80$) \meas{}, con una
+resolución a la que se le escaparía una diferencia menor que unos 0,04;
+que la RF estuviera encendida solo lo apoya la temperatura del chip, de
+1,1 a 2,2~$^\circ$C más alta en B que en C (Capítulo~\ref{ch:esp32}).
+Tres dispositivos muestran que la referencia
 no depende de uno de ellos; no acotan la dispersión en una población de
-producción. La prueba de reinicios se ejecutó en dos chips, en la
-condición~D, con el Wi-Fi arrancado pero no asociado y, en el segundo
+producción. La prueba de reinicios se ejecutó en el segundo y el tercer
+chip, en la
+condición~D, con el Wi-Fi arrancado pero no asociado y, en el tercer
 chip, con cada fuente encendida y apagada por separado; no se probaron
 el Bluetooth ni una radio asociada. Acota la entropía que inyecta el
 bootloader de serie solo por abajo: que no haya ninguna repetición en 1000
@@ -599,7 +719,8 @@ estado interno del generador no está documentado.
 chips en cada una de cinco esquinas. La cifra declarable, 0,757, usa
 $\mu - 3\sigma$ de la peor esquina; con $\sigma$ en el extremo alto de su
 intervalo del 95\,\% es 0,704, y sin los chips cuyas fases de muestreo
-dejan un hueco, 0,789. Dos tandas de una esquina difieren en la media por
+dejan un hueco, 0,789. Las dos tandas difieren en la media en dos
+esquinas, una de ellas la que limita, por
 una razón que no se estableció, y los modelos estadísticos son los de un
 \ac{PDK} abierto. El margen hasta $\Hdecl = 0{,}60$ es lo que absorbe todo
 eso.
@@ -609,10 +730,14 @@ modelo a partir de una magnitud medida \meas{}, con una calibración
 $H_\infty \ge 0{,}99$ con \kd{19} usando su borde inferior. El estimador
 del suelo se equivoca por arriba, en una cantidad que depende del paso de
 fase y que no se acotó, y el borde inferior del rango es lo único que se
-concede por ello; un factor dos en $q_2$ llevaría la cota a 0,974. Un
+concede por ello. No hay más margen: la mitad del borde inferior,
+$q_2 = 0{,}3\times10^{-6}$, llevaría la cota a 0,920 \est{} (0,974 es la
+cifra para la mitad del centro del rango), y haría falta $2^{20}$ para
+mantener 0,99 con un factor dos. El suelo del bitstream final es una
+sola captura. Un
 envoltorio en una placa a temperatura ambiente; no se variaron ni la
-temperatura ni la alimentación, y el origen de la modulación cercana a
-39,4~kHz se desconoce. Las cifras SP~800-90B de los mismos bits, de 0,83 a
+temperatura ni la alimentación, y el origen de la modulación a
+38--40~kHz se desconoce. Las cifras SP~800-90B de los mismos bits, de 0,83 a
 0,86, están en el techo de la batería para $10^6$ bits y no acotan nada.
 \emergencystretch=1em
 \item[Min-entropía en el circuito integrado.] Simulada y

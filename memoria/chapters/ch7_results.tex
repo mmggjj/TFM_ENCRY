@@ -34,14 +34,16 @@ O1 & met    & Ring at transistor level on the open IHP SG13G2 \ac{PDK},
               (Section~\ref{sec:ihp_ring11}); the library's sampling
               flip-flop simulated without noise over 120 dies
               (Section~\ref{sec:ff_mc}); foundry \ac{PDK} pending \\
-O2 & met    & Jitter extracted from the waveforms; thermal and $1/f$
-              separated (bench and impulse sensitivity function);
-              estimator validated on synthetic data with known $Q$ \\
+O2 & met$^{\dagger}$ & Thermal jitter extracted from the waveforms;
+              estimator validated on synthetic data with known $Q$.
+              $^{\dagger}$The $1/f$ component is only bracketed between
+              two limits; a factor of two on the thermal variance is
+              open (Section~\ref{sec:ihp_ring}) \\
 O3 & met    & Stochastic model closed: exact wrapped-Gaussian computation,
               design point $Q \ge 0.2286$ (Section~\ref{sec:opoint}) \\
 O4 & met    & Engine written in portable VHDL-2008; thirteen testbenches
-              pass, against FIPS-197, SP 800-38B and RFC 4493 vectors and
-              a reference model validated on the \ac{CAVP} vectors (52
+              pass, against FIPS-197, SP 800-38A and RFC 4493 vectors and
+              a reference model validated on the \ac{CAVP} vectors (51
               seeds for the generator; at system level, the key
               recomputed from the seed the engine collected) \\
 O5 & met$^{*}$ & The whole engine runs on a Basys~3 and the ESP32 recomputed
@@ -69,8 +71,8 @@ O8 & met    & Structural comparison (Section~\ref{sec:se_comparison}); both
 \end{table}
 
 The minimum defensible result declared in Chapter~\ref{ch:ch1_intro} ---
-O1--O3 together with O5 --- is reached, with the caveat on O5 stated in
-the table: the source is dimensioned from the transistor and the engine
+O1--O3 together with O5 --- is reached, with the caveats on O2 and O5
+stated in the table: the source is dimensioned from the transistor and the engine
 built around it answers an independent implementation over a real bus.
 
 \section{Transistor-level noise of the ring}
@@ -152,7 +154,8 @@ simulated eight times.
 \caption{Five-stage ring on IHP SG13G2 \simu{}. The noise density is not
 assumed: it is the white floor of the transistors' own noise model at the
 switching point. The thermal point is the mean of eight independent
-realizations, $\pm$ one standard deviation of the mean; the other rows are
+realizations, $\pm$ one standard deviation of the mean, with $\sigma$
+taken as the root of the mean of $(\sigma/T)^2$; the other rows are
 single realizations. Power is the average over whole periods.}
 \label{tab:ihp_ring}
 \small
@@ -173,7 +176,9 @@ the device noise produces, and with an exponent of 0.42 that marks it as
 numerical noise rather than a random walk. The eight thermal realizations
 spread by 3.3\,\% in $\sigma$ (169.0 to 186.5~fs), so a single run carries
 that uncertainty and the mean carries 1.2\,\%. Quadrupling the density
-multiplies the jitter by $1.99 \pm 0.06$ against the expected 2, and the
+multiplies the jitter by $1.99 \pm 0.06$ against the expected 2 (the
+quadrupled point is a single realization, and the $\pm$ is the 3.3\,\%
+spread of one run), and the
 mean period does not move, so the bench stays in the linear regime that
 the placeholder bench left at its highest point. The accumulation
 exponent averages 0.99: white noise, as the stochastic model assumes. As
@@ -228,7 +233,10 @@ $-40~^\circ$C (sf, fs) need 1.32 and $1.55\times10^6$, close to tt (1.47)
 and below ss; at 1.08~V, tt, sf and fs need 1.93, 1.57 and
 $1.74\times10^6$, half of ss. At the worst point, $2^{22}$ still gives
 $H_\infty = 0.9873$, but with a 10\,\% margin on $K_D$, close to the
-7\,\% judged too thin for $2^{20}$ at the typical point; $2^{23}$ gives 0.9999 and 0.20 to 0.41~kbit/s, about 2.6~s for the
+7\,\% judged too thin for $2^{20}$ at the typical point; $2^{23}$ gives
+0.9999 and 0.20 to 0.41~kbit/s, from the slow corner at 1.08~V to the
+fast one at 1.2~V, both at $-40~^\circ$C (the fast corner at 1.32~V was
+not simulated with five stages), about 2.5~s for the
 512 bits of a seeding in the worst case. Device mismatch, drawn per
 transistor from the \ac{PDK} statistical models with a new noise
 realization in every run, spreads the period by 1.3\,\% over 48 dies at
@@ -247,8 +255,10 @@ the fixed divider would therefore be $2^{23}$: it has to come from the
 coldest corner and the lowest supply the product must work at, not from
 the typical point.
 
-\paragraph{Flicker noise.} Adding the $1/f$ noise of the \ac{PDK} leaves
-400~ns unchanged: $\sigma$ rises by 3.8\,\%, within the spread between
+\paragraph{Flicker noise.} The corners and crossovers of this paragraph
+are estimates \est{} computed from simulated quantities \simu{}: the
+sensitivity function and the noise of each device. Adding the $1/f$ noise
+of the \ac{PDK} leaves 400~ns unchanged: $\sigma$ rises by 3.8\,\%, within the spread between
 realizations, and the separation $E[D^2] = a_1 M + a_2 M^2$, validated
 beforehand on synthetic phases (thermal recovered to 0.1\,\% with and
 without $1/f$), finds $a_2$ compatible with zero. Amplifying the $1/f$
@@ -311,8 +321,8 @@ The sampling flip-flop biases the bit more than the ring does. With the
 real \texttt{sg13g2\_\allowbreak dfrbpq\_1} of the library on node~5, behind a
 \texttt{sg13g2\_\allowbreak buf\_1} (without it the flip-flop's input capacitance
 pulls the ring, about 2--3~ps of period modulation), and the probability
-of a one weighted over the sampling phase, tt and ss stay within 0.01 of
-the ideal threshold. At 125~$^\circ$C with mismatch they do not: over four
+of a one weighted over the sampling phase, tt and ss stay within about
+0.013 of the ideal threshold (0.005 at tt, 0.013 at ss). At 125~$^\circ$C with mismatch they do not: over four
 dies each, $P(1)$ is 0.372--0.461 at ff and 0.399--0.437 at sf, while the
 ideal threshold on the same rings gives 0.49--0.51 \simu{}. The flip-flop
 does not capture a rising and a falling input at the same instant: the
@@ -326,10 +336,14 @@ entropy, $\Hdecl = 0.80$: five of them fell below it and the worst gave
 512-bit seed computed for it (Section~\ref{sec:health}), and declared
 provisional, because eight dies say little about a tail. The criterion
 that would close it was written down before simulating anything else: a
-Monte Carlo of 24 dies per corner; the declarable entropy is
-$-\log_2\max(p, 1-p)$ evaluated at $p = \mu - 3\sigma$ of $P(1)$, and
-the minimum over the corners is the figure; if it falls below 0.60 the
-circuit is corrected, and $\Hdecl$ is not lowered again.
+Monte Carlo of 24 dies per corner, to which the four dies already run at
+ff and at sf are added, and eight dies at sf and 1.08~V, extended to 24
+if their mean comes out worse than at 1.2~V; the declarable entropy is
+$-\log_2\max(p, 1-p)$ evaluated at the $3\sigma$ point of $P(1)$ on the
+side away from one half ($p = \mu - 3\sigma$ here, since every mean is
+below one half), and the minimum over the corners is the figure; if it
+falls below 0.60 the circuit is corrected, and $\Hdecl$ is not lowered
+again. The normality that $3\sigma$ assumes was to be reported with it.
 
 \begin{table}[htbp]
 \centering
@@ -337,7 +351,9 @@ circuit is corrected, and $\Hdecl$ is not lowered again.
 \simu{}, without noise. $P(1)$ is weighted over the sampling phase; $H$ is
 the bound on the entropy of the bit, minus the base-2 logarithm of the
 larger of $p$ and $1-p$, at $p = \mu - 3\sigma$. The declarable entropy
-of each ring is the smallest $H$ of its rows.}
+of each ring is the smallest $H$ of its rows. The rows of 28 dies are 24
+plus the four of the first batch; the first row is 8 dies extended to
+24.}
 \label{tab:ff_mc}
 \small
 \begin{tabular}{@{}llrcccc@{}}
@@ -365,29 +381,47 @@ single die of that corner, at 0.596, is below. By the criterion, the
 circuit was corrected. Of the options that the $1/T$ law offers, a longer
 sampled ring was preferred to RO1 followed by a divide-by-two, whose
 toggle flip-flop at 2.7~GHz would bring an asymmetry of its own that was
-not simulated: RO1 now has eleven stages, 2.2 times the period. The
+not simulated: RO1 now has eleven stages, 2.0 to 2.1 times the period
+\simu{}. The
 Monte Carlo was repeated with it, on the same four corners plus the fast
 corner at $-40~^\circ$C and 1.32~V, where the period is shortest: 24 dies
 in each of five corners, 120 in all. The declarable entropy is
 \textbf{0.757} \simu{}, again set by sf at 125~$^\circ$C and 1.08~V, so
 $\Hdecl = 0.60$ stands, the cut-offs do not change and the circuit is not
 touched again. With $\sigma$ at the upper end of its 95\,\% confidence
-interval that corner still gives 0.704.
+interval that corner still gives 0.704. The Shapiro--Wilk test does not
+reject normality in eight of the nine rows ($p$ from 0.06 to 0.84); it
+does in tt at 125~$^\circ$C with eleven stages ($p < 0.01$), because of
+the one die described below.
 
 How the 24 dies would be read was also fixed before the last batch
-finished. In some dies the sampling phases leave part of the period
+finished, but not before any result was known: when the rule was written
+the first eleven dies of the limiting corner had been seen, two of them
+with a large gap, and it was known that dropping them raised the figure.
+In some dies the sampling phases leave part of the period
 uncovered, and the phase-weighted $P(1)$ is then uncertain by about the
 width of that gap over $\sqrt{6}$. The official figure uses every die; a
 sensitivity reading drops the dies with a gap above 0.025 of a period
-(error up to 0.01) and never decides alone. It gives 0.789 with 22 dies
-in the limiting corner, so both readings pass. The same sensitivity
+(standard error about 0.01, at most about 0.025) and never decides
+alone; the threshold comes from that error budget and not from the two
+dies. It gives 0.789 with 22 dies
+in the limiting corner, so both readings pass. The two dies dropped
+there are the worst of the 120 (0.4166, the 0.777 of
+Section~\ref{sec:verif_results}) and a degenerate measurement that
+returns exactly 0.5000; without them the $\sigma$ of the corner falls
+from 0.0183 to 0.0141. The same sensitivity
 reading on the five-stage campaign gives 0.530 against 0.532: dropping
 those dies would not have changed that decision either.
 
 Three limits are stated. These are simulations without noise, with the
 statistical models of an open \ac{PDK}. The critical corners were run in
 two batches of 11 and 13 dies, and in sf at 1.2~V the two batches differ
-in their mean ($0.4700$ against $0.4592$, Welch $p = 0.004$); the cause
+in their mean ($0.4700$ against $0.4592$, Welch $p = 0.004$). The
+limiting corner, sf at 1.08~V, shows a difference of the same size and
+sign ($0.4691$ against $0.4579$, $p = 0.15$, and $p = 0.01$ without the
+two dies with a large gap), so the effect is systematic between batches
+and reaches the corner that sets 0.757; in ff at $-40~^\circ$C the
+batches agree ($p = 0.78$). The cause
 was not established --- the candidate is the period of the sampling
 clock, which each batch takes from a previous simulation of another die
 --- and the official figure pools both batches, so that variation is
@@ -404,11 +438,13 @@ A longer RO1 has less relative jitter per period, so the divider was
 recomputed. The eleven-stage ring was simulated at the worst point found
 above, ss at $-40~^\circ$C and 1.08~V, without mismatch, eight
 realizations of 900~ns (about 700 periods each) \simu{}: $T = 1240.9$~ps,
-$\sigma = 214.9 \pm 4.0$~fs, no double crossings, and a variance per RO1
+$\sigma = 214.9 \pm 4.0$~fs (the root of the mean variance, not the mean
+of the eight $\sigma$), no double crossings, and a variance per RO1
 period $(\sigma/T)^2 = (3.00 \pm 0.26)\times10^{-8}$ (95\,\% confidence
 interval of the mean), with $2.65\times10^{-8}$ in the lowest realization. The
 five-stage ring gave about $6.0\times10^{-8}$ at the same point, and
-$6.0 \times 5/11 = 2.7$: the $1/N$ law of the number of stages holds. The
+$6.0 \times 5/11 = 2.7$: the $1/N$ law of the number of stages holds
+within 10\,\%, with its prediction at the lower edge of the interval. The
 spread between the eight realizations, 10.5\,\%, is larger than the
 5.6\,\% that the same estimator gives on white jitter with as many
 crossings; the cause was not identified. It does not reach the divider,
@@ -461,12 +497,14 @@ apparent one (Section~\ref{sec:campaign}).
 
 The worst-die column is conservative, and it is not a Monte Carlo of the
 eleven-stage ring: mismatch was not simulated with eleven stages. The
-factor of 1.175 comes from the five-stage ring. It is a ratio of extremes
-dominated by the estimation error of a single realization of 650 to 700
+factor of 1.175 comes from the five-stage ring. It is the $K_D$ of the
+worst die over the $K_D$ of the mean variance, dominated by the
+estimation error of a single realization of 650 to 700
 periods, not a pure measure of mismatch --- on those dies the die-to-die
 spread of $\sigma/T$ was no larger than the run-to-run spread --- and it
 is applied here on top of the lowest of eight realizations, so that error
-is counted twice. For \kd{24} to fall below $H_\infty = 0.98$ the
+is counted twice. That it equals, to three digits, the ratio of periods
+1.1754 used above is a coincidence: the two quantities are unrelated. For \kd{24} to fall below $H_\infty = 0.98$ the
 variance per period would have to be 2.6 times below the nominal mean of
 $3.00\times10^{-8}$, and 5.2 times below it for the minimum divider
 \kd{25} \est{}.
@@ -480,8 +518,9 @@ the wait for the window that holds the last of them, 10 to 75~s. The
 fastest corner is the cold fast one, not the hot one. Two things move
 these figures by a few per cent: the real load on RO2 (on RO1 the
 flip-flop with its buffer lengthens the period by about 3\,\%) and
-mismatch (1.3\,\% of period spread on the five-stage ring). This is two
-orders of magnitude below the kbit/s of the first estimates, and it is
+mismatch (1.3\,\% of period spread on the five-stage ring). This is one
+to two orders of magnitude below the 0.35 to 3.9~kbit/s of the first
+estimates (Section~\ref{sec:kd}), and it is
 what the bias of the flip-flop, the worst corner and the margin cost
 together; the engine seeds a deterministic generator and can afford it.
 
@@ -498,13 +537,17 @@ than assumed: the truncated series of equation~14
 in~\cite{baudet_2011_security} \emph{overestimates} entropy and is thus
 not a lower bound, so the exact wrapped-Gaussian computation is used
 instead; and the first-harmonic derivation of min-entropy agrees with the
-exact one to six digits over the whole range of interest.
+exact one to four digits at $Q = 0.05$ and to six or more from
+$Q = 0.1$ upwards, which includes the design point.
 
 Since $Q = K_D\,q_2$ (Section~\ref{sec:ero}), the divider follows from
-the jitter. Table~\ref{tab:opoint} gives the operating points estimated
-before any measurement for the jitter range expected of a 28~nm
-\ac{FPGA}~\cite{petura_2016_survey}, with two equal rings
-($q_2 = Q_{\mathrm{raw}}$) and RO2 at 500~MHz.
+the jitter. Table~\ref{tab:opoint} gives three illustrative operating
+points computed before any measurement, with two equal rings
+($q_2 = Q_{\mathrm{raw}}$) and RO2 at 500~MHz. The jitter expected of a
+28~nm \ac{FPGA}, 2 to 4~ps per period of 3 to
+5~ns~\cite{petura_2016_survey}, is $\sigma/T$ from $4\times10^{-4}$ to
+$1.3\times10^{-3}$: it covers the first two rows and extends below the
+first, and the third row lies beyond it.
 
 \begin{table}[htbp]
 \centering
@@ -531,11 +574,14 @@ with their rings and their own target, a Shannon entropy of 0.997
 Section~\ref{sec:kd}); the min-entropy target used here is stricter and
 would ask for a larger divider with the same rings.
 
-The two operating points of this work fall outside the table, on the slow
-side. On the \ac{FPGA} the measured white floor is at or below the first
-row, $q_2 = 0.6$ to $1.1\times10^{-6}$ with RO2 at 205~MHz, and the
-divider is \kd{19} (\texttt{CFG\_KD} $= 19$), about 390~bit/s \meas{}
-(Section~\ref{sec:campaign}). On the integrated circuit
+Neither operating point of this work reaches the throughput of the
+table. On the \ac{FPGA} the measured white floor lies between the first
+two rows, $q_2 = 0.6$ to $1.1\times10^{-6}$ \meas{}; the throughput falls
+below the table because RO2 runs at 205~MHz and not at 500, and because
+the divider is taken from the lower edge and rounded up to a power of
+two: \kd{19} (\texttt{CFG\_KD} $= 19$), about 390~bit/s
+(Section~\ref{sec:campaign}). The integrated circuit does fall outside
+the table, below its first row:
 $q_2 \approx 3.5\times10^{-8}$ at the worst corner and the divider is
 \kd{25}, 20 to 50~bit/s \est{} (Section~\ref{sec:ihp_ring11}).
 
@@ -734,8 +780,8 @@ conditions A--D \meas{}.}
 
 Four readings follow. First, at $10^6$ bits the battery saturates: uniform
 bits score $0.839 \pm 0.021$, and every point where the model gives
-$H_\infty \ge 0.97$ scores between 0.82 and 0.87, always limited by the
-compression estimator. Above that ceiling the battery tells nothing
+$H_\infty \ge 0.97$ scores between 0.82 and 0.87, limited by the
+compression estimator in nearly all of those sequences. Above that ceiling the battery tells nothing
 apart, so the ESP32, at 0.85, and the simulated source at $2^{23}$, the
 divider a five-stage ring would use, at 0.84 to 0.85 in the three cases,
 are indistinguishable at this length;
@@ -801,7 +847,9 @@ sets these results beside those of the first prototype board.
 The procedure had been fixed in five steps before the board existed, so
 that it could not be tuned after seeing the data: confirm that the rings
 oscillate; measure the jitter at $K_D = 1$ by the method of Fischer and
-Lubicz~\cite{fischer_2014_embedded}, keeping only the linear term of a
+Lubicz~\cite{fischer_2014_embedded}, ``with at least three rings so that
+the global component separates from the local
+one''~\cite{lubicz_2024_jitter}, keeping only the linear term of a
 fit $\sigma^2(t) = at + bt^2$; fix $K_D$ from that jitter and recompute
 the health-test cut-offs for the measured entropy; collect $10^6$
 consecutive raw bits at that divider and contrast the SP~800-90B
@@ -832,9 +880,12 @@ Table~\ref{tab:fpga_q} gives the results.
 \centering
 \caption{$q_2$ on the Basys~3 by estimator \meas{}, $K_D = 4$, fixed
 stage placement, RO2 at 205 to 207~MHz. The residual is that of the fit,
-in units of the binomial noise. Repeatability: three consecutive captures
-of one bitstream without fixed placement, and two of each bitstream with
-it.}
+in units of the binomial noise. The values are those of the first of two
+captures of each bitstream. The repeatability of the first two rows is
+that of three consecutive captures of the earlier bitstream without fixed
+placement; that of the third row, of the two captures of each bitstream
+with it. In the quiet wrapper the variance fit returns $\kappa = -2.3$,
+a regime in which that estimator is not reliable.}
 \label{tab:fpga_q}
 \small
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.16\linewidth}@{}}
@@ -851,7 +902,8 @@ White floor of the spectrum of the instantaneous frequency & 0.6 to $1.1\times10
 
 The first three rows do not measure the same thing, and none of them
 measures thermal jitter. Each autocorrelation estimator repeats within a
-few per cent, so the factor of three to four between them is systematic:
+few per cent, so the factor between them, three to four in the quiet
+wrapper and fifteen with the frequency meter, is systematic:
 it depends on how much of the shape of $c(M)$ each one attributes to
 jitter. The model does not describe that shape. On the first bitstreams,
 with the accumulation exponent left free, the fit returns $b = 1.6$ to
@@ -869,8 +921,14 @@ not explain it.
 The spectrum of the instantaneous frequency shows what the fits were
 absorbing. Each chunk is demodulated at its own mean phase step, the
 phase is taken over blocks of 16 samples and the spectra are averaged
-over the chunks. A narrow line stands at about 39.4~kHz, more than a
-hundred times above the floor in the quiet wrapper. It is fixed in time,
+over the chunks. A narrow line stands at 38 to 40~kHz, 150 times above
+the floor in the quiet wrapper (88 times in the final bitstream). The
+resolution is stated with it: in the captures of the campaign, at
+$K_D = 4$, the bins are 12.56~kHz wide and the peak is the bin at
+37.7~kHz; a capture at $K_D = 16$ on the bitstream of the load test
+described below, with bins of 3.14~kHz, splits the line between the bins
+at 37.7 and 40.8~kHz and places it at 39.4~kHz by interpolation
+(Figure~\ref{fig:fpga_spectrum}). It is fixed in time,
 not in ring periods: it sits at 38 to 40~kHz with RO2 at 130 and at
 205~MHz. It is not phase-locked to the start of a capture. It is not the
 \ac{I2C} traffic during the capture: a firmware command that keeps the
@@ -882,12 +940,77 @@ times smaller with the frequency meter attached. And a carrier near
 480~kHz with sidebands at $\pm39.5$~kHz is present in every bitstream. A
 switching regulator of the board is a hypothesis compatible with all of
 this; it was not verified, and the origin of the line remains
-unidentified. What is established is that a deterministic modulation of
-external origin enters the relative phase of the rings \meas{}, which is
-what explains $b \approx 2$ and the disagreement between estimators.
+unidentified. What is established is that a deterministic modulation,
+fixed in time and not tied to the frequency of the rings, is present in
+their relative phase \meas{}. It is a candidate explanation, not a
+demonstrated one, for part of the disagreement, $b \approx 2$ and the
+difference between estimators: the line was never put into the model to
+see whether it reproduces them, and whether the factor of 4.4 between
+wrappers is the line alone is not established either.
 
-Away from the line the spectrum is flat, and that floor is the white
-part of the phase noise. It was converted into $q_2$ by calibration
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.86\textwidth, height=5.6cm, ymode=log,
+  xlabel={frequency (kHz)}, ylabel={spectrum (units of the estimator)},
+  xmin=0, xmax=400, ymin=0.03, ymax=30,
+  tick label style={font=\footnotesize}, label style={font=\footnotesize}]
+\addplot[thick, mark=none] coordinates {
+(0.0, 4.795e-02) (3.1, 5.419e-01) (6.3, 4.841e-01) (9.4, 3.039e-01)
+(12.6, 2.249e-01) (15.7, 1.878e-01) (18.8, 1.633e-01) (22.0, 1.437e-01)
+(25.1, 1.295e-01) (28.3, 1.165e-01) (31.4, 1.181e-01) (34.5, 7.251e-01)
+(37.7, 1.490e+01) (40.8, 1.499e+01) (44.0, 7.582e-01) (47.1, 1.086e-01)
+(50.2, 8.883e-02) (53.4, 8.299e-02) (56.5, 7.952e-02) (59.7, 7.895e-02)
+(62.8, 8.144e-02) (65.9, 8.270e-02) (69.1, 8.246e-02) (72.2, 8.364e-02)
+(75.4, 8.641e-02) (78.5, 1.020e-01) (81.6, 9.249e-02) (84.8, 8.532e-02)
+(87.9, 8.683e-02) (91.1, 8.906e-02) (94.2, 9.021e-02) (97.4, 9.425e-02)
+(100.5, 9.679e-02) (103.6, 9.949e-02) (106.8, 1.075e-01) (109.9, 1.059e-01)
+(113.1, 1.074e-01) (116.2, 1.268e-01) (119.3, 1.333e-01) (122.5, 1.195e-01)
+(125.6, 1.222e-01) (128.8, 1.307e-01) (131.9, 1.330e-01) (135.0, 1.305e-01)
+(138.2, 1.334e-01) (141.3, 1.416e-01) (144.5, 1.486e-01) (147.6, 1.550e-01)
+(150.7, 1.508e-01) (153.9, 1.612e-01) (157.0, 1.677e-01) (160.2, 1.677e-01)
+(163.3, 1.731e-01) (166.4, 1.788e-01) (169.6, 1.825e-01) (172.7, 1.857e-01)
+(175.9, 1.891e-01) (179.0, 1.941e-01) (182.1, 1.984e-01) (185.3, 2.051e-01)
+(188.4, 2.108e-01) (191.6, 2.237e-01) (194.7, 2.273e-01) (197.8, 2.228e-01)
+(201.0, 2.220e-01) (204.1, 2.699e-01) (207.3, 2.652e-01) (210.4, 2.412e-01)
+(213.5, 2.418e-01) (216.7, 2.517e-01) (219.8, 2.576e-01) (223.0, 2.641e-01)
+(226.1, 2.622e-01) (229.2, 2.709e-01) (232.4, 2.766e-01) (235.5, 2.789e-01)
+(238.7, 2.828e-01) (241.8, 4.015e-01) (244.9, 4.834e-01) (248.1, 3.147e-01)
+(251.2, 2.922e-01) (254.4, 2.913e-01) (257.5, 3.032e-01) (260.6, 3.068e-01)
+(263.8, 3.272e-01) (266.9, 3.250e-01) (270.1, 3.191e-01) (273.2, 3.108e-01)
+(276.4, 3.128e-01) (279.5, 3.390e-01) (282.6, 4.498e-01) (285.8, 3.913e-01)
+(288.9, 3.435e-01) (292.1, 3.431e-01) (295.2, 3.464e-01) (298.3, 3.567e-01)
+(301.5, 3.681e-01) (304.6, 3.470e-01) (307.8, 3.549e-01) (310.9, 3.543e-01)
+(314.0, 3.422e-01) (317.2, 3.581e-01) (320.3, 8.049e-01) (323.5, 1.135e+00)
+(326.6, 4.472e-01) (329.7, 3.872e-01) (332.9, 3.816e-01) (336.0, 3.905e-01)
+(339.2, 3.904e-01) (342.3, 3.755e-01) (345.4, 3.850e-01) (348.6, 3.930e-01)
+(351.7, 4.099e-01) (354.9, 4.280e-01) (358.0, 4.422e-01) (361.1, 6.409e-01)
+(364.3, 5.279e-01) (367.4, 4.130e-01) (370.6, 4.244e-01) (373.7, 4.038e-01)
+(376.8, 4.044e-01) (380.0, 4.126e-01) (383.1, 4.045e-01) (386.3, 4.005e-01)
+(389.4, 4.169e-01) (392.5, 4.199e-01) (395.7, 4.267e-01) (398.8, 4.634e-01)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Spectrum of the instantaneous relative frequency of the rings
+on the Basys~3 \meas{}: 2000 chunks at $K_D = 16$, bins of 3.14~kHz. The
+capture is that of the load-test bitstream with the load stopped (quiet
+wrapper, fixed placement, 4000 idle flip-flops added); the spectrum was
+recorded at this resolution only on that bitstream, which is not the one
+of the campaign. The
+line falls in the bins at 37.7 and 40.8~kHz. In this bitstream the floor
+is about twice that of the campaign and rises with frequency, and smaller
+lines stand near 245, 283, 323 and 361~kHz, which were not examined; the
+divider is not derived from this capture.}
+\label{fig:fpga_spectrum}
+\end{figure}
+
+Between 100 and 400~kHz, away from the line, the spectrum is roughly
+flat, and that floor is taken as the white part of the phase noise. In
+the bitstream of the campaign the three bands of 100~kHz differ by
+$\pm13$\,\%; in the final bitstream the floor doubles from the first band
+to the third, and the floor of the simulated calibration rises alike at
+that phase step, which is why each band is calibrated on its own.
+It was converted into $q_2$ by calibration
 against simulated bits of known $q_2$ with a modulation of the measured
 frequency and amplitude \simu{}. The validation on simulated bits set the
 limits of the method before the figure was used: without modulation no
@@ -899,17 +1022,25 @@ components of the estimator, and the $q_2$ read from it errs upwards,
 the non-conservative side. For the quiet wrapper with fixed placement,
 three calibration models give 0.80 to $0.88\times10^{-6}$ and the bands
 between 100 and 400~kHz give 0.59 to $1.13\times10^{-6}$: \textbf{$q_2 =
-0.6$ to $1.1\times10^{-6}$} \meas{}, calibration \simu{}, that is, a
-jitter of 4 to 5~ps per 4.9~ns period, of the order of the 2 to 4~ps
-reported for rings in this technology~\cite{petura_2016_survey}. For the
+0.6$ to $1.1\times10^{-6}$} \meas{}, calibration \simu{}. Expressed as
+$\sqrt{q_2}\,T_2$ that is 4 to 5~ps per 4.9~ns period of RO2: the
+relative jitter of the two rings, not that of one, from an estimator
+that errs upwards, and so only of the order of the 2 to 4~ps per ring
+reported for this technology~\cite{petura_2016_survey}. For the
 wrapper with the frequency meter the mean phase step is different and the
 calibration does not determine $q_2$.
 
-This is the first declared deviation. The protocol asked for a
-polynomial fit of the accumulated variance and for keeping its linear
-term; that fit does not describe these data, and the separation of
+This is the first declared deviation, and it has three parts. The
+protocol asked for $K_D = 1$; captures at $K_D = 1$ exist only for the
+first bitstreams, where the variance estimator has three or four usable
+distances and is not reliable, and every figure of
+Table~\ref{tab:fpga_q} is at $K_D = 4$. It asked for at least three
+rings; the separation of
 global from local jitter with a third ring~\cite{lubicz_2024_jitter} is
-not available to an engine with two. The white floor comes
+not available to an engine with two, so what is measured is the relative
+jitter of one pair. And it asked for a
+polynomial fit of the accumulated variance and for keeping its linear
+term; that fit does not describe these data. The white floor comes
 instead from a spectral estimator introduced after the data had been
 seen, on the proposal of an independent review. It was validated on
 simulated bits with and without a known modulation, its bias is in a
@@ -942,13 +1073,18 @@ $n = \log_2 K_D$ & $q_2 = 8.2\times10^{-7}$ & $q_2 = 6.6\times10^{-7}$ & $q_2 = 
 
 With the lower edge of the floor, $q_2 = 0.6\times10^{-6}$, \kd{19}
 (\texttt{CFG\_KD} $= 19$) gives $H_\infty = 0.996$; it stays above 0.99
-while $q_2 \ge 5.0\times10^{-7}$ and above $\Hdecl = 0.60$ while
-$q_2 \ge 1.3\times10^{-7}$. The \ac{FPGA} build therefore takes \kd{19}
+while $q_2 \ge 5.1\times10^{-7}$ and above $\Hdecl = 0.60$ while
+$q_2 \ge 1.4\times10^{-7}$. The \ac{FPGA} build therefore takes \kd{19}
 as both its reset value and its minimum divider: about 390~bit/s with RO2
 at 205~MHz. A further factor of two on $q_2$ would ask for $2^{20}$ and
-was not taken; it is the margin this operating point does not have. The
+was not taken; it is the margin this operating point does not have: with
+half the lower edge, $q_2 = 0.3\times10^{-6}$, \kd{19} gives
+$H_\infty = 0.920$ \est{}, and the 0.974 of the last column of
+Table~\ref{tab:fpga_kd} is for half the middle of the range, not half
+its edge. The
 final bitstream, which differs from the one above in the timing
-constraint of RO2 and in the minimum divider, was measured again and
+constraint of RO2, in the minimum, reset and maximum dividers and in the
+revision of the \ac{RTL}, was measured again in a single capture and
 gives 0.95 to $1.35\times10^{-6}$ by band, above the edge used. The
 divider this replaced is worth recording. The joint fit of
 Table~\ref{tab:fpga_q} had suggested $K_D \ge 2^{16}$ with a factor of
@@ -978,7 +1114,7 @@ correlation.
 RO2 at 205~MHz. $z$ is the lag-1 correlation in standard deviations. The
 last column is the model with $q_2 = 8.2\times10^{-7}$ \est{}; it was not
 tabulated below $2^{14}$, where it is smaller still. The last row is the
-final bitstream.}
+final bitstream, with RO2 at 204.4~MHz.}
 \label{tab:fpga_90b}
 \small
 \begin{tabular}{@{}clcrcc@{}}
@@ -1021,7 +1157,7 @@ from this table. It comes from the white floor, and the battery only
 fails to contradict it.
 
 Two properties of the bits do not depend on the divider. The fraction of
-ones is 0.5054 to 0.5064 at every divider of this bitstream, 0.4951 to
+ones is 0.5050 to 0.5064 at every divider of this bitstream, 0.4951 to
 0.4963 without fixed placement and 0.4959 in the final bitstream: a bias
 of about half a per cent that is 7 to 13 standard deviations from one
 half in $10^6$ bits, and whose sign changes with the implementation. It
@@ -1036,7 +1172,10 @@ without fixed placement and 0.880 with it, both at \kd{16}, against 0.907
 to 0.935 for ideal bits of that length; the fraction of ones is 0.4955
 and 0.5054 and $\rho_1$ is within 1.1 standard deviations of zero. These
 two records were taken before the white floor was measured, at a divider
-where the model gives $H_\infty \approx 0.47$. No long record exists at
+where the model gives $H_\infty \approx 0.47$ with the white floor of the
+fixed placement; for the record without it, whose floor was determined
+less well (0.74 to $1.47\times10^{-6}$), it gives 0.43 to 0.75 \est{}.
+No long record exists at
 \kd{19}. They are therefore a statement about the battery, which scores
 them like ideal bits, and not about the source.
 
@@ -1068,15 +1207,15 @@ frequency of RO2 from 130 to 207~MHz), the logic attached to the rings
 (quiet wrapper against display and frequency meter), and the load on the
 core supply. Those comparisons answered a different question from the
 one asked: the apparent phase noise depends on what hangs from the rings
-and a modulation enters from outside, but how much two adjacent rings
-couple was not measured.
+and a modulation of unidentified origin is present, but how much two
+adjacent rings couple was not measured.
 
 \paragraph{What the campaign establishes.} The rings of the \ac{FPGA}
 have a white phase-noise floor of 0.6 to $1.1\times10^{-6}$ per RO2
 period, measured inside the device with the caveat that the estimator
 errs upwards; with its lower edge, \kd{19} gives $H_\infty \ge 0.99$ in
-the model. Everything else the bits contain --- a modulation near
-39.4~kHz of unidentified origin, a bias of half a per cent that follows
+the model. Everything else the bits contain --- a modulation at 38 to
+40~kHz of unidentified origin, a bias of half a per cent that follows
 the implementation --- is not entropy, and neither the SP~800-90B battery
 nor the health tests tell it apart from entropy. The stochastic model
 describes the white part and not the shape of the measured
@@ -1090,7 +1229,13 @@ the same methodology. Table~\ref{tab:o8} sets them side by side at
 $10^6$ bits with the same binaries and options: the thirty-six ESP32
 captures of Chapter~\ref{ch:esp32}, the three \ac{FPGA} streams at
 $2^{17}$ to $2^{19}$ of Table~\ref{tab:fpga_90b}, ideal uniform bits, and
-independent bits with a bias of 0.2\,\% and nothing else.
+independent bits with a bias of 0.2\,\% and nothing else. The \ac{FPGA}
+column has to be read with its composition in mind: the three streams are
+from the bitstream of the campaign, not the final one, and only one of
+them is at the operating divider; at $2^{17}$ and $2^{18}$ the model
+gives 0.80 and 0.974. The stream of the final bitstream at \kd{19}
+(0.853, last row of Table~\ref{tab:fpga_90b}) is not in the column and
+falls inside its range.
 
 \begin{table}[htbp]
 \centering
@@ -1122,8 +1267,8 @@ $z$ & 0.6 (0.0--2.6) & 11.6 (11.1--12.0) & 0.7 (0.6--1.6) & 3.9 (3.8--4.3) \\
 
 The assigned figure does not separate anything: 0.857 for the
 \ac{FPGA}, 0.848 for the ESP32 and 0.847 for ideal bits, with overlapping
-ranges, all set by the compression estimator at its ceiling for this
-length. The estimators that are sensitive to bias do separate the
+ranges, set in nearly every sequence by the compression estimator at its
+ceiling for this length. The estimators that are sensitive to bias do separate the
 \ac{FPGA}, at 0.980 to 0.983 against 0.995 to 0.999, and the column of
 biased independent bits shows that a bias alone moves them that way; the
 bias of the \ac{FPGA} is larger than the one simulated in that column,
@@ -1139,7 +1284,8 @@ more care still. The ESP32 capture scores 0.911, ideal bits 0.907 to
 value, MultiMMC and LZ78Y estimators give 0.983 to 0.986 for the
 \ac{FPGA} against 0.998 to 0.999 for the ESP32 and for ideal bits. But
 those \ac{FPGA} records are at \kd{16}, where the model with the measured
-white floor gives $H_\infty \approx 0.47$ (Section~\ref{sec:campaign}).
+white floor gives $H_\infty \approx 0.47$ with fixed placement and 0.43
+to 0.75 without it \est{} (Section~\ref{sec:campaign}).
 That column of the comparison speaks about the SP~800-90B battery, which
 cannot tell such a record from an ideal one, and not about the source at
 its operating divider.
@@ -1156,7 +1302,9 @@ ESP32 (Table~\ref{tab:esp32_restart}).
 \caption{Restart test (SP~800-90B \S3.1.4, 1000 restarts of 1000 bits)
 \meas{}. $H_I$ is the non-IID estimate of the source it is compared
 with; the test passes if the sanity check passes and the row and column
-estimates $H_r$ and $H_c$ are at least $H_I/2$.}
+estimates $H_r$ and $H_c$ are at least $H_I/2$. The ESP32 chips are
+numbered as in Chapter~\ref{ch:esp32}: the second is a0:dd:6c:0e:fb:4c
+and the third f8:b3:b7:2a:09:28.}
 \label{tab:restart_cmp}
 \small
 \begin{tabular}{@{}llcccc@{}}
@@ -1166,10 +1314,10 @@ Source & Variant & $H_I$ & $H_r$ & $H_c$ & Verdict \\
 Basys~3 & \kd{16}, no fixed placement & 0.819 & 0.843 & 0.892 & passes \\
 Basys~3 & \kd{19}, fixed placement            & 0.857 & 0.854 & 0.830 & passes \\
 Basys~3 & \kd{19}, final bitstream            & 0.853 & 0.847 & 0.845 & passes \\
-ESP32, first chip  & stock bootloader         & 0.838 & 0.898 & 0.854 & passes \\
-ESP32, first chip  & boot noise removed       & 0.838 & 0.024 & 0.813 & fails \\
-ESP32, second chip & stock bootloader         & 0.833 & 0.892 & 0.848 & passes \\
-ESP32, second chip & boot noise removed       & 0.833 & 0.016 & 0.844 & fails \\
+ESP32, second chip & stock bootloader         & 0.838 & 0.898 & 0.854 & passes \\
+ESP32, second chip & boot noise removed       & 0.838 & 0.024 & 0.813 & fails \\
+ESP32, third chip  & stock bootloader         & 0.833 & 0.892 & 0.848 & passes \\
+ESP32, third chip  & boot noise removed       & 0.833 & 0.016 & 0.844 & fails \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1222,8 +1370,11 @@ below 2\,\% and a dispersion of 4.0\,\% over eight seeds with 20\,000
 blocks \simu{}. Without the corrections applied here a plain straight-line
 fit biases the result by $-18$\,\%, so the correction is not cosmetic.
 \item[Area.] A lower bound \simu{}: cells only, flattened, without routing,
-fill or clock tree. Published growth factors from cell area to core area
-on this library are $\approx 2.35$ for an \ac{AES}. Of the optimization
+fill or clock tree. No growth factor from cell area to core area was
+found for this library; the estimates in square millimetres use a
+utilization of 0.60 to 0.70, a factor of 1.4 to 1.7 \est{}, whose lower
+end is the ratio of routed to raw gate density published for another
+open 130~nm library, not for this one. Of the optimization
 savings of Chapter~\ref{ch:ch6_asic}, two are synthesized and the third
 is \est{} and explicitly not claimed as measured. Renaming alone moves
 the figure of the logic optimizer by about 0.2\,\%.
@@ -1238,10 +1389,21 @@ the nominal one. The non-IID figure is set by estimators whose
 conservative bias on nearly uniform data exceeds the spread between
 conditions; an analysis of variance finds no condition effect
 ($p \ge 0.045$ on every estimator) and no chip effect ($p \ge 0.032$,
-against 0.0045 after correction). Three devices show that the reference
+against 0.0045 after correction). That analysis says nothing about the
+radio: in conditions A and B of those thirty-six captures the station was
+started without associating and with the default power saving, so the RF
+may have been asleep for most of each capture (read in the code, not
+measured). The comparison of radio on against radio off rests on a
+repetition with the radio kept awake, twelve captures on one chip, three
+per condition: no condition effect ($p = 0.41$) and no difference between
+radio and no radio ($p = 0.80$) \meas{}, with a resolution that would
+miss a difference below about 0.04; that the RF was on is supported only
+by the chip temperature, 1.1 to 2.2~$^\circ$C higher in B than in C
+(Chapter~\ref{ch:esp32}). Three devices show that the reference
 does not hinge on one of them; they do not bound the spread across a
-production population. The restart test was run on two chips, in
-condition~D, with the Wi-Fi started but not associated, and on the second
+production population. The restart test was run on the second and third
+chips, in
+condition~D, with the Wi-Fi started but not associated, and on the third
 chip with each source switched on and off in turn; Bluetooth and an
 associated radio were not tested. It bounds the entropy that the stock bootloader injects
 only from below: no repeat in 1000 restarts means more than about
@@ -1251,7 +1413,8 @@ confidence. The size of the generator's internal state is not documented.
 on 24 dies in each of five corners. The declarable figure, 0.757, uses
 $\mu - 3\sigma$ of the worst corner; with $\sigma$ at the upper end of
 its 95\,\% interval it is 0.704, and without the dies whose sampling
-phases leave a gap, 0.789. Two batches of one corner differ in their mean
+phases leave a gap, 0.789. The two batches differ in their mean in two
+corners, one of them the limiting one,
 for a reason that was not established, and the statistical models are
 those of an open \ac{PDK}. The margin to $\Hdecl = 0.60$ is what absorbs
 all of that.
@@ -1261,9 +1424,13 @@ white floor $q_2 = 0.6$ to $1.1\times10^{-6}$, which gives
 $H_\infty \ge 0.99$ at \kd{19} with its lower edge. The estimator of the
 floor errs upwards, by an amount that depends on the phase step and was
 not bounded, and the lower edge of the range is the only allowance made
-for it; a factor of two on $q_2$ would bring the bound to 0.974. One
+for it. There is no further margin: half the lower edge,
+$q_2 = 0.3\times10^{-6}$, would bring the bound to 0.920 \est{} (0.974 is
+the figure for half the middle of the range), and $2^{20}$ would be
+needed to keep 0.99 with a factor of two. The floor of the final
+bitstream is a single capture. One
 wrapper on one board at room temperature; temperature and supply were
-not varied, and the origin of the modulation near 39.4~kHz is unknown.
+not varied, and the origin of the modulation at 38 to 40~kHz is unknown.
 The SP~800-90B figures of the same bits, 0.83 to 0.86, are at the
 ceiling of the battery for $10^6$ bits and bound nothing.
 \emergencystretch=1em
