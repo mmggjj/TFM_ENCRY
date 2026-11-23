@@ -16,10 +16,11 @@ pair of ring oscillators of Chapter~\ref{ch:ch3_entropy}.
 \label{sec:arch}
 
 Figure~\ref{fig:engine} summarizes the data path. Raw bits leave the
-\ac{ERO} in the clock domain of the sampling ring, cross to the system
-clock one bit at a time, and feed three consumers: the health tests, the
-seed collector of the deterministic generator, and a capture buffer used
-only for characterization. Keys come out of a \ac{CTRDRBG}; the current
+\ac{ERO} in the clock domain of the sampling ring. A capture buffer used
+only for characterization records them there, before the crossing; they
+cross to the system clock one bit at a time and feed the health tests
+and the seed collector of the deterministic generator. Keys come out of
+a \ac{CTRDRBG}; the current
 key is loaded into an AES-CMAC block that answers challenges; and an
 \ac{I2C} slave exposes everything as a register map. Two blocks of the
 figure exist in one target only: in the integrated circuit RO2 passes
@@ -44,7 +45,9 @@ raw bits as a continuous stream for the entropy assessment.
 \node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
 \node[bloque, right=of drbg] (cmac) {AES-CMAC};
 \node[bloque, below=12mm of drbg] (i2c) {I2C slave\\register map};
-\draw[flecha] (ro) -- (presc); \draw[flecha] (presc) -- (ero);
+\draw[flecha] (ro) -- (presc) node[midway, above, font=\scriptsize] {RO2};
+\draw[flecha] (presc) -- (ero);
+\draw[flecha] (ro.south) -- ++(0,-4mm) -| node[pos=0.25, below, font=\scriptsize] {RO1} ([xshift=-5mm]ero.south);
 \draw[flecha] (ero) -- (cdc);
 \draw[flecha] (cdc) -- (ht); \draw[flecha] (cdc) -- (seed);
 \draw[flecha] (ero) |- (cap);
@@ -65,9 +68,8 @@ through the I2C slave like the capture buffer.}
 The decision that shapes the whole engine is to use \textbf{one
 cryptographic primitive, AES-128, for the three jobs}: conditioning the
 entropy, generating keys and authenticating. The first architecture had
-a SHA-256 core as conditioner; the synthesis estimates of
-Chapter~\ref{ch:ch6_asic} showed that it would take almost half the
-digital area, and SP~800-90B lists AES-based constructions --- CMAC,
+a SHA-256 core as conditioner; an early estimate, made before any
+synthesis, gave it almost half the digital area \est{}, and SP~800-90B lists AES-based constructions --- CMAC,
 CBC-MAC and the block-cipher derivation function of SP~800-90A --- among
 its \emph{vetted} conditioning components~\cite{turan_2018_sp80090b}.
 Dropping the hash was estimated at the time to take the engine from
@@ -106,7 +108,7 @@ the usual \texttt{xtime} network, and the state follows the column-major
 convention of FIPS~197 with byte~0 on the left, so that hexadecimal
 strings in the standard map one-to-one onto the VHDL vectors.
 
-The core was verified against the five official vectors available for
+The core was verified against five official vectors for
 AES-128 encryption (FIPS~197 appendices~B and~C.1, and the three ECB
 blocks of SP~800-38A F.1.1) and against a chain of one thousand
 encryptions to expose any state left over between blocks. A check that
@@ -142,10 +144,13 @@ sequence of sixteen encryptions; a variable-length input would cost a
 byte-oriented datapath for no benefit. Instantiation (or reseed) costs
 16~AES operations and generating 256~bits costs four: 209 and 53~cycles
 in the generator's own bench, which uses the one-round core (11 cycles
-per encryption). In the engine each encryption takes the 51 cycles of the
-32-bit core, which remains negligible against the time a seed takes to
-collect.
-% PENDIENTE: ciclos de siembra/generación con el AES de 32 bits (M1), sin cifra en docs/
+per encryption): two cycles of sequencing per encryption and one more,
+$16 \times 13 + 1$ and $4 \times 13 + 1$ \simu{}. In the engine each
+encryption takes the 51 cycles of the 32-bit core; by the same count
+that is about 849 and 213 cycles \est{}, not measured in the system
+bench, and negligible against the time a seed takes to collect.
+% NOTA (no impresa): 849 y 213 = 16 x 53 + 1 y 4 x 53 + 1, sin simular
+% (revision del 23-11, M17); el banco del motor no imprime ciclos.
 The state (Key, V) is never exposed; the reseed counter is readable so
 that the host can enforce a reseed policy far below the $2^{48}$ limit of
 the standard.
@@ -197,7 +202,9 @@ dies in each of five corners the declarable entropy is 0.757 \simu{}
 and $\Hdecl = 0.60$ stands (Table~\ref{tab:ff_mc}). The lower target is
 paid for in the seed, which grew from 384 to 512 bits: even at the worst
 proportion the test lets through ($p \approx 0.748$, $H \approx 0.42$),
-the 512 seed bits carry 214 bits of entropy, more than the 192 that an
+the 512 seed bits of a memoryless biased source carry 214 bits of
+entropy (correlated bits are another regime, which these tests do not
+see and the minimum divider covers, below), more than the 192 that an
 AES-128 \ac{CTRDRBG} needs (128 for the entropy input plus 64 for the
 nonce, or 192 together when both come from the same source at the same
 time, as here; SP~800-90A \S8.6.3 and
@@ -207,12 +214,17 @@ would not reach its 64, so the design relies on that joint rule; with
 cut-offs are generics,
 because $H$ is set from the \emph{measured} min-entropy, not assumed. The
 proportion test
-also checks the complement of the count, which the standard permits for
-binary sources: a source stuck at the value opposite to the window's
-first sample would otherwise score zero and pass. Alarms are sticky until
-explicitly cleared, and while any alarm is raised nothing leaves the
-engine: the sequencer refuses to seed, to generate a key and to produce
-random output. Two further rules close the gap between a continuous test
+also checks the complement of the count. That is an addition of this
+design, not part of the standard, which only counts the repetitions of
+the window's first sample: a source stuck at the opposite value would
+otherwise score one, the first sample alone, and pass. It does not relax
+the test, and with both tails the false-alarm probability per window
+stays at $6.15\times10^{-10}$, below $2^{-30}$ \est{}. Alarms are sticky
+until explicitly cleared, and while any alarm is raised no new key or
+random output is produced: the sequencer refuses to seed, to generate a
+key and to produce random output. Authentication with the key already
+loaded is still served, and what was produced before the alarm stays
+readable. Two further rules close the gap between a continuous test
 and a 512-bit seed. A start-up test (SP~800-90B \S4.3) must pass first:
 one complete proportion window, 1024 samples, closed without alarm after
 reset or after the alarms are cleared, and clearing them restarts the
@@ -232,7 +244,11 @@ end of the reseed policy the host is still expected to run well before
 that. A zeroization command clears the key, the generator state and
 counter, the challenge, the random register and the collected seed, and
 loads the null key into the authenticator; it is honoured even under
-alarm, and the engine must be seeded again afterwards. And the sampling
+alarm, but only while the engine is idle: during a seeding, which lasts
+10 to 75~s in the integrated circuit \est{}, it is refused like any
+other command, and the host first clears the alarms, which aborts the
+seeding, and then zeroizes. The engine must be seeded again afterwards.
+And the sampling
 divider resets to the characterized value rather than to a small one:
 \kd{25} (\texttt{CFG\_KD} $= 25$) in the integrated circuit, with a
 maximum of $2^{26}$, and \kd{19} on the \ac{FPGA}, with a maximum of
@@ -289,7 +305,12 @@ consecutive bits, $|z| \le 1.4$ at dividers $2^{12}$ to $2^{16}$ with
 free placement of the ring stages; with fixed placement, $|z| \le 0.8$
 at $2^{17}$ to $2^{19}$, and at $2^{13}$ to $2^{16}$ one stream of four
 reaches $z = 2.1$; on the two $8.4\times10^6$-bit captures $|z|$ is 1.1
-\meas{}. The bits are
+\meas{}. The statement is about streams. With fixed placement $2^{12}$
+exists only as chunks, which are not consecutive, and there
+$\rho_1 = +0.0045$ ($z = 4.5$), of the size of the Basys~2 effect; that
+point lies next to the dividers where the bits are plainly
+anticorrelated ($z = -10$ at $2^{11}$, Table~\ref{tab:fpga_90b}) and its
+cause was not separated. The bits are
 identical in simulation; the mechanism inside
 the flip-flop was not identified.
 
@@ -324,7 +345,10 @@ library \est{} (Section~\ref{sec:ro_silicon}), so a chain of four toggle
 flip-flops comes first. The divider register still counts periods of
 RO2; the sampler counts $K_D/16$ edges of the prescaled clock, which is
 the same window, and dividers below $2^{4}$ are refused. The \ac{FPGA}
-has no prescaler. The characterization path does not cross bit by bit:
+has no prescaler. The divider setting itself crosses from the system
+domain to the ring domain without a synchronizer: it is quasi-static,
+written only while the engine is idle and the stream stopped. The
+characterization path does not cross bit by bit:
 the capture buffer is written in the ring domain, at RO2 on the
 \ac{FPGA} and at RO2/16 in the integrated circuit, into a 4096-bit
 memory and read out in the system domain afterwards, with the two
@@ -345,7 +369,8 @@ arrives during the read is not lost, and a byte that finds the queue full
 stops the stream with an overflow flag instead of overwriting: a gap
 cannot go unnoticed. The stream obeys the rules of the capture buffer ---
 test mode only, never while a seed is collected, and no seeding while it
-runs --- and freezes the divider. It is usable where the serial link of
+runs --- and freezes the divider, which a chunk capture in progress does
+not. It is usable where the serial link of
 the host keeps up: with RO2 at 205~MHz, from \kd{13} upwards; at
 $2^{12}$ the 115\,200-baud link does not empty the queue and the stream
 overflows after 1285 bytes, whereas with RO2 at 130~MHz $2^{12}$ still
@@ -401,8 +426,10 @@ verifies that the key is unreadable without the test pin, together with
 the refusals, the zeroization and the continuous stream described above
 (Table~\ref{tab:tb}). What a VHDL bench cannot know is whether the tags are
 \emph{correct}, because the key came from ring-oscillator noise; the
-bench dumps key, challenges and tags to a file and a Python script
-recomputes the CMACs with the independent AES. They match. That is the
-same cross-check the ESP32 performs with mbedTLS, first against the host
+bench dumps the collected seed, key, random output, challenges and tags
+to a file, and a Python script recomputes the three generations from the
+seed with the reference model and the CMACs with the independent AES.
+They match, 9 checks of 9 \simu{}. The tag comparison is the same
+cross-check the ESP32 performs with mbedTLS, first against the host
 model of the engine and then on the board, where 40 tags of 40 matched
 in each of three sessions \meas{} (Section~\ref{sec:bringup}).

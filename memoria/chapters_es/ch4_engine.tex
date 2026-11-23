@@ -17,10 +17,11 @@ del Capítulo~\ref{ch:ch3_entropy}.
 \label{sec:arch}
 
 La Figura~\ref{fig:engine} resume la ruta de datos. Los bits en bruto
-salen del \ac{ERO} en el dominio de reloj del anillo de muestreo, cruzan
-al reloj del sistema de bit en bit y alimentan a tres consumidores: los
-tests de salud, el colector de semilla del generador determinista y un
-búfer de captura que solo se usa para la caracterización. Las claves
+salen del \ac{ERO} en el dominio de reloj del anillo de muestreo. Un
+búfer de captura que solo se usa para la caracterización los registra
+ahí, antes del cruce; cruzan al reloj del sistema de bit en bit y
+alimentan los tests de salud y el colector de semilla del generador
+determinista. Las claves
 salen de un \ac{CTRDRBG}; la clave actual se carga en un bloque AES-CMAC
 que responde a retos; y un esclavo \ac{I2C} lo expone todo como un
 mapa de registros. Dos bloques de la figura existen solo en uno de los
@@ -46,7 +47,9 @@ bits en bruto como un flujo continuo para la evaluación de la entropía.
 \node[bloque, right=of seed] (drbg) {CTR\_DRBG\\+ df};
 \node[bloque, right=of drbg] (cmac) {AES-CMAC};
 \node[bloque, below=12mm of drbg] (i2c) {Esclavo I2C\\mapa de registros};
-\draw[flecha] (ro) -- (presc); \draw[flecha] (presc) -- (ero);
+\draw[flecha] (ro) -- (presc) node[midway, above, font=\scriptsize] {RO2};
+\draw[flecha] (presc) -- (ero);
+\draw[flecha] (ro.south) -- ++(0,-4mm) -| node[pos=0.25, below, font=\scriptsize] {RO1} ([xshift=-5mm]ero.south);
 \draw[flecha] (ero) -- (cdc);
 \draw[flecha] (cdc) -- (ht); \draw[flecha] (cdc) -- (seed);
 \draw[flecha] (ero) |- (cap);
@@ -68,9 +71,9 @@ captura.}
 La decisión que da forma a todo el motor es usar \textbf{una sola
 primitiva criptográfica, AES-128, para las tres tareas}: acondicionar la
 entropía, generar claves y autenticar. La primera arquitectura tenía un
-núcleo SHA-256 como acondicionador; las estimaciones de síntesis del
-Capítulo~\ref{ch:ch6_asic} mostraron que ocuparía casi la mitad del área
-digital, y SP~800-90B incluye construcciones basadas en AES --- CMAC,
+núcleo SHA-256 como acondicionador; una estimación temprana, anterior a
+cualquier síntesis, le daba casi la mitad del área digital \est{}, y
+SP~800-90B incluye construcciones basadas en AES --- CMAC,
 CBC-MAC y la función de derivación basada en cifrado de bloque de
 SP~800-90A --- entre sus componentes de acondicionamiento
 \emph{aprobados}~\cite{turan_2018_sp80090b}. En su momento se estimó que
@@ -112,7 +115,7 @@ habitual, y el estado sigue la convención por columnas de FIPS~197 con
 el byte~0 a la izquierda, de modo que las cadenas hexadecimales de la
 norma se corresponden una a una con los vectores VHDL.
 
-El núcleo se verificó con los cinco vectores oficiales disponibles para
+El núcleo se verificó con cinco vectores oficiales para
 el cifrado AES-128 (apéndices~B y~C.1 de FIPS~197, y los tres bloques ECB
 de SP~800-38A F.1.1) y con una cadena de mil cifrados para poner de
 manifiesto cualquier estado residual entre bloques. Una comprobación que
@@ -149,10 +152,14 @@ en una secuencia cerrada de dieciséis cifrados; una entrada de longitud
 variable costaría una ruta de datos orientada a bytes sin ningún
 beneficio. La instanciación (o el resembrado) cuesta 16~operaciones AES
 y generar 256~bits cuesta cuatro: 209 y 53~ciclos en el banco propio del
-generador, que usa el núcleo de una ronda (11 ciclos por cifrado). En el
-motor cada cifrado tarda los 51 ciclos del núcleo de 32 bits, que sigue
-siendo despreciable frente al tiempo que tarda en recogerse una semilla.
-% PENDIENTE: ciclos de siembra/generación con el AES de 32 bits (M1), sin cifra en docs/
+generador, que usa el núcleo de una ronda (11 ciclos por cifrado): dos
+ciclos de secuenciación por cifrado y uno más, $16 \times 13 + 1$ y
+$4 \times 13 + 1$ \simu{}. En el motor cada cifrado tarda los 51 ciclos
+del núcleo de 32 bits; con la misma cuenta son unos 849 y 213 ciclos
+\est{}, sin medir en el banco del sistema, y despreciables frente al
+tiempo que tarda en recogerse una semilla.
+% NOTA (no impresa): 849 y 213 = 16 x 53 + 1 y 4 x 53 + 1, sin simular
+% (revision del 23-11, M17); el banco del motor no imprime ciclos.
 El estado (Key, V)
 nunca se expone; el contador de resembrados es legible para que el
 anfitrión pueda imponer una política de resembrado muy por debajo del
@@ -210,7 +217,9 @@ de 0,025), y $\Hdecl = 0{,}60$ se mantiene (Tabla~\ref{tab:ff_mc}). El
 objetivo más bajo se paga en la semilla, que pasó de 384 a 512 bits:
 incluso con la peor proporción que deja pasar el test
 ($p \approx 0{,}748$, $H \approx 0{,}42$), los 512 bits de la semilla
-llevan 214 bits de entropía, más que los 192 que necesita un \ac{CTRDRBG}
+de una fuente sesgada sin memoria llevan 214 bits de entropía (los bits
+correlados son otro régimen, que estos tests no ven y que cubre el
+divisor mínimo, más abajo), más que los 192 que necesita un \ac{CTRDRBG}
 AES-128 (128 para la entrada de entropía más 64 para el nonce, o 192
 juntos cuando los dos salen de la misma fuente a la vez, como aquí;
 SP~800-90A \S8.6.3 y \S8.6.7~\cite{barker_2015_sp80090ar1}). Por
@@ -220,12 +229,17 @@ Los dos
 cortes son parámetros genéricos
 (generics), porque $H$ se fija a partir de la min-entropía \emph{medida},
 no se supone. El test de proporción comprueba también el
-complemento de la cuenta, algo que la norma permite para fuentes
-binarias: de lo contrario, una fuente atascada en el valor opuesto a la
-primera muestra de la ventana puntuaría cero y pasaría. Las alarmas
+complemento de la cuenta. Es una adición de este diseño, no parte de la
+norma, que solo cuenta las repeticiones de la primera muestra de la
+ventana: de lo contrario, una fuente atascada en el valor opuesto
+puntuaría uno, la primera muestra sola, y pasaría. No relaja el test, y
+con las dos colas la probabilidad de falsa alarma por ventana sigue en
+$6{,}15\times10^{-10}$, por debajo de $2^{-30}$ \est{}. Las alarmas
 quedan enclavadas hasta que se borran explícitamente, y mientras haya
-alguna alarma activa no sale nada del motor: el secuenciador se niega a
-cargar la semilla, a generar clave y a producir salida aleatoria. Dos
+alguna alarma activa no se produce ni clave ni salida aleatoria nueva:
+el secuenciador se niega a cargar la semilla, a generar clave y a
+producir salida aleatoria. La autenticación con la clave ya cargada se
+sigue atendiendo, y lo producido antes de la alarma sigue legible. Dos
 reglas más cierran el hueco entre un test continuo y una semilla de 512
 bits. Primero tiene que pasar un test de arranque (SP~800-90B \S4.3):
 una ventana completa del test de proporción, 1024 muestras, cerrada sin
@@ -248,7 +262,11 @@ política de resembrado que el anfitrión sigue teniendo que aplicar mucho
 antes. Una orden de borrado total pone a cero la clave, el estado y el
 contador del generador, el reto, el registro aleatorio y la semilla
 recogida, y carga la clave nula en el autenticador; se atiende incluso
-con alarma, y después hay que volver a sembrar. Y el divisor de muestreo
+con alarma, pero solo con el motor libre: durante una siembra, que dura
+de 10 a 75~s en el circuito integrado \est{}, se rechaza como cualquier
+otra orden, y el anfitrión borra primero las alarmas, lo que aborta la
+siembra, y después lanza el borrado total. Después hay que volver a
+sembrar. Y el divisor de muestreo
 se reinicia al valor caracterizado y no a uno pequeño: \kd{25}
 (\texttt{CFG\_KD} $= 25$) en el circuito integrado, con un máximo de
 $2^{26}$, y \kd{19} en la \ac{FPGA}, con un máximo de $2^{24}$. Un
@@ -305,7 +323,13 @@ consecutivos, $|z| \le 1{,}4$ con divisores de $2^{12}$ a $2^{16}$ y
 colocación libre de las etapas de los anillos; con colocación fija,
 $|z| \le 0{,}8$ de $2^{17}$ a $2^{19}$, y de $2^{13}$ a $2^{16}$ uno de
 cuatro flujos llega a $z = 2{,}1$; en las dos capturas de
-$8{,}4\times10^6$ bits $|z|$ vale 1,1 \meas{}. Los bits son idénticos
+$8{,}4\times10^6$ bits $|z|$ vale 1,1 \meas{}. La afirmación es sobre
+flujos. Con colocación fija, $2^{12}$ solo existe como fragmentos, que
+no son consecutivos, y ahí $\rho_1 = +0{,}0045$ ($z = 4{,}5$), del tamaño
+del efecto de la Basys~2; ese punto está junto a los divisores donde
+los bits salen claramente anticorrelados ($z = -10$ con $2^{11}$,
+Tabla~\ref{tab:fpga_90b}) y su causa no se ha separado. Los bits son
+idénticos
 en simulación; el
 mecanismo dentro del biestable no se ha identificado.
 
@@ -343,7 +367,10 @@ reloj no cierra tiempos en la biblioteca \est{}
 biestables de conmutación. El registro del divisor sigue contando
 periodos de RO2; el muestreador cuenta $K_D/16$ flancos del reloj
 preescalado, que es la misma ventana, y los divisores por debajo de
-$2^{4}$ se rechazan. La \ac{FPGA} no tiene preescalador. La ruta de
+$2^{4}$ se rechazan. La \ac{FPGA} no tiene preescalador. El propio
+ajuste del divisor cruza del dominio del sistema al del anillo sin
+sincronizador: es casi estático, y solo se escribe con el motor libre y
+el flujo parado. La ruta de
 caracterización no cruza bit a bit: el búfer de
 captura se escribe en el dominio del anillo, a RO2 en la \ac{FPGA} y a
 RO2/16 en el circuito integrado, en una
@@ -367,7 +394,8 @@ lectura no se pierde, y un byte que encuentra la cola llena para el flujo
 con una bandera de desbordamiento en lugar de pisar: un hueco no puede
 pasar inadvertido. El flujo sigue las reglas del búfer de captura ---
 solo en modo de prueba, nunca mientras se recoge una semilla, y sin
-siembra mientras corre --- y congela el divisor. Sirve donde el enlace
+siembra mientras corre --- y congela el divisor, cosa que no hace una
+captura por fragmentos en marcha. Sirve donde el enlace
 serie del anfitrión da abasto: con RO2 a 205~MHz, desde \kd{13} en
 adelante; con $2^{12}$ el enlace a 115\,200 baudios no vacía la cola y
 el flujo desborda tras 1285 bytes, mientras que con RO2 a 130~MHz
@@ -428,9 +456,12 @@ verifica que la clave no puede leerse sin el pin de prueba, junto con los
 rechazos, el borrado total y el flujo continuo descritos arriba
 (Tabla~\ref{tab:tb}). Lo que un banco VHDL no puede saber es si las etiquetas
 son \emph{correctas}, porque la clave procede del ruido de los
-osciladores en anillo; el banco vuelca la clave, los retos y las
-etiquetas a un fichero y un script de Python recalcula los CMAC con el
-AES independiente. Coinciden. Es la misma comprobación cruzada que el
+osciladores en anillo; el banco vuelca la semilla recogida, la clave, la
+salida aleatoria, los retos y las etiquetas a un fichero, y un script de
+Python recalcula las tres generaciones desde la semilla con el modelo de
+referencia y los CMAC con el AES independiente. Coinciden, 9
+comprobaciones de 9 \simu{}. La de las etiquetas es la misma
+comprobación cruzada que el
 ESP32 hace con mbedTLS, primero frente al modelo del motor en el PC y
 después en la placa, donde coincidieron 40 etiquetas de 40 en cada una
 de tres sesiones \meas{} (Sección~\ref{sec:bringup}).
