@@ -15,11 +15,11 @@ effectively 40 bits of entropy is a 40-bit key. This is not a theoretical
 concern. Frequency injection on the supply rail of a commercial secure
 microcontroller collapsed its key space from $2^{64}$ to about
 3300~\cite{markettos_2009_frequency}; a certified smart-card generator was
-found biased despite passing the standard statistical
-suites~\cite{hurleysmith_2018_certifiably}; and the hardware generator of
+found biased despite performing well in most of the standard statistical
+tests~\cite{hurleysmith_2018_certifiably}; and the hardware generator of
 one of the most widely deployed IoT microcontrollers, the ESP32, silently
 returns pseudo-random values when its radio is off while still passing
-every black-box test~\cite{blancoromero_2026_entropy}, which this work
+the statistical screenings~\cite{blancoromero_2026_entropy}, which this work
 measures directly with the restart test of SP~800-90B
 (Section~\ref{sec:esp32_90b}).
 
@@ -50,7 +50,9 @@ sources is built, and a restart test with and without the documented
 noise sources opens the box as far as it can be opened from outside
 (Chapter~\ref{ch:esp32}). Its central finding is methodological: the
 tests pass under conditions in which the entropy cannot be what the tests
-imply. With the radio and the ADC off the generator receives no noise:
+imply. With the radio and the ADC off the generator receives no noise
+--- in the two chips examined, and for the 0.35 to 0.8~s after boot over
+which it was observed \meas{}:
 it only continues a pseudo-random sequence seeded by the bootloader, and
 once that boot noise is removed its output is a fixed sequence read from
 a slightly different point at every boot. Every statistical test still
@@ -76,9 +78,10 @@ shares nothing with it, over a real bus.
 The engine is designed for silicon. Secure elements --- small integrated
 circuits that generate, store and use keys on behalf of a host
 microcontroller over I2C --- are a mature product category; the
-\emph{transparency} of their entropy is not. Of three widely used parts,
+\emph{transparency} of their entropy is not. Of four widely used parts,
 one ships with a NIST validation of its entropy source and two do not
-mention SP~800-90 anywhere in their documentation~\cite{microchip_atecc608b_ds}.
+mention SP~800-90 anywhere in their datasheets~\cite{nist_esv_e46,
+infineon_optiga_trustm_ds, st_stsafe_a110_ds}.
 The FPGA in this work is therefore the verification vehicle, not the
 target: it lets the whole engine run at speed against an independent
 verifier on a real bus, and its rings be measured, which no simulator
@@ -112,6 +115,16 @@ report its area in gate equivalents with the growth factors to core area.
 secure elements and with published circuits, with stated uncertainties.
 \end{enumerate}
 
+The objectives are listed as they were set at the outset, and two were
+met with a reservation that is stated where it belongs. Of AIS~20/31
+(O3) only the min-entropy threshold of class PTG.2 is used, to fix the
+divider; the raw bits of the integrated circuit are biased by their
+sampler and are not claimed to meet that class
+(Section~\ref{sec:exact}). And of O5, the known-answer tests stay in
+simulation, because the engine admits no external key or seed, and the
+interoperability was checked in one direction, the ESP32 recomputing the
+tags of the engine (Chapter~\ref{ch:ch8_concl}).
+
 The minimum defensible result is O1--O3 together with O5: an entropy
 source designed from the transistor, with its jitter extracted and turned
 into a bound, and a digital engine verified against an independent
@@ -120,9 +133,10 @@ as well as a positive one: if the accumulation exponent on hardware is
 two rather than one, flicker dominates and the divider cannot grow
 indefinitely, and that is a finding. Part of it came true. On the
 FPGA the exponent is between 1.6 and 2.1 \meas{}, the model does not
-describe the shape of the measured phase noise, a deterministic
-modulation of external origin explains much of the difference, and the
-bound had to be taken from the white floor of a spectrum instead of from
+describe the shape of the measured phase noise, a narrow line at 38 to
+40~kHz of unidentified origin modulates the relative phase of the rings
+--- a candidate explanation for part of the difference, not a
+demonstrated one --- and the bound had to be taken from the white floor of a spectrum instead of from
 the fit planned at the outset (Section~\ref{sec:campaign}).
 
 \section{Scope and exclusions}
@@ -130,7 +144,8 @@ the fit planned at the outset (Section~\ref{sec:campaign}).
 
 Four things are deliberately out of scope, each for a stated reason.
 \emph{Fabrication}: an academic shuttle is affordable and the engine is
-no larger than the smallest area that can be ordered, but the schedule from tape-out to packaged
+estimated to fit in the smallest area that can be ordered \est{}
+(Section~\ref{sec:shuttle}), but the schedule from tape-out to packaged
 and characterized samples exceeds a master's thesis; the cost and the path
 are documented, not executed. \emph{Asymmetric cryptography}: an
 elliptic-curve multiplier is a project in itself and would consume the
