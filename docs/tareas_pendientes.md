@@ -9,9 +9,10 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
 
 ## En marcha
 
-1. **Memoria.** La escribe un agente (Fable), EN y ES, un commit por capítulo,
-   sin push. Al acabar: revisar sus commits, leer los logs de las dos
-   compilaciones y subir.
+1. ~~**Memoria.**~~ Hecha el 22-11 (Fable, f0bce5a-ade2d66; revisada y
+   corregida en b433571; EN 145 páginas, ES 150). Quedan tres notas no
+   impresas: O5/KAT (punto 2), ciclos de siembra y generación con el AES de
+   32 bits (M1, punto 11) y la foto del montaje (punto 12).
 
 ## Decisiones de Mario
 
@@ -34,7 +35,8 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
 
 4. **Revisión independiente de la memoria** (paso 22 del plan): agente sin
    las conclusiones de la sesión, con código y datos; aplicar correcciones.
-5. **Subir los commits locales** y comprobar la CI (`gh run list`).
+5. ~~**Subir los commits locales** y comprobar la CI~~: subido el 22-11
+   (b433571), CI en verde.
 6. **PR de `feat/lecturas-firmadas` a `main`** con la CI en verde (paso 23).
 
 ## Opcionales (no cambian el diseño)
@@ -51,3 +53,12 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
 10. **Monte Carlo del peor chip con 11 etapas** (~11 h; regla ya fijada en
     `docs/decisiones_pendientes.md`). El revisor lo dio por recomendable, no
     necesario.
+
+## Huecos de la memoria (apuntados el 23-11)
+
+11. **Ciclos de siembra y generación con el AES de 32 bits (M1):** la memoria
+    da 209 y 53 ciclos, que son del núcleo de una ronda; medirlos en
+    simulación con el núcleo compacto (el que lleva `motor_top`) y llevarlos
+    a `docs/` y al cap. 4.
+12. **Foto del montaje** (Basys 3 + ESP32): la hace Mario; hueco comentado
+    en el cap. 5.
