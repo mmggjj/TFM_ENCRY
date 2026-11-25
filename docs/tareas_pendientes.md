@@ -26,7 +26,10 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
    modelo (cadena semilla → clave de extremo a extremo), y `tb_ctr_drbg`
    pasa de 2 a 52 semillas. La variante de FPGA con carga de semilla
    (6-10 h) queda descartada; la de simular la netlist de Vivado, también.
-3. **Aislamiento de los anillos en el integrado** (tarea 10 de
+3. ~~**Aislamiento de los anillos en el integrado**~~ (25-11, Mario: la
+   recomendación, sin cambio de diseño; prueba barata con SPICE de la
+   sensibilidad a V_DD en `analysis/sensibilidad_vdd.py`, ver
+   `docs/decisiones_pendientes.md` §10) (tarea 10 de
    `docs/basys3.md`, "Tareas pendientes (18-11-2026)"): búfer a la salida,
    alimentación o anillo de guarda propios, `ro_mon` sin carga. Propuesta:
    recomendación de trazado y trabajo futuro en la memoria, sin cambio de
@@ -60,16 +63,16 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
 
 ## Huecos de la memoria (apuntados el 23-11)
 
-11. **Ciclos de siembra y generación con el AES de 32 bits (M1):** la memoria
+11. ~~**Ciclos de siembra y generación con el AES de 32 bits (M1):**~~ medidos el 25-11 en `tb_motor_top` (849 instanciar/resembrar, 213 generar [SIMULADO], igual que la cuenta; `results/tb_motor_top_run_2511.log`) y llevados al cap. 4: la memoria
     da 209 y 53 ciclos, que son del núcleo de una ronda; medirlos en
     simulación con el núcleo compacto (el que lleva `motor_top`) y llevarlos
     a `docs/` y al cap. 4.
 12. **Foto del montaje** (Basys 3 + ESP32): la hace Mario; hueco comentado
-    en el cap. 5.
+    en el cap. 5. Mario, 25-11: otro día.
 
 ## Lo que dejó la revisión del 23-11 (apuntado el 23-11)
 
-13. **Para Mario:** agradecimientos (nombran a la empresa) y "Tutores"
+13. **Para Mario:** agradecimientos quitados el 25-11 (Mario); "Tutores"
     vacío, sin tocar; cotejar con los PDF originales lo que el repositorio no
     sostiene (Petura 2016, ec. 1 y columna de viabilidad; Bayon 2012,
     potencia del campo; BER 3-8 % de las SRAM; fecha de Blanco-Romero;

@@ -296,7 +296,19 @@ fija en tiempo y no ligada a la frecuencia del anillo, cuyo origen no se
 ha identificado \meas{} (Sección~\ref{sec:campaign}). En una \ac{FPGA} los anillos no se
 pueden aislar; en un circuito integrado sí, con una alimentación
 filtrada propia o un anillo de guarda, que es además la defensa frente a
-los ataques de inyección de arriba.
+los ataques de inyección de arriba. Esa alimentación debe ser una sola
+rama común a los dos anillos, no una por anillo. Cada anillo por separado
+es sensible a su alimentación: su periodo cambia entre un 1,1 y un
+2,8\,\% por cada 10~mV según la esquina \simu{}. Pero el bit depende del
+cociente de los dos periodos y, como los dos anillos usan el mismo
+inversor, una perturbación común se cancela casi entera en él: en el
+chip nominal queda un 0,4\,\% de la sensibilidad de un anillo solo, y
+como mucho un 2-3\,\% (media más dos desviaciones típicas sobre 8 sorteos
+de desapareamiento por anillo, esquinas típica y lenta) \simu{}. Con
+alimentaciones separadas se perdería esa cancelación. Es una sensibilidad
+estática, con escalones de $\pm10$~mV y sin ruido; el acoplamiento por
+sustrato, las caídas de tensión distintas en cada zona del chip y el
+enganche entre anillos quedan fuera.
 
 \section{Coste y plazos de una lanzadera académica}
 \label{sec:shuttle}

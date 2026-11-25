@@ -100,6 +100,15 @@ todo. Léelo entero antes de tocar nada.
   con 50 semillas más (19/19, mutante cazado); trece bancos, 307
   comprobaciones. Arreglado de paso: `aleatorio1` se volcaba a ceros. Memoria
   EN/ES corregida en los caps. 1, 2, 5, 7 y 8 y apéndice B.
+- **25-11:** agradecimientos quitados (Mario); ciclos del DRBG con el AES de
+  32 bits medidos en `tb_motor_top` (849 y 213 [SIMULADO], iguales a la
+  cuenta). **Sensibilidad a V_DD** (`analysis/sensibilidad_vdd.py`, SPICE sin
+  ruido): cada anillo cambia su periodo un 1,1-2,8 % por 10 mV, pero el
+  cociente ro2/ro1 solo un 0,4 % de eso (chip nominal) y como mucho un
+  2-3 % con desapareamiento: la alimentación propia del integrado debe ser
+  una rama común a los dos anillos (`docs/decisiones_pendientes.md` §10,
+  cap. 6 de la memoria). Revisión de la memoria del 23-11 aplicada (EN 155
+  páginas, ES 162).
 - **Documentos nuevos:** `docs/plan_memoria_cierre.md` (qué está desfasado en
   la memoria), `docs/basys2_frente_basys3.md`; **memoria: apéndice D**,
   Basys 2 frente a Basys 3 (EN y ES).

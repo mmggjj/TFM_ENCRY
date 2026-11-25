@@ -288,7 +288,17 @@ not tied to the ring frequency, whose origin was not identified \meas{}
 (Section~\ref{sec:campaign}). In an \ac{FPGA} the rings cannot be
 isolated; in an integrated circuit they can, with their own filtered
 supply or a guard ring, which is also the defence against the injection
-attacks above.
+attacks above. That supply should be one branch shared by both rings,
+not one per ring. Each ring alone is sensitive to its supply: its period
+changes by 1.1 to 2.8\,\% per 10~mV across the corners \simu{}. The bit,
+however, depends on the ratio of the two periods, and since both rings
+use the same inverter a common disturbance largely cancels in it: 0.4\,\%
+of a single ring's sensitivity remains at the nominal die, and at most
+2 to 3\,\% (mean plus two standard deviations over 8 mismatch draws per
+ring, typical and slow corners) \simu{}. Separate supplies would lose that
+cancellation. This is a static sensitivity from supply steps of
+$\pm10$~mV without noise; substrate coupling, unequal supply drops across
+the die and locking between the rings are not covered.
 
 \section{Cost and schedule of an academic shuttle}
 \label{sec:shuttle}

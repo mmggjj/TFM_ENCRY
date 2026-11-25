@@ -146,11 +146,10 @@ byte-oriented datapath for no benefit. Instantiation (or reseed) costs
 in the generator's own bench, which uses the one-round core (11 cycles
 per encryption): two cycles of sequencing per encryption and one more,
 $16 \times 13 + 1$ and $4 \times 13 + 1$ \simu{}. In the engine each
-encryption takes the 51 cycles of the 32-bit core; by the same count
-that is about 849 and 213 cycles \est{}, not measured in the system
-bench, and negligible against the time a seed takes to collect.
-% NOTA (no impresa): 849 y 213 = 16 x 53 + 1 y 4 x 53 + 1, sin simular
-% (revision del 23-11, M17); el banco del motor no imprime ciclos.
+encryption takes the 51 cycles of the 32-bit core, and the system bench
+measures 849 cycles to instantiate or reseed and 213 to generate
+\simu{}, exactly $16 \times 53 + 1$ and $4 \times 53 + 1$: negligible
+against the time a seed takes to collect.
 The state (Key, V) is never exposed; the reseed counter is readable so
 that the host can enforce a reseed policy far below the $2^{48}$ limit of
 the standard.

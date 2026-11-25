@@ -282,6 +282,43 @@ buffer a la salida de cada anillo (el SPICE ya lo pedía), `ro_mon` sin carga
 en producto, y alimentación o anillo de guarda propios para los anillos.
 Sin cambio de RTL.
 
+**Decidido (Mario, 25-11-2026):** la recomendación, sin cambio de diseño.
+Coste de probarlo [ESTIMADO, sin ejecutar], de menos a más:
+
+1. **SPICE sin ruido, sensibilidad a la alimentación (1-2 h, sin placa):**
+   periodo de ro1 (11) y ro2 (13) a V_DD ± 10-20 mV en las esquinas ya
+   simuladas (~2 min por punto, `anillo_ihp.py --escalas 0`), con y sin
+   desapareamiento. Da dT/dV de cada anillo y cuánto rizado común pasa a la
+   fase relativa: con los dos anillos del mismo inversor, el cociente
+   T(ro2)/T(ro1) se cancela a primer orden y solo queda lo que deje el
+   desapareamiento. Responde a "¿hace falta alimentación propia?" en el
+   integrado, que es lo que se recomienda.
+2. **FPGA, búfer y separación (≈ 1 día):** variantes de `basys3_top` con un
+   búfer (LUT) entre cada anillo y lo que cuelga, y con los anillos
+   separados frente a adyacentes; ~10 min de Vivado por variante (el
+   bitstream del 19-11 tardó eso según las fechas de `build/`), dos
+   capturas a `kd 2` por variante (repetibilidad) y `espectro_fase.py`.
+   Limitación: en la FPGA la alimentación es común, así que solo prueba el
+   búfer y la colocación, no la alimentación propia.
+3. **SPICE con la red de alimentación (días):** dos anillos con V_DD
+   compartida a través de R-L-C y un rizado inyectado, con y sin anillo de
+   guarda; el rizado de ~39 kHz son 25 µs, unos 20 000 periodos, así que
+   habría que escalar la frecuencia o pasar horas por simulación.
+
+**Resultado de la prueba 1 (25-11-2026)** [SIMULADO, sin ruido;
+`analysis/sensibilidad_vdd.py` → `results/sensibilidad_vdd.md` y `.json`;
+escalón de ±10 mV dentro del mismo transitorio, así que la derivada sale del
+mismo chip]: S = (1/T) dT/dV de −1,07 (ff 125 °C) a −2,75 /V (ss −40 °C
+1,08 V), igual para ro1 y ro2 a 0,4 %: el rizado común llega al cociente
+T(ro2)/T(ro1) atenuado ~250 veces en el chip nominal (las cuatro esquinas).
+Con desapareamiento (8 chips por anillo, tt y ss −40 °C 1,08 V), |S2 − S1|
+llega como mucho (μ + 2σ) al 2,0 % y 3,2 % de |S1|: 30-50 veces de
+atenuación. **Consecuencia:** la alimentación propia debe ser una rama común
+a los dos anillos, no una por anillo (separadas perderían la cancelación).
+No cubre: rizado a frecuencia real, sustrato, caídas distintas en el chip,
+enganche entre anillos; con 8 chips la σ entre chips tiene un IC ancho.
+Llevado al cap. 6 de la memoria (EN y ES).
+
 ## Orden sugerido
 
 9 → 6 → 7 (el divisor mínimo depende de la longitud de ro1 y de cómo se

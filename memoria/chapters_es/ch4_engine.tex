@@ -155,11 +155,10 @@ y generar 256~bits cuesta cuatro: 209 y 53~ciclos en el banco propio del
 generador, que usa el núcleo de una ronda (11 ciclos por cifrado): dos
 ciclos de secuenciación por cifrado y uno más, $16 \times 13 + 1$ y
 $4 \times 13 + 1$ \simu{}. En el motor cada cifrado tarda los 51 ciclos
-del núcleo de 32 bits; con la misma cuenta son unos 849 y 213 ciclos
-\est{}, sin medir en el banco del sistema, y despreciables frente al
-tiempo que tarda en recogerse una semilla.
-% NOTA (no impresa): 849 y 213 = 16 x 53 + 1 y 4 x 53 + 1, sin simular
-% (revision del 23-11, M17); el banco del motor no imprime ciclos.
+del núcleo de 32 bits, y el banco del sistema mide 849 ciclos para
+instanciar o resembrar y 213 para generar \simu{}, exactamente
+$16 \times 53 + 1$ y $4 \times 53 + 1$: despreciables frente al tiempo
+que tarda en recogerse una semilla.
 El estado (Key, V)
 nunca se expone; el contador de resembrados es legible para que el
 anfitrión pueda imponer una política de resembrado muy por debajo del

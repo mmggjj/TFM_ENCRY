@@ -780,4 +780,38 @@ begin
     wait;
   end process principal;
 
+  -- Ciclos del DRBG con el nucleo AES que lleva el motor (compartido, de
+  -- 32 bits por defecto): desde la orden hasta drbg_listo. Se informa de la
+  -- primera de cada tipo.
+  ciclos_drbg : process (clk)
+    alias d_inst   is << signal .tb_motor_top.dut.drbg_inst : std_logic >>;
+    alias d_reseed is << signal .tb_motor_top.dut.drbg_reseed : std_logic >>;
+    alias d_gen    is << signal .tb_motor_top.dut.drbg_gen : std_logic >>;
+    alias d_listo  is << signal .tb_motor_top.dut.drbg_listo : std_logic >>;
+    variable n : natural := 0;
+    variable tipo : natural := 0;              -- 0 nada, 1 inst, 2 reseed, 3 gen
+    variable visto : std_logic_vector(1 to 3) := "000";
+  begin
+    if rising_edge(clk) then
+      if tipo /= 0 then
+        n := n + 1;
+        if d_listo = '1' then
+          if visto(tipo) = '0' then
+            visto(tipo) := '1';
+            case tipo is
+              when 1 => report "  ciclos DRBG instanciar: " & integer'image(n);
+              when 2 => report "  ciclos DRBG resembrar: " & integer'image(n);
+              when others => report "  ciclos DRBG generar: " & integer'image(n);
+            end case;
+          end if;
+          tipo := 0;
+        end if;
+      end if;
+      if d_inst = '1' then tipo := 1; n := 0;
+      elsif d_reseed = '1' then tipo := 2; n := 0;
+      elsif d_gen = '1' then tipo := 3; n := 0;
+      end if;
+    end if;
+  end process ciclos_drbg;
+
 end architecture sim;
