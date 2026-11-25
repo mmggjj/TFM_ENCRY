@@ -62,6 +62,11 @@ FUENTES = {
     # segunda tanda del mismo chip (2026-10-21), fuera de los ANOVA (12 + 12 + 12)
     **{f"0928t2_cond{c}_rep{r}": RES / "esp32_campana_rng" / "mac_f8b3b72a0928" / "tanda2" / f"cond{c}_rep{r}.bin"
        for c in "ABCD" for r in (1, 2, 3)},
+    # mismo chip, 2026-11-10, con el firmware que no deja dormir la radio en
+    # A y B (sta_disconnected_pm = false, WIFI_PS_NONE); fuera de los ANOVA
+    # de la campana, se comparan aparte (docs/esp32_linea_base_90b.md)
+    **{f"0928rd_cond{c}_rep{r}": RES / "esp32_campana_rng" / "mac_f8b3b72a0928_radio_despierta" / f"cond{c}_rep{r}.bin"
+       for c in "ABCD" for r in (1, 2, 3)},
 }
 
 
@@ -147,7 +152,14 @@ def main() -> int:
     if not filas:
         return 1
     # Se fusiona con el CSV existente (clave nombre/test/modo): un --solo no
-    # debe borrar los resultados de las demas capturas.
+    # debe borrar los resultados de las demas capturas. Con cerrojo, por si
+    # hay varias ejecuciones en paralelo (en Linux; en Windows, una a la vez).
+    try:
+        import fcntl
+        cerrojo = (RES / "entropia_90b.csv.lock").open("w")
+        fcntl.flock(cerrojo, fcntl.LOCK_EX)
+    except ImportError:
+        cerrojo = None
     if CSV.exists():
         nuevas = {(f["nombre"], f["test"], f["modo"]) for f in filas}
         with CSV.open(encoding="utf-8", newline="") as fh:

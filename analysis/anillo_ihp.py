@@ -72,15 +72,19 @@ SPICEINIT = "\n".join(
 SPICEINIT += "set num_threads=1\n"
 
 
-def cabecera_ihp(esquina="mos_tt"):
+def cabecera_ihp(esquina="mos_tt", mismatch=False):
+    """mismatch: seccion <esquina>_mismatch y mm_ok=1 en cada transistor
+    (agauss por instancia; ngspice no deja fijar su semilla)."""
+    lib = f"{esquina}_mismatch" if mismatch else esquina
+    mm = int(mismatch)
     return f"""
 * ---- CABECERA: PDK abierto IHP SG13G2, transistores lv (1,2 V) -----
-.lib {MODELOS}/cornerMOSlv.lib {esquina}
+.lib {MODELOS}/cornerMOSlv.lib {lib}
 .subckt nmos_tec d g s b w=1u l=0.13u
-xm d g s b sg13_lv_nmos w={{w}} l={{l}}
+xm d g s b sg13_lv_nmos w={{w}} l={{l}} mm_ok={mm}
 .ends
 .subckt pmos_tec d g s b w=2u l=0.13u
-xm d g s b sg13_lv_pmos w={{w}} l={{l}}
+xm d g s b sg13_lv_pmos w={{w}} l={{l}} mm_ok={mm}
 .ends
 * --------------------------------------------------------------------
 """
@@ -189,9 +193,14 @@ quit
 # 2. Anillo en transitorio
 # --------------------------------------------------------------------
 
+# histeresis de la deteccion de cruces, en fraccion de V_DD
+HISTERESIS = 0.1
+
+
 def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
            cl="1f", tstop="100n", paso="0.2p", paso_max="1p", nt=5e-13,
-           esquina="mos_tt", descartar=20, k_flicker=0.0, devolver_cruces=False):
+           esquina="mos_tt", descartar=20, k_flicker=0.0, devolver_cruces=False,
+           temp=27.0, mismatch=False):
     """Transitorio del anillo con s_i [A^2/Hz] blanco y, si k_flicker > 0,
     k_flicker/f [A^2] de 1/f, inyectados en cada nudo.
     Devuelve el resultado de jitter_desde_cruces mas potencia y tiempos."""
@@ -199,7 +208,7 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
     txt = netlist(n_etapas=n_etapas, vdd=vdd, lmin=l, wn=wn, wp=wp, cl=cl,
                   tstop=tstop, paso=paso, paso_max=paso_max,
                   densidad_ruido=s_i, nt_ruido=nt,
-                  cabecera=cabecera_ihp(esquina), flicker=flk,
+                  cabecera=cabecera_ihp(esquina, mismatch) + f".temp {temp}\n", flicker=flk,
                   guardar=f"v(n{n_etapas}) i(vdd)")
     t0 = time.time()
     nombres, m, log = simular(txt, orden=NGSPICE, spiceinit=SPICEINIT,
@@ -209,10 +218,23 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
     iv = nombres.index(f"v(n{n_etapas})")
     ii = [k for k, n in enumerate(nombres) if "vdd" in n.lower() and "#branch" in n.lower()
           or n.lower() == "i(vdd)"]
-    tc = cruces_subida(t, m[:, iv], vdd / 2.0)
+    v = m[:, iv]
+    tc_crudo = cruces_subida(t, v, vdd / 2.0)
+    tc = cruces_subida(t, v, vdd / 2.0, histeresis=HISTERESIS * vdd)
     if tc.size < 60:
         raise RuntimeError(f"solo {tc.size} cruces; ngspice dijo:\n{log[-3000:]}")
     r = jitter_desde_cruces(tc, descartar=descartar)
+    # dobles cruces que quita la histeresis en el tramo analizado (los del
+    # arranque, con el nudo parado en V_DD/2, caen en los descartados); con
+    # alguno, o con un exponente lejos de 1, se guardan los cruces y la
+    # forma de onda a su alrededor
+    sobran = np.setdiff1d(tc_crudo, tc)
+    r["n_espurios"] = int(np.count_nonzero(sobran > tc[descartar]))
+    if r["n_espurios"] or abs(r["exponente"] - 1.0) > 0.25:
+        ventanas = [(t >= x - 2 * r["periodo"]) & (t <= x + 2 * r["periodo"]) for x in sobran]
+        sel = np.logical_or.reduce(ventanas) if ventanas else np.zeros(t.size, bool)
+        r["diagnostico"] = {"cruces_crudos": tc_crudo, "cruces": tc,
+                            "t": t[sel], "v": v[sel]}
     # potencia media sobre periodos enteros, quitando el arranque
     p = float("nan")
     if ii:
@@ -221,7 +243,8 @@ def anillo(s_i, n_etapas=5, wn="0.5u", wp="1.2u", l="0.13u", vdd=1.2,
         corr = -m[sel, ii[0]]
         p = vdd * float(np.trapezoid(corr, t[sel]) / (t[sel][-1] - t[sel][0]))
     r.update({"potencia_W": p, "segundos": dur, "s_i": s_i, "n_etapas": n_etapas,
-              "tstop": tstop, "nt": nt, "cl": cl, "k_flicker": k_flicker})
+              "tstop": tstop, "nt": nt, "cl": cl, "k_flicker": k_flicker,
+              "temp": temp, "esquina": esquina, "mismatch": mismatch})
     if devolver_cruces:
         r["cruces"] = tc
     return r
@@ -542,6 +565,10 @@ def main() -> int:
     ap.add_argument("--tstop", default="100n")
     ap.add_argument("--nt", type=float, default=5e-13)
     ap.add_argument("--esquina", default="mos_tt")
+    ap.add_argument("--temp", type=float, default=27.0, help="grados C")
+    ap.add_argument("--vdd", type=float, default=1.2, help="voltios")
+    ap.add_argument("--mismatch", action="store_true",
+                    help="desapareamiento del PDK en el anillo (el ruido sale del inversor nominal)")
     ap.add_argument("--sesion", default=time.strftime("%Y%m%d_%H%M%S"))
     ap.add_argument("--escalas", default="0,1,4",
                     help="multiplos de la densidad del PDK a simular (0 = resolucion)")
@@ -550,7 +577,8 @@ def main() -> int:
 
     print("== 1. Ruido del inversor en su punto de conmutacion (PDK IHP) ==")
     r1, f, s_i, log1 = ruido_inversor(wn=args.wn, wp=args.wp,
-                                      esquina=args.esquina)
+                                      esquina=args.esquina, temp=args.temp,
+                                      vdd=args.vdd)
     np.savetxt(RES / f"anillo_ihp_ruido_{args.sesion}.csv",
                np.column_stack([f, s_i]), delimiter=",",
                header="f_Hz,S_i_A2Hz", comments="")
@@ -560,13 +588,13 @@ def main() -> int:
         return 0
 
     print("\n== 2. Anillo en transitorio ==")
-    vt = vt_nmos(wn=args.wn, esquina=args.esquina)
+    vt = vt_nmos(wn=args.wn, esquina=args.esquina, temp=args.temp, vdd=args.vdd)
     print(f"  V_T del nmos (extrapolacion lineal) = {vt:.4f} V")
     filas = []
     salida = RES / f"anillo_ihp_{args.sesion}.csv"
     cab = ["escala", "s_i_A2Hz", "etapas", "cl", "tstop", "nt_s", "n_cruces",
            "periodo_ps", "sigma_fs", "sigma_rel", "q_periodo", "exponente",
-           "potencia_uW", "segundos"]
+           "potencia_uW", "segundos", "n_espurios"]
     with salida.open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(cab)
@@ -574,19 +602,26 @@ def main() -> int:
             s = esc * r1["s_termico_A2Hz"]
             r = anillo(s, n_etapas=args.etapas, wn=args.wn, wp=args.wp,
                        cl=args.cl, tstop=args.tstop, nt=args.nt,
-                       esquina=args.esquina)
+                       esquina=args.esquina, temp=args.temp, vdd=args.vdd,
+                       mismatch=args.mismatch)
             fila = [esc, s, args.etapas, args.cl, args.tstop, args.nt,
                     r["n_cruces"], r["periodo"] * 1e12,
                     r["sigma_periodo"] * 1e15, r["sigma_rel"],
                     r["q_por_periodo"], r["exponente"],
-                    r["potencia_W"] * 1e6, r["segundos"]]
+                    r["potencia_W"] * 1e6, r["segundos"], r["n_espurios"]]
             w.writerow(fila)
             fh.flush()
             filas.append(dict(zip(cab, fila)))
             print(f"  escala {esc:4g}: S_i {s:.3e} A2/Hz, {r['n_cruces']} cruces, "
                   f"T {r['periodo'] * 1e12:.3f} ps, sigma {r['sigma_periodo'] * 1e15:.3f} fs, "
                   f"sigma/T {r['sigma_rel']:.3e}, exp {r['exponente']:.2f}, "
-                  f"P {r['potencia_W'] * 1e6:.1f} uW, {r['segundos']:.0f} s", flush=True)
+                  f"P {r['potencia_W'] * 1e6:.1f} uW, {r['segundos']:.0f} s, "
+                  f"{r['n_espurios']} dobles cruces quitados", flush=True)
+            if "diagnostico" in r:
+                diag = RES / f"anillo_ihp_{args.sesion}_e{esc:g}_diag.npz"
+                np.savez_compressed(diag, **r["diagnostico"])
+                print(f"  AVISO: dobles cruces o exponente lejos de 1; cruces y forma "
+                      f"de onda en {diag}", flush=True)
 
     print("\n== 3. Lectura ==")
     base = [x for x in filas if x["escala"] == 0]
@@ -604,7 +639,7 @@ def main() -> int:
         f0 = 1e12 / u["periodo_ps"]
         gam = r1["gamma_efectiva"]
         v_car = v_caracteristica(r1)
-        ab = abidi_sigma_rel(u["potencia_uW"] * 1e-6, 1.2, v_car, f0)
+        ab = abidi_sigma_rel(u["potencia_uW"] * 1e-6, args.vdd, v_car, f0, temp=args.temp)
         print(f"  Abidi (orden de magnitud; V_car = 4 I_trip/(gamma g_nudo) = {v_car:.3f} V, "
               f"gamma medida {gam:.2f}): sigma/T = {ab:.3e} frente a {u['sigma_rel']:.3e} "
               f"simulado (cociente {u['sigma_rel'] / ab:.2f})")

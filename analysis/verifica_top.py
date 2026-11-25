@@ -6,13 +6,20 @@ el CMAC correcto, porque la clave sale del ruido del anillo. Vuelca clave,
 reto y etiqueta a results/tb_motor_top.txt y aqui se recalcula el CMAC con
 el modelo de referencia en Python (AES independiente del VHDL, validado
 contra FIPS 197). Es la misma comprobacion que hara el ESP32 con mbedtls.
+
+Desde el 23-11-2026 vuelca tambien la semilla con la que se instancio el
+DRBG, y aqui se recalculan con el modelo (ctr_drbg_ref.py, 960/960 casos
+CAVP) las tres salidas que da el motor: clave1 (mitad alta de la primera
+generacion), aleatorio1 (la segunda entera) y clave2 (mitad alta de la
+tercera). Cubre la cadena semilla -> entropia/nonce -> DRBG -> registros
+de extremo a extremo, que el CMAC solo no comprueba.
 """
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-from ctr_drbg_ref import aes128_encrypt
+from ctr_drbg_ref import CtrDrbg, aes128_encrypt
 
 RESULTADO = Path(__file__).resolve().parent.parent / "results" / "tb_motor_top.txt"
 
@@ -70,6 +77,15 @@ def main() -> int:
         esperado = aes_cmac(v["clave1"], v[f"reto{i}"])
         chk(esperado == v[f"etiqueta{i}"],
             f"etiqueta{i} = CMAC_clave1(reto{i}) -> {esperado.hex()}")
+    # Semilla: los 384 bits altos son la entropia y los 128 bajos el nonce
+    # (motor_top: entropia => semilla(511 downto 128)).
+    d = CtrDrbg(usar_df=True)
+    d.instantiate(v["semilla1"][:48], v["semilla1"][48:])
+    g1, g2, g3 = d.generate(32), d.generate(32), d.generate(32)
+    chk(g1[:16] == v["clave1"], f"clave1 = mitad alta de DRBG(semilla1), 1.a generacion -> {g1[:16].hex()}")
+    chk(g2 == v["aleatorio1"], "aleatorio1 = 2.a generacion entera")
+    chk(g3[:16] == v["clave2"], "clave2 = mitad alta de la 3.a generacion")
+    chk(any(v["aleatorio1"]), "aleatorio1 no nulo")
     chk(v["clave1"] not in (v["aleatorio1"][:16], v["aleatorio1"][16:]),
         "aleatorio1 (registro legible) no contiene clave1 en ninguna mitad")
     chk(v["clave1"] != v["clave2"], "las dos claves difieren")

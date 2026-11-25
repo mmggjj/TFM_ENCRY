@@ -157,13 +157,17 @@ punto; el límite lo pone la sobrecarga por trozo, no el volumen.
 Estas cifras encajan con la literatura: Fischer y Lubicz obtienen
 K_D ≈ 430.000 con σ = 5,01 ps sobre T = 7,81 ns, y el modelo de aquí
 reproduce ese número. Órdenes de magnitud esperables en Artix-7 (28 nm,
-2–4 ps por periodo de 3–5 ns [ESTIMADO, Petura 2016]): **K_D entre 3·10⁴ y
-5·10⁵, caudal entre 1 y 20 kbit/s por anillo**.
+2–4 ps por periodo de 3–5 ns [ESTIMADO, Petura 2016]): **K_D entre 1,3·10⁵ y
+1,4·10⁶, caudal entre 0,35 y 3,9 kbit/s por anillo** con RO2 a 500 MHz
+(Q_raw = (σ/T)² de 1,6·10⁻⁷ a 1,8·10⁻⁶, K_D = 0,2286 / Q_raw). Corregido el
+23-11-2026 (revisión de la memoria): antes decía 3·10⁴-5·10⁵ y 1-20
+kbit/s, que no salen de esos datos. Lo medido en la Basys 3 (Q blanca
+0,6-1,1·10⁻⁶, `CFG_KD` 19) cae dentro del rango corregido.
 
 **Consecuencia de arquitectura:** un solo ERO da kbit/s, no Mbit/s. Para
 sembrar el DRBG con 256 bits de entropía plena hacen falta ≥ 512 bits de
 min-entropía, es decir ~0,5 kbit crudos con H_min ≈ 0,98, o sea **entre
-0,03 y 0,5 s por semilla**. Es de sobra para el caso de uso (una semilla
+0,13 y 1,5 s por semilla** con el rango corregido (antes 0,03-0,5 s). Es de sobra para el caso de uso (una semilla
 cada muchos bloques cifrados), y confirma que la elección del ERO frente a
 arquitecturas de más caudal es correcta aquí: el TFM necesita entropía
 *demostrable*, no rápida. Si se quisiera más caudal, la vía limpia es

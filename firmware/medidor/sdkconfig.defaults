@@ -1,0 +1,25 @@
+# Medidor con lecturas firmadas. ESP32-C3 (RISC-V, el chip de los productos
+# pequenos con Wi-Fi); compila igual para el ESP32 clasico con
+# idf.py set-target esp32.
+CONFIG_IDF_TARGET="esp32c3"
+
+# ECDSA determinista (RFC 6979): el nonce de cada firma no sale de ningun
+# generador. lectura.c no compila sin esto.
+CONFIG_MBEDTLS_ECDSA_DETERMINISTIC=y
+
+# La generacion de la clave y la CSR corren en la tarea principal; con el
+# tamano por defecto (3,5 KiB) mbedtls se queda sin pila en P-256.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
+
+# Consola: solo errores, para no contaminar las tramas hacia el PC. UART a
+# 115200, como el resto de programas del TFM.
+CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
+CONFIG_LOG_DEFAULT_LEVEL=1
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+
+# stdin bloqueante por UART para la consola minima de main.c
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_VFS_SUPPORT_IO=y
+
+# Tick de 1 ms: los plazos de espera del motor se miden en ticks.
+CONFIG_FREERTOS_HZ=1000

@@ -2,6 +2,19 @@
 
 Revisión hecha el 13-10-2026 con la memoria del commit 54f35ea: seis revisores (uno por frase del objetivo oficial, otro para título y portada) y un verificador escéptico detrás de cada uno. Texto del objetivo en `docs/normas_tfm.md`. Los cambios exactos (texto actual y texto nuevo) están en `docs/alineacion_objetivo_oficial.json`; desde entonces el capítulo del ESP32 se ha separado (`memoria/chapters/esp32_blackbox.tex`), así que las líneas citadas del cap. 7 han cambiado.
 
+**Nota del 30-10-2026, antes de aplicar los cambios 6, 33, 34, 39 y 61:**
+las cifras del anillo de IHP cambiaron. σ pasa de 180,37 fs (una
+realización) a 176,7 ± 2,0 fs (media de ocho, dispersión 3,3 %;
+`docs/anillo_ihp.md` §4.1), y los ficheros `results/anillo_ihp_e5_400n.*`
+se sustituyeron por `results/anillo_ihp_rep400n_*`. Recalculado con
+`entropias_exactas()`: 2^20 → Q = 0,244 ± 0,006, H_inf = 0,9853
+(0,9836-0,9868), 383,7 µs, 2,606 kbit/s; Q = 0,30 pide K_D ≥ 1 287 499 →
+2^21: Q = 0,489, H_inf = 0,99988, 1,303 kbit/s; K_D para H_min 0,98 =
+981 095. El 33 ya tiene la dispersión, y el 61 ya tiene el log regenerado
+(Abidi 0,41). El idd del 34 está en `anillo_ihp_rep400n_01.log:3`.
+Los textos de `alineacion_objetivo_oficial.json` llevan las cifras viejas:
+hay que corregirlos antes de pegarlos.
+
 ## Veredicto
 
 En lo esencial la memoria sí cuadra con el objetivo oficial, pero todavía no del todo. Las dos primeras partes están cubiertas. El motor está pensado para un ASIC: síntesis en IHP SG13G2, 68 kGE como cota inferior y sin fabricar. El anillo está diseñado a nivel de transistor y simulado con ruido sacado de los modelos del PDK. La tercera parte (pasar el jitter a entropía con un modelo) está bien hecha, pero le falta el último paso con números: el divisor solo admite potencias de dos, y la memoria no da la entropía por bit del anillo simulado. Las dos últimas partes están a medias, y el cap. 7 lo reconoce. La integración en la FPGA está escrita y simulada, pero la placa no ha funcionado. De la comparación de secuencias solo está medido el lado del ESP32; del lado de la fuente no hay ni una secuencia. Lo que falla no son esos huecos, sino cómo se cuentan. El Abstract y el Resumen dan por hecha la verificación en la Basys 3 y con el ESP32, y no dan ninguna cifra medida del ESP32. Hay cifras que no cuadran: unos 38 kGE y no 20-25 tras optimizar; 13 kGE en el cap. 4 frente a 68 en el cap. 6; el punto de Fischer-Lubicz con un periodo equivocado. Falta el montaje real de dos placas, y el cap. 8 y el apéndice A están vacíos. Además, el commit de las 19:51 de hoy (54f35ea), que convierte el estudio del ESP32 en la primera parte del TFM, tiene dos fallos. Mete en el Abstract, el Resumen y el cap. 1 una frase inexacta sobre la prueba de reinicios: la secuencia fija solo aparece al quitar el ruido de arranque. Y anuncia en el cap. 1 una implementación propia de SP 800-22 y un recolector de claves que la memoria no desarrolla. He comprobado los 72 cambios contra ese commit: cada texto actual aparece una sola vez, y una copia con todos aplicados compila con tectonic sin errores ni citas o referencias rotas. No he tocado ningún fichero del repositorio. Al aplicarlos, ten en cuenta cuatro cosas: (1) los textos van con saltos de línea LF, pero tfm_main.tex, ch4-ch7 y CLAUDE.md tienen CRLF; (2) hay que repetirlos en tfm_main_es.tex y chapters_es/; (3) varios dependen de otros, como dice cada motivo, sobre todo los de 2^20/2^21 (ch7:156) y los 38 kGE (ch6:109); (4) antes de pegar conviene recalcular las cifras marcadas, buscar la fuente del 2,35 y del 1,7-4,6, y mirar cómo define Petura σ_th.

@@ -1,0 +1,3 @@
+kd,modo,trozos,bits,crc_malo,tramas_huerfanas,errores,ms_mediana,ms_min,ms_max,f_ro2_MHz,fraccion_unos,fichero
+13,flujo,,1000000,0,0,0,57240,,,143.11670160726766,0.519485,kd13_flujo.bin
+14,flujo,,1000000,0,0,0,114490,,,143.104201240283,0.51919,kd14_flujo.bin

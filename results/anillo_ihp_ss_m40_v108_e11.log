@@ -1,0 +1,16 @@
+8 realizaciones independientes, tstop 900n, escala 1 (ruido del PDK), mos_ss, -40 C, 1.08 V
+  rep  1: 704 cruces, T 1240.910 ps, sigma 209.02 fs, exp 1.01
+  rep  2: 704 cruces, T 1240.894 ps, sigma 202.62 fs, exp 0.85
+  rep  3: 705 cruces, T 1240.911 ps, sigma 229.25 fs, exp 1.00
+  rep  4: 704 cruces, T 1240.913 ps, sigma 204.74 fs, exp 1.03
+  rep  5: 704 cruces, T 1240.902 ps, sigma 225.49 fs, exp 0.90
+  rep  6: 704 cruces, T 1240.904 ps, sigma 225.35 fs, exp 0.95
+  rep  7: 704 cruces, T 1240.911 ps, sigma 218.52 fs, exp 1.03
+  rep  8: 704 cruces, T 1240.907 ps, sigma 202.04 fs, exp 0.92
+
+  sigma por periodo = 214.9 +- 4.0 fs (1 sigma de la media; dispersion entre repeticiones 5.3 % en sigma)
+  Q por periodo = 2.9988e-08 +- 1.12e-09
+  K_D = 7623066 (intervalo 1 sigma 7349522 - 7917760); 0.11 kbit/s a 0.806 GHz
+  periodo 1240.906 ps, dispersion 0.006 ps (0.00 %); K_D de cada realizacion: 6698177 - 8623642 (mediana 8057192)
+
+datos en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_ss_m40_v108_e11_resumen.csv

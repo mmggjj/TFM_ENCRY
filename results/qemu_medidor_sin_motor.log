@@ -1,0 +1,43 @@
+Adding SPI flash device
+ESP-ROM:esp32c3-api1-20210207
+Build:Feb  7 2021
+rst:0x1 (POWERON),boot:0x8 (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5820,len:0x1820
+load:0x403cc710,len:0xbd0
+load:0x403ce710,len:0x2f5c
+entry 0x403cc71a
+[0;32mI (1) boot: ESP-IDF v5.3.5-1057-g5a4288e8ffc 2nd stage bootloader[0m
+[0;32mI (1) boot: compile time Oct 27 2026 19:27:59[0m
+[0;32mI (7) boot: chip revision: v0.3[0m
+[0;32mI (7) boot: efuse block revision: v0.0[0m
+[0;32mI (9) boot.esp32c3: SPI Speed      : 80MHz[0m
+[0;32mI (9) boot.esp32c3: SPI Mode       : SLOW READ[0m
+[0;32mI (9) boot.esp32c3: SPI Flash Size : 2MB[0m
+[0;32mI (13) boot: Enabling RNG early entropy source...[0m
+[0;32mI (18) boot: Partition Table:[0m
+[0;32mI (18) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (19) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (20) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (20) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (21) boot: End of partition table[0m
+[0;32mI (22) esp_image: segment 0: paddr=00010020 vaddr=3c030020 size=0c5ach ( 50604) map[0m
+[0;32mI (31) esp_image: segment 1: paddr=0001c5d4 vaddr=3fc8c200 size=017f8h (  6136) load[0m
+[0;32mI (33) esp_image: segment 2: paddr=0001ddd4 vaddr=40380000 size=02244h (  8772) load[0m
+[0;32mI (36) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=2c104h (180484) map[0m
+[0;32mI (65) esp_image: segment 4: paddr=0004c12c vaddr=40382244 size=09f80h ( 40832) load[0m
+[0;32mI (73) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (74) boot: Disabling RNG early entropy source...[0m
+[0;31mE (347) medidor: sin respuesta I2C[0m
+medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar
+[0;31mE (5253) medidor: sin respuesta I2C[0m
+[0;31mE (7254) i2c.master: i2c_master_transmit(1207): I2C transaction failed[0m
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); no hay clave
+lectura: primero 'clave'
+csr: FALLO (-16000), sin clave
+publica: FALLO, sin clave (-16000)
+olvidar: clave borrada
+[0;31mE (14263) medidor: sin respuesta I2C[0m
+qemu-system-riscv32: terminating on signal 15 from pid 68606 (timeout)
+rc=124

@@ -8,6 +8,8 @@
 -- Se comprueba: instanciar y generar dos veces (dos salidas distintas y
 -- ambas correctas), resembrar y generar, el contador de peticiones, y que
 -- instanciar de nuevo borra el estado y reproduce la primera salida.
+-- Paso 8 (23-11-2026): 50 semillas mas del modelo (C_LOTE), cada una con
+-- instanciar, dos generaciones, resembrar y otra generacion.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -24,8 +26,12 @@ architecture sim of tb_ctr_drbg is
   constant C_T : time := 10 ns;
 
   signal clk, rst_n : std_logic := '0';
-  signal instanciar, resembrar, generar : std_logic := '0';
-  signal entropia : std_logic_vector(255 downto 0) := (others => '0');
+  signal instanciar, resembrar, generar, borrar : std_logic := '0';
+  -- Segunda instancia con el contador corto, para ver la saturacion.
+  signal instanciar2, generar2 : std_logic := '0';
+  signal listo2, ocupado2, agotado2 : std_logic;
+  signal peticiones2 : unsigned(31 downto 0);
+  signal entropia : std_logic_vector(383 downto 0) := (others => '0');
   signal nonce    : std_logic_vector(127 downto 0) := (others => '0');
   signal salida   : std_logic_vector(255 downto 0);
   signal listo, ocupado, sembrado : std_logic;
@@ -51,14 +57,31 @@ begin
   dut : entity work.ctr_drbg
     port map (clk => clk, rst_n => rst_n,
               instanciar => instanciar, resembrar => resembrar,
+              borrar => borrar, agotado => open,
               entropia => entropia, nonce => nonce,
               generar => generar, salida => salida,
               listo => listo, ocupado => ocupado, sembrado => sembrado,
               peticiones => peticiones);
 
+  dut_corto : entity work.ctr_drbg
+    generic map (G_PET_BITS => 2)
+    port map (clk => clk, rst_n => rst_n,
+              instanciar => instanciar2, resembrar => '0',
+              borrar => '0', agotado => agotado2,
+              entropia => entropia, nonce => nonce,
+              generar => generar2, salida => open,
+              listo => listo2, ocupado => ocupado2, sembrado => open,
+              peticiones => peticiones2);
+
   principal : process
     variable fallos : natural := 0;
     variable ciclos : natural;
+    variable mal : natural := 0;
+
+    function bool_n(b : boolean) return natural is
+    begin
+      if b then return 1; else return 0; end if;
+    end function;
 
     procedure orden(signal s : out std_logic; n : out natural) is
       variable c : natural := 0;
@@ -127,6 +150,7 @@ begin
     comprobar(salida = C_SAL1A, "vuelve a dar la primera salida");
 
     report "5) Generar sin sembrar no hace nada";
+    -- (sigue abajo; el 6 y el 7 van despues)
     rst_n <= '0';
     wait for 3 * C_T;
     rst_n <= '1';
@@ -137,6 +161,70 @@ begin
     wait for 5 * C_T;
     comprobar(ocupado = '0' and sembrado = '0',
               "la orden se ignora sin estado valido");
+
+    report "6) Borrar deja el DRBG sin estado y a cero, en reposo o a mitad";
+    entropia <= C_E1;
+    nonce    <= C_N1;
+    orden(instanciar, ciclos);
+    orden(generar, ciclos);
+    orden(borrar, ciclos);
+    comprobar(sembrado = '0' and salida = (255 downto 0 => '0') and peticiones = 0,
+              "tras borrar: sin estado, salida y contador a cero");
+    generar <= '1';
+    wait until rising_edge(clk);
+    generar <= '0';
+    wait for 5 * C_T;
+    comprobar(ocupado = '0' and sembrado = '0', "generar tras borrar se ignora");
+    orden(instanciar, ciclos);
+    generar <= '1';
+    wait until rising_edge(clk);
+    generar <= '0';
+    wait for 3 * C_T;
+    comprobar(ocupado = '1', "generacion en curso");
+    orden(borrar, ciclos);
+    comprobar(ocupado = '0' and sembrado = '0', "borrar a mitad de una generacion la aborta y limpia");
+
+    report "7) El contador satura (instancia con G_PET_BITS = 2: tope 3)";
+    instanciar2 <= '1';
+    wait until rising_edge(clk);
+    instanciar2 <= '0';
+    wait until listo2 = '1';
+    for i in 1 to 2 loop
+      generar2 <= '1';
+      wait until rising_edge(clk);
+      generar2 <= '0';
+      wait until listo2 = '1';
+    end loop;
+    wait until rising_edge(clk);
+    comprobar(peticiones2 = 3 and agotado2 = '1', "tras dos generaciones el contador esta en 3 y agotado");
+    generar2 <= '1';
+    wait until rising_edge(clk);
+    generar2 <= '0';
+    wait for 300 * C_T;
+    comprobar(peticiones2 = 3 and ocupado2 = '0', "agotado: generar se ignora y el contador no da la vuelta");
+
+    report "8) Lote de " & integer'image(C_LOTE'length) &
+           " semillas: instanciar, dos generaciones, resembrar y otra";
+    rst_n <= '0';
+    wait for 3 * C_T;
+    rst_n <= '1';
+    wait until rising_edge(clk);
+    for i in C_LOTE'range loop
+      entropia <= C_LOTE(i).e;
+      nonce    <= C_LOTE(i).n;
+      orden(instanciar, ciclos);
+      orden(generar, ciclos);
+      mal := mal + 1 - bool_n(salida = C_LOTE(i).a);
+      orden(generar, ciclos);
+      mal := mal + 1 - bool_n(salida = C_LOTE(i).b);
+      entropia <= C_LOTE(i).er;
+      nonce    <= C_LOTE(i).nr;
+      orden(resembrar, ciclos);
+      orden(generar, ciclos);
+      mal := mal + 1 - bool_n(salida = C_LOTE(i).c);
+    end loop;
+    comprobar(mal = 0, integer'image(3 * C_LOTE'length - mal) & " de " &
+              integer'image(3 * C_LOTE'length) & " salidas = referencia");
 
     if fallos = 0 then
       report "tb_ctr_drbg: 0 fallos" severity note;

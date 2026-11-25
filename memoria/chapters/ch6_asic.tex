@@ -1,8 +1,9 @@
 \chapter{Path to an Integrated Circuit}
 \label{ch:ch6_asic}
 
-% [DRAFT v1] Source material: docs/sintesis_resultados.md, docs/via_asic.md,
-% synth/sintetiza.py, results/sintesis_sg13g2.csv.
+% Source material: docs/sintesis_resultados.md (synthesis of 22-11-2026),
+% docs/via_asic.md, docs/decisiones_pendientes.md, synth/sintetiza.py,
+% results/sintesis_sg13g2.csv.
 
 The engine is designed to end up as a dedicated integrated circuit that
 serves keys to a microcontroller, and the FPGA is its verification
@@ -13,7 +14,8 @@ would cost and what would have to change in the entropy source. A
 tape-out is explicitly out of scope of this thesis --- not for cost or
 area, as will be seen, but for schedule --- and everything here is
 labelled as what it is: a lower bound on area from logic synthesis, with
-the growth factors to core area taken from published data.
+the growth to core area estimated from a range of utilization, not from
+a placed and routed design.
 
 \section{Standard-cell synthesis flow}
 \label{sec:synthflow}
@@ -36,41 +38,63 @@ synthesized; they are the one block designed at transistor level
 \section{Area per block in gate equivalents}
 \label{sec:area}
 
-Table~\ref{tab:synth} gives the result for each block. The digital
+Table~\ref{tab:synth} gives the result for each block, all synthesized in
+one run on the final \ac{RTL}. The whole engine is \textbf{95.5~kGE}, and
+the digital
 engine --- everything except the capture buffer --- is about
-\textbf{68~kGE}: 62.9~kGE in the blocks of the table and 5.2~kGE in the
-top-level sequencer and register file, which only appear when the whole
-engine is synthesized. AES is close to half of it: the authenticator and
-the generator each instantiate their own encryption core, 15.8~kGE apiece.
+\textbf{48.7~kGE}, the difference between the last row and the buffer's
+($95.46 - 46.81$). Synthesized on their own, the authenticator and the
+generator each carry their own one-round-per-cycle encryption core,
+15.8~kGE apiece, and that is how their rows in the table are measured; in
+the whole engine a single 32-bit core serves both, because the sequencer
+never lets them run at the same time (Section~\ref{sec:opt}), so the rows
+do not add up to the engine's figure. Roughly, from the rows: the shared
+32-bit AES
+6.6~kGE, the authenticator without its core 7.5, the generator without it
+23.8, health tests 1.2, sampler, crossing and resets 0.4, \ac{I2C} 1.0,
+and the remainder, about 8~kGE, of top-level sequencer, registers and
+core arbitration.
 The capture buffer is reported for completeness but must not be read as
-part of the product: its 46.7~kGE are a 4096-bit memory mapped onto
-flip-flops because the flow has no SRAM macros. In the FPGA it occupies a
-block RAM at no logic cost; in silicon it would be a compiled SRAM or,
+part of the product: its 46.8~kGE are a 4096-bit memory mapped onto
+flip-flops because the flow has no SRAM macros. On the \ac{FPGA} the
+implementation tool maps it onto distributed RAM, 158 look-up tables and
+44 flip-flops in the implemented design, with no block RAM; in silicon it
+would be a compiled SRAM or,
 more sensibly, a much smaller buffer, because it is a test path that is
 disabled at production.
 
 \begin{table}[htbp]
 \centering
-\caption{Logic synthesis on IHP SG13G2, flattened, no routing.
-1~GE $=7.2576~\mu\mathrm{m}^2$. Lower bound on area \simu{}.}
+\caption{Logic synthesis on IHP SG13G2, flattened, no routing, all
+blocks in one run on the final \ac{RTL} (22 November 2026, Yosys with
+the GHDL plug-in). 1~GE $=7.2576~\mu\mathrm{m}^2$. Lower bound on area
+\simu{}.}
 \label{tab:synth}
-\begin{tabular}{@{}lrrrr@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth}rrrr@{}}
 \toprule
 Block & Cells & Flip-flops & Area ($\mu\mathrm{m}^2$) & kGE \\
 \midrule
-AES-128 encryption core       & 10\,439 & 262   & 114\,771 & 15.81 \\
-AES-CMAC (with its AES)        & 13\,210 & 909   & 169\,766 & 23.39 \\
-CTR\_DRBG with df (with its AES) & 17\,953 & 2\,355 & 267\,262 & 36.83 \\
-Health tests (RCT, APT)        & 568     & 85    & 8\,986   & 1.24 \\
-ERO sampler and 24-bit divider & 132     & 28    & 2\,397   & 0.33 \\
+AES-128 core, one round per cycle (20 S-boxes, clear input) & 10\,549 & 262 & 114\,677 & 15.80 \\
+AES-128 core, 32-bit datapath (4 S-boxes, 51 cycles/block) & 3\,771 & 265 & 48\,175 & 6.64 \\
+AES-CMAC (with its one-round AES) & 13\,239 & 909   & 169\,426 & 23.35 \\
+CTR\_DRBG with df (with its one-round AES) & 20\,614 & 2\,483 & 287\,513 & 39.62 \\
+Health tests (RCT, APT)        & 530     & 86    & 8\,487   & 1.17 \\
+ERO sampler and divider (stand-alone, 24-bit counter) & 139 & 28 & 2\,442 & 0.34 \\
 Bit clock-domain crossing      & 11      & 7     & 408      & 0.06 \\
+Reset synchronizer (one per clock domain) & 3 & 3 & 147      & 0.02 \\
 I2C slave (with bus-hang guard) & 431    & 85    & 7\,408   & 1.02 \\
 \midrule
 Capture buffer (4096-bit RAM as flip-flops) & 12\,592 & 4\,140 & 339\,698 & 46.81 \\
-Whole engine, rings as wires   & 47\,252 & 8\,409 & 834\,033 & 114.92 \\
+Whole engine, rings as wires, one shared one-round AES & 42\,010 & 8\,422 & 763\,818 & 105.24 \\
+\textbf{Whole engine, one shared 32-bit AES} & 34\,179 & 8\,425 & 692\,782 & \textbf{95.46} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+The sampler row is the block with its default 24-bit counter; inside the
+engine the counter has 22 bits and sits behind the four toggle flip-flops
+of the divide-by-16 prescaler of RO2, which belong to the top level
+(Section~\ref{sec:ro_silicon}).
 
 The numbers are internally consistent, and that consistency is how an
 error in the flow was caught: before flattening, the report returned for
@@ -78,8 +102,38 @@ the authenticator and for the generator the area of their AES
 sub-module alone. An authenticator weighing exactly as much as a bare AES
 is impossible, so the report, not the design, was wrong. After
 flattening, the authenticator adds to the AES 647 flip-flops (sub-keys,
-chaining state, key) and 7.6~kGE, and the generator adds 2093 flip-flops
-and 21~kGE, about half of which are its registers.
+chaining state, key) and 7.5~kGE, and the generator adds 2221 flip-flops
+and 23.8~kGE, about two thirds of which are its registers \est{} (a
+flip-flop of this library is 6.75 to 7.25~GE depending on the cell; the
+cells the mapper chose were not counted).
+
+The figure moved with the design, and each step was synthesized against
+the previous one in the same run, because the logic optimizer alone
+shifts the total by about 0.2\,\% when only signal names change, and
+between runs of different days the same variant has moved by about
+0.5\,\% (the engine with the one-round core: 104.60, 104.81 and
+105.24~kGE in three runs of 19 and 22 November). At
+register-map version~3 --- zeroization, a request counter that saturates
+instead of wrapping, the capture exclusion rules and the reset
+synchronizers --- the engine was 115.7~kGE with two encryption cores;
+sharing one core took it to 101.6 and the 32-bit core to 92.5
+(Section~\ref{sec:opt}). The 512-bit seed (Section~\ref{sec:health})
+added 256 flip-flops, in the seed collector and in the generator's
+entropy register, and 2.3~kGE. The thirteen-stage RO2 with its prescaler
+and the wider divider added 0.5\,\% in the run in which they were
+introduced (95.09 to 95.53~kGE, five flip-flops more), which is the size
+of that noise: in the run of the table the engine with the earlier
+generics comes out at 95.60~kGE, above the final one, so the change is
+not measurable in area. Refusing a divider outside the admitted range
+cost nothing measurable either: 95.46~kGE in the run of the table, with
+the same 8\,425 flip-flops. The October runs
+read the \ac{VHDL} through GHDL's Verilog netlist output and the
+\texttt{pip}-installable build of Yosys, the table through the GHDL
+plug-in; on the unchanged AES core the two paths agreed within 0.9\,\%
+when they were compared in October, and the core's figure in the table,
+15.80~kGE, is 1.6\,\% below the 16.06 of that month: differences under
+about 2\,\% between runs of different dates and tool paths are not
+design changes.
 
 \section{Optimizations and their expected savings}
 \label{sec:opt}
@@ -89,31 +143,69 @@ verifiable, not small --- and it points at three optimizations, in order
 of return on effort:
 
 \begin{enumerate}
-\item \textbf{One shared AES core.} The top-level sequencer already
-serializes commands: the generator and the authenticator never run at the
-same time. Sharing the core saves $\approx$15.8~kGE, a quarter of the
-engine, for a trivial arbiter.
-\item \textbf{Compact S-box datapath.} Twenty independent S-box tables
-synthesize to 15.8~kGE for the whole core; area-optimized designs in the
-literature range from 2.4~kGE for an 8-bit datapath at 226 cycles per
-block~\cite{moradi2011pushing} to about 5~kGE for 32-bit datapaths. Speed
-is irrelevant here, so a 32-bit datapath with four shared S-boxes is the
-sensible point; estimated saving, 10~kGE per core.
-\item \textbf{Fewer registers in the generator.} Of its 2355 flip-flops,
-the captured entropy and nonce (384), the seed material (256), the output
+\item \textbf{One shared AES core --- done.} The top-level sequencer
+already serializes commands: the generator and the authenticator never
+run at the same time. The core now lives in the top level and is handed
+to whichever block raises its start pulse; a property in the system
+bench checks that the two never do so in the same cycle. Measured
+saving, in the run of October in which it was introduced:
+\textbf{14.1~kGE} (115.7 to 101.6), a little under the 15.8
+estimated, because the arbitration costs about half a kGE and the clear
+input that the review required on the core and on the generator costs
+another. A generic keeps the two-core arrangement available.
+\item \textbf{Compact S-box datapath --- done.} Twenty independent S-box
+tables synthesize to 16~kGE for the one-round core; area-optimized
+designs in the literature range from 2.4~kGE for an 8-bit datapath at 226
+cycles per block~\cite{moradi2011pushing} to about 5~kGE for 32-bit
+datapaths. Speed is irrelevant here, so a second core was written with a
+32-bit datapath: four S-boxes shared between SubBytes and the key
+schedule's SubWord, one MixColumns, ShiftRows applied as a wiring
+permutation of the state register at the start of each round, one column
+per cycle, 51 cycles per block instead of 11. It passes the same official
+vectors, the thousand-block chain and the zeroization test, and the bench
+requires its output to equal the one-round core's on every block. Measured
+when it was introduced, in October:
+6.67~kGE against 16.06 for the core (a saving of 9.4, against
+the 10 estimated, the difference being the column multiplexers and the
+extra phase register), and 92.5 against 101.8~kGE for the whole
+engine in the same synthesis run. In the run of Table~\ref{tab:synth}:
+\textbf{6.64~kGE against 15.80} for the core and \textbf{95.46 against
+105.24~kGE} for the engine, a saving of 9.8; over the four runs of
+November in which both variants were synthesized the saving goes from
+9.1 to 9.8~kGE. The one-round core remains
+available through a generic.
+\item \textbf{Fewer registers in the generator.} Of its 2483 flip-flops,
+the captured entropy and nonce (512), the seed material (256), the output
 (256) and the temporaries of the derivation function can be reduced by
 consuming the seed as a stream and sharing temporaries; roughly 800
 flip-flops, about 4~kGE.
 \end{enumerate}
 
-With the three, the digital engine falls to \textbf{$\approx$20--25~kGE}
-(the 5~kGE of top-level control barely shrink),
-which is the order of magnitude the state of the art anticipated (13 to
-25~kGE for engines of this kind) and which, at the published growth
-factor of $\approx$2.35 from cell area to core area for an AES on this same
-library, is about 0.34~mm$^2$ of core. Each of these savings is stated as
-an estimate; measuring them by synthesizing the optimized variants is
-listed as future work, not claimed.
+The two measured optimizations took the digital engine, in the October
+runs, from 69~kGE (two one-round cores) to 46; with the 512-bit seed and
+the changes to the source that followed it stands at 48.7~kGE, and the
+third optimization would leave it at
+\textbf{$\approx$45~kGE} \est{}. That is above the 13 to 25~kGE that this
+work's own initial estimate, assembled from published block areas,
+anticipated for an engine of this kind, and the table says why: the
+generator without its core is 23.8~kGE, about two thirds of it
+registers, and the
+top-level sequencer and registers another 8; reaching that range
+would mean rethinking the generator's storage rather than its cipher,
+which this work leaves stated rather than done.
+% NOTA (no impresa): "13 to 25 kGE" son las estimaciones propias de
+% docs/via_asic.md §4 (config. A con SHA 24,6 kGE; sin SHA ~13) y
+% docs/arquitectura.md §9.
+The step from cell area to core area is an estimate with a range, not a
+result: no design was placed and routed. The utilization is taken
+between 0.60, the ratio of routed to raw gate density published for the
+standard cells of another open 130~nm process, not this
+one~\cite{skywater_pdk_cells}, and 0.70, the figure assumed in the
+first area budget of this work, that is, a core 1.4 to 1.7 times the cell area. With it, 45~kGE
+(0.33~mm$^2$ of cells) is 0.47 to 0.54~mm$^2$ of core \est{}, below the
+0.8~mm$^2$ that is the minimum charge on this process
+(Section~\ref{sec:shuttle}). The first two savings are measurements; the
+third is an estimate and is listed as future work, not claimed.
 
 \section{What the ring oscillator needs in silicon}
 \label{sec:ro_silicon}
@@ -137,13 +229,76 @@ sweeps do it with a configurable ring and a tuning loop~\cite{yang_2016_jssc}.
 Third, and most important for a security device, injecting a frequency on
 the supply locks the rings and removes the jitter: a 500~mV signal on
 the rail reduced the key space of a commercial secure microcontroller
-from $2^{64}$ to about 3300~\cite{markettos_2009_frequency}, and a few
-hundred microwatts of radiated field destroyed the statistics of a
-fifty-ring generator~\cite{bayon_2012_contactless}. The same calibration
+from $2^{64}$ to about 3300~\cite{markettos_2009_frequency}, and a
+contactless electromagnetic attack locked the fifty rings of an
+\ac{FPGA} generator and controlled the bias of its
+output~\cite{bayon_2012_contactless}. The same calibration
 loop, together with supply filtering, is the published defence, and the
 health tests of Section~\ref{sec:health} are the detector of last resort.
 None of this is in the FPGA prototype; it is the work that a silicon
 implementation adds.
+
+Four requirements come from this work's own simulations and
+measurements, and the \ac{RTL} already applies the first two.
+
+\paragraph{Ring lengths.} RO1 has eleven stages and RO2 thirteen. RO1 is
+long because the sampling flip-flop of the library does not capture a
+rising and a falling input at the same instant, and that fixed asymmetry
+biases the bit less the slower the sampled ring is: with five stages the
+declarable entropy fell below the declared 0.60, with eleven it is 0.757
+\simu{} (Section~\ref{sec:ff_mc}). RO2 is longer still, and deliberately
+not equal to RO1, because two identical rings tend to lock to each
+other. With these lengths and the minimum divider \kd{25}
+(\texttt{CFG\_KD} $= 25$) the source delivers 20 to 50~bit/s over
+corners \est{} (Section~\ref{sec:ihp_ring11}).
+
+\paragraph{Timing of the ring domain.} The logic clocked by RO2 has to
+close timing at the ring's own period, and a first estimate says that
+it would not have with the original five-stage ring \est{} (logic
+synthesis and the mapper's delay report on the typical library, 1.2~V
+and 25~$^\circ$C): a 26-bit divider counter clocked directly by the
+ring, as the design then had, takes 1.53~ns, and a
+single flip-flop of the library needs about 0.37~ns to toggle, against
+a period of 0.366~ns. With thirteen stages the simulated period is
+0.905~ns in the typical corner at 27~$^\circ$C \simu{}, which leaves the
+first flip-flop a margin of $\times2.4$ there, and a chain of
+four toggle flip-flops divides RO2 by 16 before anything wider is
+clocked, so the counter, now of 22 bits and not estimated again, runs
+with a period sixteen times longer than the ring's (14.5~ns typical).
+In the fastest corner simulated ($-40$~$^\circ$C, 1.32~V, fast
+transistors) the period falls to 0.594~ns \simu{}: against the
+typical-library 0.37~ns that would be $\times1.6$, a comparison across
+corners that is only indicative, because no fast-corner library was
+used for the flip-flop. This is an
+estimate and it is open: the local \ac{PDK} has no slow-corner library,
+so 1.08~V at 125~$^\circ$C is unchecked, and no static timing analysis
+with constraints on the divided clock has been run.
+
+\paragraph{Isolation of the sampled node.} The flip-flop must not hang
+from the ring: without a buffer between them its input capacitance pulls
+the node and modulates the period by 2 to 3~ps \simu{}. For the same
+reason the monitor output that the \ac{FPGA} wrapper uses to measure the
+ring frequencies must be left unloaded in a product.
+
+\paragraph{Own supply or guard ring.} On the \ac{FPGA} the logic that
+hangs from the rings changes the apparent phase noise by a factor of
+4.4, with the ring stages at the same sites, and the relative phase of
+the rings carries a narrow modulation at 38 to 40~kHz, fixed in time and
+not tied to the ring frequency, whose origin was not identified \meas{}
+(Section~\ref{sec:campaign}). In an \ac{FPGA} the rings cannot be
+isolated; in an integrated circuit they can, with their own filtered
+supply or a guard ring, which is also the defence against the injection
+attacks above. That supply should be one branch shared by both rings,
+not one per ring. Each ring alone is sensitive to its supply: its period
+changes by 1.1 to 2.8\,\% per 10~mV across the corners \simu{}. The bit,
+however, depends on the ratio of the two periods, and since both rings
+use the same inverter a common disturbance largely cancels in it: 0.4\,\%
+of a single ring's sensitivity remains at the nominal die, and at most
+2 to 3\,\% (mean plus two standard deviations over 8 mismatch draws per
+ring, typical and slow corners) \simu{}. Separate supplies would lose that
+cancellation. This is a static sensitivity from supply steps of
+$\pm10$~mV without noise; substrate coupling, unequal supply drops across
+the die and locking between the rings are not covered.
 
 \section{Cost and schedule of an academic shuttle}
 \label{sec:shuttle}
@@ -152,10 +307,22 @@ Fabrication is more accessible than the size of the word suggests. The
 University of Sevilla and IMSE-CNM are members of Europractice, whose
 academic price list is public: a mini@sic block in UMC~180~nm costs
 3\,430~\texteuro{}, one in TSMC~65~nm 3\,691~\texteuro{}, and IHP SG13G2 is
-offered at 5\,110~\texteuro{}/mm$^2$ with a free multi-project run for
-open-source designs under 2~mm$^2$~\cite{europractice_prices2026}. An engine of
-0.3--0.4~mm$^2$ fits many times over in the smallest block of any of
-them; the chip would be limited by its pads, not its logic. The
+offered at 5\,110~\texteuro{}/mm$^2$~\cite{europractice_prices2026}; IHP
+also announces free multi-project runs for open-source designs, without
+publishing their area limits or conditions. The
+engine is 0.35~mm$^2$ of cells without the capture buffer and
+0.69~mm$^2$ with it, unrouted \simu{}; with the utilization range of
+Section~\ref{sec:opt} the first figure becomes 0.50 to 0.59~mm$^2$ of
+core \est{}. On IHP, which bills by area with a minimum equivalent to
+0.8~mm$^2$, that is below the minimum, so the order would be the minimum
+one. The mm$^2$ are those of this library: in the 180~nm alternative
+the same 48.7~kGE, at the 9.677~$\mu\mathrm{m}^2$ per gate equivalent of
+a published library of that
+process~\cite{poschmann2009lightweight}, are 0.47~mm$^2$ of cells and
+0.67 to 0.78~mm$^2$ of core \est{}, which fits about three times in the
+2.33~mm$^2$ block; for 65~nm no gate area was collected, and no figure
+is given beyond the 1~mm$^2$ minimum of that block. The chip would be
+limited by its pads rather than by its logic. The
 institute's own hardware-security group has already taken ring-oscillator
 primitives from Xilinx~7-series FPGAs to characterized 65~nm silicon,
 which makes the continuation of this work a matter of joining an
@@ -170,5 +337,7 @@ source validation~\cite{microchip_atecc608b_ds}; two of its direct competitors
 do not mention SP~800-90 anywhere in their datasheets. The honest
 position of this work is therefore not to compete on price but on
 \emph{transparency of the entropy}: every bit of a key produced by this
-engine can be traced to a measured jitter and a stated bound, which is
+engine can be traced to a jitter that the device itself can measure
+(measured in this work on the \ac{FPGA} prototype, simulated for the
+integrated circuit) and to a stated bound, which is
 precisely what a black-box part cannot offer.

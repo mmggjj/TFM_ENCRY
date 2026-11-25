@@ -189,18 +189,31 @@ def leer_raw(ruta):
 # Extraccion de cruces y jitter
 # --------------------------------------------------------------------
 
-def cruces_subida(t, v, umbral):
+def cruces_subida(t, v, umbral, histeresis=0.0):
     """Instantes de cruce ascendente por el umbral, con interpolacion
     lineal entre las dos muestras que lo rodean.
 
     El sesgo de la interpolacion es practicamente el mismo en cada flanco,
     asi que se cancela al calcular varianzas, que es lo unico que se usa.
+    Con histeresis > 0 un cruce solo cuenta si la senal ha bajado de
+    umbral - histeresis desde el anterior: el ruido sobre un flanco lento
+    no da dobles cruces.
     """
     t = np.asarray(t, dtype=float)
     v = np.asarray(v, dtype=float)
     por_debajo = v[:-1] < umbral
     por_encima = v[1:] >= umbral
     idx = np.flatnonzero(por_debajo & por_encima)
+    if idx.size and histeresis > 0:
+        bajos = np.flatnonzero(v < umbral - histeresis)
+        validos, ultimo = [], -1
+        for i in idx:
+            # algun punto bajo en (ultimo, i]
+            j = np.searchsorted(bajos, ultimo, side="right")
+            if j < bajos.size and bajos[j] <= i:
+                validos.append(i)
+                ultimo = i
+        idx = np.asarray(validos, dtype=int)
     if idx.size == 0:
         return np.empty(0)
     v0, v1 = v[idx], v[idx + 1]
@@ -321,6 +334,7 @@ def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800,
     orden: ejecutable de ngspice (por defecto, el que se encuentre).
     spiceinit: texto de un .spiceinit, p. ej. para cargar modelos OSDI.
     """
+    propio = directorio is None          # temporal nuestro: se borra al acabar
     directorio = directorio or tempfile.mkdtemp(prefix="ring_")
     os.makedirs(directorio, exist_ok=True)
     sp = os.path.join(directorio, "ring.sp")
@@ -348,6 +362,9 @@ def simular(texto_netlist, directorio=None, usar_wsl=None, timeout=1800,
     if not os.path.exists(raw):
         raise RuntimeError(f"ngspice no genero el raw.\n{r.stdout}\n{r.stderr}")
     nombres, m = leer_raw(raw)
+    if propio:
+        # 400 ns a 0,2 ps son cientos de MB por raw; /tmp es un tmpfs en RAM
+        shutil.rmtree(directorio, ignore_errors=True)
     return nombres, m, r.stdout + r.stderr
 
 

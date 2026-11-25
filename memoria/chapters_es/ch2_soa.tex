@@ -1,7 +1,7 @@
 \chapter{Estado del arte}
 \label{ch:ch2_soa}
 
-% [BORRADOR v1] Material de partida: docs/estado_del_arte_trng.md, estado_del_arte_cripto.md,
+% Material de partida: docs/estado_del_arte_trng.md, estado_del_arte_cripto.md,
 % plataforma_y_flujo.md, via_asic.md. Cada afirmación numérica de este capítulo lleva una
 % referencia que se cotejó con su fuente al redactar la revisión;
 % lo que la revisión no pudo consultar está marcado como tal en las notas de trabajo.
@@ -9,7 +9,10 @@
 La revisión se organiza siguiendo la cadena que construye el TFM: cómo
 se convierten los osciladores en anillo en bits aleatorios, cómo se
 modela y se acota su entropía, cómo se mide su jitter desde dentro del
-dispositivo, qué exigen las dos normas que rigen el campo, qué primitivas
+dispositivo, qué exigen las dos normas que rigen el campo, qué se sabe de
+los generadores de los microcontroladores de uso común --- sobre todo del
+ESP32 --- y de las segundas fuentes y los recolectores construidos a su
+alrededor, qué primitivas
 simétricas encajan en un motor con recursos limitados, qué ofrecen los
 componentes comerciales y qué cambia cuando el diseño sale de la FPGA
 hacia el silicio. La última sección expone el hueco que aborda este
@@ -53,18 +56,22 @@ con un modelo completo que va de lo físico a lo
 estocástico~\cite{bernard_2019_physical}; el \textbf{anillo
 autotemporizado} (STR) hace circular varios eventos por un anillo
 asíncrono para obtener fases separadas del orden del
-jitter~\cite{cherkaoui_2013_very}, y alcanza 154~Mbit/s; y el
-\textbf{ES-TRNG} de Yang \emph{et al.} usa la cadena de acarreo como
-convertidor de tiempo a digital para codificar la posición del flanco con
-10~LUT y 5~flip-flops~\cite{yang_2018_estrng, rozic_2015_highly}.
+jitter~\cite{cherkaoui_2013_very}, y alcanza 154~Mbit/s en la
+implementación de Petura~\cite{petura_2016_survey}; y los diseños de
+Lovaina digitalizan la posición del flanco: el DC-TRNG usa la cadena de
+acarreo como convertidor de tiempo a digital~\cite{rozic_2015_highly}, y
+el \textbf{ES-TRNG} de Yang \emph{et al.} la codifica con precisión
+variable y muestreo repetido en 10~LUT y
+5~flip-flops~\cite{yang_2018_estrng}.
 
 La Tabla~\ref{tab:petura} reproduce la comparación que hicieron Petura
 \emph{et al.} de los núcleos conformes a AIS sobre un mismo
 dispositivo~\cite{petura_2016_survey}. La columna de entropía es una
-estimación estadística (el test T8 de AIS~31), no una cota del modelo; la
-columna de viabilidad es la valoración cualitativa de los autores, en la
-que COSO y TERO puntúan peor porque necesitan un ajuste manual por
-dispositivo. No existe una tabla comparable para Artix-7; el proyecto
+estimación estadística (el test T8 de AIS~31), no una cota del modelo.
+Los autores clasifican además los núcleos por viabilidad; esa columna no
+se reproduce porque el sentido de su escala no pudo confirmarse con las
+notas de trabajo, y solo se conserva su observación de que COSO y TERO
+necesitan un ajuste manual por dispositivo. No existe una tabla comparable para Artix-7; el proyecto
 abierto OpenTRNG implementa ERO, multianillo y COSO en una Arty~A7 con el
 mismo dado XC7A35T que la Basys~3, pero no publica cifras ni de entropía
 ni de tasa de bits~\cite{opentrng_2025_docs}.
@@ -73,19 +80,18 @@ ni de tasa de bits~\cite{opentrng_2025_docs}.
 \centering
 \caption{Núcleos TRNG compatibles con AIS en Xilinx Spartan-6 (45~nm),
 según Petura \emph{et al.}~\cite{petura_2016_survey}, tabla~II. La
-entropía es la estimación T8; la ``viabilidad'' es la clasificación de los
-autores (cuanto más alta, más fácil).}
+entropía es la estimación T8.}
 \label{tab:petura}
-\begin{tabular}{@{}lrrrrl@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Núcleo & LUT/reg. & Potencia (mW) & Tasa (Mbit/s) & Entropía/bit & Viab. \\
+Núcleo & LUT/reg. & Potencia (mW) & Tasa (Mbit/s) & Entropía/bit \\
 \midrule
-ERO  & 46/19   & 2,16  & 0,0042 & 0,999 & 5 \\
-COSO & 18/3    & 1,22  & 0,54   & 0,999 & 1 \\
-MURO & 521/131 & 54,72 & 2,57   & 0,999 & 4 \\
-PLL  & 34/14   & 10,6  & 0,44   & 0,981 & 3 \\
-TERO & 39/12   & 3,31  & 0,625  & 0,999 & 1 \\
-STR  & 346/256 & 65,9  & 154    & 0,998 & 2 \\
+ERO  & 46/19   & 2,16  & 0,0042 & 0,999 \\
+COSO & 18/3    & 1,22  & 0,54   & 0,999 \\
+MURO & 521/131 & 54,72 & 2,57   & 0,999 \\
+PLL  & 34/14   & 10,6  & 0,44   & 0,981 \\
+TERO & 39/12   & 3,31  & 0,625  & 0,999 \\
+STR  & 346/256 & 65,9  & 154    & 0,998 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,9 +114,16 @@ fase anterior, la probabilidad de cualquier vector de salida y una cota
 inferior de la tasa de entropía de Shannon,
 $H \ge 1 - \frac{4}{\pi^2\ln 2}e^{-4\pi^2 Q}$, cuyo alcance exacto se
 examina en el Capítulo~\ref{ch:ch3_entropy}. Petura \emph{et al.} la
-reescriben en magnitudes de diseño, $H = 1 - \frac{4}{\pi^2\ln2}\exp(-\pi^2
-\sigma_{th}^2 K T_2/T_1^3)$, y Fischer y Lubicz la invierten para obtener
+reescriben en magnitudes de diseño --- el jitter térmico por periodo, el
+divisor y los dos periodos~\cite{petura_2016_survey} ---, y Fischer y
+Lubicz la invierten para obtener
 el divisor $K_D$ a partir de un jitter medido~\cite{fischer_2014_embedded}.
+La forma que se usa en este trabajo es $Q = K_D\,\sigma^2 T_2/T_1^3$ en
+el exponente $-4\pi^2 Q$ de Baudet, que es la que reproduce el divisor
+publicado por Fischer y Lubicz (Sección~\ref{sec:kd}); la expresión tal
+como la imprimen Petura \emph{et al.} se transcribió en las notas de
+trabajo con $\pi^2$ en el exponente, que no lo reproduce, y no se ha
+cotejado con el artículo si responde a otro convenio para $\sigma$.
 Ma \emph{et al.} proponen un modelo alternativo que usa el grupo de
 Lovaina~\cite{ma_2014_entropy}; Haddad \emph{et al.} cuestionan la
 independencia mutua de las realizaciones del jitter en la que se apoyan
@@ -224,6 +237,15 @@ también una fuente física débil situada detrás de un postprocesado
 criptográfico~\cite{saarinen_2021_entropy}. La decisión del NIST de 2022
 de revisar la publicación lo dice expresamente: ``rechazando su uso para
 evaluar generadores criptográficos de números aleatorios''~\cite{nist_2022_decision}.
+La crítica que llevó hasta ahí es anterior: Saarinen califica la batería
+de ``claramente obsoleta, posiblemente dañina'', porque la superan
+generadores sin secreto alguno~\cite{saarinen_2022_obsolete}; Iwasaki
+muestra que los resultados de sus tests no son mutuamente independientes
+y que le falta un criterio global de aceptación con
+fundamento~\cite{iwasaki_2017_analysis}; y los comentarios públicos
+recogidos en la propia revisión del NIST insisten en la redundancia de
+los tests y en el mal uso de la batería como
+certificación~\cite{nist_2021_sp80022_comments}.
 Los datos empíricos lo confirman: un generador certificado de tarjeta
 inteligente mostró sesgos persistentes aun superando la mayoría de los
 tests~\cite{hurleysmith_2018_certifiably,
@@ -233,7 +255,241 @@ Espressif dice que devuelve valores pseudoaleatorios~\cite{espressif_idf_random,
 blancoromero_2026_entropy}. La literatura académica sobre ese generador
 solo aplica SP~800-22 o Dieharder~\cite{castillo_2026_automated,
 hidayatulloh_2024_performance}; no se encontró ninguna caracterización
-suya según SP~800-90B.
+suya según SP~800-90B (Sección~\ref{sec:soa_mcu}).
+
+\section{Generadores de los microcontroladores de uso común}
+\label{sec:soa_mcu}
+
+Por qué el generador de un microcontrolador merece una sección propia lo
+muestra lo que ocurre cuando uno falla sobre el terreno. Heninger
+\emph{et al.} recorrieron los servidores TLS y SSH de todo el espacio
+IPv4 y encontraron que el 0,75\,\% de los certificados TLS compartía su
+clave con otro servidor; factorizaron las claves RSA de dispositivos
+reales siempre que dos claves compartían un primo, y atribuyeron la causa
+a equipos embebidos sin pantalla --- encaminadores, cortafuegos --- que
+generaban sus claves en el primer arranque, antes de que su reserva de
+entropía se llenara: el \emph{agujero de entropía en el
+arranque}~\cite{heninger_2012_mining}. El RFC~4086, la buena práctica del
+IETF sobre aleatoriedad, enuncia el principio de que la seguridad de
+claves, nonces y cookies descansa en valores impredecibles y de que un
+proceso pseudoaleatorio mal sembrado solo da
+``pseudoseguridad''~\cite{eastlake_2005_rfc4086}; y Tillmanns \emph{et
+al.}, al hacer ingeniería inversa del firmware de los chips Bluetooth de
+Broadcom y Cypress, encontraron que los generadores hardware dedicados
+que llevan algunos superan tests avanzados, mientras que muchos
+dispositivos populares no tienen ninguno y recurren a un generador
+pseudoaleatorio inseguro~\cite{tillmanns_2020_firmware}. Un termostato o
+un equipo HVAC conectado que despierta del sueño profundo y abre una
+sesión TLS antes de que su radio se haya asociado es el mismo patrón en
+miniatura.
+
+{\sloppy
+\paragraph{La cadena del ESP32.} En el ESP32 el camino del periférico al
+protocolo es corto. El cargador de arranque de segunda etapa, y la
+aplicación cuando lo pide mediante \texttt{bootloader\_\allowbreak{}random\_\allowbreak{}enable()},
+ponen el ADC SAR en un modo de muestreo de ruido
+(\texttt{bootloader\_\allowbreak{}random.c}~\cite{espressif_bootloader_random}); la
+interfaz de entropía de mbedTLS en ESP-IDF,
+\texttt{mbedtls\_\allowbreak{}hardware\_\allowbreak{}poll()} en \texttt{esp\_\allowbreak{}hardware.c}, es una
+envoltura fina sobre \texttt{esp\_\allowbreak{}fill\_\allowbreak{}random()}~\cite{espressif_esp_hardware};
+y la pila TLS construida encima~\cite{espressif_mbedtls} toma de esa
+función los aleatorios de cliente y servidor, los escalares efímeros de
+ECDHE, los IV y los identificadores de sesión, sin acondicionamiento
+propio. Sea cual sea el régimen del generador en el momento en que corre
+un saludo TLS, las claves de sesión lo heredan. Al medir TLS~1.3 en el
+ESP32, Salles y Farias encuentran una suite con Curve25519 y RSA unas
+cuatro veces más rápida que P-256 con ECDSA a igual
+seguridad~\cite{salles_2023_iotst}, de modo que el saludo es donde se va
+el tiempo, y un generador que se bloquea o un acondicionador software
+lento gravan el momento más caro de la conexión. El cargador de arranque
+es también lo que siembra el generador antes de que haya radio: a la
+pregunta de cuándo cuenta el subsistema de RF como ``habilitado'' para
+que \texttt{esp\_\allowbreak{}random()} sea verdaderamente aleatorio --- si basta con
+inicializar una pila Bluetooth, y qué casos saturan el ADC de alta
+velocidad con el Wi-Fi encendido ---, un responsable de Espressif contestó
+que el arranque de la radio habilita el ADC de alta velocidad y que el
+cargador de arranque siembra antes la entropía del generador, y la
+documentación se reescribió a raíz de ello~\cite{espressif_issue_14665}.
+El cargador de arranque anuncia en su registro la conmutación de esa
+fuente (``Enabling\slash Disabling RNG early entropy source''), lo que también
+ha desconcertado a usuarios~\cite{espressif_issue_7598}. La frontera
+entre el funcionamiento verdaderamente aleatorio y el pseudoaleatorio es,
+en suma, sutil incluso para los propios usuarios del fabricante; la
+prueba de reinicios de la Sección~\ref{sec:esp32_90b} muestra que sin el
+ruido del arranque la salida se repite, y solo acota por abajo lo que ese
+ruido aporta.\par}
+
+\paragraph{El ESP32 original y sus sucesores.} Las guías de los chips
+posteriores, ESP32-S2, -C3 y -H2, documentan una fuente de entropía
+secundaria que el ESP32 original no tiene: el muestreo de un oscilador
+interno asíncrono de 8~MHz, siempre habilitado y mezclado por hardware en
+el estado del generador, que por sí solo ``was sufficient to pass the
+Dieharder random number test suite'', aunque la salida verdaderamente
+aleatoria solo se garantiza con la fuente principal también
+habilitada~\cite{espressif_idf_random_c3}. La guía del ESP32 original no
+menciona ninguna fuente así~\cite{espressif_idf_random}. Los resultados
+obtenidos en un chip posterior no se trasladan, por tanto, al original, y
+la advertencia de ``pseudo-random only'' pesa más sobre él.
+
+\paragraph{Miradas anteriores al generador del ESP32.} El trabajo
+revisado por pares más cercano, de Hidayatulloh \emph{et al.}, usa
+\texttt{esp\_\allowbreak{}random()} para los nonces de AES en modo contador sobre
+enlaces LoRa punto a punto e informa de que los números superan la
+batería del NIST, en una sola condición de funcionamiento y sin las
+proporciones de aprobados por test ni la uniformidad de los
+valores~$p$~\cite{hidayatulloh_2024_performance}. Castillo \emph{et al.}
+presentan un entorno web automatizado para SP~800-22 y lo validan con
+2~GB de un ESP32-C3, que lleva la fuente secundaria; la aportación es la
+herramienta, no el dispositivo~\cite{castillo_2026_automated}. La
+validación del propio Espressif es la única pasada de Dieharder en
+condición favorable de la Sección~\ref{sec:esp32_periph}. El resto es
+informal: Cheich dibuja histogramas de hasta unos 300\,000 valores con el
+Wi-Fi encendido y apagado y entre reinicios, y concluye que la salida
+parece aleatoria, sin batería formal~\cite{cheich_2025_esp32}, y el
+tutorial de AndroidCrypto reproduce la advertencia de Espressif y enseña
+a llamar a \texttt{bootloader\_\allowbreak{}random\_\allowbreak{}enable()}, sin caracterización
+alguna~\cite{androidcrypto_esp32}. Blanco-Romero \emph{et al.} señalan
+que la salida pseudoaleatoria con la radio apagada supera los cribados
+estadísticos~\cite{blancoromero_2026_entropy}. No se encontró en la
+literatura consultada una caracterización del ESP32 original que varíe
+las condiciones de funcionamiento y estime la min-entropía de la salida.
+
+\paragraph{Otros microcontroladores.} La Tabla~\ref{tab:prior-trng} sitúa
+el ESP32 junto a los generadores de otros componentes de la misma clase.
+STMicroelectronics documenta en la nota de aplicación AN4230 una
+validación del generador de los STM32 frente a SP~800-22 y SP~800-90B e
+informa de su evaluación frente a AIS-31 PTG.2, la caracterización
+pública de fabricante más completa que se encontró~\cite{stm_an4230};
+aun así, Ngo y Dubrova recuperan el peso de Hamming de sus palabras de
+salida a partir del consumo con un modelo de aprendizaje profundo, con
+más de un 60\,\% de acierto frente a un 14\,\% de referencia: la fuga por
+canal lateral es una amenaza distinta de la debilidad
+estadística~\cite{ngo_2022_sidechannel}. Nordic documenta para el
+nRF52840 un generador basado en el ruido térmico interno con un corrector
+de sesgo hardware opcional~\cite{nordic_nrf52840_rng}. El RP2040 expone
+un bit de un oscilador en anillo, \texttt{RANDOMBIT}, del que su hoja de
+datos dice que no cumple los requisitos de los sistemas de
+seguridad~\cite{raspberrypi_rp2040_ds, dmo_2022_rp2040}. Los procesadores
+de aplicación de Broadcom de la Raspberry~Pi exponen un generador cerrado
+como \texttt{/dev/hwrng}, que las evaluaciones de la comunidad con ENT,
+\texttt{rngtest} y Dieharder dan por bueno a cerca de
+1~Mbit/s~\cite{russell_2013_rpi_hwrng}; con el diseño y cualquier filtrado
+sin publicar, no se puede construir un modelo estocástico y ``supera los
+tests'' no se puede convertir en una cifra de entropía. El ESP32 queda
+entre los diseños documentados en FPGA de la Sección~\ref{sec:soa_archs}
+y estas cajas negras: sus fuentes están nombradas, no cuantificadas.
+
+\begin{table}[htbp]
+\centering
+\caption{Evaluaciones publicadas de los generadores hardware de
+componentes de clase IoT. ``Condiciones'' indica si se varió el estado de
+funcionamiento.}
+\label{tab:prior-trng}
+\footnotesize
+\begin{tabular}{@{}*{5}{>{\raggedright\arraybackslash}p{2.35cm}}p{1.0cm}@{}}
+\toprule
+Plataforma & Fuente declarada & Evaluación & Condiciones & Resultado & Ref. \\
+\midrule
+ESP32 & Ruido de los ADC de RF y SAR, relojes asíncronos & Dieharder, 2~GB (fabricante) & Solo Wi-Fi encendido & Supera; datos no públicos & \cite{espressif_trm_esp32} \\
+ESP32 & \texttt{esp\_\allowbreak{}random()} & SP~800-22 & Una & Supera (nonces LoRa) & \cite{hidayatulloh_2024_performance} \\
+ESP32-C3 & Como el ESP32, más la secundaria de 8~MHz & SP~800-22, 2~GB & Una & Supera (objeto: el entorno) & \cite{castillo_2026_automated} \\
+ESP32 (blog) & \texttt{esp\_\allowbreak{}random()} & Histogramas & Wi-Fi sí/no, reinicios & ``Parece aleatorio'' & \cite{cheich_2025_esp32} \\
+STM32 & Ruido analógico, dedicado & SP~800-22, SP~800-90B; AIS-31 PTG.2 & No se indica & Supera (fabricante) & \cite{stm_an4230} \\
+nRF52840 & Ruido térmico, corrector de sesgo & Ninguna publicada & --- & --- & \cite{nordic_nrf52840_rng} \\
+RP2040 & Bit de un oscilador en anillo & Análisis de la comunidad & --- & No apto para criptografía (hoja de datos) & \cite{raspberrypi_rp2040_ds} \\
+BCM2835 & Cerrada & ENT, \texttt{rngtest}, Dieharder & No & Supera & \cite{russell_2013_rpi_hwrng} \\
+Bluetooth de Broadcom\slash Cypress & Generador en el chip, si lo hay & Baterías avanzadas, ingeniería inversa & Muchos dispositivos & Generador bueno; alternativa insegura & \cite{tillmanns_2020_firmware} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Segundas fuentes y recolección de entropía}
+\label{sec:soa_harvest}
+
+Un nodo que mantiene la radio apagada necesita entropía de otra parte, y
+dos líneas de trabajo dicen dónde encontrarla y cómo combinarla.
+
+\paragraph{El estado de arranque de la SRAM.} Una celda SRAM de seis
+transistores es un par de inversores acoplados; al encenderse, ambos
+parten cerca de su punto metaestable y la celda se resuelve hacia un
+estado u otro. En las celdas cuyos transistores están muy desapareados,
+el resultado lo fija la fabricación y se repite en cada encendido: una
+huella propia del dispositivo, la base de la PUF de SRAM. En las celdas
+muy apareadas decide cada vez el ruido térmico, y esas celdas son una
+fuente de entropía. El mismo patrón se lee así de dos maneras, las celdas
+estables como identidad y las inestables como aleatoriedad, como
+mostraron Holcomb, Burleson y Fu con FERNS, al extraer de 512~bytes de
+SRAM en el encendido 128 bits aleatorios que superan los tests de rachas,
+de entropía aproximada y de frecuencia por bloques del
+NIST~\cite{holcomb_2009_powerup}. Guajardo \emph{et al.} dieron la primera
+PUF de SRAM intrínseca en FPGA y la metodología de distancias de Hamming
+intra e interdispositivo que hoy es la habitual para separar la huella
+del ruido~\cite{guajardo_2007_fpga}, y van der Leest \emph{et al.}
+cuantificaron la min-entropía del ruido de los patrones de arranque de
+SRAM comerciales y lo acondicionaron en semillas de 256 bits con
+entropía completa~\cite{vanderleest_2012_efficient}. El patrón se
+describe por su uniformidad (fracción de unos, idealmente la mitad), su
+unicidad (distancia entre dispositivos, idealmente la mitad de la
+longitud) y su fiabilidad, cuyo complemento, la tasa de bits erróneos
+intradispositivo entre encendidos de un mismo chip, no es nula ni
+siquiera en condiciones
+nominales~\cite{holcomb_2009_powerup, vanderleest_2012_efficient}. El uso
+como identidad corrige esos errores con un extractor difuso y datos de
+ayuda públicos; el uso como entropía los busca, y debe recordar que la
+mayoría estable la conoce cualquiera que haya leído el patrón una vez.
+Para el ESP32 no se encontró ninguna estimación revisada por pares de la
+min-entropía de arranque. La biblioteca abierta \texttt{esp32\_\allowbreak{}puflib}
+implementa una PUF de SRAM para la familia como componente de ESP-IDF,
+lee la memoria desde un stub de despertar del sueño profundo y guarda los
+datos de ayuda en la flash~\cite{stanicek_esp32_puflib}; y un hilo del
+foro informa de que la ROM de arranque ya ha escrito los primeros
+0x1320~bytes de SRAM1 y 0x6E0~bytes de SRAM2 cuando corre el código de la
+aplicación~\cite{esp32forum_wakestub}, de modo que quien lea debe usar
+regiones que la ROM no toca. Las dos fuentes de un chip son
+complementarias, no redundantes: el ruido del generador es continuo pero
+necesita sus inyectores alimentados, mientras que el patrón de la SRAM es
+de un solo uso, gratuito en el encendido, solo se renueva con un ciclo de
+alimentación y está dominado por su huella fija.
+
+\paragraph{Acondicionamiento y recolección.} El lema del hash residual de
+Impagliazzo, Levin y Luby acota cuánto se acerca a la uniformidad un hash
+2-universal de una fuente de min-entropía conocida, pero necesita una
+semilla uniforme~\cite{impagliazzo_1989_pseudorandom}, que un dispositivo
+escaso de entropía no tiene. En la práctica se usa una función
+criptográfica fija y su solidez se argumenta en términos computacionales:
+Dodis \emph{et al.} analizan cuándo las construcciones CBC-MAC, en cascada
+y HMAC actúan como extractores de aleatoriedad~\cite{dodis_2004_randomness},
+SP~800-90B las admite como acondicionadores aprobados
+(Sección~\ref{sec:soa_standards}), y HKDF divide la derivación de claves
+en un paso de extracción, que destila una clave pseudoaleatoria a partir
+de una entrada no uniforme, y un paso de expansión, que la
+estira~\cite{krawczyk_2010_hkdf}. Fusionar varias fuentes débiles tiene
+precedentes en dispositivos con recursos limitados. Pawlowski, Jara y
+Ogorzalek recolectan los bits menos significativos de sensores de
+temperatura, humedad y luz en nodos IoT, y los de luz dan unos
+7,9~bits por byte tras el ajuste a razón de 1,3~ms por byte,
+aproximadamente~\cite{pawlowski_2015_harvesting}; Zhang y Wu construyen
+una reserva de entropía que fusiona circuitos caóticos y sucesos del
+entorno en redes multisensor~\cite{zhang_2023_heterogeneous}; Foreman,
+Yeung y Curchod muestran cómo los extractores (Toeplitz, Trevisan) elevan
+la calidad medida de generadores comerciales con baterías
+ampliadas~\cite{foreman_2024_statistical}; y la revisión de Kietzmann,
+Schmidt y W\"ahlisch recorre las fuentes de radio, sensores, SRAM y
+jitter, los generadores y las pautas de diseño para el IoT con recursos
+limitados, y trata allí la escasez de entropía como un problema
+estructural~\cite{kietzmann_2021_guideline}. El \texttt{pico\_\allowbreak{}rand} del
+SDK del RP2040 es un caso real en silicio: como el bit del oscilador en
+anillo está autocorrelado cuando se muestrea deprisa, mezcla muestras del
+anillo (a lo sumo unos 100~kbit/s, separadas 10~$\mu$s), el tiempo y
+contadores de bus mediante un hash~\cite{rpi_forum_picorand}. A todos
+ellos se les aplican dos cautelas. La min-entropía se suma entre fuentes
+solo si son independientes, y fuentes que comparten dado, alimentación y
+temperatura no tienen por qué serlo; lo que garantiza la concatenación
+seguida de un hash sin esa hipótesis es solo la min-entropía de la mejor
+fuente. Y una salida resumida con un hash parece uniforme entre lo que
+entre, así que las baterías estadísticas sobre ella validan la
+construcción, no la entropía; el recolector de la
+Sección~\ref{sec:esp32_harvester} se lee a esa luz.
 
 \section{Núcleos simétricos para hardware con recursos limitados}
 \label{sec:soa_cores}
@@ -243,7 +499,7 @@ Para AES-128 (diez rondas~\cite{nist_2023_fips197}), el espacio de diseño
 va desde cauces segmentados totalmente desenrollados, orientados a la
 tasa de bits, hasta rutas de datos de 8 bits, orientadas al área: Good y
 Benaissa publican 124 slices y dos block RAM a 2,2~Mbit/s en una
-Spartan-II en un extremo y 25~Gbit/s en el
+Spartan-II en un extremo y 25~Gbit/s en una Spartan-III en el
 otro~\cite{good_2005_fastest}; el diseño compacto de Chodowiec y Gaj usa
 222 slices y tres block RAM~\cite{chodowiec_2003_compact}; y las
 realizaciones ASIC más pequeñas llegan a 2,4~kGE con una ruta de datos de
@@ -300,9 +556,16 @@ ATECC608B, a 0,90~\$ por unidad suelta~\cite{digikey_prices_2026}, ofrece
 AES-128, SHA-256/HMAC, ECDSA/ECDH sobre P-256, dieciséis ranuras de clave
 y una interfaz I2C, y su fuente de entropía cuenta con una validación del
 NIST según SP~800-90B, obtenida precisamente con osciladores en
-anillo~\cite{nist_esv_e46}. Dos de sus competidores no hacen ninguna
-referencia a SP~800-90 en sus hojas de datos; el tercero afirma que su
-generador está ``diseñado para cumplir'' la norma. La lección para este
+anillo~\cite{nist_esv_e46}; su propia hoja de datos solo dice que el
+generador está ``diseñado para cumplir'' SP~800-90A, B y C, y es ese
+certificado, no la hoja de datos, lo que cubre la
+fuente~\cite{microchip_atecc608b_ds}. El SE050 declara en su hoja de
+datos un generador conforme a SP~800-90B y SP~800-90A, y tiene una
+validación de algoritmo de su generador determinista pero ninguna de su
+fuente de entropía~\cite{nxp_se050_ds, nist_cmvp_3840}. Los otros dos no
+hacen ninguna referencia a SP~800-90 en sus hojas de
+datos~\cite{infineon_optiga_trustm_ds,
+st_stsafe_a110_ds}. La lección para este
 trabajo es dónde puede competir un diseño académico y dónde no: no en
 precio, donde un componente certificado cuesta menos de un euro, sino en
 la transparencia de la entropía, que es justo lo que un componente de
@@ -331,24 +594,29 @@ muestran por qué un dispositivo de seguridad no puede ignorar su entorno:
 una frecuencia inyectada en la alimentación engancha los anillos y
 eliminó el jitter de un microcontrolador seguro comercial, con lo que su
 espacio de claves pasó de $2^{64}$ a 3300~\cite{markettos_2009_frequency},
-y unos pocos cientos de microvatios de campo radiado sesgaron un
-generador de cincuenta anillos hasta que falló todos los
-tests~\cite{bayon_2012_contactless}; la defensa publicada combina el
+y un campo electromagnético aplicado sin contacto enganchó los cincuenta
+anillos de un generador en FPGA y controló el sesgo de su
+salida~\cite{bayon_2012_contactless}; la defensa publicada combina el
 filtrado de la alimentación con el mismo lazo de
-calibración~\cite{yang_2016_jssc}, y el envejecimiento del dispositivo
+calibración~\cite{yang_2016_jssc}. El envejecimiento del dispositivo
 por inestabilidad por polarización y temperatura y por inyección de
-portadores calientes degrada con los años los generadores mal
-temporizados, mientras deja intactos los bien temporizados.
+portadores calientes, que desplaza la frecuencia de un anillo y con ella
+un punto de funcionamiento calibrado en fábrica, es otra diferencia con
+la FPGA que este trabajo no aborda.
 
 El acceso al silicio es más abierto de lo que parece. La Universidad de
 Sevilla y el IMSE-CNM son miembros de Europractice~\cite{europractice_memberlist},
 cuya lista de precios académicos es pública: un bloque mini@sic cuesta
 3\,430~\texteuro{} en UMC~180~nm y 3\,691~\texteuro{} en TSMC~65~nm, y el
-SG13G2 de IHP se ofrece a 5\,110~\texteuro{}/mm$^2$, con una tirada
-gratuita para diseños de código abierto de menos de 2~mm$^2$~\cite{europractice_prices2026, europractice_minisic,
-ihp_openpdk}. El área de seguridad hardware del instituto ya ha llevado
+SG13G2 de IHP se ofrece a
+5\,110~\texteuro{}/mm$^2$~\cite{europractice_prices2026,
+europractice_minisic}; IHP anuncia además tiradas multiproyecto gratuitas
+para diseños de código abierto, sin publicar sus condiciones ni sus
+límites de área~\cite{ihp_openpdk}. El área de seguridad hardware del
+instituto ya ha llevado
 primitivas de osciladores en anillo desde FPGA Xilinx de la serie 7,
-evaluadas con SP~800-22 y SP~800-90B, hasta silicio de 65~nm
+evaluadas con SP~800-22 y
+SP~800-90B~\cite{rojas2022trngcapability}, hasta silicio de 65~nm
 caracterizado~\cite{imse_area_hwsec,
 martinez2022efficientropuf, ortega2024vlsi65nm, ortega2026ropuf65nm}, y
 ha fabricado antes circuitos criptográficos~\cite{mora2020trivium}. Las
@@ -357,9 +625,12 @@ síntesis --- IHP SG13G2, SkyWater SKY130, GlobalFoundries GF180MCU y la
 predictiva Nangate 45~nm --- vienen con vistas liberty, LEF y GDS, y la
 literatura compara este tipo de diseños en puertas equivalentes
 normalizadas a la NAND2 mínima de la biblioteca~\cite{ihp_openpdk_repo, skywater_pdk_cells, gf180mcu_pdk,
-nangate45, kaps2019lwc}, con la advertencia de que el área de síntesis
-lógica es una cota inferior que crece en un factor de 1,7 a 4,6 al pasar
-al área de núcleo tras el rutado.
+nangate45}, con la advertencia de que el área de síntesis
+lógica es una cota inferior: la propia documentación de SKY130 da una
+densidad de puertas tras el rutado de 160~kGates/mm$^2$ frente a una
+bruta de 266, una utilización de 0,60~\cite{skywater_pdk_cells}, de modo
+que en esa biblioteca el núcleo rutado ocupa unas 1,7 veces el área de
+las celdas.
 
 \section{Hueco que aborda este trabajo}
 \label{sec:gap}
@@ -369,30 +640,37 @@ embebida del jitter, el estudio comparativo de núcleos conformes a AIS,
 el COSO calibrado en dispositivos de la serie 7 y una implementación
 abierta sobre el mismo dado de la Basys~3 existen todos, y el propio
 grupo del instituto ha pasado de las FPGA de la serie 7 al silicio de
-65~nm con primitivas de osciladores en anillo. Lo que \emph{no se
+65~nm con primitivas de osciladores en anillo; existen también la
+entropía del arranque de la SRAM y recolectores de varias fuentes con un
+acondicionador criptográfico, en el RP2040 entre otros. Lo que \emph{no se
 encontró} en la literatura consultada, y lo que este trabajo se propone
 aportar de forma modesta pero verificable, es lo siguiente.
 
 \begin{enumerate}
 \item Una cifra de jitter por periodo para la Artix-7 XC7A35T en
 unidades absolutas, obtenida dentro del dispositivo con un método
-diferencial, con las componentes térmica y de parpadeo separadas y con su
+diferencial y con su
 incertidumbre declarada, dado que los coeficientes publicados para
-Artix-7 están en unidades del contador.
+Artix-7 están en unidades del contador. Lo obtenido es un rango para el
+suelo blanco del ruido de fase relativo de dos anillos, separado de una
+modulación determinista y no del ruido de parpadeo, con un estimador que
+yerra por arriba (Capítulo~\ref{ch:ch8_concl}).
 \item La cadena completa \emph{jitter medido $\to$ factor de calidad $\to$
 cota de min-entropía $\to$ divisor $\to$ umbrales de los tests de salud},
 aplicada a una plataforma y contrastada con los diez estimadores no
-i.i.d.\ de SP~800-90B y con los requisitos PTG.2 de AIS~20/31
+i.i.d.\ de SP~800-90B y con el umbral de min-entropía de la clase PTG.2
+de AIS~20/31
 \emph{versión~3.0}, que la mayor parte de la literatura anterior no pudo
-usar.
+usar; los demás requisitos de PTG.2 no se evalúan.
 \item Una caracterización según SP~800-90B del generador del ESP32 en sus
 estados de funcionamiento, y una comparación controlada, con la misma
 metodología, entre una fuente de caja blanca en FPGA y una comercial de
 caja negra.
 \item El uso de un microcontrolador de uso común, con sus propios
 aceleradores criptográficos, como oráculo independiente de un motor en
-FPGA, sobre un bus real, con pruebas de respuesta conocida, de
-interoperabilidad y de reto-respuesta.
+FPGA, sobre un bus real, con pruebas de interoperabilidad y de
+reto-respuesta; las pruebas de respuesta conocida quedan en simulación,
+porque el motor no admite ni clave ni semilla externas.
 \item Un motor de generación de claves de una sola primitiva --- AES para
 el acondicionamiento, la generación y la autenticación --- escrito como
 RTL portable, verificado contra vectores oficiales, sintetizado sobre una

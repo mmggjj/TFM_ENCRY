@@ -1,9 +1,9 @@
 \chapter{Verification}
 \label{ch:ch5_verification}
 
-% [DRAFT v1] Source material: rtl/tb/*, rtl/run_tb.py, analysis/ctr_drbg_ref.py,
-% analysis/verifica_top.py, firmware/verificador/, docs/mapa_registros.md.
-% FPGA bring-up section pending hardware.
+% Source material: rtl/tb/*, rtl/run_tb.py, analysis/ctr_drbg_ref.py,
+% analysis/verifica_top.py, firmware/verificador/, docs/mapa_registros.md,
+% docs/basys3.md, docs/decisiones_pendientes.md, results/run_tb_todos.log.
 
 \section{Strategy: vectors, simulation, independent verifier}
 \label{sec:verif_strategy}
@@ -14,23 +14,33 @@ model used to check it. The verification of this work therefore rests on
 three legs that do not share an implementation.
 
 \begin{enumerate}
-\item \textbf{Official vectors.} Every primitive is checked against the
-test vectors published with its standard: FIPS~197 and SP~800-38A for
-AES, RFC~4493 and the NIST example file for CMAC, and the CAVP response
-files for CTR\_DRBG (with and without derivation function, with and
-without reseed). These are known-answer tests and they settle
-correctness of the algorithm.
+\item \textbf{Official vectors.} AES and CMAC are checked in VHDL against
+the test vectors published with their standards: FIPS~197 and SP~800-38A
+for AES, and the four examples of RFC~4493 with its subkeys for CMAC.
+These are
+known-answer tests and they settle correctness of the algorithm. The
+CAVP response files for CTR\_DRBG (with and without derivation function,
+with and without reseed) cannot be applied to the VHDL as they stand:
+the hardware takes a fixed input of 384 bits of entropy and 128 of nonce
+with no additional input. They are applied to the reference model of the
+next item, and the VHDL is compared with that model.
 \item \textbf{Independent reference models.} A bit-exact model of the
 generator was written in Python with its own AES, derived from the
 standard without looking at the VHDL. It is validated against the CAVP
 vectors first, and only then used to generate expected values for the
-fixed input layout of the hardware and to recompute the tags of the
-system-level bench. Two implementations that agree are worth more than
-one that passes.
+fixed input layout of the hardware (51 sequences, one main and a batch
+of 50, each instantiated, generated twice, reseeded and generated again:
+153 outputs) and, at system level, to
+recompute from the seed the engine actually collected the key, the
+random output and the second key, and the tags. Two implementations that
+agree are worth more than one that passes.
 \item \textbf{An independent verifier in the loop.} On hardware the
-ESP32 recomputes with mbedtls, and with its own AES accelerator, every
-result the engine produces, so that the final check is performed by a
-third, unrelated implementation over a real bus.
+ESP32 reads the key in test mode and recomputes with mbedtls, and with
+its own AES accelerator, the authentication tag of every challenge the
+engine answers, so that the final check is performed by a third,
+unrelated implementation over a real bus. It has done so on the board:
+forty tags out of forty in each of three sessions \meas{}
+(Section~\ref{sec:bringup}).
 \end{enumerate}
 
 Two working rules apply throughout, both learned in the black-box study
@@ -57,7 +67,7 @@ because its symptom, a single failure at count~14 of each block, looked
 exactly like an algorithmic error.
 
 A second script, \texttt{gen\_drbg\_vectores.py}, drives the validated
-model through the sequence the hardware supports (instantiate with 32
+model through the sequence the hardware supports (instantiate with 48
 bytes of entropy and 16 of nonce, generate twice, reseed, generate) and
 emits a VHDL package of expected values; if the input layout of the
 hardware ever changes, that script is the only place to change it. A
@@ -67,27 +77,48 @@ validates itself against RFC~4493 before checking anything.
 \section{Testbenches and results}
 \label{sec:testbenches}
 
-All VHDL is simulated with GHDL~6 under a single runner that analyses the
+All VHDL is simulated with GHDL under a single runner that analyses the
 sources in dependency order and executes every bench, printing the
-simulator's output unfiltered. Table~\ref{tab:tb} summarizes the seven
-benches and their state at the time of writing.
+simulator's output unfiltered. Table~\ref{tab:tb} summarizes the thirteen
+benches and their result in the last complete run, 307 checks in all
+\simu{}. The benches that contain the whole engine do not simulate the
+rings of the product: the stage delay is ten times larger, for the reason
+given below, and the sampling ring keeps five stages so that the
+simulation does not take twice as long; the bench says so. The system
+bench also sets four generics away from the values of the product, and
+what it shows has to be read with them: a minimum divider of $2^{4}$
+instead of \kd{25}, so the refusal of a seed below the minimum is
+exercised with that minimum; a 4-bit request counter instead of 32 bits,
+so the saturation at $2^{32}-1$ itself is not exercised by any bench,
+only the same logic at $2^{4}-1$; a prescaler of 4 instead of 16 on the
+sampling ring, the product's prescaler being measured by the
+sampling-window bench; and a stream queue of 64~bytes instead of the 256
+of the board.
 
 \begin{table}[htbp]
 \centering
-\caption{Testbenches, what they check and their result (GHDL 6.0, VHDL-2008).}
+\caption{Testbenches, what they check and their result (GHDL 5.0.1,
+VHDL-2008; one run of the thirteen, 23 November 2026; whole-engine bench
+with the generics stated in the text).}
 \label{tab:tb}
-\small
-\begin{tabular}{@{}lp{9.2cm}c@{}}
+\footnotesize
+\begin{tabular}{@{}lp{8.4cm}c@{}}
 \toprule
 Bench & Checks & Result \\
 \midrule
-Ring oscillator & start/stop, $f = 1/(2N t_{pd})$, zero floor, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 4/4 \\
-I2C slave & addressing, foreign address, multi-byte write, repeated-start read & 14/14 \\
-AES-128 core & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 blocks); 1000-block chain & 6/6 \\
-AES-CMAC & RFC~4493 examples 1--4; repeatability & 5/5 \\
-CTR\_DRBG & instantiate, 2$\times$generate, reseed, counter, re-instantiate, refuse unseeded & 13/13 \\
-Health tests & healthy source, stuck, 70\,\% biased, stuck-at-complement, sticky/clear & 10/10 \\
-Whole engine & ESP32 sequence over I2C: id, seed (divider below minimum refused, divider frozen while busy), key, random register free of the key, 2 challenges, 2nd key, capture, key hidden & 18/18 \\
+Ring oscillator & start/stop, $f = 1/(2N t_{pd})$, zero floor, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 6/6 \\
+\ac{ERO} sampler & bits come out at every divider $2^{0}$ to $2^{4}$ and take both values (the ratio is checked by the sampling-window bench); the two ways of sampling (clock enable, or every edge of the sampling ring with the divider selecting the sample) give the same bit & 12/12 \\
+I2C slave & addressing, foreign address, multi-byte write, repeated-start read; bus under abuse: sub-filter glitches, stop and repeated start mid-byte, bytes after a foreign address, pointer across stop and wrap, master lost with SDA held, stop after read-ACK, 1~MHz and 100~kHz; 1 property, 1 cover & 49/49 \\
+AES-128 cores (both) & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 blocks); 1000-block chain; zeroization mid-block; one-round-per-cycle and 32-bit cores agree & 18/18 \\
+AES-CMAC & RFC~4493 examples 1--4 and subkeys K1, K2; repeatability & 7/7 \\
+CTR\_DRBG & instantiate, 2$\times$generate, reseed, counter, re-instantiate, refuse unseeded, zeroize at rest and mid-operation, saturating request counter; 50 more seeds (150 outputs) against the model & 19/19 \\
+Health tests & healthy source, stuck, 80\,\% biased, stuck-at-complement, sticky/clear, window-close strobe with its verdict, window restart on clear & 15/15 \\
+Whole engine & ESP32 sequence over I2C: id, divider at its reset value, seed (divider below minimum refused, divider frozen while busy, divider values out of range ignored and flagged), key, random register free of the key, 2 challenges, 2nd key, capture (seed never in the buffer), key hidden, exhaustion, zeroization and residues, continuous stream (400 consecutive bytes equal to the raw bits, credit, overflow, the three ways it stops); 14 properties, 8 covers & 92/92 \\
+Engine without cryptography & the source-only variant built for the first prototype board (Appendix~\ref{app:fpga}): cryptographic commands refused, source, health tests and stream unchanged; 4 properties, 2 covers & 21/21 \\
+Sampling window & the window between two samples is exactly $2^{n}$ periods of the sampling ring for every register value $n$ from 4 to 14, with the prescaler of the integrated circuit; out-of-range values refused & 47/47 \\
+Ring frequency meter & five frequencies with jitter, overflow and recovery, display, prescaler & 10/10 \\
+Board wrapper (Basys~3) & engine with its rings behind the board pins: displayed frequency of both rings, ring output gated by test mode & 4/4 \\
+Board wrapper (Basys~2) & source-only engine behind the pins of the first board: frequency meter, ring output, heartbeat, \ac{I2C} through the bidirectional pin & 7/7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -113,7 +144,22 @@ valid during the strobe; the second by loading the shift register and
 driving its first bit on the same falling edge that releases the
 acknowledge. A third defect was in the bench itself: initializing the
 register memory from the stimulus process created a second driver on the
-same signal and every conflicting bit resolved to unknown.
+same signal and every conflicting bit resolved to unknown. The slave is
+the only door into the chip, so the bench was later extended with the bus
+under abuse: spurious pulses shorter than the input filter in the middle
+of a byte, on SDA with SCL high (a start followed by a stop, if not
+filtered) and on SCL in its low phase; a stop and a repeated start in the
+middle of a byte; bytes sent after a foreign address; the pointer
+surviving a stop and wrapping at the end of the map; a master that
+disappears with the clock stopped while the slave is holding SDA low in
+its acknowledge; a master that issues a stop after acknowledging a read
+byte, which \ac{I2C} itself makes impossible when the next byte starts
+with a zero because the slave is holding the line; and the bus at
+1~MHz and 100~kHz with a 20~MHz system clock. The bench counts the write
+strobes to the register bank, so no aborted transaction may write, and a
+property checked at every clock states that the slave never drives SDA
+while idle. The bus-hang guard releases the line in the configured number
+of cycles in both stuck cases, and nothing abnormal writes.
 
 \paragraph{Health tests.} The ``healthy'' source of the first bench, a
 shift register seeded with a single one, started with a run of 27 zeros
@@ -136,22 +182,77 @@ system bench, which drives almost a millisecond of I2C traffic, did not
 finish in twenty minutes of CPU: every ring transition costs two random
 draws in the jitter model. In that bench alone the stage delay is set ten
 times larger, with the same relative jitter, and this is stated in the
-bench. The eighteen checks pass, and the key, the two challenges and their
-tags are written to a file that \texttt{verifica\_top.py} checks: both
-tags equal the CMAC recomputed by the independent Python AES, the
-readable random-output register contains the key in neither of its
-halves, and two generations give different keys. This is the first point at which a key born from
+bench. Its checks pass, and the collected seed, the key, the random
+output, the two challenges and their tags are written to a file that
+\texttt{verifica\_top.py} checks: both tags equal the CMAC recomputed by
+the independent Python AES; the key, the random output and the second
+key equal the first, second and third generations of the reference
+model instantiated with that seed (384 bits of entropy and 128 of
+nonce, the key being the upper half); the readable random-output
+register contains the key in neither of its halves; and two generations
+give different keys. Flipping one bit of the dumped seed makes the three
+generation checks fail. This is the first point at which a key born from
 ring-oscillator noise, conditioned, generated and used to authenticate,
 is confirmed by an implementation that shares nothing with the VHDL.
-Two of the eighteen checks were added when two obligations that the
+Several of the checks were added when three obligations that the
 register map had placed on the host were moved into the hardware: a seed
-command issued with the divider below its minimum is now refused, and a
-write to the divider register while a command is running is ignored. A
+command issued with the divider below its minimum is now refused, a
+write to the divider register while a command is running is ignored, and
+a divider value outside the admitted range is ignored and raises the
+rejection bit of the diagnostic register. A
 rule that only the documentation enforces is a rule that a careless host
-breaks; the bench now exercises both. The bench also had to be told to
-stop: with the rings running after reset, a simulation whose stimulus has
+breaks; the bench now exercises the three. The security rules of the
+sequencer are also written as PSL properties inside the bench, checked
+on every clock of the whole simulation rather than only at the steps
+that provoke them: no generation and no seeding while an alarm is
+raised, no seed collection before the start-up test, no generation with
+the request counter exhausted, capture and seeding mutually exclusive
+and capture only in test mode, the continuous stream never active while
+a seed is collected and started only in test mode with the engine idle,
+no authentication without a valid key, zeroization clearing the key in
+the same cycle, and the engine never staying busy forever; cover
+directives confirm that the bench
+reaches the states those properties guard. A mutant of the sequencer
+that drops the alarm check on key generation is caught both by the step
+that expects the refusal and by the property. The bench also had to be
+told to stop: with the rings running after reset, a simulation whose stimulus has
 finished never runs out of events, and the first re-run consumed
 forty-five minutes of CPU after its last check had passed.
+
+\paragraph{Sampling window: an independent review.} After the divider
+rules of November 2026 (rings of eleven and thirteen stages, a
+divide-by-sixteen prescaler on the sampling ring, and a minimum, a reset
+value and a maximum for the divider; Section~\ref{sec:ihp_ring11}) the
+\ac{RTL} was reviewed by a separate session that was given the code and
+the requirement, not the conclusions of the work. The requirement is
+that the window between two samples be $2^{n}$ periods of the sampling
+ring for the register value $n$ (\texttt{CFG\_KD}, $K_D = 2^{n}$), and
+that nothing seed below the minimum divider. The review found that it
+holds \simu{}, with this reach: the window was measured by counting
+periods for $n = 4$ to 19; from 20 to 26, where a whole window cannot be
+simulated in reasonable time, what was checked is the mask of the
+counter and the count at which the sample strobe fires, with the count
+forced, not the window itself. But the
+review found three defects of medium severity and one hole in the
+benches. The meter firmware of Section~\ref{sec:lecturas_firmadas} wrote
+a divider below the new minimum before seeding, so on the integrated
+circuit it would never have seeded (it failed closed); it now seeds with
+the reset value. A register value of 32 or more was truncated to five
+bits, so 32 was taken as 0 without any flag; the whole byte is now
+compared. And values from 0 to 3, below the prescaler, were accepted
+while the real window was $2^{4}$; they are now refused. The hole was
+that no bench measured the window: a mutant with half the window raised
+no failed check in the system bench (the 88 checks it reached passed)
+and only made it hang in the stream step, a side effect of the doubled
+bit rate. A new bench counts the periods of the sampling ring
+between consecutive samples for every $n$ from 4 to 14 and checks the
+refusals (47 checks), and the system bench gained the out-of-range
+cases; above $n = 14$ no bench of the repository measures the window,
+and the evidence is that of the review. The bitstream measured on the board predates these corrections
+and differs from the corrected design only for out-of-range writes. What
+the review left open is recorded for the physical implementation: there
+is no timing constraint for the divided clock yet, and the first window
+after a change of divider is shorter, which affects at most one bit.
 
 \section{ESP32 verifier firmware}
 \label{sec:firmware}
@@ -161,35 +262,379 @@ talks to the engine through the register map of Appendix~\ref{app:regs}
 and offers a console over the UART. Its commands map onto the
 verification plan: \texttt{id} reads identification and status;
 \texttt{sembrar} and \texttt{generar} issue the long commands and poll
-the busy flag; in test mode \texttt{generar} also reads back the key
-(provisioning) and checks that it equals the first sixteen bytes of the
-generated block; \texttt{reto N} performs $N$ challenge-response rounds
+the busy flag, and after each one check the rejection bit, so that a
+refused command is never taken for a quick one; in test mode
+\texttt{generar} also reads the key, which is how the verifier is
+provisioned; \texttt{reto N} performs $N$ challenge-response rounds
 with nonces from \texttt{esp\_random()}, recomputing each tag with
 \texttt{mbedtls\_cipher\_cmac} and counting matches and mismatches, the
 mismatches being printed in full; \texttt{crudo N} dumps $N$ chunks of
 raw bits and \texttt{esp N} dumps blocks of the ESP32's own generator, both
 in the framed, CRC32-protected format of the ESP32 capture campaigns
 (Section~\ref{sec:esp32_90b}), so that the same statistical pipeline
-processes the two sources. CMAC is
+processes the two sources. The commands added for the board are
+\texttt{kd}, which reads or writes the divider register and reports
+whether the engine took the value; \texttt{flujo N}, which empties the
+continuous stream of Section~\ref{sec:cdc} into numbered frames and
+declares the string valid only if it arrived whole; \texttt{crudoq},
+which captures a chunk like \texttt{crudo} but keeps the bus silent while
+the capture lasts; \texttt{aleatorio N}, which dumps random blocks;
+\texttt{borrar}, which clears the health alarms; and \texttt{cero}, the
+zeroization. The time-outs follow the divider, since a seeding at a
+large divider takes seconds. CMAC is
 not enabled by default in the ESP-IDF build of mbedtls and is switched on
 in the project defaults; the console runs at 115\,200~baud, the only rate
 that proved reliable with the board's USB bridge in those campaigns,
 and the log level is set to errors only so that log lines cannot corrupt
-the frames. The firmware builds with ESP-IDF~5.3.2 into a 255~kB image;
-running it awaits the hardware.
+the frames. The register access layer (map, command issue, real-time
+polling, rejection check) is a component shared with the application of
+Section~\ref{sec:lecturas_firmadas}. The firmware builds without
+warnings with ESP-IDF~5.3.2 on the author's machine and with 5.3.5 in the
+continuous-integration workflow, and it is the firmware that drove the
+engine on the board in every measurement of Section~\ref{sec:bringup} and
+of Chapter~\ref{ch:ch7_results}.
+
+One finding concerns the firmware as an instrument. An independent review
+of the first night on the board noticed that every duration in the logs
+was a multiple of 10~ms: the local build configuration had kept a 100~Hz
+operating-system tick, and the 1~kHz of the project defaults had never
+been applied. The access layer tolerates it, and no measurement was
+affected except in that resolution: until 18 November 2026 the durations
+reported by the verifier, and the ring frequencies derived from them,
+are quantized to 10~ms, and they are quoted with that resolution; from
+that date the tick is 1~ms.
+
+Both firmwares are also exercised on the host, without a board: the
+bench includes the firmware source unchanged, links it against a software
+model of the engine that implements the register map as a second,
+independent reading of the specification, and runs the sequence with a
+real mbedtls~3.6 tree (3.6.2 both in the ESP-IDF~5.3.2 of the author's
+machine and in the continuous-integration workflow). The model's AES and
+CMAC
+validate themselves against FIPS~197 and RFC~4493 before any check, so
+that a model fault cannot pass for a firmware fault. The bench checks
+counts, not just outcomes: that a rejected command is not mistaken for a
+quick one, that a bus failure is counted as a bus failure and not as a
+cryptographic mismatch, that nothing reaches the PC while an alarm is
+raised, and that the timeouts last what they claim.
+
+\section{The engine in a product: signed readings}
+\label{sec:lecturas_firmadas}
+
+The verifier judges the engine; a second firmware \emph{uses} it, as a
+product would. The product is a generic energy meter on an ESP32-C3, the
+RISC-V part of the small Wi-Fi devices, with the engine on the same
+\ac{I2C} bus as the meter's own peripherals. Two uses, both fed by the
+engine's entropy. First, the device generates its own ECDSA P-256 key
+pair: mbedtls draws the private scalar through a callback that issues
+one \texttt{aleatorio} command per 32-byte block, two or three blocks
+per key in the recorded runs (two in the emulator and on the module in
+October, three in the host bench of 22 November), and the private key never leaves the chip; what leaves is the public key, or
+a PKCS\#10 certificate request signed with it, which is what a device
+would send to the manufacturer's CA so that nobody, the manufacturer
+included, ever holds the private key. Second, every reading (device
+identifier, sequence number, time, accumulated energy, power; 24~bytes)
+is signed, so that whoever receives it checks integrity and origin
+without trusting the transport or the offline store in between.
+
+Three decisions carry the design. The key's strength is bounded by what
+generated it: the engine's \ac{DRBG} is CTR\_DRBG with AES-128, 128~bits
+of security, which is what P-256 offers, so a larger curve would gain
+nothing from this seed. Signatures use deterministic ECDSA
+(RFC~6979): the per-signature nonce is derived from the key and the
+message, two signatures of the same reading are identical (the bench
+checks it), and a poor generator at signing time cannot leak the key,
+which is the classic ECDSA failure; the engine is therefore needed only
+to \emph{create} the key, and a meter whose engine is in alarm keeps
+signing with the key it has, while it cannot make a new one. And the
+entropy callback fails closed: if the engine rejects the command
+(unseeded, alarm, start-up test not passed) or the bus fails, mbedtls
+aborts and no other source is substituted; a failed generation leaves the
+previous key in service and never a half-made one. A monotonic sequence
+number lets the receiver reject replayed readings, which a valid
+signature alone does not.
+
+The host bench runs the meter firmware against the engine model and
+hands its console output to a PC script that verifies the frames with a
+different library (\texttt{cryptography}, not mbedtls). The bench plants
+one tampered reading (one bit of the energy field) and one replayed
+reading among ten valid ones, and the script must find exactly those
+two; the certificate request must parse, carry a valid self-signature and
+the device's public key. All checks pass. The firmware builds with
+ESP-IDF~5.3.5 for the ESP32-C3, and it also runs on Espressif's QEMU
+emulation of that chip: without an engine every command fails closed, and
+with the engine model linked into the firmware in place of the \ac{I2C}
+driver (a build option, never for a board) the whole sequence runs on the
+emulated RISC-V core with the target build of mbedtls, and the PC script
+accepts its frames; the public key the emulated chip produces equals the
+one the host bench produces from the same engine blocks. The emulator
+run is of 27 October 2026, with the engine model at register-map
+version 0x02.
+
+A build with the same model option was then flashed onto a real ESP32-C3
+module over USB-serial (28 October 2026, model at version 0x03) and
+driven by a script that logs every line and times every command. Neither
+run has been repeated with the current firmware (version 0x04, 512-bit
+seed, bounded re-arming); the host bench has. On the silicon, seeding
+the model takes tens of milliseconds,
+generating the P-256 key and storing it takes about 0.16~s, a certificate
+request 0.2~s and one signed reading about 0.2~s including the serial
+round trip; the private key survives physical resets (the enable pin
+pulsed from the serial adapter), the boot counter kept in flash advances
+on each, the public key read back after a reset is unchanged and the
+first reading of the next boot exceeds the last one of the previous boot
+in sequence, so the anti-replay rule holds across real power cycles. Two
+things the emulator could not show appeared at once. The console read its
+commands with a buffered-line call over a non-blocking input, and over a
+real USB-serial link the bytes of a command arrive with gaps: a single
+command reached the firmware as four fragments, each rejected as unknown;
+the console now accumulates characters up to the line end. And the new key
+generated after forgetting the old one was identical to it, because the
+engine model draws its ``randomness'' from a seedless pseudo-random
+function that repeats the same sequence at every boot; this is not a
+defect of the meter but the live demonstration of what the engine is for.
+The PC verifier accepts every frame of the board log. The engine itself
+has since run on a board with the verifier
+(Section~\ref{sec:bringup}); what has not been done is to connect this
+meter to the real engine: it has only run against the model, whose
+entropy is an AES with a fixed seed, not a measurement.
 
 \section{FPGA bring-up}
 \label{sec:bringup}
 
-% [PENDING HARDWARE] Vivado project, constraints (DONT_TOUCH, pblocks,
-% ALLOW_COMBINATORIAL_LOOPS, set_disable_timing), first bitstream: do the
-% rings oscillate and at what frequency; then the ESP32 in the loop.
-Pending hardware. The constraints the rings need are known from the
-literature and from the vendor documentation --- \texttt{DONT\_TOUCH} on
-the cells and nets of each ring (unlike \texttt{KEEP}, it survives
-implementation), \texttt{ALLOW\_COMBINATORIAL\_LOOPS} on one net of each
-loop, \texttt{set\_disable\_timing} to break the loop for static timing
-analysis, and one placement block per ring so that identical rings are
-neither merged nor placed side by side --- and the first bitstream has a
-single purpose: to read the frequency counters and confirm that every
-ring oscillates. Nothing about entropy is claimed before that.
+% Sources: docs/basys3.md ("Implementación con Vivado", "Frecuencias de los
+% anillos", "El motor entero con el ESP32", "Colocación fija", "19-11-2026"),
+% docs/decisiones_pendientes.md, results/basys3_o5_consola_*.txt,
+% results/basys3_esquema, results/basys3_plano. Utilization and timing of the
+% final bitstream (19-11): results/basys3_final_1911/util_hier.rpt and
+% timing.rpt (copied from synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/,
+% whose .bit has the SHA-256 3affc2f5...9659 that docs/basys3.md gives for
+% the final bitstream).
+The complete engine runs on a Digilent Basys~3 board, whose \ac{FPGA} is
+an Artix-7 XC7A35T, with the ESP32 of Section~\ref{sec:firmware} on its
+\ac{I2C} bus at 400~kHz (two wires and ground to a board connector, with
+the pull-ups of the pins). A board switch is the test pin. This section
+reports the implementation, the ring frequencies and the functional
+result; the entropy campaign on the same board is in
+Section~\ref{sec:campaign}. A first prototype had run a few days earlier
+on the only board then at hand, a Basys~2, where only the entropy source
+fits; what it taught is used below, and the two boards are compared in
+Appendix~\ref{app:fpga}.
+
+\paragraph{Flow and ring constraints.} The design is implemented with
+Vivado~2025.2 on Linux, from a script and without a project, so that a
+bitstream is reproduced by one command. The rings need four constraints,
+known from the literature and from the vendor documentation:
+\texttt{DONT\_TOUCH} on the cells of each ring (unlike \texttt{KEEP}, it
+survives implementation), \texttt{ALLOW\_COMBINATORIAL\_LOOPS} on the nets
+of each loop, \texttt{set\_disable\_timing} to break the loop for static
+timing analysis, and one placement block per ring, apart from each other
+and with the rest of the logic excluded, so that the rings are neither
+merged nor placed side by side. The output of each ring is declared as a
+clock. Two wrappers of the same engine are built: the normal one drives
+the four-digit display with the ring frequency meter, and the
+\emph{quiet} one has neither display nor meter and is the one closest to
+the integrated circuit; every entropy measurement uses the quiet wrapper,
+because the logic attached to the rings changes their phase noise
+(Section~\ref{sec:campaign}).
+
+\paragraph{Three things had to be fixed before the design met timing.}
+First, the rings were not routed. Each placement block enclosed its ring
+in two slices and also confined the routing; inside two slices there are
+no tracks to close the loop, and ten connections were left unrouted. The
+block now fixes only the placement. Second, the clock domain of the
+sampling ring did not close at the real frequency. With five stages in
+the sampling ring RO2 and seven in the sampled ring RO1, RO2 ran at
+357.8~MHz \meas{}, and the critical path of its domain, from the sample
+strobe of the \ac{ERO} to the write enable of the capture memory, takes
+3.3 to 3.9~ns; with seven and nine stages RO2 still ran at 293~MHz
+\meas{}. The board wrapper therefore uses eleven stages in RO2 and
+thirteen in RO1. Third, the logic that closes the window of the
+proportion test did not meet the 100~MHz system clock ($-0.26$~ns over
+thirteen logic levels): it subtracted the count from the window size
+before comparing. The two comparisons were rewritten against constants,
+which is the same condition, and because this is a health test the
+equivalence was not taken on trust: an independent review enumerated the
+two conditions over 34\,236\,958 cases, co-simulated the old and the new
+block with thirty sets of generics without a single difference, with two
+mutants caught, and proved them equivalent formally for small generics
+\simu{}.
+
+\paragraph{A ring must be checked in the implemented netlist.} On the
+Basys~2 the first bitstream had no rings at all: the tools had collapsed
+the inverter chain, and it was found only by reading the implemented
+netlist (Appendix~\ref{app:fpga}). On the Basys~3 the build script therefore
+lists, after routing, every cell of both rings with its site and the
+state of every net of the loop, and stops if the ring clocks do not exist
+after synthesis. That listing showed something the constraints had not
+prevented: Vivado had packed the inverters of RO2 two by two into the two
+outputs of the same six-input \ac{LUT}, a placement optimization that
+\texttt{DONT\_TOUCH} does not forbid, while RO1 was left alone. With one
+\ac{LUT} per stage, each fixed to its site and to its position in the
+slice, the same eleven-stage RO2 runs at 207~MHz instead of 130~MHz
+\meas{} (Table~\ref{tab:ringfreq}). The fixed stage placement is the
+default since 18 November 2026 and is the configuration of the final
+bitstream; it fixes the \acp{LUT} of the rings, not the routing between
+them nor the sampling flip-flop.
+
+\begin{table}[htbp]
+\centering
+\caption{Ring frequencies on the Basys~3 \meas{}. Display: the embedded
+frequency meter, one count in 640~$\mu$s, $\pm0.1$~MHz of reading and
+$\pm50$~ppm of the board oscillator; the values were read by eye, and no
+file records them. Stream: number of bits times $K_D$ over the duration
+reported by the ESP32, in steps of 10~ms until 18 November ($\pm0.12\,\%$
+at \kd{13}) and of 1~ms afterwards.}
+\label{tab:ringfreq}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.4cm}rr>{\raggedright\arraybackslash}p{4.4cm}@{}}
+\toprule
+Stages RO2 / RO1, placement & RO2 (MHz) & RO1 (MHz) & Method \\
+\midrule
+5 / 7, one block per ring & 357.8 & 291.8 & display \\
+7 / 9, one block per ring & 293 & --- & stream \\
+11 / 13, one block per ring (inverters of RO2 merged) & 130.0 & not measured & stream, three dividers within $\pm0.06\,\%$ \\
+11 / 13, fixed stages, normal wrapper & 207.2 & 167.2 & display; 207.0 by stream \\
+11 / 13, fixed stages, quiet wrapper & 205.0--205.2 & --- & stream \\
+11 / 13, final bitstream (quiet) & 204.4 & --- & stream of $10^6$ bits at \kd{19} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The frequencies are the first result and they were read before anything
+else: a ring removed by the tools, or two rings locked to each other,
+would otherwise be indistinguishable from a working source. Two readings
+of the table matter later. The jump from 293 to 130~MHz does not follow
+the stage count, which is how the merged inverters were found. And the
+measured ratio of the two rings with fixed stages is 1.24, against
+$13/11 = 1.18$ from the stage count: the routing between stages weighs as
+much as the \acp{LUT}, so on an \ac{FPGA} the period of a ring has to be
+measured, not derived.
+
+\paragraph{The timing constraint of the sampling ring follows the
+measurement.} A timing failure in the divider of the \ac{ERO} would look
+like randomness, so the constraint on RO2 is not left as an estimate. It
+is 4.5~ns, and for the quiet wrapper the script compares the longest
+path of that domain with 0.9 times the measured period, 4.88~ns, and
+stops if it is longer. The check stopped one build: with the maximum
+divider of the integrated circuit, $2^{26}$, which on the board, where
+the sampling ring has no prescaler, means a 26-bit counter (in the
+integrated circuit the counter has 22 bits behind the prescaler), the
+path was 4.407~ns, above the 4.392~ns allowed; the board wrapper keeps a
+24-bit counter (maximum divider $2^{24}$), with which the path is
+3.98~ns.
+Table~\ref{tab:impl} gives the utilization and the timing of that final
+bitstream, the one every measurement of 22 November was taken with.
+
+\begin{table}[htbp]
+\centering
+\caption{Implementation of the complete engine on the XC7A35T: final
+bitstream of 19 November 2026 (quiet wrapper, fixed stage placement,
+routed design, Vivado~2025.2 reports). The normal wrapper of 17 November,
+with display and frequency meter, took 4\,011 \acp{LUT} (19\,\% of the
+device) and 4\,561 flip-flops (11\,\%). No block RAM and no DSP block is
+used: the capture memory and the stream queue are distributed RAM. The
+rows add up to less than the total: the registers and the sequencer of
+the top level (8 \acp{LUT} and 1\,066 flip-flops) have no row, and
+neither do the small blocks that the hierarchical report, three levels
+deep, does not list (65 \acp{LUT} and 41 flip-flops by difference).}
+\label{tab:impl}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Block & \acp{LUT} & Flip-flops \\
+\midrule
+CTR\_DRBG & 1\,629 & 2\,225 \\
+AES-128 core, 32-bit datapath & 647 & 266 \\
+AES-CMAC & 388 & 523 \\
+\ac{I2C} slave & 453 & 86 \\
+Health tests & 423 & 86 \\
+Capture buffer (96 \acp{LUT} as RAM) & 158 & 44 \\
+Stream queue (48 \acp{LUT} as RAM) & 115 & 55 \\
+\textbf{Complete engine} & \textbf{3\,886} & \textbf{4\,392} \\
+\midrule
+Clock & Constraint & Worst slack (setup / hold) \\
+\midrule
+System, 100~MHz & 10~ns & $+1.160$ / $+0.023$~ns \\
+RO2, eleven stages & 4.5~ns & $+0.524$ / $+0.054$~ns \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:esquema} is the engine as Vivado elaborates it, block for
+block the data path of Figure~\ref{fig:engine}, and
+Figure~\ref{fig:plano} is where the routed design sits in the device: the
+engine in the upper left corner, RO2 just below it and RO1 further down,
+each alone in its block.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{basys3_esquema_motor.pdf}
+\caption{Block schematic of the engine as elaborated by Vivado (quiet
+wrapper, 18 November 2026, before the divider limits of 19 November,
+which do not change the blocks). From the bottom: the two rings, the
+\ac{ERO} sampler with its reset synchronizer, the bit clock-domain
+crossing and the capture buffer; health tests and stream queue; the
+\ac{I2C} slave; and the single 32-bit AES core shared by the CTR\_DRBG
+and the AES-CMAC block. Signal names are those of the \ac{RTL}.}
+\label{fig:esquema}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{basys3_plano.pdf}
+\caption{Placement of the routed design in the XC7A35T (quiet wrapper,
+fixed stage placement, 18 November 2026, before the changes of 19
+November). Each dot is a cell, coloured by block (legend in Spanish, as
+generated; the numbers are cells); the stars are the stages of the two
+rings, RO2 (\texttt{ro2}, eleven stages) and RO1 (\texttt{ro1},
+thirteen), each in its own placement block, away from the logic.}
+\label{fig:plano}
+\end{figure}
+
+% FOTO DEL MONTAJE (Basys 3 + ESP32): pendiente, la hace Mario
+
+\paragraph{The engine with the ESP32 as oracle (O5).} The functional
+sequence was run in three sessions, on three different implementations:
+17 November (free placement), 18 November (fixed stages) and 19 November
+(final bitstream) \meas{}. In each one the verifier reads the
+identification (complete engine, version 0x04, start-up test passed),
+sets the divider, seeds --- the 512-bit seed is accepted only after its
+proportion window closes clean ---, generates a key and reads it in test
+mode, and runs twenty challenge-response rounds; then it zeroizes the
+engine, reads the status to check that neither the seeded flag nor the
+key flag remains (in the first two sessions; the console of the third
+has no status reading between the zeroization and the new seeding),
+seeds and generates again, obtains a different key, and runs twenty more
+rounds. In the
+three sessions \textbf{the forty tags computed by the hardware equal the
+forty that \texttt{mbedtls\_cipher\_cmac} computes on the ESP32}, with no
+cryptographic mismatch and no bus error. The random blocks requested in
+between arrive with a correct CRC (four per session in the first two).
+The first two sessions seeded at \kd{16} (\texttt{CFG\_KD} $= 16$), the
+working divider at the time; the third at \kd{19}, the divider that the
+jitter measurement of Section~\ref{sec:campaign} requires, which is also
+the minimum and the reset value of the final bitstream. That session
+exercised the divider rules on the board: after configuration the
+register reads 19; with \kd{18} the seed command is refused and the
+rejection bit rises; with \kd{19} it is accepted; and writing 25, above
+the maximum of the board wrapper, leaves the register at 19 and raises
+the rejection bit.
+
+What this run is, and what it is not, should be stated. It is the
+integration of the \ac{FPGA} and the ESP32 with the ESP32 as an
+independent judge of every tag, over a real bus, with keys born from the
+noise of the rings. On the board it verifies the \ac{AES} core (the same
+one the generator uses, since the core is shared), the \ac{CMAC}, the key
+register, the \ac{I2C} slave and the sequencer. It does not verify the
+CTR\_DRBG: the ESP32 reads the key and recomputes the tag from it, so the
+key is taken as data, not predicted, and a generator with a wrong
+derivation or update would pass the same forty rounds. It is not a
+known-answer test either: the register map offers no way to load a
+known key or a known seed, by design, so the generator is verified in
+simulation, where the reference model validated on the \ac{CAVP} vectors
+predicts the key from the seed the engine collected
+(Section~\ref{sec:testbenches}), and not on the hardware. Nothing about
+entropy follows from it: a generator seeded with a constant would pass
+the same forty rounds. That is the subject of
+Section~\ref{sec:campaign}.

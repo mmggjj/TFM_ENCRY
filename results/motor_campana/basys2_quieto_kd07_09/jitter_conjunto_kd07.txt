@@ -1,0 +1,2 @@
+kd07_trozos.npz: 489 trozos, 1001472 bits, CFG_KD 7, fraccion de unos 0.5170
+ajuste conjunto (nu por trozo, M = 1..30): Q por muestra 2.0977e-03; por periodo de ro2 1.6388e-05; residuo medio 7.849e-04 frente a ruido binomial 1.100e-04 (7.1 veces)

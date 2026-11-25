@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_campana_90b_trozos_bel/entropia90b/kd11_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_campana_90b_trozos_bel/entropia90b/bits/kd11.bits 1",
+   "dateTimeStamp" : "20261118054623",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_campana_90b_trozos_bel/entropia90b/bits/kd11.bits",
+   "sha256" : "b45c8b5fcac2bae9a178cb29967d0c88ca9f3a78edac06f594ac233fe2a063db",
+   "testCases" : [
+      {
+         "hOriginal" : 0.98048840807431359,
+         "mcvEstimateMode" : 507302.0,
+         "mcvEstimatePHat" : 0.50552256058673473,
+         "mcvEstimatePU" : 0.50680813669204927,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 1.0,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.98537395122266103,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.82730180954285581,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.69504332792112056,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.87737235456059548,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99337971926036217,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99732365326731509,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.74535519947291429,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.98131805893201152,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.69504332792112056,
+         "hOriginal" : 0.69504332792112056,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

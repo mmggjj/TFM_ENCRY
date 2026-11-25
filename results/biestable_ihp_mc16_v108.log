@@ -1,0 +1,38 @@
+sf125_v108_mm uno_buf 5 etapas rep 0: periodo 501.6 ps, modulacion 0.01 ps, hueco de fase max 0.0044, 621 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5108; 0.4059/0.5108
+  AVISO nudo 5: bordes ff 24, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 1: periodo 498.8 ps, modulacion 0.01 ps, hueco de fase max 0.0099, 620 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5155; 0.4641/0.5155
+  AVISO nudo 5: bordes ff 10, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 2: periodo 486.9 ps, modulacion 0.01 ps, hueco de fase max 0.0057, 621 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5039; 0.4113/0.5039
+  AVISO nudo 5: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 3: periodo 501.9 ps, modulacion 0.01 ps, hueco de fase max 0.0078, 627 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5096; 0.4601/0.5096
+  AVISO nudo 5: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 4: periodo 493.9 ps, modulacion 0.01 ps, hueco de fase max 0.0044, 629 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5036; 0.4315/0.5036
+  AVISO nudo 5: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 5: periodo 486.5 ps, modulacion 0.01 ps, hueco de fase max 0.0117, 612 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 0.3385/0.4993; 0.3385/0.4993
+sf125_v108_mm uno_buf 5 etapas rep 6: periodo 500.0 ps, modulacion 0.01 ps, hueco de fase max 0.0054, 628 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.4995; 0.3617/0.4995
+  AVISO nudo 5: bordes ff 16, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 7: periodo 489.8 ps, modulacion 0.01 ps, hueco de fase max 0.0094, 621 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5129; 0.4260/0.5129
+  AVISO nudo 5: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 8: periodo 508.2 ps, modulacion 0.01 ps, hueco de fase max 0.0050, 632 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5031; 0.4026/0.5031
+  AVISO nudo 5: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 9: periodo 495.7 ps, modulacion 0.01 ps, hueco de fase max 0.0083, 641 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5109; 0.4650/0.5109
+  AVISO nudo 5: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 10: periodo 489.7 ps, modulacion 0.01 ps, hueco de fase max 0.0081, 633 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 0.4338/0.5051; 0.4338/0.5051
+sf125_v108_mm uno_buf 5 etapas rep 11: periodo 501.5 ps, modulacion 0.01 ps, hueco de fase max 0.0027, 628 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5063; 0.4487/0.5063
+  AVISO nudo 5: bordes ff 8, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 12: periodo 487.7 ps, modulacion 0.01 ps, hueco de fase max 0.0055, 631 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5139; 0.4078/0.5139
+  AVISO nudo 5: bordes ff 14, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 13: periodo 502.4 ps, modulacion 0.01 ps, hueco de fase max 0.0388, 632 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5102; 0.3795/0.5102
+  AVISO nudo 5: bordes ff 4, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 14: periodo 497.6 ps, modulacion 0.01 ps, hueco de fase max 0.0039, 632 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.4982; 0.4093/0.4982
+  AVISO nudo 5: bordes ff 10, ideal 2 (deberian ser 2)
+sf125_v108_mm uno_buf 5 etapas rep 15: periodo 494.6 ps, modulacion 0.01 ps, hueco de fase max 0.0090, 630 s; P(1) biestable / ideal por nudo (bordes; ponderada): n5 nan/0.5067; 0.4161/0.5067
+  AVISO nudo 5: bordes ff 6, ideal 2 (deberian ser 2)
+
+CSV: /home/mmggjj/workspace/TFM_ENCRY/results/biestable_ihp_mc16_v108.csv
+
+P(1) ponderada por el tramo de fase de cada muestra (no necesita bordes limpios)
+
+| caso | montaje | n | periodo ps | modulacion ps | P(1) biestable (min-max) | ideal VDD/2 (min-max) | biestable - ideal (min-max) | H cota peor (biestable) | bordes ff max |
+|---|---|---|---|---|---|---|---|---|---|
+| sf125_v108_mm | uno_buf 5 et. | 16 | 496.0 | 0.01 | 0.3385-0.4650 | 0.4982-0.5155 | -0.1608--0.0459 | 0.5962 | 24 |

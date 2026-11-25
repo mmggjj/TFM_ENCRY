@@ -1,0 +1,4 @@
+results/motor_campana/basys3_jitter_kd00_02_normal/kd00_trozos.npz: conjunto M=1..1000: Q/muestra 2.7750e-05, por periodo de ro2 2.7750e-05, residuo/ruido 247.40, saturado False
+results/motor_campana/basys3_jitter_kd00_02_normal/kd00_trozos.npz: conjunto M=1..300: Q/muestra 1.0000e-05, por periodo de ro2 1.0000e-05, residuo/ruido 45.74, saturado False
+results/motor_campana/basys3_jitter_kd00_02_normal/kd02_trozos.npz: conjunto M=1..300: Q/muestra 7.9674e-05, por periodo de ro2 1.9918e-05, residuo/ruido 28.59, saturado False
+results/motor_campana/basys3_jitter_kd00_02_normal/kd02_trozos.npz: conjunto M=1..100: Q/muestra 3.7466e-05, por periodo de ro2 9.3664e-06, residuo/ruido 5.40, saturado False

@@ -1,0 +1,108 @@
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+tb_rev_mascara.vhd:48:20:@91700ns:(report note):   [ok ] kd 0: kd_ero 0, unos en la mascara 0
+tb_rev_mascara.vhd:48:20:@91700001ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@164200001ps:(report note):   [ok ] kd 1: kd_ero 0, unos en la mascara 0
+tb_rev_mascara.vhd:48:20:@164200002ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@236700002ps:(report note):   [ok ] kd 2: kd_ero 0, unos en la mascara 0
+tb_rev_mascara.vhd:48:20:@236700003ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@309200003ps:(report note):   [ok ] kd 3: kd_ero 0, unos en la mascara 0
+tb_rev_mascara.vhd:48:20:@309200004ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@381700004ps:(report note):   [ok ] kd 4: kd_ero 0, unos en la mascara 0
+tb_rev_mascara.vhd:48:20:@381700005ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@454200005ps:(report note):   [ok ] kd 5: kd_ero 1, unos en la mascara 1
+tb_rev_mascara.vhd:48:20:@454200006ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@454200007ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@454200008ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@526700008ps:(report note):   [ok ] kd 6: kd_ero 2, unos en la mascara 2
+tb_rev_mascara.vhd:48:20:@526700009ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@526700010ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@526700011ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@599200011ps:(report note):   [ok ] kd 7: kd_ero 3, unos en la mascara 3
+tb_rev_mascara.vhd:48:20:@599200012ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@599200013ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@599200014ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@671700014ps:(report note):   [ok ] kd 8: kd_ero 4, unos en la mascara 4
+tb_rev_mascara.vhd:48:20:@671700015ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@671700016ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@671700017ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@744200017ps:(report note):   [ok ] kd 9: kd_ero 5, unos en la mascara 5
+tb_rev_mascara.vhd:48:20:@744200018ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@744200019ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@744200020ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@816700020ps:(report note):   [ok ] kd 10: kd_ero 6, unos en la mascara 6
+tb_rev_mascara.vhd:48:20:@816700021ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@816700022ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@816700023ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@889200023ps:(report note):   [ok ] kd 11: kd_ero 7, unos en la mascara 7
+tb_rev_mascara.vhd:48:20:@889200024ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@889200025ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@889200026ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@961700026ps:(report note):   [ok ] kd 12: kd_ero 8, unos en la mascara 8
+tb_rev_mascara.vhd:48:20:@961700027ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@961700028ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@961700029ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1034200029ps:(report note):   [ok ] kd 13: kd_ero 9, unos en la mascara 9
+tb_rev_mascara.vhd:48:20:@1034200030ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1034200031ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1034200032ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1106700032ps:(report note):   [ok ] kd 14: kd_ero 10, unos en la mascara 10
+tb_rev_mascara.vhd:48:20:@1106700033ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1106700034ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1106700035ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1179200035ps:(report note):   [ok ] kd 15: kd_ero 11, unos en la mascara 11
+tb_rev_mascara.vhd:48:20:@1179200036ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1179200037ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1179200038ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1251700038ps:(report note):   [ok ] kd 16: kd_ero 12, unos en la mascara 12
+tb_rev_mascara.vhd:48:20:@1251700039ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1251700040ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1251700041ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1324200041ps:(report note):   [ok ] kd 17: kd_ero 13, unos en la mascara 13
+tb_rev_mascara.vhd:48:20:@1324200042ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1324200043ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1324200044ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1396700044ps:(report note):   [ok ] kd 18: kd_ero 14, unos en la mascara 14
+tb_rev_mascara.vhd:48:20:@1396700045ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1396700046ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1396700047ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1469200047ps:(report note):   [ok ] kd 19: kd_ero 15, unos en la mascara 15
+tb_rev_mascara.vhd:48:20:@1469200048ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1469200049ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1469200050ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1541700050ps:(report note):   [ok ] kd 20: kd_ero 16, unos en la mascara 16
+tb_rev_mascara.vhd:48:20:@1541700051ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1541700052ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1541700053ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1614200053ps:(report note):   [ok ] kd 21: kd_ero 17, unos en la mascara 17
+tb_rev_mascara.vhd:48:20:@1614200054ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1614200055ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1614200056ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1686700056ps:(report note):   [ok ] kd 22: kd_ero 18, unos en la mascara 18
+tb_rev_mascara.vhd:48:20:@1686700057ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1686700058ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1686700059ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1759200059ps:(report note):   [ok ] kd 23: kd_ero 19, unos en la mascara 19
+tb_rev_mascara.vhd:48:20:@1759200060ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1759200061ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1759200062ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1831700062ps:(report note):   [ok ] kd 24: kd_ero 20, unos en la mascara 20
+tb_rev_mascara.vhd:48:20:@1831700063ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1831700064ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1831700065ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1904200065ps:(report note):   [ok ] kd 25: kd_ero 21, unos en la mascara 21
+tb_rev_mascara.vhd:48:20:@1904200066ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1904200067ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1904200068ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:48:20:@1976700068ps:(report note):   [ok ] kd 26: kd_ero 22, unos en la mascara 22
+tb_rev_mascara.vhd:48:20:@1976700069ps:(report note):   [ok ]   tic con la cuenta a todo unos
+tb_rev_mascara.vhd:48:20:@1976700070ps:(report note):   [ok ]   sin tic con 2^(kd_ero-1)-1
+tb_rev_mascara.vhd:48:20:@1976700071ps:(report note):   [ok ]   tic con 2^kd_ero-1
+tb_rev_mascara.vhd:134:5:@1977700071ps:(report note): FIN: fallos = 0
+simulation stopped @1977700071ps
+
+real	1m38,973s
+user	0m53,017s
+sys	0m45,376s

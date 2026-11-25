@@ -1,0 +1,69 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/ss40v108_peor_kd23_r3_n8378368_noniid_b8.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_peor_kd23_r3_n8378368.bin 8",
+   "dateTimeStamp" : "20261101173013",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_peor_kd23_r3_n8378368.bin",
+   "sha256" : "5a52ba1e26bc957458c8469ee1546c438fb26566c65a93a780c22eb8c660e654",
+   "testCases" : [
+      {
+         "hBitstring" : 0.99802323045194608,
+         "hOriginal" : 7.8865349865309433,
+         "mcvEstimateMode" : 4258.0,
+         "mcvEstimatePHat" : 0.0040657082620386212,
+         "mcvEstimatePU" : 0.0042258726703702501,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hBitstring" : 0.96051990601029746,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.9991183612316924,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.96123845134812402,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "binTTupleRes" : 0.93103132710695202,
+         "tTupleRes" : 7.3481794909264586,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "binLrsRes" : 0.99869252235538797,
+         "lrsRes" : 7.9392820550271939,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hBitstring" : 0.99960386757510256,
+         "hOriginal" : 7.9251917849012052,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hBitstring" : 0.99829305610798669,
+         "hOriginal" : 7.9066164940846972,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hBitstring" : 0.99821445904501716,
+         "hOriginal" : 7.9483423316036976,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hBitstring" : 0.99854039625232704,
+         "hOriginal" : 7.9493632641318746,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 8.0,
+         "hAssessed" : 7.3481794909264586,
+         "hBitstring" : 0.93103132710695202,
+         "hOriginal" : 7.3481794909264586,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

@@ -1,11 +1,501 @@
+% Rutas y nombres en \texttt no se dividen: se deja holgura al espaciado.
+\sloppy
+
 \chapter{Mapa de registros}
 \label{app:regs}
-% PENDIENTE a partir de docs/mapa_registros.md
+
+Este apéndice es el contrato de interfaz entre el motor y su maestro, en
+la versión 0x04 del \ac{RTL}. El mismo texto, con la historia de cada
+regla, está en el repositorio como \nolinkurl{docs/mapa_registros.md}; lo
+siguen el \ac{RTL} (\nolinkurl{rtl/top/motor_top.vhd}), el modelo del PC
+(\nolinkurl{firmware/host_check/motor_sim.c}) y la capa de acceso del
+firmware (\nolinkurl{firmware/componentes/motor_i2c}).
+
+El motor responde en la dirección \ac{I2C} de 7 bits 0x30. Una escritura
+fija un puntero de registro de 8 bits que avanza con cada byte de datos,
+leído o escrito. El esclavo nunca estira el reloj: las órdenes largas se
+lanzan escribiendo \texttt{CONTROL} y el maestro sondea \texttt{STATUS}
+hasta que baja \texttt{ocupado}. Las direcciones no definidas se leen como
+0x00 y las escrituras en registros de solo lectura se ignoran.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Registros. R: lectura, W: escritura.}
+\label{tab:app_regs}
+\begin{tabular}{@{}llc>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
+\toprule
+Dirección & Nombre & Acceso & Contenido \\
+\midrule
+0x00 & ID & R & 0xA5 \\
+0x01 & VERSION & R & 0x04 \\
+0x02 & STATUS & R & Tabla~\ref{tab:app_status} \\
+0x03 & CONTROL & W & órdenes, Tabla~\ref{tab:app_control}; se autolimpian \\
+0x04 & CFG\_KD & R/W & exponente $n$ del divisor: $K_D = 2^{n}$ periodos de
+  RO2 entre dos muestras. Rango admitido 4--26 en el circuito integrado y
+  0--24 en la \ac{FPGA}; un valor fuera de él se ignora y levanta
+  \texttt{DIAG.rechazada}. Tras el reset vale 25 (19 en la \ac{FPGA}).
+  Solo con el motor libre y el flujo parado: si no, la escritura se
+  ignora. Una captura por trozos en marcha no la impide \\
+0x05 & CFG\_PAG & R/W & página del búfer de captura, 0--3 \\
+0x06--0x07 & RCT\_MAX & R & racha más larga vista por el \ac{RCT} desde el
+  reset o el último \texttt{borrar\_alarmas}, byte bajo primero \\
+0x08--0x09 & APT\_MAX & R & cuenta (o complemento) más alta de una ventana
+  cerrada del \ac{APT} desde el reset o el último
+  \texttt{borrar\_alarmas}, byte bajo primero \\
+0x0A--0x0D & PETICIONES & R & contador de resembrado del \ac{DRBG}, 32 bits,
+  byte bajo primero. Se satura en $2^{32}-1$ \\
+0x0E & DIAG & R & Tabla~\ref{tab:app_diag} \\
+0x0F & FLUJO & R/W & captura continua de bits crudos. Bit 0
+  \texttt{activo}: escribir 1 vacía la cola y arranca, escribir 0 para.
+  Bit 1 \texttt{desbordado}, solo lectura \\
+0x10--0x1F & CLAVE & R & clave actual, 16 bytes. \textbf{Solo en modo test} \\
+0x20--0x2F & RETO & W & nonce de 16 bytes para el reto-respuesta \\
+0x30--0x3F & ETIQUETA & R & $\mathrm{CMAC}_{\text{CLAVE}}(\text{RETO})$, 16
+  bytes; se lee como ceros mientras \texttt{etiqueta\_lista} vale 0 \\
+0x40--0x5F & ALEATORIO & R & 32 bytes de la última orden \texttt{aleatorio},
+  una generación del \ac{DRBG} independiente de la clave \\
+0x60 & FLUJO\_N & R & bytes que esperan en la cola del flujo, 31 como
+  mucho; leerlo fija el crédito de la transacción. \textbf{Solo en modo
+  test} \\
+0x61--0x7F & FLUJO\_DATO & R & cada lectura con crédito saca un byte de la
+  cola; sin crédito devuelve 0x00 y no saca nada. \textbf{Solo en modo
+  test} \\
+0x80--0xFF & CAPTURA & R & 128 bytes de bits crudos, página CFG\_PAG.
+  \textbf{Solo en modo test} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{STATUS (0x02).}
+\label{tab:app_status}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.6\linewidth}@{}}
+\toprule
+Bit & Nombre & Significado \\
+\midrule
+0 & sembrado & el \ac{DRBG} tiene estado válido \\
+1 & ocupado & hay una orden en curso; no mandar otra \\
+2 & alarma\_rct & test de repetición disparado (fuente pegada) \\
+3 & alarma\_apt & test de proporción disparado (fuente sesgada) \\
+4 & clave\_valida & hay clave cargada en el autenticador \\
+5 & captura\_llena & el búfer de captura tiene un trozo listo \\
+6 & etiqueta\_lista & ETIQUETA corresponde al RETO actual \\
+7 & modo\_test & el pin de test está activo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{DIAG (0x0E).}
+\label{tab:app_diag}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.6\linewidth}@{}}
+\toprule
+Bit & Nombre & Significado \\
+\midrule
+0 & arrancado & el test de arranque ha pasado: una ventana completa del
+  \ac{APT} (1024 muestras) sin alarma desde el reset o desde el último
+  \texttt{borrar\_alarmas} \\
+1 & rechazada & la última orden escrita en CONTROL se ignoró o, si era una
+  siembra, se abortó. Se baja con la siguiente orden aceptada \\
+2 & agotado & el contador de peticiones está en $2^{32}-1$;
+  \texttt{generar} y \texttt{aleatorio} se rechazan hasta resembrar \\
+3 & solo\_fuente & constante: 1 en la variante sintetizada sin
+  criptografía para la Basys~2 (Apéndice~\ref{app:fpga}), donde las
+  órdenes criptográficas se rechazan; 0 en el motor completo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{CONTROL (0x03). Una orden por escritura.}
+\label{tab:app_control}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{0.64\linewidth}@{}}
+\toprule
+Bit & Orden & Qué hace \\
+\midrule
+0 & sembrar & recoge 512 bits crudos (384 de entropía y 128 de nonce),
+  espera a que los tests de salud los hayan evaluado enteros e instancia el
+  \ac{DRBG} desde cero \\
+1 & generar & pide 256 bits; los 128 primeros pasan a ser la CLAVE y se
+  cargan en el autenticador, el resto se descarta. No deja nada legible \\
+2 & autenticar & ETIQUETA $\leftarrow \mathrm{CMAC}_{\text{CLAVE}}(\text{RETO})$ \\
+3 & borrar\_alarmas & baja las alarmas de salud; reinicia la ventana de
+  arranque \\
+4 & capturar & llena el búfer de captura con bits crudos. Solo en modo test,
+  con el motor libre y sin otra captura en marcha \\
+5 & resembrar & como \texttt{sembrar}, pero sobre el estado actual; sola,
+  exige un \ac{DRBG} sembrado \\
+6 & aleatorio & pide 256 bits y los deja en ALEATORIO \\
+7 & borrar\_todo & zeroización: CLAVE, todo el estado del \ac{DRBG} y sus
+  intermedios (también el núcleo \ac{AES}), RETO, ALEATORIO, ETIQUETA y la
+  semilla recogida a cero, y la clave nula cargada en el autenticador. Se
+  atiende siempre que el motor esté libre, también con alarma \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reglas que impone el hardware.} Una orden rechazada no llega a
+subir \texttt{ocupado} y levanta \texttt{DIAG.rechazada}.
+\begin{itemize}
+\item Con una alarma de salud levantada se rechazan \texttt{sembrar},
+  \texttt{resembrar}, \texttt{generar} y \texttt{aleatorio};
+  \texttt{autenticar} se sigue atendiendo, porque usa la clave ya generada
+  y no consume entropía.
+\item No se siembra antes de pasar el test de arranque
+  (SP~800-90B~\S4.3~\cite{turan_2018_sp80090b}). La semilla solo entra en
+  el \ac{DRBG} cuando se cierra sin alarma la ventana del \ac{APT} que
+  contiene su último bit; una alarma o un \texttt{borrar\_alarmas} durante
+  la recogida aborta la siembra y deja el estado anterior intacto. Una
+  siembra tarda entre 512 y $512 + 1023$ bits crudos, según dónde caiga
+  en la ventana: de 10 a 75~s en el circuito integrado con \kd{25} \est{},
+  tras un test de arranque (1024 bits) de 20 a 50~s
+  (Sección~\ref{sec:ihp_ring11}); de 1,3 a 4~s y unos 2,6~s en la Basys~3
+  con \kd{19} \est{}, calculados con los 205~MHz medidos de RO2.
+\item \texttt{sembrar} y \texttt{resembrar} se rechazan con
+  \texttt{CFG\_KD} por debajo del divisor mínimo, $n = 25$ por defecto y
+  19 en la Basys~3. El cruce de dominio de reloj solo pediría $n \ge 8$
+  con el RO2 de 13 etapas en su esquina más rápida. El mínimo lo fija la entropía: en placa los
+  tests de salud no dan alarma ni con \kd{8}, donde SP~800-90B asigna
+  0,186 a unos bits que alternan \meas{} (Sección~\ref{sec:campaign}), así
+  que el mínimo es la única protección frente a un maestro que escriba un
+  divisor bajo.
+\item Una escritura en \texttt{CFG\_KD} fuera del rango admitido se ignora
+  y levanta \texttt{DIAG.rechazada}; se compara el byte entero. En el
+  circuito integrado RO2 pasa por un preescalador que divide por 16 y el
+  muestreador cuenta $2^{n-4}$ periodos del reloj preescalado, que son los
+  mismos $2^{n}$ periodos de RO2, así que los valores por debajo de 4 se
+  rechazan. Una escritura válida posterior no baja \texttt{rechazada}, que
+  solo bajan las órdenes.
+\item Una captura y una siembra se excluyen, así que el búfer de captura
+  nunca contiene bits de una semilla. Lo mismo vale para el flujo
+  continuo: solo arranca en modo test, con el motor libre, sin captura en
+  curso y con \texttt{CFG\_KD} en el mínimo o por encima, y mientras está
+  activo se rechazan \texttt{sembrar}, \texttt{resembrar} y
+  \texttt{capturar}. Arrancar el flujo cuenta como una orden para
+  \texttt{DIAG.rechazada}.
+\item El contador de peticiones no da la vuelta: en $2^{32}-1$ el motor se
+  niega a generar hasta resembrar (\texttt{DIAG.agotado}). La política de
+  resembrado por debajo de ese tope es del maestro.
+\end{itemize}
+El motor nunca se rearma solo tras una alarma: borrar las alarmas, esperar
+el test de arranque y volver a sembrar es política del maestro, como mucho
+tres veces en 24~horas (Sección~\ref{sec:health}).
+
+\paragraph{Notación y genéricos.} En todo este documento el divisor se
+escribe $K_D = 2^{n}$, con $n$ el valor de \texttt{CFG\_KD}; cuenta
+siempre periodos de RO2. Los límites de $n$ son genéricos del nivel
+superior, que solo se nombran aquí (Tabla~\ref{tab:app_generics}). Para
+caracterizar por debajo del divisor mínimo, el envoltorio de la \ac{FPGA}
+se compila con \texttt{G\_KD\_MIN} bajado a 6; la captura por trozos no
+está sujeta al mínimo.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Genéricos que fijan el divisor y la instrumentación, en la
+configuración del circuito integrado (los valores por defecto del nivel
+superior) y en el envoltorio de la Basys~3.}
+\label{tab:app_generics}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.42\linewidth}cc@{}}
+\toprule
+Genérico & Significado & Circuito integrado & Basys~3 \\
+\midrule
+\texttt{G\_KD\_MIN} & $n$ mínimo para sembrar, resembrar y el flujo & 25 & 19 \\
+\texttt{G\_KD\_RESET} & $n$ tras el reset & 25 & 19 \\
+\texttt{G\_KD\_MAX} & $n$ máximo; el contador del muestreador tiene
+  \texttt{G\_KD\_MAX} $-$ \texttt{G\_PRESC\_RO2} bits (22 y 24) & 26 & 24 \\
+\texttt{G\_PRESC\_RO2} & $\log_2$ del preescalador de RO2; menor $n$ admitido & 4 & no hay \\
+\texttt{G\_FLUJO\_BYTES} & bytes de la cola del flujo & 0 & 256 \\
+Etapas de los anillos & RO1 (muestreado) / RO2 (de muestreo) & 11 / 13 & 13 / 11 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Prioridad.} Si llegan varios bits de orden en una misma
+escritura, solo se atiende el de mayor prioridad: \texttt{borrar\_todo},
+después \texttt{sembrar}/\texttt{resembrar} (\texttt{resembrar} si van los
+dos), \texttt{generar}, \texttt{aleatorio}, \texttt{autenticar},
+\texttt{capturar}. Con \texttt{sembrar} y \texttt{resembrar} a la vez no
+se aplica la comprobación de \ac{DRBG} sembrado: en un motor sin estado
+la escritura se acepta y el estado se deriva de la semilla recogida
+sobre el estado todo ceros, lo que es inocuo.
+\texttt{borrar\_alarmas} se atiende junto con
+cualquiera de ellas, pero no debe compartir escritura con una siembra:
+reinicia la ventana de arranque, así que la siembra se acepta y se aborta
+en el ciclo siguiente.
+
+\paragraph{Secuencia típica del maestro.}
+\begin{enumerate}
+\item Leer ID (0xA5) y VERSION (0x03 o posterior).
+\item Escribir \texttt{CFG\_KD} con el divisor de la caracterización, o
+  dejar el valor de reset.
+\item Sondear DIAG hasta \texttt{arrancado}; escribir \texttt{sembrar};
+  sondear STATUS hasta que baje \texttt{ocupado}; comprobar
+  \texttt{DIAG.rechazada} $= 0$, \texttt{sembrado} $= 1$ y sin alarmas.
+\item Escribir \texttt{generar}, sondear, comprobar \texttt{DIAG.rechazada}.
+  Ya hay clave.
+\item Solo para provisionar en banco, en modo test: leer CLAVE.
+\item Reto-respuesta: escribir RETO, escribir \texttt{autenticar}, sondear,
+  leer ETIQUETA y compararla con el \ac{CMAC} que calcula el maestro.
+\item Aleatorio para el maestro: escribir \texttt{aleatorio}, sondear, leer
+  ALEATORIO.
+\end{enumerate}
+
+\paragraph{Modo test.} El pin \texttt{modo\_test}, sincronizado con dos
+biestables, habilita la lectura de CLAVE y CAPTURA, la orden
+\texttt{capturar} y el flujo. En la \ac{FPGA} es un interruptor de la
+placa; en un circuito integrado sería un fusible que se quema en
+producción.
+
+\paragraph{Captura continua.} \texttt{capturar} entrega trozos de 4096
+bits sin relación entre sí, que es lo que quiere el estimador de jitter;
+SP~800-90B pide $10^6$ muestras consecutivas. El flujo es una cola de
+bytes en el dominio de sistema, alimentada por los mismos bits que ven
+los tests de salud y la recogida de semilla, que el maestro vacía por
+\ac{I2C} mientras se llena. El primer bit recibido es el más
+significativo del primer byte. Una transacción lee 32 bytes desde 0x60:
+la cuenta $n$ (0 a 31), $n$ bytes de datos y ceros. Si llega un byte con
+la cola llena no se pisa nada: sube \texttt{desbordado} y el flujo se
+para, de modo que un hueco nunca pasa inadvertido. Quitar el modo test o
+\texttt{borrar\_todo} también lo paran. La cola tiene 256 bytes en la
+\ac{FPGA} y por defecto no existe (genérico \texttt{G\_FLUJO\_BYTES}
+$= 0$): es instrumentación de caracterización y no forma parte del área
+del Capítulo~\ref{ch:ch6_asic}; sin ella FLUJO se lee 0 y arrancarlo se
+rechaza. Por el enlace serie a 115\,200 baudios del ESP32 el flujo da
+abasto desde \kd{13} con RO2 a 205~MHz \meas{}; con $2^{12}$ la cola se
+desborda.
 
 \chapter{Vectores de prueba oficiales utilizados}
 \label{app:vectors}
-% PENDIENTE
 
-\chapter{Gu\'ia de reproducci\'on}
+La Tabla~\ref{tab:app_vectors} recoge de dónde sale cada valor de
+referencia que usan los bancos y cómo se cierra cada comprobación. Se usan
+vectores oficiales siempre que una norma los publica. Donde la
+disposición de entrada del hardware no coincide con ningún caso publicado,
+los valores esperados salen de un modelo de referencia en Python que se
+contrasta antes con los vectores oficiales y que está escrito de forma
+independiente del \ac{VHDL}.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Valores de referencia y su origen. Las cuentas son las
+comprobaciones superadas en la última ejecución
+(\nolinkurl{results/run_tb_todos.log}, 307 en total en trece bancos;
+\acs{PSL}: 14 de 14 aserciones y 8 de 8 coberturas en el banco del motor
+completo, 4 de 4 y 2 de 2 en la variante de solo fuente, 1 de 1 y 1 de 1
+en el esclavo \acs{I2C}).}
+\label{tab:app_vectors}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.2\linewidth}>{\raggedright\arraybackslash}p{0.4\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+\toprule
+Bloque & Origen de los valores esperados & Dónde se comprueba \\
+\midrule
+\ac{AES}-128 (los dos núcleos) & FIPS~197~\cite{nist_2023_fips197},
+  apéndices~B y C.1; SP~800-38A, F.1.1 ECB-AES128, tres bloques; mil
+  cifrados encadenados repetidos; de nuevo el apéndice~C.1 tras
+  \texttt{borrar} & \texttt{tb\_aes\_enc}, 18 comprobaciones, los dos
+  núcleos con los mismos estímulos y obligados a coincidir \\
+\ac{AES}-\ac{CMAC} & RFC~4493~\cite{song_2006_rfc4493} (los ejemplos de
+  SP~800-38B~\cite{nist_2016_sp80038b}): los cuatro mensajes de 0, 16, 40
+  y 64 bytes con la clave \texttt{2b7e1516\ldots}, y el de 16 bytes
+  repetido; las subclaves $K_1$ y $K_2$ del mismo ejemplo & \texttt{tb\_aes\_cmac}, 7 comprobaciones \\
+\ac{CTRDRBG}, modelo de referencia &
+  \texttt{drbgtestvectors} del \ac{CAVP}~\cite{nist_cavp_drbg},
+  \texttt{CTR\_DRBG\_no\_reseed.rsp} y \texttt{CTR\_DRBG\_pr\_false.rsp},
+  AES-128 con y sin función de derivación: $4 \times 240 = 960$ casos &
+  \nolinkurl{analysis/ctr_drbg_ref.py}, 960 de 960 \\
+\ac{CTRDRBG}, \ac{RTL} & el modelo de referencia anterior, con la
+  disposición de entrada del hardware (entropía de 384 bits, nonce de 128,
+  sin personalización): \nolinkurl{analysis/gen_drbg_vectores.py} escribe
+  \texttt{drbg\_vectores\_pkg.vhd}, 51 secuencias (una y un lote de 50),
+  153 salidas & \texttt{tb\_ctr\_drbg}, 19
+  comprobaciones (una de ellas sobre las 150 salidas del lote),
+  incluidas la zeroización y la saturación del contador \\
+Motor completo & la clave sale del ruido del anillo, así que el banco
+  vuelca la semilla recogida, la clave, la salida aleatoria, los retos y
+  las etiquetas; el modelo recalcula desde la semilla las tres
+  generaciones, y el \ac{CMAC} de las etiquetas &
+  \nolinkurl{analysis/verifica_top.py}, 9 de 9 \\
+Ventana de muestreo & sin vector: el banco cuenta los periodos de RO2
+  entre dos muestras y exige exactamente $2^{n}$ para $n$ de 4 a 14, y el
+  rechazo de los valores fuera de rango & \texttt{tb\_ventana\_ero}, 47
+  comprobaciones \\
+Firmware contra el modelo del motor & \ac{CMAC} y ECDSA del mbedtls~3.6
+  del objetivo, compilado para el PC; las lecturas firmadas se verifican
+  con la biblioteca \texttt{cryptography} & \texttt{run\_host.py}, 0 fallos;
+  \texttt{verifica\_lecturas.py} \\
+Cortes de los tests de salud & fórmulas de
+  SP~800-90B~\S4.4~\cite{turan_2018_sp80090b} para $H = 0{,}60$ y
+  $\alpha = 2^{-30}$: \ac{RCT} $C = 51$, \ac{APT} $W = 1024$, $C = 766$;
+  semilla de 512 bits $\ge 192$ bits de entropía en el límite del
+  \ac{APT} (fuente sesgada sin memoria); \ac{APT} con su complemento,
+  adición de este diseño, aún por debajo de $2^{-30}$;
+  peor chip y $\mu - 3\sigma$ del Monte Carlo del biestable por encima de
+  $\Hdecl$ &
+  \nolinkurl{analysis/cortes_salud.py}, 11 de 11; comportamiento en
+  \texttt{tb\_health\_tests}, 15 comprobaciones \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Los ficheros del \ac{CAVP} se guardan en el repositorio
+(\nolinkurl{tests/vectors/drbg/}), así que la validación no depende de que la
+web del \ac{NIST} siga igual. Las estimaciones de entropía del
+Capítulo~\ref{ch:ch7_results} no son vectores de prueba: salen de la
+herramienta SP~800-90B del \ac{NIST}~\cite{nist_ea_github}, ejecutada sin
+cambios.
+
+\chapter{Guía de reproducción}
 \label{app:repro}
-% PENDIENTE
+
+Todo lo que en este trabajo no necesita las placas se vuelve a ejecutar en
+cada push mediante un flujo de integración continua
+(\nolinkurl{.github/workflows/verifica.yml}) en una máquina Ubuntu limpia que
+no es la del autor: seis trabajos, uno de ellos ejecutado dos veces (los
+dos proyectos de firmware), sin credenciales. El repositorio es
+público: \url{https://github.com/mmggjj/TFM_ENCRY}. Las órdenes de abajo
+son las que ejecuta el flujo, así que una ejecución en verde las
+reproduce. Las salidas nunca se filtran: los scripts imprimen la salida
+completa de cada herramienta y fallan ante cualquier error.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Lo que reproduce el flujo de integración continua.}
+\label{tab:app_ci}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.27\linewidth}@{}}
+\toprule
+Trabajo & Orden & Resultado \\
+\midrule
+Modelo y estimadores & \texttt{python} \nolinkurl{analysis/ero_model.py},
+  \texttt{jitter\_estimator.py}, \texttt{ctr\_drbg\_ref.py},
+  \texttt{cortes\_salud.py}, \texttt{fuzz\_verifica\_lecturas.py},
+  \texttt{verifica\_lecturas.py} sobre el log de la placa & autopruebas, 960
+  casos del \ac{CAVP}, lecturas de la placa válidas \\
+Bancos \ac{VHDL} & \texttt{python} \nolinkurl{rtl/run_tb.py} y después
+  \texttt{python} \nolinkurl{analysis/verifica_top.py} & 13 bancos, informe \acs{PSL}
+  como artefacto \\
+Síntesis & \texttt{python} \nolinkurl{synth/sintetiza.py} \texttt{--verilog} & área por bloque en
+  kGE (Capítulo~\ref{ch:ch6_asic}) \\
+Firmware en el PC & \texttt{python} \nolinkurl{firmware/host_check/run_host.py}
+  \texttt{--mbedtls <dir>}, y otra vez con \texttt{--sanear} & 0 fallos, también con
+  ASan y UBSan \\
+Compilación con ESP-IDF & \texttt{idf.py set-target}, \texttt{build},
+  \texttt{size}, e \texttt{idf.py -B build\_sim -DMOTOR\_SIMULADO=1 build},
+  para el verificador (ESP32) y el medidor (ESP32-C3) & 4 imágenes \\
+Memoria & \texttt{tectonic tfm\_main.tex} y \texttt{tfm\_main\_es.tex} &
+  los dos PDF como artefactos \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Herramientas.} Python~3.12 con \texttt{numpy}, \texttt{scipy} y
+\texttt{cryptography}; GHDL de los paquetes de Ubuntu (5.0.1 con el motor
+mcode en la máquina del autor) para los bancos, que se ejecutan en
+\acs{VHDL}-2008; Yosys mediante \texttt{yowasp-yosys}, o la OSS CAD Suite
+con el plugin de GHDL, y la biblioteca de celdas estándar IHP SG13G2 del
+\ac{PDK} abierto~\cite{ihp_openpdk_repo}; mbedtls~3.6.2 del tarball de
+publicación (un clon de git no trae los fuentes generados); ESP-IDF~5.3.5,
+en la integración continua con el contenedor \nolinkurl{espressif/idf:v5.3.5};
+tectonic, 0.15.0 en la máquina del autor, mientras que la integración
+continua instala la versión publicada sin fijarla. La versión de desarrollo GHDL~7.0 con el motor LLVM se cae
+con las propiedades \acs{PSL} de \texttt{tb\_motor\_top} que usan nombres
+externos, y no debe usarse.
+
+\paragraph{Fuera del flujo.} Tres partes necesitan software o hardware que
+el flujo no tiene:
+\begin{itemize}
+\item \emph{Anillo a nivel de transistor.} ngspice~47~\cite{ngspice_47} con
+  OpenVAF-Reloaded~\cite{openvaf_reloaded} para compilar los modelos PSP
+  del \ac{PDK}; \texttt{python} \nolinkurl{analysis/anillo_ihp_repeticiones.py}, con
+  \texttt{--esquina}, \texttt{--temp}, \texttt{--vdd} y \texttt{--mismatch}
+  para esquinas, alimentación y desapareamiento. ngspice no deja fijar la
+  realización del ruido, así que cada ejecución es una nueva y la
+  incertidumbre sale de repetir. Una realización de 400~ns tarda unos 30
+  minutos. El anillo de once etapas es \texttt{--etapas 11} con
+  \texttt{--tstop 900n}, unas 2~h~10~min por realización, y
+  \nolinkurl{analysis/anillo_ihp_divisor.py} convierte sus resultados en
+  $H_\infty$ por divisor. El biestable de muestreo es
+  \nolinkurl{analysis/biestable_ihp.py}; su Monte Carlo se lee con
+  \nolinkurl{analysis/biestable_mc.py} (\texttt{--fuentes} para los logs,
+  \texttt{--hueco-max} para la lectura de sensibilidad), y
+  \nolinkurl{analysis/caudal_integrado.py} da la tasa de bits, los tiempos
+  de siembra y las tasas de falsa alarma del circuito integrado.
+\item \emph{Estimaciones SP~800-90B del ESP32.} La herramienta del
+  \ac{NIST}~\cite{nist_ea_github} compilada desde el fuente;
+  \texttt{python} \nolinkurl{analysis/entropia_90b.py} y después
+  \texttt{resumen\_90b.py}, sobre las capturas guardadas en
+  \nolinkurl{results/}; la prueba de reinicios con \texttt{reinicios\_90b.py}.
+  Las capturas nuevas necesitan un ESP32 y \nolinkurl{analysis/campana_rng.py}.
+\item \emph{\ac{FPGA}.} Vivado~2025.2 en Linux, en modo por lotes con
+  \nolinkurl{synth/basys3/build.tcl}; en Ubuntu~26.04, que la herramienta
+  no soporta, necesita las variables de entorno \texttt{LOCPATH} y
+  \texttt{LD\_LIBRARY\_PATH} puestas como describe
+  \nolinkurl{docs/basys3.md}. La variable \texttt{GENERICOS} elige la
+  variante del envoltorio, la colocación fija de las etapas
+  (\texttt{ro\_bel.xdc}) se carga por defecto y \texttt{SIN\_BEL=1} la
+  quita. La placa se graba con \texttt{openFPGALoader -b basys3} o con
+  \texttt{djtgcfg} de Digilent. La campaña de la
+  Sección~\ref{sec:campaign} necesita la placa y el ESP32 con el
+  verificador: \nolinkurl{analysis/campana_motor.py} (\texttt{--flujo}
+  para bits consecutivos, \texttt{--90b} para pasar la batería,
+  \texttt{--callado} para no tocar el bus durante una captura),
+  \texttt{reinicios\_fpga.py} para la prueba de reinicios,
+  \texttt{jitter\_autocorrelacion.py} y \texttt{espectro\_fase.py}
+  (\texttt{--valida}, \texttt{--calibra}) para el jitter,
+  \texttt{sesgo\_correlacion.py}, y \texttt{tabla\_o8.py} para la
+  comparación de la Sección~\ref{sec:o8}. El análisis se repite sin la
+  placa a partir de las capturas guardadas en
+  \nolinkurl{results/motor_campana} y \nolinkurl{results/fpga_reinicios}.
+  La Basys~2 del Apéndice~\ref{app:fpga} se compila con ISE~14.7 mediante
+  \nolinkurl{synth/basys2/build.sh}.
+\end{itemize}
+
+\paragraph{Primera campaña del ESP32.} El análisis de la primera campaña
+(Secciones~\ref{sec:esp32_sp80022} a~\ref{sec:esp32_harvester}) se vuelve a
+ejecutar sin la placa a partir de los ficheros guardados en
+\nolinkurl{results/esp32_rng_agosto}, con \texttt{numpy}, \texttt{scipy},
+\texttt{matplotlib} y \texttt{cryptography}:
+\begin{itemize}
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/nist_sp800_22.py}
+  ejecuta la autocomprobación de la batería SP~800-22 (datos del sistema
+  operativo, ceros, patrón alternado).
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/harvester_from_sources.py}
+  escribe las 1000 semillas de la validación fuera de línea en
+  \texttt{seeds\_rep1.bin}, a partir de \texttt{puf\_boot1.bin} y
+  \texttt{condD\_rep1.bin}.
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/run_campaign.py}
+  ejecuta \texttt{nist\_analysis.py}, \texttt{entropy\_analysis.py},
+  \texttt{temperature\_correlation.py}, \texttt{harvester\_validation.py}
+  y el modo fuera de línea de \texttt{mqtt\_tls\_demo.py}. Cada uno escribe
+  sus CSV y figuras en el directorio de datos, y \texttt{run\_campaign.py}
+  copia las figuras en \nolinkurl{memoria/figures} con sus propios
+  nombres; la memoria solo usa \texttt{nist\_heatmap.pdf}, como
+  \texttt{esp32\_nist\_heatmap.pdf}. Los cuatro scripts también se ejecutan
+  uno a uno, con \texttt{-d <directorio de datos>} y
+  \texttt{--figdir <directorio>}. Ejecutados de nuevo el 2026-10-31 sobre
+  una copia de los datos, reproducen los CSV guardados, valor a valor.
+\item \texttt{python} \nolinkurl{analysis/esp32_rng/make_result_tables.py}
+  escribe las tablas de resultados en \LaTeX{} en
+  \texttt{tablas\_generadas.tex}, y \texttt{python}
+  \nolinkurl{analysis/esp32_rng/figuras_memoria.py} dibuja las
+  Figuras~\ref{fig:esp32_metrics}, \ref{fig:esp32_temp}
+  y~\ref{fig:esp32_harvester} en \nolinkurl{memoria/figures}.
+\end{itemize}
+Una captura nueva necesita un ESP32 con \nolinkurl{firmware/esp32_rng}
+compilado y grabado (\texttt{idf.py set-target esp32}, \texttt{build},
+\texttt{-p <puerto> flash}; ESP-IDF~5.3, consola a 115\,200~baudios).
+Después, \texttt{python} \nolinkurl{analysis/esp32_rng/capture_rng.py}
+\texttt{--port <puerto>} \texttt{--reps <n>} reinicia la placa por RTS y
+recoge $n$ secuencias válidas por condición, con los patrones de SRAM
+(\texttt{puf\_boot<k>.bin}), las semillas y \texttt{capture\_log.csv}; por
+defecto escribe en \nolinkurl{results/esp32_rng_agosto}, así que
+\texttt{-o <directorio>} mantiene aparte los datos nuevos. Un reinicio por
+RTS mantiene alimentada la SRAM y no da un patrón de encendido nuevo: para
+la serie limpia, se desenchufa la placa, se vuelve a enchufar y se ejecuta
+\texttt{python} \nolinkurl{analysis/esp32_rng/capture_puf.py}
+\texttt{--port <puerto>} una vez por encendido, lo que añade un
+\texttt{puf\_pc<N>.bin}. Las campañas posteriores usan el mismo firmware
+con \nolinkurl{analysis/campana_rng.py}, que guarda el flujo serie íntegro
+y numera las repeticiones a partir de \texttt{--primera-rep}.

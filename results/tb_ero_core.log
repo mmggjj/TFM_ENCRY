@@ -1,0 +1,27 @@
+=== analisis ===
+rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
+  shared variable cfg : t_cfg;
+                  ^
+
+=== ejecucion ===
+
+--- tb_ero_core ---
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+rtl/tb/tb_ero_core.vhd:82:9:@400020ns:(report note): [ok] kd 0: 57142 bits
+rtl/tb/tb_ero_core.vhd:82:9:@400020ns:(report note): [ok] kd 0: bits de los dos valores (28568 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@800040ns:(report note): [ok] kd 1: 28570 bits
+rtl/tb/tb_ero_core.vhd:82:9:@800040ns:(report note): [ok] kd 1: bits de los dos valores (14286 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@1200060ns:(report note): [ok] kd 2: 14285 bits
+rtl/tb/tb_ero_core.vhd:82:9:@1200060ns:(report note): [ok] kd 2: bits de los dos valores (7134 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@1600080ns:(report note): [ok] kd 3: 7142 bits
+rtl/tb/tb_ero_core.vhd:82:9:@1600080ns:(report note): [ok] kd 3: bits de los dos valores (3567 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] kd 4: 3571 bits
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] kd 4: bits de los dos valores (1802 unos)
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] mismo bit en las dos variantes (0 distintos de 110710)
+rtl/tb/tb_ero_core.vhd:82:9:@2000100ns:(report note): [ok] mismo valido en las dos variantes (0 ciclos distintos)
+rtl/tb/tb_ero_core.vhd:108:7:@2000100ns:(report note): tb_ero_core: todo correcto
+simulation stopped @2000100ns
+
+=== resumen ===
+todos los bancos pasan

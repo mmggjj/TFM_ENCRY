@@ -1,0 +1,27 @@
+Executing action: all (aliases: build)
+Running ninja in directory /tmp/tfm/firmware/medidor/build_sim
+Executing "ninja all"...
+[1/9] Performing build step for 'bootloader'
+[1/1] cd /tmp/tfm/firmware/medidor/build_sim/bootloader/esp-idf/esptool_py && $HOME/.espressif/python_env/idf5.3_py3.10_env/bin/python $IDF_PATH/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /tmp/tfm/firmware/medidor/build_sim/bootloader/bootloader.bin
+Bootloader binary size 0x53a0 bytes. 0x2c60 bytes (35%) free.
+[2/7] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+[3/7] Linking C static library esp-idf/main/libmain.a
+[4/7] Generating ld/sections.ld
+[5/7] Linking CXX executable medidor.elf
+[6/7] Generating binary image from built executable
+esptool.py v4.12.0
+Creating esp32c3 image...
+Merged 1 ELF section
+Successfully created esp32c3 image.
+Generated /tmp/tfm/firmware/medidor/build_sim/medidor.bin
+[7/7] cd /tmp/tfm/firmware/medidor/build_sim/esp-idf/esptool_py && $HOME/.espressif/python_env/idf5.3_py3.10_env/bin/python $IDF_PATH/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /tmp/tfm/firmware/medidor/build_sim/partition_table/partition-table.bin /tmp/tfm/firmware/medidor/build_sim/medidor.bin
+medidor.bin binary size 0x4b210 bytes. Smallest app partition is 0x100000 bytes. 0xb4df0 bytes (71%) free.
+
+Project build complete. To flash, run:
+ idf.py flash
+or
+ idf.py -p PORT flash
+or
+ python -m esptool --chip esp32c3 -b 460800 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_size 2MB --flash_freq 80m 0x0 build_sim/bootloader/bootloader.bin 0x8000 build_sim/partition_table/partition-table.bin 0x10000 build_sim/medidor.bin
+or from the "/tmp/tfm/firmware/medidor/build_sim" directory
+ python -m esptool --chip esp32c3 -b 460800 --before default_reset --after hard_reset write_flash "@flash_args"

@@ -1,0 +1,45 @@
+--- id ---
+id 0xa5 version 0x04 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+--- kd 18 ---
+kd 18 leido 18 ok
+--- sembrar ---
+sembrar: RECHAZADA por el motor
+--- id ---
+id 0xa5 version 0x04 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=1 agotado=0 solo_fuente=0
+--- kd 19 ---
+kd 19 leido 19 ok
+--- sembrar ---
+sembrar: ok
+--- id ---
+id 0xa5 version 0x04 status 0x81 sembrado=1 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+--- generar ---
+clave 3e542f3c4d67e124a689af3b30a79c54
+provision: ok
+--- reto 20 ---
+reto-respuesta: 20 aciertos, 0 fallos criptograficos, 0 errores de bus, de 20
+--- aleatorio 2 ---
+FD0020032ec79463ccc886b267e8877586dc82ff13b203ef4bf1efeff8d5b1bf13f910dd5de496
+FD002033552c1ebe7c70ce5141e8023c61e6aea02c7ded61913285b94abe62849bdefeeaac7573
+--- cero ---
+cero: ok, motor borrado; hay que sembrar de nuevo
+--- sembrar ---
+sembrar: ok
+--- generar ---
+clave 8586dec0d0fc4c6906940371495fc208
+provision: ok
+--- reto 20 ---
+reto-respuesta: 20 aciertos, 0 fallos criptograficos, 0 errores de bus, de 20
+--- kd 27 ---
+kd: fuera de rango (0 a 24)
+--- id ---
+id 0xa5 version 0x04 status 0xd1 sembrado=1 ocupado=0 alm_rct=0 alm_apt=0 clave=1 captura=0 etiqueta=1 test=1 arrancado=1 rechazada=0 agotado=0 solo_fuente=0
+--- kd ---
+kd leido 19
+--- kd 25 ---
+kd 25 leido 19 IGNORADO
+--- id ---
+id 0xa5 version 0x04 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 clave=0 captura=0 etiqueta=0 test=1 arrancado=1 rechazada=1 agotado=0 solo_fuente=0
+--- kd 24 ---
+kd 24 leido 24 ok
+--- kd ---
+kd leido 24

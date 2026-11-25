@@ -1,0 +1,12 @@
+Verificacion cruzada del motor con el modelo de referencia
+  [ok ] etiqueta1 = CMAC_clave1(reto1) -> 328894c2590278407de362e809faab2b
+  [ok ] etiqueta2 = CMAC_clave1(reto2) -> 516a08dde4045be3b3fc41c789c2bf4d
+  [ok ] clave1 = mitad alta de DRBG(semilla1), 1.a generacion -> 732bd9313c4ab3c76a7b5a82818fad8b
+  [ok ] aleatorio1 = 2.a generacion entera
+  [ok ] clave2 = mitad alta de la 3.a generacion
+  [ok ] aleatorio1 no nulo
+  [ok ] aleatorio1 (registro legible) no contiene clave1 en ninguna mitad
+  [ok ] las dos claves difieren
+  [ok ] clave1 no es un patron trivial
+
+verifica_top: 0 fallos

@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/0928rd_condD_rep1_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condD_rep1.bits 1",
+   "dateTimeStamp" : "20261110210725",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/entropia90b/bits/0928rd_condD_rep1.bits",
+   "sha256" : "2c5fc6c779db7d2939e2984255003d8fb0d29f8aca3e1b1d74e300ee1aee95ff",
+   "testCases" : [
+      {
+         "hOriginal" : 0.99586276229350623,
+         "mcvEstimateMode" : 500148.0,
+         "mcvEstimatePHat" : 0.50014800000000004,
+         "mcvEstimatePU" : 0.5014359152393113,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.90401831493578499,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99780604872071821,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.8434417006837539,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93468520393509535,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.99259630800781973,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99609426053328998,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99448096360103644,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.9950717641494442,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.99578072643178339,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.8434417006837539,
+         "hOriginal" : 0.8434417006837539,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

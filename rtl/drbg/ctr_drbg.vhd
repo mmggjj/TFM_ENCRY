@@ -2,7 +2,7 @@
 -- secciones 10.2.1 y 10.3.2).
 --
 -- Es el fabricante de claves del motor. Recibe entropia cruda del anillo
--- (256 bits) mas un nonce (128 bits), la acondiciona con Block_Cipher_df
+-- (384 bits) mas un nonce (128 bits), la acondiciona con Block_Cipher_df
 -- y mantiene el estado (Key, V) del que salen las claves. Todo son
 -- cifrados AES encadenados con un control alrededor: no hay ninguna otra
 -- primitiva. Ver docs/arquitectura.md seccion 9.
@@ -10,9 +10,11 @@
 -- Tamanos fijos, a proposito. La norma admite entradas de cualquier
 -- longitud, pero en hardware una longitud fija convierte la funcion de
 -- derivacion en una secuencia cerrada de cifrados:
---   S = L(4) || N(4) || entropia(32) || nonce(16) || 0x80 || ceros
---     = 64 bytes = 4 bloques, con L = 48 y N = 32.
--- Coste: instanciar o resembrar = 14 cifrados; generar 256 bits = 4.
+--   S = L(4) || N(4) || entropia(48) || nonce(16) || 0x80 || ceros
+--     = 80 bytes = 5 bloques, con L = 64 y N = 32.
+-- Coste: instanciar o resembrar = 16 cifrados; generar 256 bits = 4.
+-- 512 bits crudos desde el 16-11-2026 (antes 256 + 128): con H declarada
+-- 0,60 llevan al menos 214 de entropia (docs/basys2.md).
 --
 -- El modelo de referencia bit a bit es analysis/ctr_drbg_ref.py, validado
 -- contra 960 vectores del CAVP; los vectores de este nucleo salen de el
@@ -23,13 +25,20 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity ctr_drbg is
+  generic (
+    -- Bits del contador de peticiones que cuentan para agotarlo (SP 800-90A,
+    -- reseed_interval). 32 en hardware; los bancos lo bajan para probarlo.
+    G_PET_BITS : positive := 32;
+    G_AES_EXTERNO : boolean := false
+  );
   port (
     clk        : in  std_logic;
     rst_n      : in  std_logic;
 
     instanciar : in  std_logic;                       -- pulso: Key=V=0 y siembra
     resembrar  : in  std_logic;                       -- pulso: siembra sobre el estado
-    entropia   : in  std_logic_vector(255 downto 0);
+    borrar     : in  std_logic;                       -- pulso: Key=V=0, sin estado, contador a 0
+    entropia   : in  std_logic_vector(383 downto 0);
     nonce      : in  std_logic_vector(127 downto 0);
 
     generar    : in  std_logic;                       -- pulso: 256 bits nuevos
@@ -38,7 +47,20 @@ entity ctr_drbg is
     listo      : out std_logic;                       -- pulso al acabar cualquier orden
     ocupado    : out std_logic;
     sembrado   : out std_logic;                       -- hay estado valido
-    peticiones : out unsigned(31 downto 0)            -- reseed_counter
+    peticiones : out unsigned(31 downto 0);           -- reseed_counter
+    -- El contador llego a 2^G_PET_BITS - 1: no se genera mas hasta
+    -- resembrar. El contador no da la vuelta.
+    agotado    : out std_logic;
+
+    -- Nucleo AES externo (G_AES_EXTERNO): lo pone quien instancia y lo
+    -- puede compartir con otro bloque, porque este solo cifra cuando se
+    -- lo ordenan y nunca a la vez que el otro.
+    aes_arranca_o : out std_logic;
+    aes_borrar_o  : out std_logic;
+    aes_clave_o   : out std_logic_vector(127 downto 0);
+    aes_dato_o    : out std_logic_vector(127 downto 0);
+    aes_salida_i  : in  std_logic_vector(127 downto 0) := (others => '0');
+    aes_listo_i   : in  std_logic := '0'
   );
 end entity ctr_drbg;
 
@@ -46,7 +68,7 @@ architecture rtl of ctr_drbg is
 
   constant C_K0 : std_logic_vector(127 downto 0)
     := x"000102030405060708090a0b0c0d0e0f";
-  constant C_L  : std_logic_vector(31 downto 0) := x"00000030";  -- 48 bytes
+  constant C_L  : std_logic_vector(31 downto 0) := x"00000040";  -- 64 bytes
   constant C_N  : std_logic_vector(31 downto 0) := x"00000020";  -- 32 bytes
 
   type t_fase is (REPOSO, DF_BCC, DF_X, UPDATE, GEN);
@@ -60,11 +82,12 @@ architecture rtl of ctr_drbg is
   signal valido : std_logic := '0';
 
   -- Entrada capturada al recibir la orden
-  signal ent_r   : std_logic_vector(255 downto 0) := (others => '0');
+  signal ent_r   : std_logic_vector(383 downto 0) := (others => '0');
   signal nonce_r : std_logic_vector(127 downto 0) := (others => '0');
 
   -- Funcion de derivacion
-  signal i_bcc, j_bcc : integer range 0 to 4 := 0;
+  signal i_bcc : integer range 0 to 4 := 0;
+  signal j_bcc : integer range 0 to 5 := 0;
   signal cadena  : std_logic_vector(127 downto 0) := (others => '0');
   signal t0      : std_logic_vector(127 downto 0) := (others => '0');
   signal kdf     : std_logic_vector(127 downto 0) := (others => '0');
@@ -84,16 +107,17 @@ architecture rtl of ctr_drbg is
   signal aes_listo   : std_logic;
   signal lanzado     : std_logic := '0';   -- hay un cifrado en curso
 
-  -- Bloque j de S (0..3), a partir de la entrada capturada.
+  -- Bloque j de S (0..4), a partir de la entrada capturada.
   function bloque_s(j : integer;
-                    e : std_logic_vector(255 downto 0);
+                    e : std_logic_vector(383 downto 0);
                     n : std_logic_vector(127 downto 0))
     return std_logic_vector is
   begin
     case j is
-      when 0 => return C_L & C_N & e(255 downto 192);
-      when 1 => return e(191 downto 64);
-      when 2 => return e(63 downto 0) & n(127 downto 64);
+      when 0 => return C_L & C_N & e(383 downto 320);
+      when 1 => return e(319 downto 192);
+      when 2 => return e(191 downto 64);
+      when 3 => return e(63 downto 0) & n(127 downto 64);
       when others => return n(63 downto 0) & x"80" & x"00000000000000";
     end case;
   end function;
@@ -109,11 +133,25 @@ begin
   ocupado    <= '0' when fase = REPOSO else '1';
   sembrado   <= valido;
   peticiones <= cnt_reseed;
+  agotado    <= '1' when cnt_reseed(G_PET_BITS - 1 downto 0) = (G_PET_BITS - 1 downto 0 => '1')
+                else '0';
 
-  nucleo : entity work.aes_enc
-    port map (clk => clk, rst_n => rst_n, arranca => aes_arranca,
-              clave => aes_clave, dato => aes_dato,
-              salida => aes_salida, listo => aes_listo, ocupado => open);
+  g_nucleo_propio : if not G_AES_EXTERNO generate
+    nucleo : entity work.aes_enc
+      port map (clk => clk, rst_n => rst_n, arranca => aes_arranca, borrar => borrar,
+                clave => aes_clave, dato => aes_dato,
+                salida => aes_salida, listo => aes_listo, ocupado => open);
+  end generate g_nucleo_propio;
+
+  g_nucleo_externo : if G_AES_EXTERNO generate
+    aes_salida <= aes_salida_i;
+    aes_listo  <= aes_listo_i;
+  end generate g_nucleo_externo;
+
+  aes_arranca_o <= aes_arranca;
+  aes_borrar_o  <= borrar;
+  aes_clave_o   <= aes_clave;
+  aes_dato_o    <= aes_dato;
 
   p_drbg : process (clk, rst_n)
     variable iv : std_logic_vector(127 downto 0);
@@ -136,6 +174,24 @@ begin
       aes_arranca <= '0';
       listo <= '0';
 
+      if borrar = '1' then
+        -- Zeroizacion, en cualquier fase: aborta lo que haya en curso y
+        -- deja a cero el estado, la semilla capturada, la salida y todos
+        -- los registros intermedios. De temp_hi se recupera Key exacta
+        -- tras un generar, y de kdf y x_df la semilla derivada; el nucleo
+        -- AES guarda la clave de ronda, de la que se recupera la clave.
+        key <= (others => '0'); v <= (others => '0');
+        valido <= '0'; cnt_reseed <= (others => '0');
+        ent_r <= (others => '0'); nonce_r <= (others => '0');
+        material <= (others => '0'); sal_r <= (others => '0');
+        temp_hi <= (others => '0'); kdf <= (others => '0');
+        x_df <= (others => '0'); t0 <= (others => '0');
+        cadena <= (others => '0');
+        aes_clave <= (others => '0'); aes_dato <= (others => '0');
+        i_bcc <= 0; j_bcc <= 0; paso <= 0; lanzado <= '0';
+        fase <= REPOSO; tras_update <= REPOSO;
+        listo <= '1';
+      else
       case fase is
 
         when REPOSO =>
@@ -150,13 +206,16 @@ begin
             cadena <= (others => '0');
             fase <= DF_BCC;
             lanzado <= '0';
-          elsif generar = '1' and valido = '1' then
+          elsif generar = '1' and valido = '1'
+                and cnt_reseed(G_PET_BITS - 1 downto 0) /= (G_PET_BITS - 1 downto 0 => '1') then
+            -- Con el contador agotado la orden se ignora: el nivel superior
+            -- ya la rechaza, esto es por si alguien usa el DRBG suelto.
             paso <= 0;
             fase <= GEN;
             lanzado <= '0';
           end if;
 
-        -- BCC(K0, IV_i || S): cinco cifrados encadenados por cada i.
+        -- BCC(K0, IV_i || S): seis cifrados encadenados por cada i.
         when DF_BCC =>
           if lanzado = '0' then
             if j_bcc = 0 then
@@ -170,7 +229,7 @@ begin
             lanzado     <= '1';
           elsif aes_listo = '1' then
             lanzado <= '0';
-            if j_bcc = 4 then
+            if j_bcc = 5 then
               -- Fin de una BCC: temp = T0 || T1.
               if i_bcc = 0 then
                 t0     <= aes_salida;
@@ -233,8 +292,10 @@ begin
                 cnt_reseed <= to_unsigned(1, 32);
                 listo      <= '1';
               else
-                -- Venimos de generar: contador +1.
-                cnt_reseed <= cnt_reseed + 1;
+                -- Venimos de generar: contador +1, sin dar la vuelta.
+                if cnt_reseed(G_PET_BITS - 1 downto 0) /= (G_PET_BITS - 1 downto 0 => '1') then
+                  cnt_reseed <= cnt_reseed + 1;
+                end if;
                 listo      <= '1';
               end if;
               fase <= REPOSO;
@@ -264,6 +325,7 @@ begin
           end if;
 
       end case;
+      end if;
     end if;
   end process p_drbg;
 

@@ -1,0 +1,87 @@
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+tb_rev_ventana.vhd:79:20:@61200ns:(report note):   [ok ] reset CFG_KD = 25
+tb_rev_ventana.vhd:172:7:@163200ns:(report note):   escribir CFG_KD = 27 -> se lee 25
+tb_rev_ventana.vhd:174:7:@204200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@306200ns:(report note):   escribir CFG_KD = 28 -> se lee 25
+tb_rev_ventana.vhd:174:7:@347200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@449200ns:(report note):   escribir CFG_KD = 29 -> se lee 25
+tb_rev_ventana.vhd:174:7:@490200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@592200ns:(report note):   escribir CFG_KD = 30 -> se lee 25
+tb_rev_ventana.vhd:174:7:@633200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@735200ns:(report note):   escribir CFG_KD = 31 -> se lee 25
+tb_rev_ventana.vhd:174:7:@776200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@878200ns:(report note):   escribir CFG_KD = 32 -> se lee 0
+tb_rev_ventana.vhd:174:7:@919200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1021200ns:(report note):   escribir CFG_KD = 33 -> se lee 1
+tb_rev_ventana.vhd:174:7:@1062200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1164200ns:(report note):   escribir CFG_KD = 34 -> se lee 2
+tb_rev_ventana.vhd:174:7:@1205200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1307200ns:(report note):   escribir CFG_KD = 35 -> se lee 3
+tb_rev_ventana.vhd:174:7:@1348200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1450200ns:(report note):   escribir CFG_KD = 36 -> se lee 4
+tb_rev_ventana.vhd:174:7:@1491200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1593200ns:(report note):   escribir CFG_KD = 37 -> se lee 5
+tb_rev_ventana.vhd:174:7:@1634200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1736200ns:(report note):   escribir CFG_KD = 38 -> se lee 6
+tb_rev_ventana.vhd:174:7:@1777200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@1879200ns:(report note):   escribir CFG_KD = 39 -> se lee 7
+tb_rev_ventana.vhd:174:7:@1920200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:172:7:@2022200ns:(report note):   escribir CFG_KD = 40 -> se lee 8
+tb_rev_ventana.vhd:174:7:@2063200ns:(report note):     DIAG = 2 (bit1 rechazada)
+tb_rev_ventana.vhd:180:5:@2165200ns:(report note):   tras 0x1F y luego una escritura valida, DIAG.rechazada = '1'
+tb_rev_ventana.vhd:79:20:@2236700ns:(report note):   [ok ] CFG_KD 0 escrito
+tb_rev_ventana.vhd:79:20:@2236731400ps:(report note):   [ok ] kd 0 ventana 1: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 1)
+tb_rev_ventana.vhd:79:20:@2236745800ps:(report note):   [ok ] kd 0 ventana 2: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 1)
+tb_rev_ventana.vhd:79:20:@2309245800ps:(report note):   [ok ] CFG_KD 1 escrito
+tb_rev_ventana.vhd:79:20:@2309278600ps:(report note):   [ok ] kd 1 ventana 1: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 2)
+tb_rev_ventana.vhd:79:20:@2309293ns:(report note):   [ok ] kd 1 ventana 2: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 2)
+tb_rev_ventana.vhd:79:20:@2381793ns:(report note):   [ok ] CFG_KD 2 escrito
+tb_rev_ventana.vhd:79:20:@2381825800ps:(report note):   [ok ] kd 2 ventana 1: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 4)
+tb_rev_ventana.vhd:79:20:@2381840200ps:(report note):   [ok ] kd 2 ventana 2: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 4)
+tb_rev_ventana.vhd:79:20:@2454340200ps:(report note):   [ok ] CFG_KD 3 escrito
+tb_rev_ventana.vhd:79:20:@2454373ns:(report note):   [ok ] kd 3 ventana 1: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 8)
+tb_rev_ventana.vhd:79:20:@2454387400ps:(report note):   [ok ] kd 3 ventana 2: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 8)
+tb_rev_ventana.vhd:79:20:@2526887400ps:(report note):   [ok ] CFG_KD 4 escrito
+tb_rev_ventana.vhd:79:20:@2526920200ps:(report note):   [ok ] kd 4 ventana 1: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 16)
+tb_rev_ventana.vhd:79:20:@2526934600ps:(report note):   [ok ] kd 4 ventana 2: 16 periodos de ro2 (esperado 2^kd efectivo 16, 2^CFG_KD 16)
+tb_rev_ventana.vhd:79:20:@2599434600ps:(report note):   [ok ] CFG_KD 5 escrito
+tb_rev_ventana.vhd:79:20:@2599496200ps:(report note):   [ok ] kd 5 ventana 1: 32 periodos de ro2 (esperado 2^kd efectivo 32, 2^CFG_KD 32)
+tb_rev_ventana.vhd:79:20:@2599525ns:(report note):   [ok ] kd 5 ventana 2: 32 periodos de ro2 (esperado 2^kd efectivo 32, 2^CFG_KD 32)
+tb_rev_ventana.vhd:79:20:@2672025ns:(report note):   [ok ] CFG_KD 6 escrito
+tb_rev_ventana.vhd:79:20:@2672158600ps:(report note):   [ok ] kd 6 ventana 1: 64 periodos de ro2 (esperado 2^kd efectivo 64, 2^CFG_KD 64)
+tb_rev_ventana.vhd:79:20:@2672216200ps:(report note):   [ok ] kd 6 ventana 2: 64 periodos de ro2 (esperado 2^kd efectivo 64, 2^CFG_KD 64)
+tb_rev_ventana.vhd:79:20:@2744716200ps:(report note):   [ok ] CFG_KD 7 escrito
+tb_rev_ventana.vhd:79:20:@2745022600ps:(report note):   [ok ] kd 7 ventana 1: 128 periodos de ro2 (esperado 2^kd efectivo 128, 2^CFG_KD 128)
+tb_rev_ventana.vhd:79:20:@2745137800ps:(report note):   [ok ] kd 7 ventana 2: 128 periodos de ro2 (esperado 2^kd efectivo 128, 2^CFG_KD 128)
+tb_rev_ventana.vhd:79:20:@2817637800ps:(report note):   [ok ] CFG_KD 8 escrito
+tb_rev_ventana.vhd:79:20:@2818289800ps:(report note):   [ok ] kd 8 ventana 1: 256 periodos de ro2 (esperado 2^kd efectivo 256, 2^CFG_KD 256)
+tb_rev_ventana.vhd:79:20:@2818520200ps:(report note):   [ok ] kd 8 ventana 2: 256 periodos de ro2 (esperado 2^kd efectivo 256, 2^CFG_KD 256)
+tb_rev_ventana.vhd:79:20:@2891020200ps:(report note):   [ok ] CFG_KD 9 escrito
+tb_rev_ventana.vhd:79:20:@2892248200ps:(report note):   [ok ] kd 9 ventana 1: 512 periodos de ro2 (esperado 2^kd efectivo 512, 2^CFG_KD 512)
+tb_rev_ventana.vhd:79:20:@2892709ns:(report note):   [ok ] kd 9 ventana 2: 512 periodos de ro2 (esperado 2^kd efectivo 512, 2^CFG_KD 512)
+tb_rev_ventana.vhd:79:20:@2965209ns:(report note):   [ok ] CFG_KD 10 escrito
+tb_rev_ventana.vhd:79:20:@2967819400ps:(report note):   [ok ] kd 10 ventana 1: 1024 periodos de ro2 (esperado 2^kd efectivo 1024, 2^CFG_KD 1024)
+tb_rev_ventana.vhd:79:20:@2968741ns:(report note):   [ok ] kd 10 ventana 2: 1024 periodos de ro2 (esperado 2^kd efectivo 1024, 2^CFG_KD 1024)
+tb_rev_ventana.vhd:79:20:@3041241ns:(report note):   [ok ] CFG_KD 11 escrito
+tb_rev_ventana.vhd:79:20:@3045233800ps:(report note):   [ok ] kd 11 ventana 1: 2048 periodos de ro2 (esperado 2^kd efectivo 2048, 2^CFG_KD 2048)
+tb_rev_ventana.vhd:79:20:@3047077ns:(report note):   [ok ] kd 11 ventana 2: 2048 periodos de ro2 (esperado 2^kd efectivo 2048, 2^CFG_KD 2048)
+tb_rev_ventana.vhd:79:20:@3119577ns:(report note):   [ok ] CFG_KD 12 escrito
+tb_rev_ventana.vhd:79:20:@3130021ns:(report note):   [ok ] kd 12 ventana 1: 4096 periodos de ro2 (esperado 2^kd efectivo 4096, 2^CFG_KD 4096)
+tb_rev_ventana.vhd:79:20:@3133707400ps:(report note):   [ok ] kd 12 ventana 2: 4096 periodos de ro2 (esperado 2^kd efectivo 4096, 2^CFG_KD 4096)
+tb_rev_ventana.vhd:79:20:@3206207400ps:(report note):   [ok ] CFG_KD 13 escrito
+tb_rev_ventana.vhd:79:20:@3222181ns:(report note):   [ok ] kd 13 ventana 1: 8192 periodos de ro2 (esperado 2^kd efectivo 8192, 2^CFG_KD 8192)
+tb_rev_ventana.vhd:79:20:@3229553800ps:(report note):   [ok ] kd 13 ventana 2: 8192 periodos de ro2 (esperado 2^kd efectivo 8192, 2^CFG_KD 8192)
+tb_rev_ventana.vhd:79:20:@3302053800ps:(report note):   [ok ] CFG_KD 14 escrito
+tb_rev_ventana.vhd:79:20:@3332773ns:(report note):   [ok ] kd 14 ventana 1: 16384 periodos de ro2 (esperado 2^kd efectivo 16384, 2^CFG_KD 16384)
+tb_rev_ventana.vhd:79:20:@3347518600ps:(report note):   [ok ] kd 14 ventana 2: 16384 periodos de ro2 (esperado 2^kd efectivo 16384, 2^CFG_KD 16384)
+tb_rev_ventana.vhd:79:20:@3420018600ps:(report note):   [ok ] CFG_KD 15 escrito
+tb_rev_ventana.vhd:79:20:@3480229ns:(report note):   [ok ] kd 15 ventana 1: 32768 periodos de ro2 (esperado 2^kd efectivo 32768, 2^CFG_KD 32768)
+tb_rev_ventana.vhd:79:20:@3509720200ps:(report note):   [ok ] kd 15 ventana 2: 32768 periodos de ro2 (esperado 2^kd efectivo 32768, 2^CFG_KD 32768)
+tb_rev_ventana.vhd:79:20:@3582220200ps:(report note):   [ok ] CFG_KD 16 escrito
+tb_rev_ventana.vhd:79:20:@3716158600ps:(report note):   [ok ] kd 16 ventana 1: 65536 periodos de ro2 (esperado 2^kd efectivo 65536, 2^CFG_KD 65536)
+tb_rev_ventana.vhd:79:20:@3775141ns:(report note):   [ok ] kd 16 ventana 2: 65536 periodos de ro2 (esperado 2^kd efectivo 65536, 2^CFG_KD 65536)
+tb_rev_ventana.vhd:191:5:@3776141ns:(report note): FIN: fallos = 0
+simulation stopped @3776141ns

@@ -1,7 +1,6 @@
 \chapter{Fuente de entropía: del transistor a la min-entropía}
 \label{ch:ch3_entropy}
 
-% [BORRADOR v1 -- solo teoría y simulación; cifras de hardware pendientes]
 % Material de partida: docs/modelo_ero_resultados.md, docs/arquitectura.md,
 % analysis/ero_model.py, analysis/jitter_estimator.py, analysis/spice_ring.py
 
@@ -29,7 +28,8 @@ periodo de RO1, el bit muestreado se vuelve impredecible. Se eligió el
 anillos, muestreo coherente, anillos de efecto de transición) por una sola
 razón: es la arquitectura para la que existe un modelo estocástico con una
 cota de entropía demostrable y para la que se ha publicado y validado un
-método embebido de medida del jitter~\cite{petura_2016_survey}. La tasa de
+método embebido de medida del jitter~\cite{fischer_2014_embedded,
+petura_2016_survey}. La tasa de
 bits no es un requisito aquí ---el motor solo consume entropía para dar
 semilla a un generador determinista---, mientras que una cota demostrable
 sí lo es.
@@ -37,14 +37,49 @@ sí lo es.
 Una decisión de diseño que se deriva de la plataforma es que \emph{el
 oscilador de la placa nunca se usa como referencia}. La fuente de reloj de
 la Basys~3 es un oscilador MEMS con un \ac{PLL} fraccional cuya hoja de
-características especifica un jitter ciclo a ciclo de hasta 95~ps
-\est{}~\cite{digilent_2014_basys3rm}, entre uno y dos órdenes de magnitud
-por encima del jitter por periodo de un oscilador en anillo en un proceso
-de 28~nm (2--4~ps \est{}~\cite{petura_2016_survey}). Muestrear RO1 con ese
+características tabula un jitter ciclo a ciclo de 95~ps a
+100~MHz~\cite{micrel_dsc1033, digilent_2014_basys3rm}, un dato de hoja de
+características que aquí no se ha medido. Un jitter ciclo a ciclo no es
+la misma magnitud que el jitter eficaz de periodo de un oscilador en
+anillo en un proceso de 28~nm (2--4~ps
+publicados~\cite{petura_2016_survey}), pero queda más de un orden de
+magnitud por encima. Muestrear RO1 con ese
 reloj mediría el ruido de fase del PLL, una componente global y
 potencialmente inducible, en lugar del ruido térmico del anillo. Por eso
 RO2 muestrea a RO1, y el reloj de sistema de 100~MHz solo gobierna la
-lógica síncrona.
+lógica síncrona. La campaña de este trabajo encuentra en sus propios
+anillos un jitter de ese orden: el suelo blanco de la varianza de la fase
+relativa de los dos anillos en la Basys~3 es de
+$q_2 = 0{,}6$--$1{,}1\times10^{-6}$ por periodo de RO2 \meas{}, con una
+calibración que es \simu{} (Sección~\ref{sec:campaign}). Expresado como
+$\sqrt{q_2}\,T_2$ son de 4 a 5~ps por periodo de 4,9~ns de RO2, que es la
+convención del resto del documento; con la ecuación~\eqref{eq:q2}, que lo
+atribuye todo a RO1, son de 5 a 7~ps por periodo de 6,0~ns \est{}. En las
+dos lecturas es el jitter relativo de dos anillos, no el de uno, y sale
+de un estimador que yerra por arriba.
+
+\paragraph{Notación.} Cuatro símbolos se fijan aquí y se usan sin cambios
+en el resto del documento. $K_D$ es el número de periodos de RO2 entre dos
+muestras. En el hardware es siempre una potencia de dos, $K_D = 2^{n}$,
+donde $n$ es el valor del registro \texttt{CFG\_KD}
+(Apéndice~\ref{app:regs}); el texto escribe el divisor como esa potencia.
+$q_2$ es la varianza de la fase de RO1, en periodos de RO1, acumulada
+durante un periodo de RO2, de modo que el factor de calidad de la sección
+siguiente es $Q = K_D\,q_2$. Con dos anillos del mismo periodo $T$ y un
+jitter de periodo $\sigma$, $q_2 = (\sigma/T)^2$, que la teoría y el
+estimador de este capítulo llaman $Q_{\mathrm{bruto}}$. Con anillos de
+periodos distintos $T_1$ (RO1) y $T_2$ (RO2), y contando solo el jitter
+$\sigma_1$ de RO1,
+\begin{equation}
+  q_2 = \frac{T_2}{T_1}\left(\frac{\sigma_1}{T_1}\right)^{2} ,
+  \label{eq:q2}
+\end{equation}
+y este es el único sitio donde se escribe ese paso. Por último, aparecen
+tres entropías por bit que nunca son intercambiables: $H_\infty$ es la
+min-entropía que da el modelo estocástico para un $Q$ conocido; $\Hnb$ es
+la cifra que la batería SP~800-90B asigna a una secuencia registrada; y
+$\Hdecl = 0{,}60$ es el valor declarado para los cortes de los tests de
+salud y la longitud de la semilla (Sección~\ref{sec:health}).
 
 \section{Modelo estocástico y factor de calidad}
 \label{sec:model}
@@ -97,7 +132,9 @@ $A = (2/\pi)e^{-2\pi^2 Q}$, se obtiene
 \end{equation}
 Todos los términos omitidos son negativos, así que \emph{cualquier}
 truncamiento sobrestima la entropía; el término siguiente decae como
-$e^{-8\pi^2 Q}$, no como $e^{-6\pi^2 Q}$. La Tabla~\ref{tab:exact}
+$e^{-8\pi^2 Q}$, de modo que el resto $O(e^{-6\pi^2 Q})$ de la
+ecuación~\eqref{eq:baudet14} es correcto pero más holgado de lo
+necesario. La Tabla~\ref{tab:exact}
 compara el valor exacto, calculado a partir de \eqref{eq:puno} sobre una
 malla de 8192 fases, con los desarrollos de primer y segundo orden. Añadir
 el término de segundo orden reduce el error de \eqref{eq:baudet14} en un
@@ -147,6 +184,16 @@ margen que cubre la reducción del jitter térmico a baja temperatura, que
 es la prueba adversaria estándar de Fischer y
 Lubicz~\cite{fischer_2014_embedded}.
 
+De PTG.2 solo se toma ese umbral. La clase exige además
+$P(1)\in(0{,}493;\,0{,}507)$ (Sección~\ref{sec:soa_standards}), y el
+objetivo sobre $Q$ cubre el jitter, no el sesgo del muestreador. En el
+circuito integrado el biestable que muestrea da una $P(1)$ media de 0,46
+a 0,48 según la esquina, y 0,408 en el punto $\mu \mp 3\sigma$ de la
+peor \simu{} (Sección~\ref{sec:ff_mc}): sus bits crudos quedan fuera de
+esa banda y no se afirma que cumplan PTG.2. Por eso el motor declara para
+ellos $\Hdecl = 0{,}60$ y los acondiciona antes de usarlos
+(Sección~\ref{sec:health}).
+
 \section{Estimador embebido del jitter y sus dos correcciones}
 \label{sec:estimator}
 
@@ -165,7 +212,7 @@ sobre datos sintéticos con $Q$ conocido, y se corrigieron:
 es una onda \emph{triangular} de periodo uno y pendiente $\pm2$. Cuando la
 fase determinista $M\nu \bmod 1$ cae cerca de un vértice, la distribución
 queda a ambos lados de él y la varianza se desploma ---hasta 0,38 de su
-valor nominal en un caso medido---. El vértice se detecta a partir de la
+valor nominal en un caso simulado---. El vértice se detecta a partir de la
 propia media medida ($\bar c \approx 0$ o $1$ es un vértice;
 $\bar c \approx \tfrac12$, el centro de la rampa), de modo que las
 distancias $M$ con $\bar c$ fuera de $[0{,}15;\,0{,}85]$, o para las que
@@ -184,7 +231,11 @@ de 4,0\,\% sobre ocho semillas independientes para $K=20\,000$ bloques. El
 exponente de acumulación ajustado es $1{,}009$ para un simulador sin ruido
 de parpadeo; medido en hardware, el mismo exponente separa la componente
 térmica ($b=1$, que cuenta como entropía) del ruido de parpadeo y el
-jitter global ($b=2$, que no cuenta).
+jitter global ($b=2$, que no cuenta). En placa, donde los fragmentos usados
+se capturaron con $K_D = 2^2$ y no con $K_D = 1$, el exponente libre salió
+entre 1,6 y 2,1 \meas{} y el modelo no describió la forma del estadístico
+de pares, así que la parte blanca se separó en el dominio de la frecuencia
+(Sección~\ref{sec:campaign}).
 
 \begin{table}[htbp]
 \centering
@@ -240,7 +291,8 @@ desactivadas, el jitter residual es el ruido numérico del simulador. El
 primer intento dio 0,33~ps, del mismo orden que el jitter que se quiere
 medir; se debía por completo al transitorio de arranque del oscilador, y
 descartar los primeros veinte ciclos lleva el suelo de resolución a
-\textbf{1,38~fs}, tres órdenes de magnitud por debajo de la señal. Solo
+\textbf{1,38~fs}, unas 870 veces por debajo de la señal más pequeña
+medida. Solo
 entonces se inyectó ruido. El jitter es proporcional a la raíz cuadrada de
 la densidad espectral inyectada ($\times2{,}01$ medido para $\times4$ en
 densidad, frente a $\times2{,}00$ esperado) hasta el punto en que la
@@ -281,17 +333,39 @@ en la Sección~\ref{sec:ihp_ring}.
 \section{Objetivo de diseño y selección del divisor}
 \label{sec:kd}
 
-Con $\sigma/T$ medido por periodo, $Q_{\mathrm{bruto}} = (\sigma/T)^2$ y
-el divisor se obtiene de $K_D = \lceil Q_{\mathrm{objetivo}} /
-Q_{\mathrm{bruto}} \rceil$. Para el rango de jitter esperado en un proceso
-de 28~nm, el divisor queda entre $3\times10^4$ y $5\times10^5$, y la tasa
-de bits por anillo entre 1 y 20~kbit/s. El modelo reproduce el punto de
-diseño publicado por Fischer y Lubicz ($K_D \approx 430\,000$ para
-$\sigma = 5{,}01$~ps sobre $T = 7{,}81$~ns)~\cite{fischer_2014_embedded}.
-Estas tasas bastan aquí: dar semilla al generador determinista con
-256~bits de entropía completa requiere unos 512 bits brutos con
-$H_\infty \approx 0{,}98$, es decir, entre 0,03 y 0,5~s por semilla, y el
-motor solo emite una semilla en el arranque y en los intervalos de
+Conocido $q_2$, a partir de $\sigma/T$ por periodo y la
+ecuación~\eqref{eq:q2} o medido directamente, el divisor se obtiene de
+$K_D \ge Q_{\mathrm{objetivo}} / q_2$, redondeado a la siguiente potencia
+de dos. Antes de cualquier medida, el jitter esperado en un proceso de
+28~nm (2--4~ps por periodo de 3--5~ns, es decir, $q_2$ de
+$1{,}6\times10^{-7}$ a $1{,}8\times10^{-6}$ con anillos iguales) situaba
+el divisor entre $1{,}3\times10^5$ y $1{,}4\times10^6$ y la tasa de bits
+por anillo entre 0,35 y 3,9~kbit/s con RO2 a 500~MHz \est{}. La misma inversión reproduce el punto
+de diseño publicado por Fischer y Lubicz~\cite{fischer_2014_embedded}: con
+$T_1 = 8{,}9$~ns, $T_2 = 8{,}7$~ns, $\sigma = 5{,}01$~ps y su objetivo,
+una entropía de Shannon de 0,997 a través de la
+ecuación~\eqref{eq:baudet14}, da $K_D = 431\,153$ frente a su
+$K_D \approx 430\,000$. Esos periodos son los de su ejemplo de diseño;
+los 7,81~ns de la Sección~\ref{sec:soa_jitter} son los del anillo en el
+que midieron esa $\sigma$. Ese objetivo corresponde a $Q \approx 0{,}13$; el
+de min-entropía adoptado aquí, $Q \ge 0{,}2286$, pediría unos $738\,000$
+con los mismos anillos.
+
+Lo medido en la \ac{FPGA} cae dentro del rango estimado. El
+borde inferior del suelo blanco medido, $q_2 = 0{,}6\times10^{-6}$, da
+$K_D \ge 0{,}2286 / q_2 \approx 3{,}8\times10^{5}$, de ahí \kd{19}
+(\texttt{CFG\_KD} $= 19$) y unos 390~bit/s \meas{}
+(Sección~\ref{sec:campaign}); la tasa de bits queda en el extremo bajo de
+la estimación porque RO2 va a 205~MHz, no a 500, y el divisor se redondea
+a una potencia de dos. En el circuito integrado el divisor es
+\kd{25}, a entre 20 y 50~bit/s \est{} (Sección~\ref{sec:ihp_ring11}).
+Estas tasas bastan aquí. Una semilla son 512 bits brutos, 384 de entrada
+de entropía y 128 de nonce, dimensionados para $\Hdecl = 0{,}60$
+(Sección~\ref{sec:health}), y el motor espera a la ventana de los tests de
+salud que contiene el último de ellos, así que una siembra consume entre
+512 y 1535 bits: de 1,3 a 4~s en la \ac{FPGA}, tras un test de arranque
+de unos 2,6~s, y de 10 a 75~s en el circuito integrado \est{}. El motor
+solo emite una semilla en el arranque y en los intervalos de
 resembrado. Si alguna vez hiciera falta más tasa de bits, el camino limpio
 son varios \acp{ERO} independientes, cada uno con su propia cota, en lugar
 de un XOR de varios anillos cuya independencia no puede

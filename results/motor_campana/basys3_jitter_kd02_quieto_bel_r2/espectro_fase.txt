@@ -1,0 +1,2 @@
+basys3_jitter_kd02_quieto_bel_r2/kd02.bin: 2000 trozos, kd 2, bloque 0.312 us, unos 0.5055
+  pico 37.7 kHz 1.139e+00, suelo (100-400 kHz) 7.589e-03, pico/suelo 150.0, rms sincronizada/total 0.024

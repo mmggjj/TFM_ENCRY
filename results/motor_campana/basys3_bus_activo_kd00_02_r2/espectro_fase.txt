@@ -1,0 +1,4 @@
+basys3_bus_activo_kd00_02_r2/kd02.bin: 2000 trozos, kd 2, bloque 0.312 us, unos 0.5055
+  pico 37.7 kHz 1.135e+00, suelo (100-400 kHz) 7.670e-03, pico/suelo 147.9, rms sincronizada/total 0.025
+basys3_bus_activo_kd00_02_r2/kd00.bin: 2000 trozos, kd 0, bloque 0.312 us, unos 0.5054
+  pico 50.8 kHz 3.909e-02, suelo (100-400 kHz) 1.481e-03, pico/suelo 26.4, rms sincronizada/total 0.027

@@ -1,0 +1,31 @@
+SP 800-90B 4.4 — cortes para H = 0.6, alfa = 2^-30, W = 1024
+
+1) Repetition Count Test
+  [ok ] C = 51, el RTL usa 51
+2) Adaptive Proportion Test
+  [ok ] C = 766, el RTL usa 766
+3) Coste del test del complemento (adicion propia, no de la norma)
+      una cola : 6.1456e-10  (2^-30.60)
+      dos colas: 6.1456e-10  (2^-30.60)
+  [ok ] con las dos colas la falsa alarma sigue por debajo de 2^-30 (6.1456e-10 <= 9.3132e-10)
+  [ok ] el complemento apenas encarece la falsa alarma (x1.0000): su cola cae a 27.5 sigma
+4) Los cortes dependen de H: hay que recalcularlos con la H MEDIDA
+      H = 0.99  ->  RCT C =  32   APT C = 612
+      H = 0.98  ->  RCT C =  32   APT C = 616
+      H = 0.90  ->  RCT C =  35   APT C = 645
+      H = 0.75  ->  RCT C =  41   APT C = 703
+      H = 0.50  ->  RCT C =  61   APT C = 810
+  [ok ] menos min-entropia exige un corte mas alto (mas permisivo)
+  [ok ] lo mismo en el RCT
+5) Semilla con lo peor que deja pasar el APT
+      p en el corte = 0.7480 -> H = 0.4188; 512 bits x H = 214
+  [ok ] 214 >= 192 bits que pide el CTR_DRBG AES-128
+6) Biestable sg13g2, Monte Carlo de 24 chips, 11 etapas [SIMULADO]
+      p = 0.583 -> H = 0.777; falsa alarma APT por ventana 2.40e-28
+  [ok ] H del peor chip 0.777 >= H declarada 0.6
+  [ok ] falsa alarma del APT con el peor chip 2.40e-28 <= 2^-30
+      mu - 3 sigma: p = 0.5919 -> H = 0.757; falsa alarma APT por ventana 7.88e-26
+  [ok ] H declarable 0.757 >= H declarada 0.6
+  [ok ] falsa alarma del APT en mu - 3 sigma 7.88e-26 <= 2^-30
+
+cortes_salud: 0 fallos

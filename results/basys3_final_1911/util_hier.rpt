@@ -1,0 +1,39 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
+| Date         : Thu Nov 19 17:24:05 2026
+| Host         : mmggjj running 64-bit Ubuntu 26.04.1 LTS
+| Command      : report_utilization -hierarchical -hierarchical_depth 3 -file ./build/G_QUIETO_true_G_MEDIDOR_false/util_hier.rpt
+| Design       : basys3_top
+| Device       : xc7a35tcpg236-1
+| Speed File   : -1
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++----------------------------------------------+--------------+------------+------------+---------+------+------+--------+--------+------------+
+|                   Instance                   |    Module    | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
++----------------------------------------------+--------------+------------+------------+---------+------+------+--------+--------+------------+
+| basys3_top                                   |        (top) |       3886 |       3742 |     144 |    0 | 4392 |      0 |      0 |          0 |
+|   (basys3_top)                               |        (top) |          0 |          0 |       0 |    0 |    0 |      0 |      0 |          0 |
+|   u_motor                                    |    motor_top |       3886 |       3742 |     144 |    0 | 4392 |      0 |      0 |          0 |
+|     (u_motor)                                |    motor_top |          8 |          8 |       0 |    0 | 1066 |      0 |      0 |          0 |
+|     g_captura.u_captura                      | trng_capture |        158 |         62 |      96 |    0 |   44 |      0 |      0 |          0 |
+|     g_cripto.g_nucleo_unico.g_compacto.u_aes |   aes_enc_32 |        647 |        647 |       0 |    0 |  266 |      0 |      0 |          0 |
+|     g_cripto.u_cmac                          |     aes_cmac |        388 |        388 |       0 |    0 |  523 |      0 |      0 |          0 |
+|     g_cripto.u_drbg                          |     ctr_drbg |       1629 |       1629 |       0 |    0 | 2225 |      0 |      0 |          0 |
+|     g_flujo.u_flujo                          |  flujo_crudo |        115 |         67 |      48 |    0 |   55 |      0 |      0 |          0 |
+|     u_i2c                                    |    i2c_slave |        453 |        453 |       0 |    0 |   86 |      0 |      0 |          0 |
+|     u_salud                                  | health_tests |        423 |        423 |       0 |    0 |   86 |      0 |      0 |          0 |
++----------------------------------------------+--------------+------------+------------+---------+------+------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

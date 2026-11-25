@@ -33,17 +33,856 @@ todo. Léelo entero antes de tocar nada.
   `MarioGarciaJimenez <mariogj.03@gmail.com>`, **sin** línea de coautoría
   de Claude (`Co-Authored-By`) ni ninguna otra atribución (Mario, 30-10-2026).
 - **También hay un PC con Linux (Ubuntu)** desde el 30-10-2026. Los scripts
-  que llamaban a `wsl.exe` usan `bash()`/`a_wsl()`: en Windows pasan por
-  WSL y en Linux van directos. Herramientas: GHDL 7.0-dev (LLVM, elabora a
-  ejecutable) y Yosys en `~/eda/oss-cad-suite/bin`; Python con numpy/scipy
-  en `~/eda/venv` (el `python3` del sistema no los tiene); batería del NIST
-  en `~/SP800-90B_EntropyAssessment/cpp`; tectonic en `~/eda/bin`; ngspice 47
-  + OpenVAF + PDK IHP con `~/eda/instala_ngspice_ihp.sh` (la 47 está en
-  `ng-spice-rework/47/` de SourceForge, no en `ng-spice-rel`). Comprobado
-  en Linux: 7 bancos y `verifica_top` 5/5 (volcado idéntico al de Windows),
-  síntesis con las mismas celdas y área, `ea_iid` corre.
+  de análisis que llamaban a `wsl.exe` usan `bash()`/`a_wsl()` (y
+  `sintetiza.py`, `sh()`/`EN_WINDOWS`): en Windows pasan por WSL y en Linux
+  van directos. Herramientas: GHDL 5.0.1 de apt (mcode, el mismo que la CI);
+  Yosys en `~/eda/oss-cad-suite/bin`; Python con numpy/scipy en `~/eda/venv`
+  (el `python3` del sistema no los tiene); batería del NIST en
+  `~/SP800-90B_EntropyAssessment/cpp`; tectonic en `~/eda/bin`; ngspice 47 +
+  OpenVAF + PDK IHP con `~/eda/instala_ngspice_ihp.sh` (la 47 está en
+  `ng-spice-rework/47/` de SourceForge, no en `ng-spice-rel`). **No usar el
+  GHDL 7.0-dev de oss-cad-suite** (LLVM): `tb_motor_top` muere con SIGSEGV
+  en las propiedades PSL sobre nombres externos (gdb: `c_agotado`; quitada
+  esa, `c_captura`); los otros seis bancos pasan con él. `run_tb.py` admite
+  GHDL LLVM/GCC (elabora a ejecutable) por si se arregla. Comprobado en
+  Linux con el motor 0x03: 7 bancos (175 [ok]; 177 desde el 31-10, con
+  K1/K2 de RFC 4493 comparadas en `tb_aes_cmac`, PSL 11/11 y 6/6 coberturas,
+  volcado idéntico al de la rama), `verifica_top` 5/5, `ea_iid` corre, y la
+  densidad de ruido del inversor IHP idéntica bit a bit a la de Windows.
 - Push por **HTTPS** (`https://github.com/mmggjj/TFM_ENCRY.git`): las
   claves SSH de sus máquinas no están dadas de alta en GitHub.
+
+## Estado al 22-11-2026: placa cerrada, revisión del RTL y H 0,60 cerrada
+
+- **Placa, bitstream del 19-11 [MEDIDO]:** SP 800-90B a `kd 19` 0,853
+  (10⁶ consecutivos), reinicios §3.1.4 pasan (H_r 0,847, H_c 0,845);
+  `docs/basys3.md` "22-11-2026".
+- **SPICE:** T(ro2 13)/T(ro1 11) = 1,175 simulado (antes 13/11 estimado);
+  divisor sin cambios.
+- **Monte Carlo del biestable, 11 etapas, 24 chips en cada una de las cinco
+  esquinas [SIMULADO]:** con la regla fijada antes del resultado
+  (`docs/decisiones_pendientes.md`), **H declarable 0,757 ≥ 0,60** (sf 125 °C
+  1,08 V; 0,704 con la σ alta del IC 95 %; ff/tt a 125 °C 0,838/0,851);
+  sensibilidad sin hueco de fase > 0,025: 0,789. **H 0,60 cerrada**, cortes
+  51/766 sin cambio (`cortes_salud.py` 11/11). En sf 1,2 V las dos tandas
+  difieren en media (Welch p 0,004; causa sin comprobar, candidata `T_CLK`);
+  un chip de tt 125 °C con P(1) 0,5278 (único > 0,5). Monte Carlo de 5 etapas
+  con la lectura de sensibilidad: 0,530 (oficial 0,532). `results/biestable_mc_e11.md`,
+  `_e11_sin_hueco.md`, `biestable_mc_sin_hueco.md`.
+- **Caudal y falsas alarmas del integrado** (`analysis/caudal_integrado.py`
+  → `results/caudal_integrado.md`): ro2 de 13 etapas 594-1 459 ps [SIMULADO;
+  la esquina rápida es ff −40 °C 1,32 V, simulada hoy] → con `CFG_KD` 25
+  **20-50 bit/s**, arranque 20-50 s, siembra 10-75 s [ESTIMADO]. Falsas
+  alarmas [ESTIMADO, iid, tasas exactas del RTL] a 50 bit/s: peor chip 8·10⁻⁴
+  al año, chip en H 0,60 0,33 al año; Basys 3 a `kd 19` ~6·10⁻⁶. Detalle en
+  `docs/mapa_registros.md` ("Rearme").
+- **Síntesis repetida el 22-11** (`results/sintesis_22_11.log`, CSV reescrito,
+  `docs/sintesis_resultados.md`): `motor_top` **95,46 kGE**, 8 425 FF (95,53 el
+  19-11: el rechazo de `CFG_KD` no cuesta área medible).
+- **Revisión independiente del RTL** (`results/revision_rtl_20261122/`):
+  medidor que no sembraba en el integrado, `CFG_KD` ≥ 32 truncado y 0-3 con
+  ventana 2^4: corregidos (`CFG_KD` fuera de [`G_PRESC_RO2`, `G_KD_MAX`] se
+  ignora con `rechazada`). Banco nuevo `tb_ventana_ero` (47/47); **trece
+  bancos en verde** (`results/run_tb_todos.log`), banco en PC 0 fallos. El
+  bitstream de la placa es anterior a este cambio (solo difiere ante
+  escrituras fuera de rango).
+- **Memoria escrita** (fases 2-4 de `docs/plan_memoria_cierre.md`, un agente
+  Fable, commits f0bce5a-ade2d66; EN 145 páginas, ES 150): todo lo cerrado,
+  notación K_D = 2^n, H 0,60 cerrada, campaña FPGA y O8. Quedan notas no
+  impresas: ciclos con el AES de 32 bits (M1),
+  foto del montaje. Tareas de la semana del 23-11: `docs/tareas_pendientes.md`.
+- **23-11, O5 cumplido con salvedad** (decisión de Mario tras una revisión
+  independiente): las 40/40 en placa verifican AES, CMAC, registro de clave
+  y bus, no el CTR_DRBG (la clave se lee, no se predice); los 960 casos CAVP
+  los pasa el modelo Python, no el VHDL. Añadido: `tb_motor_top` vuelca la
+  semilla y `verifica_top.py` (9/9) recalcula clave1, aleatorio1 y clave2
+  con el modelo (mutante de un bit en la semilla: 3 fallos); `tb_ctr_drbg`
+  con 50 semillas más (19/19, mutante cazado); trece bancos, 307
+  comprobaciones. Arreglado de paso: `aleatorio1` se volcaba a ceros. Memoria
+  EN/ES corregida en los caps. 1, 2, 5, 7 y 8 y apéndice B.
+- **25-11:** agradecimientos quitados (Mario); ciclos del DRBG con el AES de
+  32 bits medidos en `tb_motor_top` (849 y 213 [SIMULADO], iguales a la
+  cuenta). **Sensibilidad a V_DD** (`analysis/sensibilidad_vdd.py`, SPICE sin
+  ruido): cada anillo cambia su periodo un 1,1-2,8 % por 10 mV, pero el
+  cociente ro2/ro1 solo un 0,4 % de eso (chip nominal) y como mucho un
+  2-3 % con desapareamiento: la alimentación propia del integrado debe ser
+  una rama común a los dos anillos (`docs/decisiones_pendientes.md` §10,
+  cap. 6 de la memoria). Revisión de la memoria del 23-11 aplicada (EN 155
+  páginas, ES 162).
+- **Documentos nuevos:** `docs/plan_memoria_cierre.md` (qué está desfasado en
+  la memoria), `docs/basys2_frente_basys3.md`; **memoria: apéndice D**,
+  Basys 2 frente a Basys 3 (EN y ES).
+
+## Estado al 19-11-2026: decisiones del integrado aplicadas
+
+Decisiones de Mario (`docs/decisiones_pendientes.md`, "Decidido el
+19-11-2026") aplicadas y probadas (`docs/basys3.md`, "19-11-2026"):
+**ro1 de 11 y ro2 de 13 etapas, preescalador ÷16 de ro2** (`G_PRESC_RO2` = 4: con 5
+etapas ni un biestable sg13g2 conmutaba a 2,73 GHz [ESTIMADO, biblioteca
+típica]), **`G_KD_MIN` 25 / `G_KD_RESET` 25 / `G_KD_MAX` 26** en `motor_top`
+(un `CFG_KD` mayor se ignora con `DIAG.rechazada`), **19/19/24 en
+`basys3_top`**, restricción de ro2 a 4,5 ns con comprobación en `build.tcl`.
+Bancos en verde, banco en PC 0 fallos, verificador grabado (rango 0-26).
+FPGA: WNS +0,524 ns, **O5 40/40**, rechazos comprobados en placa. Área 95,52
+kGE con ro2 de 13 (+0,5 %). **SPICE de la noche** (`docs/decisiones_pendientes.md`,
+"Validación con SPICE"; `docs/anillo_ihp.md` §4.4): ro1 de 11 etapas en ss
+−40 °C 1,08 V (8 realizaciones), Q 2,65-3,41·10⁻⁸ por periodo → `CFG_KD` 24 ya da H_∞ 0,9997
+con el peor chip (T(ro2)/T(ro1) 1,175 simulada el 22-11): **`G_KD_MIN` 25 con factor 2 de
+margen**. Monte Carlo del biestable parado a 11 de 24 chips por esquina
+crítica: H declarable 0,759 (completado a 24 el 22-11: **0,757**, sección de
+arriba; ff/tt a 125 °C, también el 22-11). **Pendiente**: memoria y PR a `main`.
+
+## Estado al 17-11-2026: la Basys 3 llegó, el motor entero en placa
+
+Todo en **`docs/basys3.md`**. Sesión nocturna autónoma (Mario fuera, hasta
+las 04:00): campaña en placa, documentación y revisión independiente; la
+memoria NO se ha tocado (decisión de Mario del 14-11: qué va a la memoria se
+decide con la Basys 3 delante).
+
+- **Placa:** Basys 3, XC7A35T (IDCODE 0x0362D093, Adept "Basys3", SN
+  210183BE6DF6). Grabar: `openFPGALoader -b basys3 <bit>` o `djtgcfg -d
+  SN:210183BE6DF6 -i 0`. ESP32 a0:dd:6c:0e:fb:4c en JA1/JA2/GND, `/dev/ttyUSB0`
+  (chmod de Mario); `/dev/ttyUSB1` es la UART de la Basys 3.
+- **Vivado 2025.2** en `~/Xilinx/2025.2` (solo Artix-7; no 2026.x por la
+  licencia anual). En Ubuntu 26.04 hace falta `LOCPATH=~/eda/locale` (locale
+  en_US generado con localedef) y `LD_LIBRARY_PATH=~/eda/ise_compat`. ISE 14.7
+  quedó comprimido en `~/eda/ise_14.7.tar.zst` para hacer sitio.
+  `build.tcl` admite `GENERICOS="G_QUIETO=true G_MEDIDOR=false"` (salida en
+  `build/<variante>`) y lista tras rutar las celdas y redes de los anillos.
+- **Tres arreglos para implementar:** pblocks sin `CONTAIN_ROUTING` (el lazo
+  no se rutaba); anillos de **11/13 etapas** en `basys3_top` (con 5/7 ro2 iba
+  a 357,8 MHz y con 7/9 a 293 MHz, por encima de lo que cierra el dominio de
+  ro2; con 11/13, **130,0 MHz** [MEDIDO, flujo]); **`health_tests`** con las
+  comparaciones del cierre del APT reescritas sin restas (misma lógica, doce
+  bancos en verde; no cerraba a 100 MHz). Todo cumple tiempos. 4 011 LUT
+  (19 %), 4 561 FF.
+- **O5 [MEDIDO]:** sembrar, generar, `reto 20` dos veces con claves
+  distintas: **40/40 etiquetas CMAC iguales a las de mbedtls**; aleatorio y
+  `cero` funcionan.
+- **Jitter [MEDIDO]:** Q por periodo de ro2 1-8·10⁻⁵ según el método; el
+  modelo deja residuos de decenas de veces el ruido (mismo problema que en la
+  Basys 2). **Repetibilidad (18-11, tres capturas):** cada estimador de
+  autocorrelación repite en ±0,3-4 %; la diferencia ×3 entre métodos y la
+  ×1,5-3 entre variantes (normal / silenciosa) son sistemáticas.
+  **SP 800-90B:** kd 8 0,125, kd 10 0,558, kd 11 0,786 (trozos no
+  consecutivos), kd 12-16 saturada (0,82-0,88); compatible con Q del orden
+  de 6-10·10⁻⁵ en kd 10-11 (kd 8 por debajo; kd 10 con correlación ρ₁ 0,05).
+  **`CFG_KD` ≥ 16** se mantiene (conservador, Q más baja 0,93·10⁻⁵).
+- **18-11, colocación fija** (`synth/basys3/ro_bel.xdc`, por defecto en
+  `build.tcl` desde el 18-11; `SIN_BEL=1` lo quita): Vivado combinaba inversores de ro2 en una LUT6 (por eso 130
+  MHz); con una LUT6 por etapa, ro2 207 MHz. Con los anillos idénticos, el
+  frecuencímetro baja la Q ×4,4 (conjunto, dos capturas por variante ±1 %;
+  ×1,6 varianza, ×1,2 global):
+  es la lógica colgada, no la colocación. Silenciosa 1,42·10⁻⁵ → CFG_KD ≥ 16
+  vale; con frecuencímetro haría falta ≥ 18. Sin correlación a retardo 1 (muestreo libre),
+  sesgo 0,495-0,496 (z −7 a −10). RCT salta a kd 8 en placa.
+- **Captura larga** (8 378 368 bits, kd 16): SP 800-90B 0,932 (ESP32 0,911,
+  ideal 0,935): la cifra asignada sigue sin separar. **Reinicios §3.1.4**
+  (1 000 reprogramaciones con djtgcfg): `ea_restart` pasa (H_r 0,843, H_c
+  0,892, H_I 0,819), 1 000 arranques distintos. Tabla O8 con la Basys 3.
+- La placa quedó con la variante silenciosa con colocación fija
+  (`synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/basys3_top.bit`, igual
+  bit a bit al `_ro_bel` del 18-11; volátil); el ESP32 con el verificador,
+  cableado a JA1/JA2/GND.
+- **Hallazgo:** el `sdkconfig` local del verificador (29-10) tiene
+  `CONFIG_FREERTOS_HZ=100`; el `=1000` de `sdkconfig.defaults` no se aplicó.
+  Las duraciones van en pasos de 10 ms. Arreglo: borrar `sdkconfig`,
+  recompilar y reflashear (Mario).
+- Dos revisiones independientes (agentes sin las conclusiones de la sesión):
+  APT equivalente (`results/revision_apt_20261117/`) y cifras del documento
+  recalculadas desde los datos; sus correcciones están aplicadas.
+- **18-11 (madrugada), `ro_bel.xdc` por defecto y campaña repetida**
+  (decisión de Mario; `docs/basys3.md` "Campaña con la colocación fija"):
+  ro2 207,2 / ro1 167,2 MHz (display); O5 40/40; flujos `kd 13-16` 0,815-0,876,
+  unos 0,505-0,506 (el sesgo cambia de signo con la colocación), sin ρ₁;
+  `kd 12` ya no cabe en flujo (205 MHz desborda la UART); trozos `kd 10`
+  0,430, `kd 11` 0,695; larga 0,880. Tests de salud sin alarma ni a `kd 8`
+  (H 0,186, bits anticorrelados ρ₁ −0,54): solo `G_KD_MIN` protege ese
+  régimen. Reinicios con colocación fija sin repetir.
+- **Revisión de Fable (18-11, `results/revision_fable_20261118/`)**: raya a
+  ~38 kHz en la frecuencia relativa de los anillos (repetible; origen sin
+  comprobar, ¿sondeo I2C?); el suelo térmico quedaría en Q ≲ 1,1·10⁻⁶ y
+  **`CFG_KD` ≥ 16 no sería conservador** (≥ 18-19 provisional) [ESTIMADO,
+  sin validar]. Ningún valor de diseño cambiado.
+- **Tarde del 18-11** (`docs/basys3.md`, "Tarde del 18-11"):
+  `analysis/espectro_fase.py` (método de Fable) probado con bits simulados;
+  **la revisión independiente de la noche lo matizó**: el suelo es jitter
+  blanco más componentes del estimador (dispersión de ν, sesgo, armónicos),
+  depende de ν y saca la Q por arriba. **Q blanca de la silenciosa con
+  colocación fija 0,6-1,1·10⁻⁶ por periodo de ro2** (la normal, ν 0,227, no
+  determinable) → al divisor la cota baja: **`CFG_KD` ≥ 19 en la FPGA**
+  (H_∞ ≥ 0,99; ≥ 20 con factor 2 en Q; kd 16 da ~0,47). **La raya no es el
+  tráfico I2C durante la captura** (orden nueva `crudoq`, bus callado: mismo
+  pico; no descarta el ESP32 conectado). Verificador regrabado con
+  FREERTOS_HZ 1000.
+  SP 800-90B a `kd 17-19` (flujos de 10⁶): 0,833-0,864, igual que a
+  `kd 13-16`: la batería no distingue H_∞ 0,47 de 0,9996. Esquemático de
+  bloques de Vivado (`synth/basys3/esquema.tcl`, necesita `-mode gui`) y plano
+  del chip (`synth/basys3/plano.tcl` + `analysis/plano_basys3.py`) en
+  `results/basys3_esquema/` y `results/basys3_plano/`. No hay foto del montaje.
+  **Reinicios a `kd 19`** con colocación fija: pasan (H_r 0,854, H_c 0,830,
+  H_I 0,857; 1 000 distintos). **Prueba de carga** (`G_CARGA` en
+  `basys3_top`, 4 000 biestables con sw1): la raya es una línea a ~39,4 kHz,
+  la carga no cambia su amplitud y la mueve un 0,9 %; hay además una
+  portadora a ~480 kHz con bandas laterales a ±39,5 kHz: regulador conmutado,
+  hipótesis abierta. Decisiones de Mario en `docs/decisiones_pendientes.md`
+  (revisado: las tres correcciones del biestable llevan a `kd 25`, que el
+  contador de 24 bits no admite; `G_KD_MIN` también bloquea el flujo).
+  **Plan del 19-11 en `docs/basys3.md`, "Plan para el 19-11-2026".**
+- **Tareas pendientes: lista numerada en `docs/basys3.md`, "Tareas
+  pendientes (18-11-2026)"** (raya de 38 kHz con el bus callado, validar el
+  estimador, suelo blanco y `CFG_KD`, 90B a `kd 17-19` y reinicios, reflashear
+  el verificador; decisiones de Mario: biestable del integrado, `G_KD_MIN`,
+  restricción de ro2 a ~4,5 ns, tiempos del contador a 2,73 GHz, aislamiento
+  de anillos, memoria; las decisiones, en una página:
+  `docs/decisiones_pendientes.md`; tarea 12: meter en la memoria los
+  esquemáticos de Vivado y el plano del chip al cerrarla).
+
+## Estado al 16-11-2026: H 0,60 y semilla de 512 bits
+
+Decisión de Mario sobre el sesgo del biestable sg13g2 (sección del 15-11,
+abajo): **H declarada 0,60 con semilla de 512 bits**, sin tocar el
+circuito. Detalle en `docs/basys2.md`, "Decisión del 16-11-2026". Sin
+commit todavía.
+
+- RTL: `ctr_drbg` con entropía de 384 bits + nonce de 128 (S de 80 bytes,
+  5 bloques, L = 64; instanciar 16 cifrados, **209 ciclos**, antes 183);
+  `motor_top` recoge 512 bits; cortes **RCT 51 / APT 766** por defecto en
+  `motor_top` y `health_tests`. VERSION sigue en 0x04 (el mapa no cambia).
+  Vectores regenerados (`gen_drbg_vectores.py`); `tb_health_tests` caso 3
+  con sesgo del 80 % (el del 70 % ya no salta con 766: da 821). Doce
+  bancos en verde (`results/run_tb_todos.log`, `tb_motor_top` PSL 14/14 y
+  8/8), `verifica_top` 5/5.
+- `cortes_salud.py` 9/9 (con el peor chip del biestable, H 0,671 ≥ 0,60;
+  falsa alarma del APT ahora con `binom.sf`). Por separado el nonce lleva
+  ~54 bits (< 64): el diseño se apoya en la regla conjunta de 192 de SP
+  800-90A §8.6.7.
+- Falsas alarmas [ESTIMADO, iid] a 8,7 kbit/s: peor chip ~8/año del RCT,
+  chip justo en H 0,60 ~89/año; integrado (≤ 0,41 kbit/s) ≤ 0,4 y ≤ 4,2.
+- Área (`results/sintesis_semilla512.log`, plugin, misma tanda):
+  `motor_top` 92,82 → **95,13 kGE**, +256 FF; CSV y tabla del cap. 6 sin
+  tocar, el cap. 6 lo dice en un párrafo.
+- Firmware: `MOTOR_BITS_SEMILLA 512u`; banco host 0 fallos (mbedtls real);
+  verificador esp32 con ESP-IDF 5.3.2 sin avisos.
+- Memoria EN/ES: cap. 4 (§DRBG, §salud, rearme, banco), cap. 6 (párrafo
+  del área), cap. 7 (párrafo del biestable tras "Duty cycle", 2,6 s de
+  siembra, cortes), apéndices; PDF regenerados sin avisos nuevos.
+- La Basys 2 sigue con bitstreams de cortes 39/683. **I2C con el ESP32
+  a0:dd:6c:0e:fb:4c funcionando** tras recablear (GPIO22 → JA1 SCL,
+  GPIO21 → JA2 SDA, GND → pin 5; mientras el cableado estuvo mal, primero
+  `I2C software timeout` y luego NACK; logs locales `results/esp32_consola_conexion_*`, no versionados).
+  Grabada `_fijo.bit`.
+
+- **Tarde del 16-11** (revisión de otro chat que Mario hizo suya; regla
+  nueva: la memoria solo se toca con la evidencia cerrada):
+  - **H 0,60 provisional** hasta un Monte Carlo de 24 chips por esquina
+    (ff 1,32 V, sf, tt a 125 °C; 8 de sf a 1,08 V) con el criterio fijado
+    antes de simular (commit 403c860, `docs/basys2.md`): H declarable =
+    μ ± 3σ de P(1), mínimo sobre esquinas; < 0,60 → corregir el circuito.
+    Memoria con notas no impresas; corregido "ocho chips por esquina" (son
+    cuatro, ocho en total).
+  - **Noche: el Monte Carlo tumba H 0,60** (`analysis/biestable_mc.py` →
+    `results/biestable_mc.md`; SIMULADO, sin ruido; 28 chips ff y sf, 24 tt
+    y 24 sf a 1,08 V, ampliado porque su media salió peor): H en μ − 3σ ff
+    0,653, **sf 0,568, sf 1,08 V 0,532**, tt 0,803; H declarable 0,532 <
+    0,60. A 1,08 V hasta el peor chip baja de 0,60 (0,596). Según lo
+    fijado, **no se baja más la H: se corrige el circuito** (ro1/2 o
+    anillo más lento, ×4 de divisor; con ×2 de periodo, H ≈ 0,72-0,74
+    [ESTIMADO, ley 1/T]); **la elección es de Mario** y la corrección se
+    valida con otro Monte Carlo igual. RTL sigue en 51/766 y semilla 512;
+    la nota no impresa de la memoria se queda. Detalle en `docs/basys2.md`,
+    "Resultado del Monte Carlo".
+  - **Residuo del jitter:** el halo (`halo_anillos.ucf`, `UCF_EXTRA`) y el
+    CE no lo cambian; **el rutado del reloj ro2 cambia la Q ×2,5-3,5** con
+    los anillos idénticos pip a pip (el `.bit` del 14-11 regrabado hoy da
+    3,4-3,9·10⁻⁵; los de colocación fija, 1,0-1,9·10⁻⁵). **`CFG_KD`
+    provisional ≥ 16** con la Q más baja medida.
+  - **Salud:** en placa con 51/766 solo salta el RCT a `kd 10`;
+    `salud_offline.py` muestra que a `kd 7-9` ningún juego de cortes (ni
+    22/596) detecta nada sobre los mismos bits: el RCT/APT no ven el
+    régimen de poco jitter; lo protege el divisor (`G_KD_MIN`, sin decidir).
+  - Tabla O8 con 4 194 304 bits (sin CE ≈ bits iid con su sesgo) y cuadro
+    de reinicios FPGA/ESP32 (`tabla_o8.py`); `sesgo_90b.py` ya fusiona el CSV.
+
+## Estado al 15-11-2026: tabla O8 y la habilitación del muestreador
+
+Sin Basys 3 todavía; todo en la Basys 2, por JTAG. Detalle en
+`docs/basys2.md`, secciones "Tabla O8..." y "Muestreo sin habilitación".
+
+- **Tabla O8** (`analysis/tabla_o8.py` → `results/tabla_o8.md`): la cifra
+  asignada de SP 800-90B no separa FPGA, ESP32 e ideal (0,845 / 0,848 /
+  0,847 a 10⁶), pero Markov, MCV, MultiMMC, LZ78Y y colisión sí separan la
+  FPGA. **Dos defectos en los bits de la FPGA, ninguno en el ESP32**
+  (`analysis/sesgo_correlacion.py`): sesgo (unos 0,496-0,498, z −12 a −18)
+  y correlación a retardo 1 (ρ₁ 0,003-0,006, z hasta 13), iguales de
+  `kd 12` a `16`: deterministas, no falta de jitter. `analysis/sesgo_90b.py`:
+  bits iid con el mismo sesgo explican MCV y predictores, no Markov ni
+  colisión.
+- **La correlación la produce el CE del biestable que muestrea ro1**
+  (medido): genérico `G_MUESTREO_LIBRE` (false por defecto; `tb_ero_core`
+  12/12 con mutante; equivalencia secuencial con HEAD por ABC `dsec`, que
+  `synth/equivalencia.sh` usa ahora si `cec` no puede). Tres
+  implementaciones con anillos y biestable fijados en los mismos sitios
+  (`synth/basys2/basys2_sin_medidor_fijo.ucf`): con CE ρ₁ 0,004-0,005 (z 9-11),
+  sin CE 0,0000-0,0005 (z ≤ 1). El sesgo no cambia con el CE (rutado o
+  día, sin separar). Mecanismo sin identificar; una sola implementación libre.
+- **Decisión de dos agentes** (Mario lo pidió así; `docs/basys2.md`
+  "Decisión del 15-11-2026"): (1) `G_MUESTREO_LIBRE = true` por defecto,
+  tras pasar los bancos con true, la síntesis y resolver la referencia de
+  `equivalencia.sh`; (2) **H declarada 0,80** y el sesgo se cuenta: el
+  ciclo de trabajo del anillo IHP [SIMULADO, `analysis/ciclo_trabajo_ihp.py`]
+  va de 0,483 a 0,535 con desapareamiento (0,464-0,553 con ±100 mV de
+  umbral), es decir 2-5 % de sesgo en el integrado; el CTR_DRBG AES-128
+  solo pide 192 bits de entropía (128 + nonce de 64; comprobado en SP
+  800-90A Rev. 1 §8.6.3, tabla 3 y §8.6.7) y la semilla son 384 crudos; ro1/2 cuesta ×4 de
+  divisor (2²⁵, ×4 menos caudal) y queda como alternativa a validar; (3)
+  α = 2⁻³⁰ con los cortes de H 0,80: **RCT 39, APT 683**, y política de
+  rearme acotada en el maestro.
+- **Aplicado el mismo día** (`docs/basys2.md`, "Aplicado el 15-11-2026"):
+  `motor_top` con `G_MUESTREO_LIBRE = true`, `G_RCT_C = 39` y
+  `G_APT_C = 683` (genéricos nuevos; `basys2_top` sigue con muestreo
+  directo); con los valores antiguos (`GEN_ACT` en `equivalencia.sh`) el
+  motor es equivalente a HEAD. `cortes_salud.py` 7/7; `motor_rearmar()` en
+  `componentes/motor_i2c` (3 en 24 h, luego fallo permanente) y orden
+  `rearmar` en el medidor, banco en PC paso 5b (135 ok, también con ASan);
+  ESP-IDF 5.3.2: verificador esp32 y medidor esp32 sin avisos (en el Linux
+  no hay cadena RISC-V para el esp32c3). `mapa_registros.md`,
+  `lecturas_firmadas.md` y memoria EN/ES (cap. 4, cap. 7 con el párrafo del
+  ciclo de trabajo, apéndice) al día, PDF regenerados. Segunda
+  implementación libre (`par -t 7`): ρ₁ = 0,0002, z 0,4. Commit local
+  8f6e156 (sin push). Síntesis comparada: sin cambio de área medible
+  (93,18 → 92,82 kGE, mismos biestables).
+- **SPICE con el biestable real de sg13g2** (`analysis/biestable_ihp.py`,
+  `docs/basys2.md` "El biestable real..."; SIMULADO, sin ruido): el reloj
+  tira del anillo si el biestable cuelga del nudo (con `sg13g2_buf_1`
+  delante, 0,01 ps); los bits fuera de sitio son la ventana de apertura
+  (±0,01 de P(1)); P(1) ponderada por fase. **El biestable sesga más que el
+  anillo**: tt/ss ±0,01, pero a 125 °C con desapareamiento P(1) 0,372-0,461
+  en ff y 0,399-0,437 en sf: **5 de 8 chips por debajo de H = 0,80 (peor
+  0,672)**; con APT 683 el peor chip daría una falsa alarma cada ~210
+  ventanas. Semilla aún ≥ 192 bits. Mecanismo probable: setup distinto para
+  D subiendo y bajando frente a un periodo de 285-405 ps; **comprobado con
+  9 y 11 etapas**: el retardo equivalente se mantiene en 26-30 ps (sf) y
+  13-15 ps (ff) mientras el periodo se duplica, el sesgo baja como ~1/T.
+  **Decidido y aplicado el 16-11** (sección de arriba): H 0,60 y semilla
+  de 512 bits.
+- `synth/basys2/basys2_sin_medidor.ucf` versionado (antes solo en `build/`).
+  La placa queda con `basys2_top_quieto_sin_medidor_fijo.bit` (lógica igual
+  a la del 14-11).
+
+## Estado al 14-11-2026: la placa es una Basys 2 (XC3S100E)
+
+Lectura, resultados y riesgos en **`docs/basys2.md`** (resumen arriba del
+todo). **Decisión de Mario (14-11, final del día): intenta conseguir una
+Basys 3; los resultados de la Basys 2 son PROVISIONALES y la memoria no se
+cierra con ellos** (nota no impresa en el cap. 8, EN y ES; los [PENDIENTE]
+siguen). Qué se repite en la Basys 3 y las lecciones: `docs/basys2.md` y
+`docs/puesta_en_marcha_fpga.md` §9. Commits del día f09ed89, 90c32a9,
+3113dfa y el de la documentación (locales, sin push).
+
+- La placa que hay es una **Basys 2 con XC3S100E** (1 920 LUT4; serigrafía
+  leída por Mario), no la Basys 3. El motor entero no cabe (cripto ~6 800
+  LUT4, estimación Yosys `-family xc3se`); la fuente sí. Mario no quiere
+  pedir placa a los tutores. **Lo de la Basys 3 se conserva intacto** (si
+  algún día hay una, se comparan los anillos en 90 y 28 nm). O5 (motor
+  entero en FPGA) habrá que reformularlo en la memoria; el objetivo oficial
+  y O6 se cubren con la fuente.
+- `motor_top`: genéricos **`G_SOLO_FUENTE`** (sin DRBG/CMAC/AES; órdenes
+  criptográficas rechazadas; **`DIAG.solo_fuente` = bit 3**) y
+  **`G_CAPTURA_BYTES`** (0 quita `trng_capture`; `capturar` rechazada). Mismo
+  mapa y VERSION 0x04. Con los valores por defecto la lógica es idéntica a
+  la del commit 33b0b70 en cuatro variantes: **`synth/equivalencia.sh`**
+  (AIG plana de Yosys comparada byte a byte, y ABC `cec` si solo cambia la
+  numeración; control negativo con `G_KD_MIN=5`). Los kGE de abc se mueven
+  un 0,2 % solo por los nombres (92,91 frente a 93,09) y las LUT xc7 de
+  `basys3_top` de 5 125 a 5 057, con los mismos biestables: no son cambios
+  de diseño. Cuidado: con el genérico directo en la condición de sembrar,
+  GHDL `--synth` saca un latch (`siembra_es_reseed`); por eso `sin_cripto`
+  es una señal.
+- **`rtl/fpga/basys2_top.vhd`** + **`synth/basys2/basys2.ucf`** (pines del
+  manual de Digilent): reloj B8 a 50 MHz esperados (JP4 sin soldar),
+  `G_KD_MIN => 7`, latido a 1 Hz para medir el reloj con cronómetro, mismo
+  frecuencímetro y display. Yosys xc3se: ~1 250 LUT4 (65 %), 452 FF.
+- **XST no lee VHDL-2008**: `synth/basys2/a_verilog.sh` pasa el diseño a
+  Verilog con GHDL y `synth/basys2/build.sh` hace xst, ngdbuild, map, par,
+  trce, bitgen (`StartUpClk:JtagClk`) y `programar` con `djtgcfg`. Sin
+  probar: ISE 14.7 (Linux, en `~/Xilinx`) y Adept 2 los está descargando
+  Mario. La placa sale en USB como `1443:0007` (FX2): openFPGALoader no
+  sirve.
+- Bancos nuevos **`tb_motor_solo_fuente`** (21/21, PSL 4/4 y 2/2; mutante
+  que acepta sembrar cazado a 552 µs,
+  `results/tb_motor_solo_fuente_mutante.log`) y **`tb_basys2_top`**
+  (frecuencímetro, JA3, latido e I2C por el pin bidireccional). Firmware:
+  `DG_SOLO_FUENTE`, `id` lo muestra y `sembrar` lo dice sin esperar al
+  arranque; `motor_sim.c` con `motor_solo_fuente`, banco host paso 16;
+  0 fallos también con ASan/UBSan; verificador compilado con ESP-IDF 5.3.2
+  sin avisos.
+- **Herramientas en el Linux:** ISE 14.7 WebPACK en `~/Xilinx` (instalador
+  por lotes; los acuerdos los acepta Mario), `~/eda/ise_compat` con
+  `libncurses.so.5 -> .so.6` (lo usa `build.sh`), licencia **HOSTID=ANY** en
+  `~/.Xilinx/Xilinx.lic` (el FlexLM de ISE ve el host ID `000000000000`
+  porque solo mira `eth0`). Adept 2 (Runtime 2.30.1 + Utilities 2.6.1): la
+  placa es "Basys2-100" con el nombre de usuario corrupto, se elige por
+  `SN:`; cadena JTAG 0 = XC3S100E (0x11C10093), 1 = XCF02S. XST y ngdbuild
+  no piden licencia; map sí.
+- **ISE completo:** 818/960 slices (85 %), 1 516 LUT4 (78 %), 451 FF; todas
+  las restricciones cumplen (`TS_ro2` mejor caso 4,65 ns: el contador de
+  `ero_core` aguanta ro2 hasta ~215 MHz). **El primer bitstream no tenía
+  anillos**: XST llevó los relojes a la salida de la NAND (par de
+  inversores detrás) y map colapsó la cadena de LUT1; se vio en el XDL.
+  Arreglado con `KEEP` en el UCF; comprobar siempre las etapas en la netlist
+  implementada.
+- **Primer día en placa (medido, 14-11-2026):** reloj 50 MHz (60 parpadeos
+  de ld7 en 60 s, ±2 %), **ro2 167,8 MHz y ro1 105,8 MHz** (±0,1 MHz de
+  lectura, ±2 % de escala), ld0 (alarma) apagado.
+- **Tarde:** `AREA_GROUP` por anillo (bordes opuestos). Con 5/7 etapas
+  compactas ro2 subió a 204,8 MHz, por encima de los ~203 MHz del contador
+  de `ero_core`: `basys2_top` usa ahora **7 y 9 etapas** (ro2 143,8 MHz,
+  ro1 108,7 MHz, margen 33 %). **ESP32 a0:dd:6c:0e:fb:4c en el bus**
+  (GPIO22→JA1, GPIO21→JA2, GND→pin 5, pull-ups internos): `id` da
+  `solo_fuente=1`; flujo de 10⁶ bits a `kd 13` y `14` sin errores.
+- **Jitter (PRELIMINAR):** sin buffer no hay `kd 0`; `flujo_desborde.py`
+  junta trozos consecutivos a `kd 7-11` aprovechando el desbordamiento, y
+  `jitter_autocorrelacion.py` ajusta c(M) con el modelo del ERO (el
+  estimador por varianza infraestima un 65-100 % a divisores altos;
+  validado todo con bits simulados). Resultado: Q por periodo de ro2
+  4-7·10⁻⁵ (σ ≈ 60-70 ps, ~10× lo térmico típico), los bits ya salen
+  descorrelados a `kd 13`, **pero el modelo deja residuos 13-45× el ruido**
+  en los divisores bajos: hay ruido no gaussiano (¿modulación, alimentación
+  común?); detalle y lectura en `docs/basys2.md`.
+- **El display modula los anillos** (ν bimodal por trozo a `kd 7`):
+  variantes de `basys2_top` `G_QUIETO` (display apagado, LED fijo) y
+  `G_MEDIDOR=false` (`GENERICOS` y `UCF` en `build.sh`). Apagado, el residuo
+  baja de 45 a ~7 veces el ruido. La lógica colgada de los anillos cambia Q
+  ×2,5 (con medidor 2·10⁻⁵, sin él 4,5·10⁻⁵); **repetibilidad ±3-5 %** en
+  tres capturas de la misma variante, así que el ×2,5 es real.
+- **Campaña SP 800-90B** (variante sin display ni medidor, flujo de 10⁶ bits,
+  `kd 12-16`): `kd 13-16` saturadas (0,82-0,86), `kd 12` = 0,760, en el borde
+  de lo que predice el modelo con Q 4,5·10⁻⁵ y por encima de lo que daría
+  2·10⁻⁵: batería y estimador de jitter coherentes. **`CFG_KD` provisional
+  ≥ 14** (K\* ≈ 2^12,3 con factor 2).
+- **Más pruebas en placa (14-11, final):** captura larga de 8 378 368 bits
+  a `kd 14` → SP 800-90B 0,890 (ESP32 0,911, ideal 0,889-0,935: no se
+  separan, dato para O8). **Tests de salud en hardware**: saltan (RCT en
+  `kd 8, 11, 12`; APT en `kd 8`), patrón no monótono por la fase
+  determinista; **hallazgo de diseño: con α = 2⁻²⁰ el RCT da una falsa
+  alarma cada ~8 min a `kd 14`** (rachas ≥ 22 iguales a las de bits ideales)
+  y cada alarma bloquea el motor: decisión pendiente de Mario (subir el
+  corte a 32 con α = 2⁻³⁰, o rearme automático en el maestro). **Prueba de
+  reinicios §3.1.4** (`analysis/reinicios_fpga.py`, 1000 reprogramaciones
+  por JTAG): `ea_restart` pasa (H_r 0,855, H_c 0,873 ≥ H_I 0,845), 1000
+  arranques distintos, Hamming 512,0 ± 16,02; al contrario que el ESP32 sin
+  ruido de arranque. Matiz: bits del flujo ~0,4 s tras configurar.
+- La placa quedó con la variante sin display ni medidor grabada (volátil:
+  al apagarla vuelve la demo de la Platform Flash). El ESP32
+  a0:dd:6c:0e:fb:4c quedó con el verificador; `/dev/ttyUSB0` necesita
+  `chmod` tras reconectarlo.
+
+## Estado al 10-11-2026: captura continua (motor 0x04), sin placa
+
+La placa se retrasa. Hecho ese día, nada en hardware:
+
+- **Captura continua** (`rtl/trng/flujo_crudo.vhd`, registros FLUJO 0x0F,
+  FLUJO_N 0x60 y FLUJO_DATO 0x61-0x7F; `docs/captura_continua.md` y
+  `docs/mapa_registros.md`): FIFO de bytes en el dominio de sistema con los
+  bits de después de `bit_cdc` (los de la semilla), que el ESP32 vacía por
+  I2C mientras se llena; lectura con crédito (32 bytes desde 0x60: `n` y
+  hasta 31 datos); si se llena, `desbordado` y se para. Mismas reglas que
+  `capturar` (solo modo test, excluyente con siembra y captura, CFG_KD
+  congelado). **VERSION 0x04.** Generic `G_FLUJO_BYTES`: **0 por defecto en
+  `motor_top`** (sin FIFO, el área del integrado no cambia), 256 en
+  `basys3_top`, 64 en el banco. Resuelve el pendiente de los 10⁶ bits
+  consecutivos de SP 800-90B.
+- `tb_motor_top` paso 9 (21 comprobaciones: 400 bytes seguidos iguales a
+  los bits crudos apuntados desde fuera del DUT, crédito, desbordamiento,
+  las tres paradas) y 3 propiedades PSL más: **85/85, PSL 14/14 y 8/8**.
+  Mutante sin crédito cazado (`results/tb_motor_top_mutante_flujo.log`).
+  Los nueve bancos en `results/run_tb_todos.log`.
+- Firmware: `MOTOR_VERSION 0x04`, `MOTOR_VERSION_MIN 0x03` (lo que exigen
+  verificador y medidor); orden **`flujo N`** del verificador (N bytes
+  consecutivos en tramas `C` numeradas, `flujo fin ... ok` o
+  `flujo: <motivo> ... la tira no vale`). `motor_sim.c` con las mismas
+  reglas (byte i = `motor_flujo_byte(i)`); banco host paso 15 y paso de
+  campaña con `--flujo`, 0 fallos. Compila con ESP-IDF 5.3.2 sin avisos.
+- `analysis/campana_motor.py --flujo`: `kdNN_flujo.bin` solo si la tira
+  llega entera (numeración, CRC, longitud y línea de fin); `resumen.csv`
+  con columna `modo`. **El flujo sirve desde CFG_KD 13-14** [ESTIMADO, ro2 a
+  300 MHz]: el cuello es la UART a 115200 (~5 kB/s); por debajo, trozos.
+- Síntesis (Yosys con plugin, Linux): `flujo_crudo` 23,67 kGE,
+  `motor_top` con FIFO 116,63; sin FIFO 93,09 frente a 93,20 del commit
+  anterior con la misma herramienta (sin cambio medible). Las filas
+  antiguas del CSV (92,53; otro camino de herramienta) no se han tocado.
+  Yosys xc7 de `basys3_top`: 5125 LUT, 4292 FF, 36 RAM64M (~25 %).
+- **ESP32, radio en A/B** (`docs/esp32_linea_base_90b.md`, aviso al final):
+  `rng_sampler.c` arrancaba el Wi-Fi sin asociar y sin
+  `sta_disconnected_pm = false` ni `WIFI_PS_NONE`: la radio pudo estar
+  dormida y el "ningún efecto de condición" no dice nada de la radio.
+  Firmware corregido y **repetido el mismo día** en el chip
+  f8:b3:b7:2a:09:28 (12 capturas `0928rd_*`, carpeta
+  `mac_f8b3b72a0928_radio_despierta`, fuera de los ANOVA de la campaña): con
+  la radio despierta sigue sin haber efecto (ANOVA p = 0,41; radio frente a
+  sin radio p = 0,80; frente a A+B de octubre p = 0,91), 3 por condición y
+  un solo chip. Indicio de radio activa: B queda 1,1-2,2 °C sobre C (en
+  octubre, 0,0). Esa placa lleva un firmware de alarma de Mario: copia en
+  `~/esp32_alarma_backup_f8b3b72a0928.bin`, restaurada y verificada por
+  SHA-256. `entropia_90b.py` admite ya ejecuciones en paralelo (cerrojo).
+- **Revisión de la memoria** (`docs/revision_memoria_2026-11-10.md`):
+  aplicados G1-G4, M4, M5, M8 y los recuentos (nueve bancos); pendientes
+  M1-M3, M6, M7, los menores y los ocho puntos frente al objetivo oficial.
+  Memoria con la captura continua (apéndice A, cap. 4 §cruces, cap. 7
+  protocolo, cap. 8), EN y ES, PDF regenerados.
+- Sin Vivado todavía: `build.tcl` sigue sin ejecutarse nunca.
+
+## Estado al 08-11-2026: el primer día de placa, preparado sin placa
+
+Detalle y checklist en **`docs/puesta_en_marcha_fpga.md`**. Nada probado en
+hardware todavía.
+
+- **Frecuencímetro de los anillos** (`rtl/fpga/medidor_frec.vhd`,
+  `siete_seg.vhd`): `basys3_top` muestra en el display la frecuencia de
+  ro2 (sw1 abajo) o ro1 (sw1 arriba) en MHz con un decimal (ventana de
+  640 µs, prescaler 64, ±1 cuenta = 0,1 MHz); JA3 saca el anillo / 64 solo
+  en modo test (un anillo visible deja seguir su fase). `motor_top` tiene
+  un puerto nuevo `ro_mon` (en el ASIC no va a pad); generic `G_MEDIDOR`
+  del envoltorio para quitarlo. Bancos nuevos `tb_medidor_frec` (10/10) y
+  `tb_basys3_top` (4/4, 7 min). XDC: pines de sw1, JA3 y display; ro1 es
+  ahora reloj (2,0 ns estimados). **`build.tcl` no cargaba
+  `aes_enc_32.vhd`**: Vivado no habría elaborado; corregido.
+- Yosys `synth_xilinx` de `basys3_top` (`synth/basys3/yosys_xc7.sh`): 4769
+  LUT y 4234 FF, ~23 % y ~10 % del XC7A35T (estimación de otra herramienta).
+- Verificador: `kd [N]` y `crudo` con plazo según CFG_KD (antes ~2 s
+  fijos) y línea `crudo i kd K ms M`. Modelo `motor_sim.c`: la captura
+  tarda 4096·2^kd periodos de ro2 a 300 MHz. Banco host paso 13 y paso de
+  campaña; `consola_verificador.c` = `main.c` del verificador en el PC.
+  **GCC 15**: mbedtls necesita `MBEDTLS_FATAL_WARNINGS=OFF` (`run_host.py`).
+  Compilado con ESP-IDF 5.3.2 en el Linux (`~/esp/esp-idf-v5.3.2`).
+- `analysis/campana_motor.py` (captura por lotes, log íntegro, CRC,
+  `kdNN.bin`, `--90b`) y `jitter_estimator.py --trozos kdNN.bin
+  --kd-captura K` (Q_raw, b y CFG_KD). Los análisis con numpy se lanzan con
+  `~/eda/venv/bin/python`.
+- CFG_KD de partida en Artix-7 [ESTIMADO, 2-4 ps / 3-5 ns]: 17-21. ro2
+  real probablemente 170-330 MHz, no los 714 del XDC.
+- **Plazos según CFG_KD** (`motor_plazo_bits_ms`, `motor_plazo_arranque_ms`,
+  `motor_plazo_siembra_ms` en `motor_i2c`): `bits · 2^CFG_KD / 100 MHz · 2`,
+  con 30/40 s de mínimo; con CFG_KD 24, arranque hasta 687 s.
+  `motor_esperar_arranque` se rinde en cuanto hay alarma. Banco host pasos 8
+  y 14 (`motor_arranque_lento` en el modelo, solo para el banco).
+- `analysis/compara_modelo_campana.py`: cifra SP 800-90B de cada divisor
+  frente a la calibración de `fuente_simulada_90b.csv` (lo que da la
+  batería con bits del modelo de esa H_∞), no frente a H_∞ directamente;
+  veredicto compatible / por debajo / por encima / saturada.
+  `prueba_compara_modelo.py` (Q conocida): 0 fallos; con Q_raw ×4 solo el
+  divisor más bajo lo detecta, así que la campaña necesita divisores bien
+  por debajo de K*.
+- Los trozos de `crudo` no son contiguos (SP 800-90B pide 10⁶
+  consecutivos): resuelto el 10-11 con la captura continua (arriba).
+  El commit `21b95b7` (curl con reintentos en `verifica.yml`) lo sube Mario:
+  el token de Claude no tiene ámbito `workflow`.
+- Cap. 8 (EN y ES) en borrador, con [PENDING]/[PENDIENTE] donde van los
+  resultados de la placa; PDF regenerados.
+- **8 chips más en el peor punto** (ss, −40 °C, 1,08 V, `--mismatch`, con
+  la histéresis; `results/anillo_ihp_mc_ss_m40_v108_hist_*`, 49 min con 4
+  procesos): 0 dobles cruces, cruces en 392,4-393,5 ns, K_D 3,44-4,23 M.
+  Con los 15 anteriores, 23 chips: 4 piden más de 2²², el peor 4,49 M
+  (H_∞ 0,973 con 2²²) y 2²³ cubre todos (≥ 0,9996). El chip 9 excluido no
+  se puede repetir (sin semilla); era un caso aislado. `anillo_ihp.md`
+  §4.3, cap. 7 y cap. 8 (EN y ES).
+
+## Estado al 31-10-2026: la fuente simulada bajo SP 800-90B
+
+`analysis/fuente_simulada_90b.py` genera bits **simulados** del ERO (modelo
+estocástico con el Q de los transistores IHP: tt 27 °C, ss −40 °C 1,08 V y
+el peor chip con desapareamiento) para divisores 2¹⁴-2²⁴, tres semillas,
+10⁶ bits, más bits uniformes de referencia, y los pasa por la batería del
+NIST con la misma vía que el ESP32. Lectura en **`docs/fuente_simulada_90b.md`**,
+figura y tabla con `analysis/fuente_simulada_figura.py`, cap. 7 §"The
+simulated source under the same battery" (EN y ES). Resultados:
+
+- A 10⁶ bits la batería **se satura en 0,839 ± 0,021** (bits uniformes); todo
+  punto con H_∞ ≥ 0,97 del modelo da 0,82-0,87. El ESP32 (0,85) y el motor
+  a 2²³ (0,84-0,85) son **indistinguibles** a esta N.
+- Con poca entropía la batería **sobreestima** (2¹⁴: modelo ≈ 0, NIST
+  0,07-0,11): no es una cota; el divisor lo fija el modelo.
+- La vía IID en byte **acepta** 2²¹ del peor caso (H_∞ 0,79) en 2 de 3 y ss
+  (0,85) en 3 de 3, con crédito 0,86-0,90: refuerza llevar la cifra no-IID.
+- `ea_iid` en bits tarda ~28 min por secuencia de 10⁶: no se ha corrido.
+  La columna `IID` del CSV de la herramienta es el tipo de prueba, no el
+  veredicto (`testCases.0.passed*`).
+- **01-11: más bits** (`--n`, sufijo `_n<N>` en el nombre y columna
+  `n_bits`; `fuente_simulada_figura.py` solo lee las filas de 10⁶). 2²³ en
+  los tres casos e ideal, 3 semillas, a las longitudes de las capturas
+  largas sin radio: **`esp_rf_off_1` = 3 523 072 bits y `esp_rf_off_2` =
+  8 378 368** (no las dos ~8,4·10⁶). Las doce secuencias con H_∞ ≈ 1 dan
+  0,881 (0,860-0,925) y 0,912 (0,889-0,935); el ESP32, 0,867 y 0,911:
+  **el techo sube con N para todos y la batería sigue sin separarlos**.
+  IID en byte a 8,4·10⁶: 12/12 pasan. Limita la compresión (33 de 36) o el
+  t-Tuple. En byte, 4 secuencias bajan a 0,79-0,83 por la cota local
+  (racha r = 4) de los predictores sobre bytes, no por la fuente. Logs
+  `results/fuente_simulada_90b_n{3523072,8378368}.log`; docs §5; cap. 7 EN
+  y ES con un párrafo (O8 no puede apoyarse en la diferencia de cifras SP
+  800-90B); PDF regenerados.
+
+## Estado al 28-10-2026: AES de 32 bits, I2C bajo abuso, placa y CI
+
+- **`rtl/aes/aes_enc_32.vhd`**: segundo núcleo AES, ruta de 32 bits (4
+  S-boxes compartidas entre SubBytes y el SubWord de la clave, un
+  MixColumns, ShiftRows como permutación del registro, una columna por
+  ciclo; 51 ciclos/bloque). Mismo interfaz que `aes_enc` con `borrar`.
+  `aes_pkg` gana `sub_word` y `mix_columna` (y `mix_columns` se apoya en
+  ella). `motor_top` lo elige con `G_AES_COMPACTO` (true por defecto;
+  solo cuenta con `G_AES_COMPARTIDO`). `tb_aes_enc` ejecuta los dos
+  núcleos con los mismos estímulos, exige que coincidan y prueba `borrar`
+  a mitad (18/18). **Síntesis: núcleo 6,67 kGE frente a 16,06; motor
+  92,53 frente a 101,83** (`motor_top_aes11` = variante con
+  `-gG_AES_COMPACTO=false`, `VARIANTES` en `sintetiza.py`). Motor
+  digital sin captura ≈ 46 kGE. Los 20-25 kGE del estado del arte ya no se
+  prometen: con la tercera optimización quedaría en ≈ 42.
+- **`tb_i2c_slave` bajo abuso** (pasos 5-13, 49/49): espurios bajo el
+  filtro dentro de un byte (SDA con SCL alto, SCL en fase baja), STOP y
+  START repetido a mitad de byte, bytes tras dirección ajena, puntero que
+  sobrevive al STOP y da la vuelta en 0xFF, maestro que desaparece con el
+  esclavo tirando de SDA (la guarda lo suelta a los `G_GUARDA` ciclos,
+  medido), STOP tras ACK de lectura (si el byte siguiente empieza por 0 el
+  esclavo retiene SDA, como cualquier esclavo I2C, y la guarda resuelve),
+  bus a 1 MHz y 100 kHz. Cuenta pulsos de escritura (`n_we`) y una
+  propiedad PSL (nunca tira de SDA en reposo). Sin fallos del RTL.
+- **Medidor en un ESP32-C3 real** (COM25, `MOTOR_SIMULADO`, flasheado con
+  esptool desde Windows; `analysis/placa_medidor.py`,
+  `results/placa_medidor_esp32c3.log`, 0 fallos; `verifica_lecturas.py` 9
+  válidas + CSR). Tiempos: clave 0,16-0,19 s, CSR 0,2 s, firma ~0,2 s. La
+  clave en NVS y el contador de arranques sobreviven a reinicios por RTS.
+  **Fallo real encontrado:** la consola con `fgets` sobre stdin no
+  bloqueante troceaba las órdenes por USB-serie (`lectura 1` → `le`,
+  `ctu`, `r`, `a`); corregido en los dos firmwares con `leer_linea`
+  (acumula hasta `\n`). Con el motor simulado, la clave tras `olvidar` sale
+  igual (rand() sin semilla): documentado como demostración, no fallo.
+- **`.github/workflows/verifica.yml`**: modelo/estimadores, bancos GHDL
+  (apt `ghdl`) + `verifica_top`, síntesis (`--verilog`, yowasp-yosys),
+  banco en host con mbedtls 3.6 clonado (+ `--sanear`), ESP-IDF 5.3.5 en
+  contenedor (los dos proyectos, normal y `MOTOR_SIMULADO`), memoria con
+  tectonic (PDF como artefacto). `sintetiza.py` ya corre en Linux sin
+  `wsl.exe` (`EN_WINDOWS`). Primera ejecución (push de 6330180): 7/7
+  trabajos en verde, bancos GHDL en 6 min, memoria compilada por primera
+  vez; la síntesis del runner coincide con la local dentro del 0,5 %. El
+  banco en host salió verde **a medias**: el clon git de mbedtls no
+  trae los ficheros generados y `run_host.py` degradaba en silencio al
+  modo sin mbedtls. Arreglado: tarball de release en la CI y error si se
+  pide `--mbedtls` y no compila. Subir un flujo exige un token con ámbito
+  `workflow` (el PAT anterior no lo tenía).
+- `rtl/run_tb.py` busca también `~/eda/ghdl/bin/ghdl.exe`.
+
+## Estado al 27-10-2026 (noche): motor versión 0x03
+
+Cuatro reglas nuevas en el RTL, salidas de los pendientes de la revisión
+(`rtl/top/motor_top.vhd`, `rtl/drbg/ctr_drbg.vhd`; especificación en
+`docs/mapa_registros.md`):
+
+- **`capturar` ya no puede exponer la semilla.** Es una orden más del
+  secuenciador: solo en modo test, con el motor libre y sin otra captura en
+  marcha (`cap_en_curso`); `sembrar`/`resembrar` se rechazan mientras hay
+  una captura en curso. Antes una captura lanzada durante una siembra dejaba
+  los bits de la semilla en el buffer, legible al activar modo test.
+- **`PETICIONES` no da la vuelta.** Generic `G_PET_BITS` (32 en hardware; el
+  banco usa 4): con el contador a todo unos el DRBG ignora `generar` y el
+  top rechaza `generar`/`aleatorio` con **`DIAG.agotado` (bit 2)** hasta
+  resembrar.
+- **`borrar_todo` (CONTROL bit 7)**, zeroización: clave, estado del DRBG y
+  contador (`ctr_drbg.borrar`), RETO, ALEATORIO y semilla a cero, clave nula
+  cargada en el CMAC (estado `ZEROIZANDO`). Se atiende también con alarma.
+- **CFG_KD de reset = 24** (generic `G_KD_RESET`; antes 7).
+- VERSION pasa a **0x03**. Prioridad de órdenes en una misma escritura:
+  borrar_todo, sembrar/resembrar, generar, aleatorio, autenticar, capturar.
+- Bancos: `tb_motor_top` pasos nuevos 5d (agotado, con `G_PET_BITS => 4`),
+  6a-6c (captura) y 8 (zeroización); `tb_ctr_drbg` con los puertos nuevos.
+  **Los siete bancos pasan** (`tb_motor_top` 64/64 comprobaciones tras la revisión y el AES compartido) y
+  `verifica_top.py` 5/5 (`results/tb_motor_top.log`). Ojo al leer `PETICIONES` con `leer_bloque`:
+  el byte bajo queda a la izquierda del vector (`x"05000000"` = 5).
+- Modelo en host (`motor_sim.c`): mismas reglas, `motor_pet_max` y
+  `motor_capturando` para el banco; `test_verificador` pasos 11 (agotado) y
+  12 (`cero`); firmware: `CTL_BORRAR_TODO`, `DG_AGOTADO`, `MOTOR_VERSION 3`,
+  comando `cero` en el verificador. Banco host 0 fallos, firmware compila
+  (0 avisos). **Síntesis repetida** (camino Verilog + yowasp, abajo):
+  motor_top 115,68 kGE con dos AES (+0,76 respecto a la 0x02; el DRBG
+  +0,99 por el contador saturado y el borrado) y **101,56 kGE con el AES
+  compartido** (abajo), motor digital sin captura ≈ 55 kGE.
+  `docs/sintesis_resultados.md`, `results/sintesis_sg13g2.{csv,log}` y el
+  cap. 6 de la memoria (EN y ES) al día.
+- Memoria: cap. 4 (EN y ES) con el párrafo de las cuatro reglas; PDF sin
+  regenerar (en este PC no hay tectonic).
+- **Segunda revisión independiente, del RTL 0x03** (otra sesión, con
+  banco extendido y mutantes en copias): un hallazgo grave y tres medios,
+  todos corregidos. **H1**: `cap_en_curso` se perdía un ciclo después de
+  lanzar cualquier captura que no fuera la primera (`cap_lleno` de la
+  anterior aún a 1), la siembra se aceptaba y la semilla volvía al buffer;
+  ahora `cap_en_curso` solo se baja con `cap_lleno = '1' and cap_arranca =
+  '0'`, y el banco (6d) hace una segunda captura, comprueba `cap_en_curso`,
+  el rechazo de `resembrar` y que la semilla no está en los 4096 bits del
+  buffer a ningún desplazamiento. **H2**: `borrar_todo` dejaba Key
+  recuperable en `temp_hi`/`kdf`/`x_df`/`aes_clave` y en la clave de ronda
+  del `aes_enc`; `ctr_drbg.borrar` limpia ahora todos los intermedios, se
+  atiende en cualquier fase (aborta) y `aes_enc` tiene entrada `borrar`.
+  **H3**: ETIQUETA seguía legible tras borrar; `aes_cmac` pone `x` a cero al
+  cargar clave y el top lee 0x30 como ceros sin `etiqueta_lista` (modelo
+  host igual). **H4**: `resembrar` sin estado se aceptaba; ahora exige
+  `drbg_sembrado`. **H7**: `modo_test` pasa por dos biestables
+  (`modo_test_s`). **H6** (documentado): `borrar_alarmas` + siembra en la
+  misma escritura aborta la siembra; bits 0 y 5 a la vez → resembrar.
+  `tb_ctr_drbg` cubre ahora `borrar` (en reposo y a mitad) y la saturación
+  con una segunda instancia `G_PET_BITS => 2`.
+- **AES compartido** (`G_AES_COMPARTIDO`, por defecto true): `aes_cmac` y
+  `ctr_drbg` tienen generic `G_AES_EXTERNO` y puertos `aes_*_o/_i`; el
+  único `aes_enc` vive en `motor_top` (`g_nucleo_unico`) y se reparte por
+  `arranca` (el núcleo captura clave y dato en ese ciclo); salida y `listo`
+  van a los dos. PSL `p_aes_uno` en el banco: nunca arrancan a la vez.
+  Síntesis: **101,56 kGE** (−14,1 respecto a los 115,68 con dos núcleos;
+  la estimación era 15,8: el reparto y la entrada `borrar` del AES se
+  comen el resto); motor digital sin captura ≈ 55 kGE. Cuidado con las
+  etiquetas de `generate`: VHDL no distingue mayúsculas y `g_aes_externo`
+  chocaba con el generic `G_AES_EXTERNO`.
+- **Reset sincronizado** (`rtl/trng/reset_sync.vhd`): activación asíncrona
+  y liberación síncrona, uno por dominio (`rst_n_s` para clk, `rst_n_ro`
+  para ro2). `bit_cdc` tiene reset también en origen y `trng_capture` un
+  reset por dominio (`rst_n_ro`). El reset de la placa ya no llega crudo a
+  ningún biestable. Siete bancos en verde tras el cambio.
+- **Propiedades PSL en `tb_motor_top`** (bloque `propiedades`, VHDL-2008 en
+  línea, no en comentarios: GHDL solo las evalúa así): con alarma no hay
+  generación ni siembra, sin test de arranque no se recoge semilla, con el
+  contador agotado no se genera, captura y siembra excluyentes, captura
+  solo en modo test, sin clave no se autentica, `borrar_todo` deja la clave
+  a cero en el ciclo, y el motor nunca se queda ocupado (`eventually!`);
+  más cuatro `cover`. Se vigilan en toda la simulación, no solo en los
+  pasos que las provocan. `run_tb.py` pasa `--psl-report` y falla si hay
+  aserción violada o cobertura sin alcanzar. Resultado: 11/11 aserciones
+  y 6/6 coberturas. Mutante (copia aparte, `generar` sin mirar la alarma):
+  lo caza `p_alm_gen` 90 µs antes que el paso 5b del banco
+  (`results/tb_motor_top_mutante.log`). **Formal con sby descartado**
+  por ahora: GHDL `--synth --out=verilog` vuelca los `cover` con sintaxis
+  VHDL que Yosys no lee, y el anillo es un segundo reloj.
+- **Basys 3 sin placa**: `rtl/fpga/basys3_top.vhd` (envoltorio: btnC como
+  reset, SDA en colector abierto, LED de latido), `synth/basys3/basys3.xdc`
+  (pines, reloj del anillo ro2 con periodo estimado 1,4 ns,
+  `ALLOW_COMBINATORIAL_LOOPS`, `DONT_TOUCH`, `set_disable_timing`),
+  `ro_pblocks.xdc` (un pblock por anillo) y `build.tcl` (flujo non-project,
+  `-tclargs programar` para grabar). Solo analizado con GHDL; **sin Vivado
+  en este PC**, sin probar. Instalación de Vivado en el Windows de Mario y
+  grabación (también con `openFPGALoader` desde Linux):
+  `docs/instalacion_vivado_windows.md` (31-10, sin ejecutar). El Ubuntu
+  26.04 no está entre los Linux que soporta AMD (22.04 y 24.04).
+- **Medidor**: la clave privada se guarda en NVS (`nvs_clave()`), se
+  recupera al arrancar y `olvidar` la borra; el firmware avisa de que sin
+  cifrado de flash/NVS va en claro. Banco host paso 11.
+- **Síntesis sin OSS CAD Suite**: `synth/sintetiza.py` tiene un segundo
+  camino, GHDL de Windows `--synth --out=verilog` + `yowasp-yosys` (Yosys
+  por pip en WSL, `pip install --user yowasp-yosys`), mismo flujo y misma
+  biblioteca; con `aes_enc` da −0,9 % respecto al plugin. Se elige solo
+  según la herramienta que haya (`--verilog` lo fuerza).
+
+## Estado al 27-10-2026 (tarde): el motor usado por un producto
+
+Rama `feat/lecturas-firmadas` (sobre `fix/salud-bloquea-salida`). Diseño y
+porqués en **`docs/lecturas_firmadas.md`**.
+
+- **`firmware/componentes/motor_i2c/`**: la capa de acceso al motor
+  (mapa, `motor_orden()` con `DIAG.rechazada`, plazos en tiempo real,
+  `motor_rng()` como `f_rng` de mbedtls que **falla cerrado**) sale del
+  verificador a un componente compartido. El verificador usa el componente
+  (`set(EXTRA_COMPONENT_DIRS ../componentes)`).
+- **`firmware/medidor/`** (ESP32-C3): el motor usado, no juzgado. Clave
+  ECDSA P-256 generada con bloques `ALEATORIO` del motor (2 por clave), que
+  no sale del chip; `publica` (trama `P`, SPKI DER), `csr` (PKCS#10 PEM),
+  `lectura N` (trama `L`: 24 bytes + firma DER). ECDSA determinista
+  (RFC 6979, `lectura.c` no compila sin `MBEDTLS_ECDSA_DETERMINISTIC`): el
+  motor solo entra en la generación de la clave; con alarma se sigue
+  firmando y no hay clave nueva, y una generación fallida mantiene la
+  anterior. Seguridad acotada a 128 bits por el CTR_DRBG AES-128.
+- **`firmware/host_check/`** (antes dentro del verificador): `run_host.py`
+  compila y corre `test_verificador.c` y `test_medidor.c` contra
+  `motor_sim.c` + `plataforma_sim.c` con **mbedtls real** (`--mbedtls`, vale
+  el árbol de ESP-IDF; lo compila con cmake) y pasa la salida del medidor
+  por `analysis/verifica_lecturas.py --permitir-cambio` (verifica con
+  `cryptography`): 9 válidas, 1 manipulada, 1 repetida y 2 cambios de clave
+  plantados, CSR válida. Sin mbedtls real el verificador usa
+  `mbedtls_stub.c` (CMAC del modelo, no independiente) y el medidor se
+  salta. `motor_sim.c` es solo el modelo (siembra diferida hasta que acaba,
+  abortada por alarma, resembrar sin estado rechazado, semilla distinta en
+  cada siembra, `motor_fallo_tras_aleatorio` para fallos a mitad);
+  `plataforma_sim.c` tiene ticks, rand, CRC32 real, MAC fija y una NVS de un
+  valor. Log: `results/host_check.log`, 0 fallos.
+- **Revisión independiente** del primer commit (otra sesión, sin mis
+  conclusiones): 13 hallazgos, todos corregidos o documentados. Los que
+  importan: el `memset` final de `motor_rng()` lo eliminaba el compilador
+  (ahora bucle `volatile`); `motor_orden()` espera a que el motor esté libre
+  **antes** de escribir CONTROL (tras un fallo de bus a mitad de orden la
+  siguiente se rechazaba); la secuencia de las lecturas lleva en el byte
+  alto un contador de arranques en NVS; `verifica_lecturas.py` va en una
+  sola pasada, cuenta y avisa de los cambios de pública (`clave_cambiada`,
+  fallo salvo `--permitir-cambio`) y un log vacío no pasa; con el bus caído
+  `clave` dice "ERROR I2C" y no "sin sembrar"; `lectura N` tope 1000. El
+  revisor señaló también un nombre en los agradecimientos de
+  `memoria/tfm_main*.tex`: es anterior a esta rama y decisión de Mario.
+- **Compilado con ESP-IDF 5.3.5** (WSL): verificador esp32 y medidor esp32c3,
+  0 avisos (`results/verificador_build_esp32.log`,
+  `results/medidor_build_esp32c3.log`; `$HOME`/`$IDF_PATH` enmascarados).
+- **QEMU** (`qemu-system-riscv32`/`-xtensa` de Espressif): sin motor el
+  medidor arranca y falla cerrado (`results/qemu_medidor_sin_motor.log`);
+  con `idf.py -B build_sim -DMOTOR_SIMULADO=1 build` (medidor y verificador)
+  el modelo del banco va dentro del firmware suplantando al driver I2C con
+  `--wrap` (+ `-u`, porque el objeto está en `libmain.a` y nadie lo llama) y
+  la secuencia completa corre en el chip emulado con el mbedtls del objetivo
+  y la NVS real; dos arranques sobre la misma flash y `verifica_lecturas.py`
+  sobre el log: `results/qemu_medidor_esp32c3*.log`. Pila mínima libre de la
+  tarea principal 10 568 B de 12 288. Verificador en QEMU esp32: 20 retos,
+  20 aciertos (`results/qemu_verificador_esp32.log`). En QEMU hay que dar
+  tiempo entre órdenes: la consola no es por interrupción y lo que llega
+  mientras firma se pierde. Nada en placa.
+- `run_host.py --sanear` (ASan+UBSan, `results/host_check_sanear.log`; ASan
+  encontró una fuga de la clave al "reiniciar") y
+  `analysis/fuzz_verifica_lecturas.py` (`results/fuzz_verifica_lecturas.log`;
+  encontró una excepción con una trama P que no era DER). Los dos en verde.
+- Memoria: cap. 5, sección nueva "The engine in a product" en inglés y
+  español; PDF no regenerados. README actualizado.
+- Pendiente: guardar la clave (NVS cifrado o el motor como elemento seguro,
+  que hoy solo guarda una AES-128 y no firma), hora real, resembrado por
+  `PETICIONES`, lecturas reales, contador de arranques de un byte; y la
+  lista de la revisión de abajo.
+
+## Estado al 27-10-2026: la alarma de salud bloquea la salida
+
+Revisión externa del RTL y del firmware. Fallo grave corregido (rama
+`fix/salud-bloquea-salida`):
+
+- **Antes**, con alarma levantada seguían saliendo clave y ALEATORIO
+  (`generar`/`aleatorio` solo miraban `sembrado`), el APT nunca evaluaba la
+  primera semilla (384 bits < ventana de 1024) y no había test de arranque.
+- **Ahora** (`rtl/top/motor_top.vhd`, `rtl/trng/health_tests.vhd`): con
+  alarma se rechazan sembrar, resembrar, generar y aleatorio; test de
+  arranque de SP 800-90B §4.3 (una ventana completa del APT sin alarma tras
+  el reset o tras borrar, y borrar reinicia la ventana); la semilla solo
+  entra en el DRBG cuando se cierra limpia la ventana que contiene su último
+  bit (estado `VALIDANDO`); registro nuevo **DIAG (0x0E)** con `arrancado` y
+  `rechazada`; VERSION pasa a 0x02. Especificación en `docs/mapa_registros.md`.
+  (Ojo, 17-11: el `sdkconfig` local del verificador se quedó con
+  `CONFIG_FREERTOS_HZ=100`; ver "Estado al 17-11-2026".)
+- `tb_health_tests` (caso 6) y `tb_motor_top` (2.0, 5b, 5c; la alarma se
+  fuerza con `force` sobre un nombre externo) cubren todo. Los siete bancos
+  pasan con GHDL 6.0.0 (`results/tb_motor_top.log`). Si el Python es el de
+  Microsoft Store no ve `%LOCALAPPDATA%\ghdl`: poner GHDL en otra carpeta y
+  su `bin` en el PATH al lanzar `run_tb.py`.
+- Verificador (`firmware/verificador`): `orden()` comprueba
+  `DIAG.rechazada`; plazos en tiempo real con `CONFIG_FREERTOS_HZ=1000` (a
+  100 Hz `pdMS_TO_TICKS(2)` era 0); `sembrar` espera al test de arranque;
+  comando `borrar`; ni rechazos ni fallos de bus llegan al PC como tramas
+  con CRC válido; `generar` sin modo test invalida la clave provisionada.
+  `host_check/motor_sim.c` modela ahora `ocupado`, arranque, rechazos y
+  alarma, y `test_verificador.c` comprueba cuentas reales (antes había
+  `chk(true, …)`). Sin compilar con ESP-IDF en este PC.
+- Memoria: cap. 4 actualizado en inglés y en español; **los PDF no están
+  regenerados**.
+- Pendiente de la misma revisión: sin XDC/SDC; sincronizador de reset y
+  `bit_cdc` sin reset; condiciones A/B del ESP32 posiblemente con la radio
+  dormida (`rng_sampler.c` sin `sta_disconnected_pm = false`). Lo demás
+  (captura y semilla, `CFG_KD` de reset, `reseed_interval`, zeroización) se
+  resolvió en la versión 0x03 (sección de arriba).
 
 ## Estado al cierre del 19-09-2026
 
@@ -127,10 +966,37 @@ todo. Léelo entero antes de tocar nada.
   Tabla~" con mayúscula.
 - **Anillo con transistores reales del PDK abierto IHP SG13G2**
   (`analysis/anillo_ihp.py`, `docs/anillo_ihp.md`): el ruido inyectado sale
-  del propio modelo; 5 etapas a 2,73 GHz, σ = 180 fs por periodo,
-  K_D ≈ 941 000, 2,9 kbit/s. Necesita ngspice 47 y OpenVAF-Reloaded,
-  compilados en WSL (`~/eda/ngspice47`, `~/eda/bin/openvaf-r`); el
-  ngspice 41 de conda-forge no carga estos modelos. Receta en el documento.
+  del propio modelo; 5 etapas a 2,73 GHz, σ = 176,7 ± 2,0 fs por periodo
+  (media de 8 realizaciones, dispersión 3,3 %; 30-10-2026, antes 180 fs de
+  una sola), K_D = 981 095 (959 000 – 1 004 000), 2,79 kbit/s; con 2²⁰,
+  H_∞ = 0,9853. Eso es tt a 27 °C. **Esquinas ss/tt/ff a −40/27/125 °C
+  (30-10, `anillo_ihp.md` §4.2): el peor caso es el frío y la esquina
+  lenta; ss a −40 °C pide K_D = 2 306 215, así que un divisor fijo para
+  todo el rango es 2²² (`CFG_KD` = 22, H_∞ = 0,9995, 0,51-0,82 kbit/s);
+  2²¹ se queda en 0,970.** Con V_DD ± 10 % y sf/fs a −40 °C (30-10): la
+  tensión baja manda; ss a −40 °C y 1,08 V pide K_D = 3 808 445 (ocho
+  realizaciones; tt/sf/fs a 1,08 V piden la mitad), 2²² da 0,9873 con solo
+  un 10 % de margen, así que **con ±10 % el divisor fijo
+  recomendado es 2²³** (0,9999, 0,20-0,41 kbit/s); sf/fs a −40 °C piden
+  1,32 y 1,55 M. **Desapareamiento** (`--mismatch`, §4.3, 31-10): 48 chips
+  en tt a 27 °C, periodo con dispersión 1,31 % (RO1 y RO2 difieren ~1,4 %),
+  σ = 177,2 ± 0,7 fs y la dispersión de σ/T (2,6 %) no supera la del ruido
+  solo: Q no cambia de forma medible; K_D por chip 0,87-1,09 M. En ss, −40 °C, 1,08 V (16
+  chips, uno excluido por cruces espurios: `cruces_subida` no tiene
+  histéresis) K_D medio 3,89 M y el peor chip 4,49 M > 2²² (H_∞ 0,973);
+  2²³ lo cubre (0,9996): se mantiene 2²³ con ±10 %. ngspice
+  tampoco deja fijar la semilla del sorteo. `anillo_ihp.py` y
+  `anillo_ihp_repeticiones.py` admiten `--esquina`, `--temp`, `--vdd` y
+  `--mismatch`; a 1,08 V cada realización tarda ~29 min.
+  `spice_ring.simular()` borra su directorio temporal: `/tmp` es un tmpfs
+  de 5,5 GB en RAM y los `.raw` lo llenaron.
+  **ngspice 47 no deja fijar la realización de `trnoise`**
+  (Wallace sembrado con `getpid()`; `rndseed`, `setseed` y
+  `.options seed` no le llegan): la incertidumbre sale de repetir
+  (`analysis/anillo_ihp_repeticiones.py`). Necesita ngspice 47 y
+  OpenVAF-Reloaded, compilados en WSL o en Linux (`~/eda/ngspice47`,
+  `~/eda/bin/openvaf-r`); el ngspice 41 de conda-forge no carga estos
+  modelos. Receta en el documento.
 - Contador del divisor del ERO de **20 a 24 bits** (`G_CNT_BITS`): con 20
   el K_D máximo dejaba solo un 11 % de margen. CFG_KD efectivo 0-24.
 - Las notas internas de la bibliografía van en `annote` (antes `note`, y
@@ -144,11 +1010,14 @@ todo. Léelo entero antes de tocar nada.
 | `analysis/` | modelo del anillo, estimadores, banco SPICE, **`ctr_drbg_ref.py`** (960 vectores CAVP), `verifica_top.py`, `consola_esp32.py` (consola serie + tramas), `campana_rng.py` (captura con el firmware del TFM_RNG, log íntegro), `entropia_90b.py` (batería SP 800-90B del NIST vía WSL), `resumen_90b.py` (tablas + ANOVA por condición), `anillo_ihp.py` (anillo con el PDK de IHP, separador térmico/1/f validado) | autovalidado |
 | `rtl/` | VHDL-2008: anillo, ERO, captura, salud, I2C, AES, CMAC, CTR_DRBG, `top/motor_top.vhd` | 7 bancos pasan (`python rtl/run_tb.py`) |
 | `synth/` | síntesis Yosys sobre IHP SG13G2, área en kGE | hecho |
-| `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls | compilado y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio |
-| `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 bajo SP 800-90B); 8 y apéndices pendientes |
+| `firmware/verificador/` | ESP-IDF 5: maestro I2C + verificación con mbedtls, sobre `componentes/motor_i2c` | compilado (27-10, 5.3.5) y flasheado (19-09) en un ESP32 sin motor: consola, tramas `esp` con CRC ok, "sin respuesta I2C" limpio; banco en PC 0 fallos |
+| `firmware/medidor/` | ESP-IDF 5, ESP32-C3: clave P-256 del motor, CSR, lecturas firmadas (`docs/lecturas_firmadas.md`) | compilado (27-10, 5.3.5); banco en PC + `verifica_lecturas.py` 0 fallos; nada en placa |
+| `firmware/host_check/` | `run_host.py`: los dos firmwares contra `motor_sim.c` y mbedtls real | `results/host_check.log` |
+| `memoria/` | LaTeX con la plantilla común; compila con tectonic (`results/memoria_compila.log`) | caps. 1–7 borrador (7 con la línea base del ESP32 y la fuente simulada bajo SP 800-90B) y apéndices A-C; 8 pendiente |
 
-**Pendiente de hardware:** puesta en marcha en la Basys 3, campaña de
-entropía del motor, ESP32 en el bucle con el motor. Lo que sí está hecho
+**Pendiente de hardware:** nada de lo básico desde el 17-11 (Basys 3, motor
+entero con el ESP32, campaña de entropía: `docs/basys3.md`); la tabla de
+arriba es la del 19-09 (hoy doce bancos). Lo que sí está hecho
 sin placa: la **línea base del ESP32 bajo SP 800-90B** (5 capturas reales,
 `docs/esp32_linea_base_90b.md`, `results/entropia_90b.csv`), que cierra
 la mitad del objetivo O8.
@@ -161,19 +1030,29 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   400 kHz, 3,3 V. Sin estiramiento de reloj: las órdenes largas
   (sembrar, generar) se lanzan escribiendo `CONTROL` (0x03) y se sondea
   `STATUS` (0x02) hasta que baje el bit `ocupado`.
-- Secuencia: leer `ID` (0x00) = 0xA5 → `CONTROL ← sembrar` → sondear →
-  comprobar `sembrado` y sin alarmas → `CONTROL ← generar` → sondear →
-  hay clave. Reto-respuesta: escribir 16 bytes en `RETO` (0x20),
+- Secuencia: leer `ID` (0x00) = 0xA5 y `VERSION` (0x01) = 0x04 (vale 0x03 o mayor) → sondear
+  `DIAG` (0x0E) hasta `arrancado` → `CONTROL ← sembrar` → sondear →
+  comprobar `DIAG.rechazada = 0`, `sembrado` y sin alarmas →
+  `CONTROL ← generar` → sondear → `DIAG.rechazada = 0` → hay clave. Reto-respuesta: escribir 16 bytes en `RETO` (0x20),
   `CONTROL ← autenticar`, sondear, leer `ETIQUETA` (0x30) y comparar con
   `mbedtls_cipher_cmac(AES-128-ECB, clave, reto)`.
 - **La clave solo es legible (0x10) con el pin `modo_test` activo.** Es
   para provisionar en banco. En producto la clave no sale del chip; el
   ESP32 solo obtiene etiquetas y aleatorio.
 - El hardware **rechaza** `sembrar`/`resembrar` si `CFG_KD` está por debajo
-  del mínimo (genérico `G_KD_MIN`, 6 por defecto): la orden se ignora y
+  del mínimo (genérico `G_KD_MIN`, 25 por defecto desde el 19-11; 19 en la
+  Basys 3): la orden se ignora y
   `ocupado` no llega a subir. Escribir `CFG_KD` con una orden en curso se
   ignora. Ambas cosas desde el 19-09; antes eran obligaciones del maestro
-  sin comprobar. Detalle en `docs/mapa_registros.md`.
+  sin comprobar. Desde el 27-10 **con alarma no sale nada** (se rechazan
+  sembrar, resembrar, generar y aleatorio) y no se siembra sin pasar el test
+  de arranque. Toda orden ignorada o siembra abortada levanta
+  `DIAG.rechazada`. Desde la versión 0x03: `capturar` solo en modo test y
+  nunca durante una siembra (ni siembra durante una captura); `PETICIONES`
+  se para en 2^32−1 y `DIAG.agotado` pide resembrar; `borrar_todo` (bit 7)
+  zeroiza; CFG_KD arranca en `G_KD_RESET` (25; 19 en la Basys 3) y un valor
+  fuera de [`G_PRESC_RO2`, `G_KD_MAX`] (4-26) se ignora con `DIAG.rechazada`
+  (22-11). Detalle en `docs/mapa_registros.md`.
 - Aleatorio para el host: `CONTROL ← aleatorio` (bit 6), sondear, leer
   `ALEATORIO` (0x40, 32 bytes). Es una generación del DRBG **independiente
   de la clave**. Hasta el 15-09 `generar` dejaba la clave en ese registro
@@ -181,9 +1060,12 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   antiguas que lean la clave desde ALEATORIO, están obsoletas.
 - mbedtls en ESP-IDF **no trae CMAC activado por defecto**: hace falta
   `CONFIG_MBEDTLS_CMAC_C=y` (ver `firmware/verificador/sdkconfig.defaults`).
-- Referencia de código: `firmware/verificador/main/main.c` (driver
-  `i2c_master` nuevo de IDF 5, comandos de consola, tramas al PC con
-  CRC32). Reutilizable tal cual como capa de acceso.
+- Referencia de código: `firmware/componentes/motor_i2c/` (driver
+  `i2c_master` nuevo de IDF 5, órdenes, plazos, `motor_rng()` para
+  mbedtls) es la capa de acceso, reutilizable tal cual; los comandos de
+  consola y las tramas al PC con CRC32 están en `verificador/main/main.c` y
+  `medidor/main/main.c`. Para usar el motor como fuente de claves en un
+  producto, el ejemplo es el medidor.
 - El motor **no descifra** ni ofrece hash: solo genera claves, sirve
   aleatorio y autentica con CMAC. El ESP32 ya tiene aceleradores AES y
   SHA propios para lo demás.
@@ -194,11 +1076,13 @@ La especificación es **`docs/mapa_registros.md`**. Resumen:
   **nunca** se usa como referencia de jitter; el anillo se muestrea con
   otro anillo.
 - El generador determinista es CTR_DRBG **con** función de derivación y
-  entrada fija de 256 bits de entropía + 128 de nonce; si se cambia esa
+  entrada fija de 384 bits de entropía + 128 de nonce (256 + 128 hasta el
+  16-11-2026); si se cambia esa
   disposición hay que regenerar los vectores con
   `analysis/gen_drbg_vectores.py`.
-- Los tests de salud (RCT C=22, APT W=1024 C=596) están calculados para
-  min-entropía 0,98; son genéricos y se fijan con la min-entropía
+- Los tests de salud (RCT C=51, APT W=1024 C=766, α = 2⁻³⁰) están
+  calculados para min-entropía 0,60 desde el 16-11-2026 (antes 0,80 con
+  39/683, y 0,98 con 22/596); son genéricos y se fijan con la min-entropía
   **medida**.
 - Con anillos a velocidad física la simulación del sistema completo no
   termina; `tb_motor_top` usa un modelo de anillo 10× más lento, y lo

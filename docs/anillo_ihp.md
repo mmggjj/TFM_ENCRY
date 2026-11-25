@@ -6,8 +6,12 @@ modelo PSP 103.6, licencia Apache 2.0) y cierra la cadena
 transistor → ruido → jitter → min-entropía **sin suponer el ruido**: la
 densidad que se inyecta sale del propio modelo del PDK.
 
-Código: `analysis/anillo_ihp.py` (usa `analysis/spice_ring.py`).
-Resultados: `results/anillo_ihp_*`.
+Código: `analysis/anillo_ihp.py` (usa `analysis/spice_ring.py`) y
+`analysis/anillo_ihp_repeticiones.py` (§4.1). Resultados: `results/anillo_ihp_*`.
+
+Revisado el 30-10-2026: §4 y §5 pasan de una realización (σ = 180,37 fs,
+K_D = 941 107) a la media de ocho (σ = 176,7 ± 2,0 fs, K_D = 981 095);
+los ficheros `anillo_ihp_e5_400n.*` se sustituyeron por `anillo_ihp_rep400n_*`.
 
 ## 1. Herramientas (WSL, espacio de usuario, sin root)
 
@@ -62,7 +66,7 @@ del anillo tiene que reproducir.
 | V_trip | 0,6305 V (V_DD/2 = 0,6: inversor equilibrado) |
 | Corriente en V_trip | 11,3 µA |
 | Conductancia del nudo | 0,238 mS |
-| Ruido térmico S_th | **4,126·10⁻²⁴ A²/Hz**, plano de 100 kHz a 10 GHz |
+| Ruido térmico S_th | **4,127·10⁻²⁴ A²/Hz**, plano de 100 kHz a 10 GHz |
 | γ efectiva = S_th / (4kT·g) | 1,04 (canal corto: más de los 2/3 de canal largo) |
 | Ruido 1/f | **S = K/f^α con K = 8,156·10⁻¹⁷ A², α = 1,000** |
 | Frecuencia de esquina 1/f | **19,8 MHz** |
@@ -72,7 +76,10 @@ El espectro es 1/f puro más un suelo plano hasta 10 GHz; por encima de
 30 GHz sube (ruido inducido en puerta), lejos de lo que importa aquí. Un
 primer cálculo del suelo como mediana entre 100 MHz y 1 GHz daba
 4,385·10⁻²⁴, un 6 % de más, porque a 100 MHz el 1/f todavía suma un 20 %:
-se corrigió restando el 1/f antes de tomar la mediana.
+se corrigió restando el 1/f antes de tomar la mediana. La mediana se toma
+de 100 kHz a 3 GHz (planitud 1,002); los resultados guardados hasta el
+30-10 se habían hecho con la banda desde 1 kHz (4,126·10⁻²⁴, planitud
+1,11), un 0,013 % menos.
 
 ## 3. Calibración de la fuente 1/f de ngspice
 
@@ -80,15 +87,21 @@ se corrigió restando el 1/f antes de tomar la mediana.
 no da la relación con la densidad con precisión suficiente: se midió con
 una fuente sola sobre 1 Ω, 1 µs a paso 0,5 ps, periodograma de Welch.
 
-| NAMP | Semilla | S·f por bandas 10 MHz … 1 THz (A²) |
+| NAMP | `rndseed` | S·f por bandas 10 MHz … 1 THz (A²) |
 |---|---|---|
 | 1 | 1 | 0,341 · 0,318 · 0,315 · 0,321 · 0,381 |
 | 2 | 1 | 1,197 · 1,201 · 1,252 · 1,260 · 1,491 |
 | 1 | 2 | 0,350 · 0,318 · 0,317 · 0,323 · 0,381 |
 
 S·f es plano de 10 MHz a 100 GHz (la última banda sube por la retención de
-muestras), escala con NAMP² (×3,92 frente a ×4, misma semilla) y no
-depende de la semilla. **K = 0,317·NAMP², que es 1/π al 0,4 %.** Para el
+muestras), escala con NAMP² (×3,92 frente a ×4) y dos realizaciones con
+NAMP = 1 coinciden. **K = 0,317·NAMP², que es 1/π al 0,4 %.** La columna
+`rndseed` no fija la realización: en ngspice 47 el ruido de `trnoise`
+(blanco y 1/f) sale del generador de Wallace, que se siembra con
+`getpid()` al arrancar, y ni `set rndseed`, ni `setseed`, ni
+`.options seed` lo resiembran (solo tocan el Tausworthe;
+`src/frontend/trannoise/wallace.c`, `initw`; comprobado el 30-10 con un
+circuito mínimo). Las tres filas son realizaciones independientes. Para el
 PDK: NAMP = √(π·K) = 1,60·10⁻⁸ A. Un primer ajuste en escala logarítmica
 sobre toda la banda daba ×5,75 en vez de ×4, porque lo dominaban los bines
 altos: se cambió a media de S·f en 0,1-10 GHz.
@@ -101,44 +114,346 @@ L = 0,13 µm, 1 fF por nudo como estimación del cableado (antes del trazado),
 ruido con NT = 0,5 ps (banda de 1 THz, muy por encima de los flancos). Se
 descartan los 20 primeros cruces (arranque).
 
-| Ruido inyectado | Cruces | Periodo (ps) | σ por periodo (fs) | σ/T | Exponente | Potencia (µW) |
-|---|---|---|---|---|---|---|
-| ninguno (resolución del banco) | 1071 | 366,039 | 0,696 | 1,90·10⁻⁶ | 0,47 | 143,0 |
-| térmico del PDK, 4,126·10⁻²⁴ A²/Hz | 1073 | 365,972 | **180,37** | **4,93·10⁻⁴** | 1,05 | 143,0 |
-| térmico ×4 | 1074 | 365,967 | 358,64 | 9,80·10⁻⁴ | 1,08 | 143,0 |
-| térmico + 1/f del PDK | 1073 | 365,974 | 183,33 | 5,01·10⁻⁴ | 1,005 | 143,0 |
+| Ruido inyectado | Realizaciones | Cruces | Periodo (ps) | σ por periodo (fs) | σ/T | Exponente | Potencia (µW) |
+|---|---|---|---|---|---|---|---|
+| ninguno (resolución del banco) | 1 (determinista) | 1071 | 366,039 | 0,675 | 1,85·10⁻⁶ | 0,42 | 143,0 |
+| térmico del PDK, 4,127·10⁻²⁴ A²/Hz | **8** | 1073-1074 | 365,968 | **176,7 ± 2,0** | **4,83·10⁻⁴** | 0,99 (0,93-1,08) | 143,0 |
+| térmico ×4 | 1 | 1073 | 365,978 | 351,0 | 9,59·10⁻⁴ | 0,92 | 143,0 |
+| térmico + 1/f del PDK | 1 | 1073 | 365,974 | 183,33 | 5,01·10⁻⁴ | 1,005 | 143,0 |
+
+El ± es una desviación típica de la media de las ocho; σ medio sale de
+promediar Q = (σ/T)². La fila con 1/f es de la tanda del 08-10 (S_th de
+4,126·10⁻²⁴); el resto, del 30-10 en Linux (`anillo_ihp_rep400n_*`).
 
 Lectura:
 
-- **Resolución primero.** Sin ruido el banco mide 0,70 fs, 259 veces por
-  debajo del jitter con el ruido del PDK. Su exponente (0,47) muestra que
+- **Resolución primero.** Sin ruido el banco mide 0,68 fs, 262 veces por
+  debajo del jitter con el ruido del PDK. Su exponente (0,42) muestra que
   ese suelo es ruido numérico, no un paseo aleatorio.
-- **Ley de la raíz.** Ruido ×4 → σ ×1,988 frente a ×2,000 teórico (0,6 %).
-  El periodo medio no se mueve (365,97 ps en los tres puntos con ruido): el
-  banco está dentro del régimen lineal, al contrario que el punto alto del
-  banco genérico.
-- **Exponente 1,05.** Ruido blanco: la varianza acumulada crece lineal con
-  el número de periodos, como supone el modelo de Baudet.
+- **Ley de la raíz.** Ruido ×4 → σ ×1,99 ± 0,06 frente a ×2,000 teórico
+  (la ×4 es una realización, con la dispersión de una sola). El periodo
+  medio no se mueve (365,97 ps en todos los puntos con ruido): el banco está
+  dentro del régimen lineal, al contrario que el punto alto del banco
+  genérico.
+- **Exponente 0,99** (media de ocho). Ruido blanco: la varianza acumulada
+  crece lineal con el número de periodos, como supone el modelo de Baudet.
 - **Contraste con Abidi** (JSSC 2006, orden de magnitud). Con
   V_car = 4·I_trip/(γ·g_nudo) = 0,181 V, todo medido en el mismo punto,
-  la fórmula da σ/T = 1,18·10⁻³; la simulación da 0,42 veces eso. Mismo
+  la fórmula da σ/T = 1,18·10⁻³; la simulación da 0,41 veces eso. Mismo
   orden. Dos tropiezos documentados: una primera versión de la fórmula
   olvidaba el factor f₀ y daba 10⁻⁸ (cuatro órdenes de menos), y la forma
   de canal largo con V_T (V_car = (V_DD/2 − V_T)/γ) no sirve aquí porque
   en el punto de conmutación los transistores están casi en el umbral
   (V_trip − V_T ≈ 0,07 V); con ella salía un cociente de 0,20.
 
+### 4.1 Incertidumbre: ocho realizaciones
+
+ngspice 47 no deja fijar la realización del ruido (§3), así que cada
+ejecución es otra realización y la incertidumbre sale de repetir:
+`analysis/anillo_ihp_repeticiones.py` lanza ocho en paralelo.
+
+| Realización | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| σ (fs) | 178,7 | 186,5 | 173,8 | 175,1 | 175,0 | 182,5 | 171,8 | 169,0 |
+
+Dispersión entre realizaciones: 3,3 % en σ (5,7 fs), algo más que el
+2,2 % que darían ~1070 periodos independientes. Lo que antes era la cifra
+(180,37 fs, una realización en Windows) queda a +0,65 veces la dispersión
+entre realizaciones de la media; otra en Linux el 30-10, fuera de estas
+ocho, dio 171,06 fs (−0,97). El periodo, la potencia,
+V_T y la densidad de ruido no dependen de la realización y coinciden entre
+Windows y Linux (la densidad, bit a bit).
+
+### 4.2 Esquinas y temperatura (30-10-2026)
+
+Esquinas ss, tt y ff a −40, 27 y 125 °C; en cada punto se recalcula la
+densidad del PDK (`--esquina`, `--temp`; el `.temp` llega también al
+transitorio: a 125 °C el periodo pasa a 379,9 ps). Cuatro realizaciones
+por punto (ocho en tt a 27 °C), 400 ns, solo con el térmico. Ficheros
+`results/anillo_ihp_esq_<esquina>_<T>_*` (−40 se escribe `m40`).
+
+| Esquina | T | Periodo (ps) | P (µW) | σ (fs) | σ/T | K_D para H_∞ ≥ 0,98 | H_∞ con 2²⁰ | 2²¹ | 2²² |
+|---|---|---|---|---|---|---|---|---|---|
+| ss | −40 °C | 438,6 | 117,5 | 138,1 ± 1,3 | 3,15·10⁻⁴ | **2 306 215** (2 262 960 – 2 351 156) | 0,781 | **0,970** | 0,9995 |
+| ss | 27 °C | 451,7 | 113,8 | 187,8 ± 2,1 | 4,16·10⁻⁴ | 1 322 114 | 0,950 | 0,9986 | 1,0000 |
+| ss | 125 °C | 469,6 | 109,6 | 274,8 ± 5,5 | 5,85·10⁻⁴ | 667 499 | 0,9985 | 1,0000 | 1,0000 |
+| tt | −40 °C | 358,8 | 146,2 | 141,7 ± 0,6 | 3,95·10⁻⁴ | 1 465 702 | 0,929 | 0,9971 | 1,0000 |
+| tt | 27 °C | 366,0 | 143,0 | 176,7 ± 2,0 | 4,83·10⁻⁴ | 981 095 | 0,985 | 0,9999 | 1,0000 |
+| tt | 125 °C | 379,9 | 138,3 | 239,1 ± 3,2 | 6,29·10⁻⁴ | 577 234 | 0,9995 | 1,0000 | 1,0000 |
+| ff | −40 °C | 289,7 | 184,8 | 125,0 ± 3,1 | 4,32·10⁻⁴ | 1 227 368 | 0,962 | 0,9992 | 1,0000 |
+| ff | 27 °C | 295,7 | 180,8 | 153,8 ± 2,6 | 5,20·10⁻⁴ | 845 499 | 0,993 | 1,0000 | 1,0000 |
+| ff | 125 °C | 309,0 | 174,3 | 210,2 ± 2,0 | 6,80·10⁻⁴ | 493 808 | 0,9999 | 1,0000 | 1,0000 |
+
+H_∞ con el Q medio; a −1σ de Q, ss a −40 °C da 0,773 / 0,968 / 0,9994.
+
+**Alimentación ±10 % y esquinas asimétricas, a −40 °C** (30-10-2026,
+`--vdd`; cuatro realizaciones por punto, ocho en ss a 1,08 V; ficheros
+`anillo_ihp_esq_ss_m40_v108_*`, `_ss_m40_v132_*`, `_sf_m40_*`,
+`_fs_m40_*`, y `_tt_m40_v108_*`, `_sf_m40_v108_*`, `_fs_m40_v108_*`). La densidad del inversor se recalcula también con la
+tensión: a 1,08 V en ss y −40 °C el inversor conmuta casi en inversión
+débil (V_T 0,66 V, corriente de conmutación 0,8 µA) y el térmico baja a
+5,13·10⁻²⁵ A²/Hz.
+
+| Punto (−40 °C) | V_DD | Periodo (ps) | P (µW) | σ (fs) | σ/T | K_D para H_∞ ≥ 0,98 | H_∞ con 2²¹ | 2²² | 2²³ |
+|---|---|---|---|---|---|---|---|---|---|
+| **ss** | **1,08 V** | 587,7 | 70,8 | 144,0 ± 1,8 | 2,45·10⁻⁴ | **3 808 445** (3 713 192 – 3 908 714) | 0,855 | **0,9873** | 0,9999 |
+| tt | 1,08 V | 465,7 | 91,0 | 160,2 ± 1,2 | 3,44·10⁻⁴ | 1 932 207 | 0,986 | 0,9999 | 1,0000 |
+| sf | 1,08 V | 467,9 | 90,5 | 178,7 ± 3,8 | 3,82·10⁻⁴ | 1 566 766 | 0,9956 | 1,0000 | 1,0000 |
+| fs | 1,08 V | 464,2 | 91,2 | 168,1 ± 0,9 | 3,62·10⁻⁴ | 1 743 907 | 0,9919 | 1,0000 | 1,0000 |
+| ss | 1,20 V | 438,6 | 117,5 | 138,1 ± 1,3 | 3,15·10⁻⁴ | 2 306 215 | 0,970 | 0,9995 | 1,0000 |
+| ss | 1,32 V | 350,9 | 178,1 | 124,5 ± 1,3 | 3,55·10⁻⁴ | 1 816 181 | 0,990 | 0,9999 | 1,0000 |
+| sf | 1,20 V | 359,1 | 146,1 | 149,3 ± 0,8 | 4,16·10⁻⁴ | 1 321 853 | 0,9986 | 1,0000 | 1,0000 |
+| fs | 1,20 V | 358,2 | 146,4 | 137,7 ± 0,3 | 3,85·10⁻⁴ | 1 546 328 | 0,9960 | 1,0000 | 1,0000 |
+
+A −1σ de Q, ss a 1,08 V da 0,845 / 0,9856 / 0,9999. Con las cuatro primeras realizaciones de ss a 1,08 V salía K_D = 3 913 109 y 0,9855 con 2²²; las ocho lo bajan un 3 % y reducen a la mitad el error.
+
+Lectura:
+
+- **El frío es el peor caso, no el calor.** σ/T sube con T en las tres
+  esquinas (el térmico va con kT y el periodo cambia poco), así que el
+  K_D necesario cae de −40 a 125 °C en un factor 3,5 (ss), 2,5 (tt) y
+  2,5 (ff).
+- **La esquina lenta es peor que la rápida** a igual temperatura: con
+  menos corriente baja más el ruido que lo que se alarga el periodo.
+- **ss a −40 °C combina las dos peor que su producto**: por separado, Q ×
+  0,74 (ss) y Q × 0,67 (frío) darían × 0,50; juntas dan × 0,43.
+- **2²⁰ solo cumple en tt a 27 °C o mejor; 2²¹ no cubre ss a −40 °C
+  (0,970); 2²² cubre toda la rejilla a 1,2 V** (0,9995 en el peor punto)
+  con 0,51 – 0,82 kbit/s según la esquina.
+- **La tensión baja es el tercer factor, y el más fuerte.** En ss a
+  −40 °C, de 1,2 a 1,08 V el periodo se alarga un 34 % y σ casi no cambia
+  (el ruido baja con la corriente al mismo ritmo que sube el tiempo de
+  conmutación), así que σ/T cae y K_D sube × 1,65. A 1,32 V pasa lo
+  contrario (× 0,79). El peor punto simulado es **ss, −40 °C, 1,08 V:
+  K_D = 3,81 M**. En tt el mismo paso de tensión pide × 1,32.
+- **2²² aún lo cubre, pero justo:** H_∞ = 0,9873 (0,9856 a −1σ), un 10 %
+  de margen en K_D y 3,6 errores estándar; un margen del orden del que se
+  juzgó insuficiente para 2²⁰ en tt a 27 °C (7 %, §5). **2²³ da 0,9999** en el peor
+  punto (0,20 – 0,41 kbit/s en los puntos simulados).
+- **Las esquinas asimétricas quedan cerca de tt (1,47 M) y por debajo de ss:** sf y fs a −40 °C
+  piden 1,32 M y 1,55 M, menos que ss (2,31 M). A 1,08 V tt, sf y fs
+  piden 1,93, 1,57 y 1,74 M, la mitad que ss: **ss a −40 °C y 1,08 V es el
+  peor punto simulado**. ff a 1,08 V no se ha simulado (es la esquina con
+  menos K_D en todo lo demás).
+- La dispersión entre realizaciones va del 0,8 al 5,0 % en σ (cuatro
+  realizaciones dan una estimación pobre de la dispersión; el error de la
+  media sale de ella).
+
+### 4.3 Desapareamiento: Monte Carlo de chips (31-10-2026)
+
+`--mismatch` usa la sección `<esquina>_mismatch` de `cornerMOSlv.lib` y
+`mm_ok=1` en cada transistor: el PDK sortea por instancia V_T, movilidad,
+W y L (`sg13g2_moslv_mismatch.lib`). ngspice tampoco deja fijar la semilla
+de ese sorteo (`rndseed` no le llega), así que cada ejecución es un chip
+distinto con su propia realización de ruido. La densidad de ruido sigue
+saliendo del inversor nominal; lo que cambia de chip a chip es el anillo.
+Sin `--mismatch` el resultado es el de siempre (366,0389 ps, idéntico).
+Ficheros `results/anillo_ihp_mc_<punto>_*` (un CSV de ruido por tanda).
+
+**tt, 27 °C, 1,2 V, 48 chips** [simulado]:
+
+| | Nominal (8 realizaciones, §4.1) | Con desapareamiento (48 chips) |
+|---|---|---|
+| Periodo | 366,04 ps | 365,91 ps, dispersión **1,31 %** (4,79 ps; 357,8 – 374,5) |
+| Potencia | 143,0 µW | 143,1 µW, dispersión 1,2 % |
+| σ por periodo | 176,7 ± 2,0 fs | 177,2 ± 0,7 fs |
+| Dispersión de σ/T entre ejecuciones | 3,3 % (IC 95 % 2,2 – 6,7) | 2,6 % (IC 95 % 2,2 – 3,2) |
+| K_D para H_∞ ≥ 0,98 | 981 095 | 974 260 (967 086 – 981 541) |
+| K_D de cada ejecución | 959 000 – 1 004 000 (de la media) | 874 619 – 1 090 974, mediana 971 107 |
+
+Lectura:
+
+- **El desapareamiento mueve el periodo, no el jitter relativo.** La media
+  de σ no cambia y la dispersión de σ/T entre chips (2,6 %) no supera la
+  que da el propio ruido entre realizaciones del mismo anillo (3,3 %, con
+  solo ocho). Con esta resolución el desapareamiento no añade dispersión
+  medible a Q; como cota, a lo sumo ~3 % en σ/T (~6 % en K_D).
+- **σ absoluto sí sigue al periodo:** r = 0,54 (p = 7·10⁻⁵), σ ∝ T^1,25
+  entre chips. El chip lento tiene más jitter por periodo y casi el mismo
+  σ/T (∝ T^0,25), que es lo que fija la entropía.
+- **El K_D de cada chip incluye el error de estimación** de su propia
+  realización (~1070 periodos), así que el intervalo 0,87 – 1,09 M es un
+  envolvente pesimista. El máximo queda 3,8 veces por debajo de 2²².
+- **RO1 y RO2 nunca son iguales:** entre dos chips del sorteo (las 1128
+  parejas de los 48) la diferencia de periodo tiene mediana 1,4 %, p95
+  3,5 % y máximo 4,6 %. Dos anillos idénticos en el mismo dado se separan
+  en ese orden; si se enganchan por acoplamiento es otra cuestión
+  (trazado), no de este banco.
+
+**ss, −40 °C, 1,08 V (el peor punto de §4.2), 16 chips** [simulado]. Uno,
+el 9, da σ = 780 fs y exponente 0,33, y no es jitter: sus 676 + 10 cruces
+a 590,8 ps ocupan 405,3 ns, más que los 400 ns simulados, cuando los
+otros quince ocupan 392,1 – 394,0 ns. Hay al menos ~20 cruces de más
+(dobles cruces de un flanco lento por V_DD/2, que `cruces_subida` no
+filtra porque no tiene histéresis), y un error de fase blanco así da
+justo un exponente bajo. La forma de onda no se guarda y la realización
+no se puede repetir (sin semilla), así que se excluye por esa
+inconsistencia y no por su valor. En los 48 de tt ese cociente va de
+396,1 a 398,9 ns, sin ninguno fuera. El resumen del script
+(`_resumen.log`) lo incluye; las cifras de abajo son de los otros quince,
+calculadas del mismo `_resumen.csv`.
+
+| | Nominal (8 realizaciones, §4.2) | Con desapareamiento (15 chips) |
+|---|---|---|
+| Periodo | 587,7 ps | 587,3 ps, dispersión **1,64 %** |
+| Potencia | 70,8 µW | 70,8 µW, dispersión 1,6 % |
+| σ por periodo | 144,0 ± 1,8 fs | 142,5 ± 1,2 fs |
+| Dispersión de σ/T entre ejecuciones | 3,6 % | 3,2 % (IC 95 % 2,4 – 5,1) |
+| K_D para H_∞ ≥ 0,98 | 3 808 445 | 3 885 159 (3 821 396 – 3 951 085) |
+| K_D de cada ejecución | — | 3 496 727 – **4 494 997**, mediana 3 825 074 |
+| H_∞ con 2²² (media / −1σ / peor chip) | 0,9873 / 0,9856 / — | 0,9860 / 0,9848 / **0,973** |
+| H_∞ con 2²³ (media / peor chip) | 0,9999 / — | 0,9999 / **0,9996** |
+
+Lectura:
+
+- **Lo mismo que en tt:** la media de σ y la dispersión de σ/T no se
+  separan del caso nominal; el periodo se dispersa un 1,6 % (RO1 frente a
+  RO2: mediana 1,6 %, máximo 6,2 %).
+- **σ sigue aquí al periodo con más fuerza** (r = 0,83, σ ∝ T^2,3): en el
+  peor punto el chip lento tiene *más* σ/T, no menos.
+- **El peor chip ya no cabe en 2²²:** pide 4,49 M > 4,19 M y da
+  H_∞ = 0,973. Ese máximo lleva dentro el error de estimación de un solo
+  chip (~650 periodos), así que es pesimista, pero el margen de 2²² sobre
+  la media también baja (de 10 % a 8 %). **2²³ cubre el peor chip con
+  margen 1,87 (H_∞ = 0,9996).** Se mantiene la recomendación de §5: con
+  ±10 % de alimentación, 2²³.
+- **Banco corregido (31-10):** `cruces_subida` admite histéresis y
+  `anillo_ihp.py` la usa (10 % de V_DD: un cruce solo cuenta si la señal
+  bajó de 0,48 V desde el anterior). Cuenta los dobles cruces que quita en
+  el tramo analizado (`n_espurios`, en el CSV y el JSON) y, si hay alguno
+  o el exponente se aparta de 1 más de 0,25, guarda los cruces y la forma
+  de onda a su alrededor en `_diag.npz`. Comprobación (tt, 27 °C, 100 ns,
+  una realización, `results/anillo_ihp_hist_tt_100n.log`): 0 dobles cruces
+  en el tramo analizado y 2 en el arranque (a 0,09 ns, con el nudo parado
+  en V_DD/2, dentro de los 20 descartados), σ = 165,1 fs, dentro de la
+  dispersión de una realización de ~230 periodos. Los resultados anteriores
+  no cambian: los dobles cruces del arranque ya se descartaban, y el chip 9
+  sigue excluido (su forma de onda no se guardó y ese sorteo no se puede
+  repetir, sin semilla). Un caso así queda ahora contado y guardado.
+
+**Ocho chips más en el peor punto, con histéresis (08-11-2026)**
+[simulado]. Mismo punto (ss, −40 °C, 1,08 V, `--mismatch`, 400 ns),
+`anillo_ihp_repeticiones.py --n 8 --procesos 4 --esquina mos_ss --temp -40
+--vdd 1.08 --mismatch --escalas-primera 1 --prefijo mc_ss_m40_v108_hist_`
+(49 min; `results/anillo_ihp_mc_ss_m40_v108_hist_*`). El chip 9 no se
+puede repetir (ngspice no deja fijar el sorteo); lo que se comprueba es si
+el caso vuelve a darse y si la histéresis lo resuelve.
+
+| Chip | Cruces | T (ps) | σ (fs) | Exp. | Cruces ocupan | K_D | H_∞ con 2²² | con 2²³ |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 660 | 586,41 | 149,83 | 0,94 | 392,9 ns | 3 501 708 | 0,9918 | 1,0000 |
+| 2 | 666 | 582,08 | 145,62 | 0,93 | 393,5 ns | 3 652 541 | 0,9897 | 0,9999 |
+| 3 | 655 | 591,09 | 147,52 | 0,96 | 393,1 ns | 3 670 169 | 0,9895 | 0,9999 |
+| 4 | 690 | 561,85 | 130,65 | 0,83 | 393,3 ns | **4 227 657** | **0,9793** | 0,9998 |
+| 5 | 648 | 596,41 | 139,70 | 0,97 | 392,4 ns | 4 166 448 | 0,9806 | 0,9998 |
+| 6 | 668 | 580,11 | 144,86 | 0,98 | 393,3 ns | 3 666 051 | 0,9895 | 0,9999 |
+| 7 | 663 | 584,16 | 150,54 | 1,05 | 393,1 ns | 3 442 235 | 0,9925 | 1,0000 |
+| 8 | 666 | 581,42 | 147,37 | 1,19 | 393,0 ns | 3 558 238 | 0,9910 | 1,0000 |
+
+"Cruces ocupan" es (cruces + 10) · T, el criterio con el que se excluyó el
+chip 9 (405,3 ns frente a 392,1-394,0 de los otros quince).
+
+- **Ningún doble cruce** en los ocho (0 quitados por la histéresis en el
+  tramo analizado; no se guardó ningún `_diag.npz`) y todos ocupan
+  392,4-393,5 ns. El chip 9 fue un caso aislado.
+- Los ocho: σ = 144,5 ± 2,3 fs, periodo con dispersión 1,74 %, K_D medio
+  3 716 288 (3 620 714 - 3 817 044), por chip 3,44-4,23 M. Compatibles
+  con los quince (3 885 159, 3,50-4,49 M).
+- **Los 23 juntos:** K_D medio 3 824 707 (3 769 526 - 3 881 527), por
+  chip 3,44-4,49 M, mediana 3,76 M; **4 de 23 piden más de 2²²** (el peor,
+  el de la tanda anterior, H_∞ 0,973 con 2²²) y **2²³ cubre todos**
+  (peor H_∞ 0,9996). Se mantiene la recomendación: con ±10 % de
+  alimentación, 2²³.
+- La cifra de cada chip lleva el error de estimación de una sola
+  realización (~650 periodos): el envolvente por chip es pesimista.
+
+### 4.4 Anillo de 11 etapas en el peor punto (19-11-2026) [simulado → estimado]
+
+Con la decisión del 19-11 (ro1 de 11 etapas, ro2 de 13 con preescalador
+÷16, `docs/decisiones_pendientes.md`), el divisor se recalcula con el anillo
+muestreado de 11 etapas en ss, −40 °C, 1,08 V, sin desapareamiento:
+`anillo_ihp_repeticiones.py --etapas 11 --tstop 900n` (~2 h 10 min por
+realización; `results/anillo_ihp_ss_m40_v108_e11_*`), resumen con
+`analysis/anillo_ihp_divisor.py --razon 1.17536` → `results/anillo_ihp_divisor_e11.txt`.
+
+- T = 1 240,9 ps (dispersión entre realizaciones 0,006 ps), σ = 214,9 ± 4,0 fs
+  (202-229 fs), **Q por periodo 2,65-3,41·10⁻⁸** (media 3,00 ± 0,11·10⁻⁸,
+  dispersión 10,5 %, 8 realizaciones), 0 dobles cruces; K_D (H_∞ 0,98) =
+  7,62 M periodos de ro1 (por realización 6,70-8,62 M). Con 5 etapas la Q era ~6,0·10⁻⁸:
+  6,0 × 5/11 = 2,7·10⁻⁸, la ley 1/N de etapas.
+- La ventana es 2^`CFG_KD` periodos de ro2 (el preescalador no la cambia).
+  **T(ro2)/T(ro1) = 1,1754** [SIMULADO, 22-11, sin ruido, 98-101 cruces:
+  1 458,6 / 1 241,0 ps; tt 27 °C 904,8 / 770,2 = 1,1747; ff 125 °C 1,32 V
+  658,7 / 560,9 = 1,1742; ff −40 °C 1,32 V, la esquina más rápida, 594,4 /
+506,1 = 1,1744; `results/anillo_ihp_periodo_*`], algo menos que
+  13/11 = 1,1818 (la carga de la última etapa no escala con N); el jitter de
+  ro2 no se cuenta (conservador); peor chip = Q mínima ÷ 1,175 (cociente peor/medio de
+  los 23 chips de 5 etapas de §4.3).
+
+| `CFG_KD` | H_∞, Q media | Q mínima | Q mínima, peor chip |
+|---|---|---|---|
+| 22 | 0,904 | 0,867 | 0,809 |
+| 23 | 0,9947 | 0,9895 | 0,9774 |
+| 24 | 0,99998 | 0,99994 | 0,99972 |
+| 25 | ≈ 1 | ≈ 1 | ≈ 1 |
+
+**Lectura:** con ro2 de 13 etapas la ventana dura más por periodo de ro2 y
+basta `CFG_KD` 24; el `G_KD_MIN` = 25 del integrado deja un factor 2 de
+margen y el contador de 26 bits otro factor 2 por encima. Pendiente:
+desapareamiento con 11 etapas (aquí se usa el factor del Monte Carlo de 5).
+
+**Caudal con `CFG_KD` 25** (22-11, `analysis/caudal_integrado.py` →
+`results/caudal_integrado.md`; periodos SIMULADOS sin ruido con 1 fF de
+carga, caudal ESTIMADO): T(ro2) de 594,4 ps (ff, −40 °C, 1,32 V) a 1 458,6
+ps (ss, −40 °C, 1,08 V) → un bit cada 19,9-48,9 ms, **20-50 bit/s**;
+arranque (1 024 bits) 20-50 s, siembra (512-1 535 bits) 10-75 s. Con
+`CFG_KD` 26, la mitad. La carga real de ro2 (prescalador y lo que cuelga)
+lo alarga algo: en ro1, el biestable con su búfer sube el periodo un ~3 %
+(580 frente a 561 ps en ff a 125 °C).
+
+**Dispersión de Q entre las 8 realizaciones (22-11, `analysis/dispersion_q.py`
+→ `results/dispersion_q.md`)** [SIMULADO]. Es del 10,5 %. El mismo estimador
+(`jitter_desde_cruces`) con jitter blanco iid y 704 cruces da un 5,6 %: el
+cociente es 1,88 (p 0,001). No es exclusivo de 11 etapas: las 18 tandas de 5
+etapas guardadas dan juntas un exceso medio de 1,16 sobre el blanco (χ² 148
+con 110 gl, p 0,009), y una de ellas (ff, −40 °C, 4 realizaciones) llega a
+2,5. Descontado ese 1,16, la de 11 etapas queda en p 0,01, uno de 19 grupos
+mirados. Los exponentes (0,85-1,03, media 0,96) caben en los del blanco con
+este estimador (0,98 ± 0,10). Sin los cruces guardados no se puede separar la
+causa (no estacionariedad, arranque, la fuente `trnoise`); haría falta repetir
+alguna realización guardándolos (~2 h cada una). **No cambia el divisor:** la
+Q media es 3,00 ± 0,26·10⁻⁸ (IC 95 %, ya con la dispersión observada) y el
+divisor se calcula con la mínima, 2,65·10⁻⁸, con un factor 2,3 de margen
+hasta perder `CFG_KD` 24.
+
 ## 5. Del jitter al divisor [simulado → estimado]
 
-Con σ = 180,37 fs y T = 365,97 ps:
+Con σ = 176,7 ± 2,0 fs (Q medio) y T = 365,97 ps:
 
 | Magnitud | Valor |
 |---|---|
-| Q por periodo, (σ/T)² | 2,43·10⁻⁷ |
-| Constante de difusión c = σ²/T | 8,89·10⁻¹⁷ s |
-| K_D para H_min ≥ 0,98 (Q ≥ 0,2286), contando solo el jitter de RO1 | 941 107 |
-| Intervalo de muestreo y caudal con RO2 igual (2,73 GHz) | 344 µs → **2,9 kbit/s** |
-| Si se cuenta también el jitter de RO2 (independiente e igual) | K_D = 470 553 → 5,8 kbit/s |
+| Q por periodo, (σ/T)² | (2,330 ± 0,054)·10⁻⁷ |
+| Constante de difusión c = σ²/T | 8,53·10⁻¹⁷ s |
+| K_D para H_min ≥ 0,98 (Q ≥ 0,2286), contando solo el jitter de RO1 | **981 095** (958 895 – 1 004 347 a ±1σ) |
+| Intervalo de muestreo y caudal con RO2 igual (2,73 GHz) | 359 µs → **2,79 kbit/s** (2,72 – 2,85) |
+| Si se cuenta también el jitter de RO2 (independiente e igual) | K_D = 490 548 → 5,6 kbit/s |
+| Con el divisor que admite el RTL, 2²⁰ | Q = 0,244 ± 0,006, H_∞ = 0,9853 (0,9836 – 0,9868); 2,606 kbit/s |
+| Para la consigna Q = 0,30 | K_D ≥ 1 287 499 → 2²¹: H_∞ = 0,9999, 1,303 kbit/s |
+| Peor punto de la rejilla a 1,2 V (ss, −40 °C, §4.2) | K_D ≥ 2 306 215 → 2²²: Q = 0,416, H_∞ = 0,9995, 0,544 kbit/s (también cumple la consigna Q = 0,30, que pide 3 026 540) |
+| **Peor punto con V_DD −10 % (ss, −40 °C, 1,08 V, §4.2)** | K_D ≥ 3 808 445 → 2²² da Q = 0,252, H_∞ = 0,9873 (10 % de margen; no cumple la consigna Q = 0,30, que pide 4 997 959); **2²³**: Q = 0,504, H_∞ = 0,9999, 0,203 kbit/s |
+
+Lo de arriba es tt a 27 °C. Para un divisor fijo que valga de −40 a
+125 °C en ss/tt/ff a 1,2 V, hace falta 2²² (`CFG_KD` = 22): el caudal baja a
+0,51 – 0,82 kbit/s. **Si además se admite V_DD ± 10 %, 2²² queda con un
+10 % de margen y lo recomendable es 2²³ (`CFG_KD` = 23): 0,20 – 0,41
+kbit/s, ≈ 1,9 s para los 384 bits de una siembra en el peor punto.** El
+Monte Carlo de desapareamiento (§4.3) lo confirma: en ese punto el peor de
+quince chips pide 4,49 M, por encima de 2²² (H_∞ = 0,973), y 2²³ lo cubre
+con H_∞ = 0,9996.
+Alternativa: fijar `CFG_KD` según la temperatura
+medida (2²⁰ basta en tt por encima de 27 °C), que exige un sensor y una
+tabla caracterizada por chip. `CFG_KD` arranca en 24 tras el reset, así
+que un maestro que no lo escriba ya está del lado seguro.
 
 El caudal cae dentro del rango que se estimó sin transistores reales
 (1-17 kbit/s, `modelo_ero_resultados.md`). La cifra conservadora es la
@@ -148,7 +463,9 @@ silicio.
 
 **Consecuencia de diseño aplicada:** el contador del divisor del ERO tenía
 20 bits, K_D máximo 2²⁰ = 1 048 576, solo un 11 % por encima de lo
-necesario en esquina típica a 27 °C. Pasa a 24 bits (`G_CNT_BITS`, K_D
+necesario en esquina típica a 27 °C con la primera realización (un 7 %,
+de 4 a 9 % a ±1σ, con la media de ocho; en frío o en ss no basta, §4.2).
+Pasa a 24 bits (`G_CNT_BITS`, K_D
 máximo 16,8 millones; 0,29 → 0,33 kGE; motor entero 114,73 → 114,92 kGE).
 `tb_motor_top` 18/18, `verifica_top.py` 5/5 y `tb_ring_osc` re-ejecutados
 con el cambio. `CFG_KD` efectivo pasa a 0-24 (`mapa_registros.md`).
@@ -157,8 +474,10 @@ con el cambio. `CFG_KD` efectivo pasa a 0-24 (`mapa_registros.md`).
 
 ### 6.1 Con el 1/f real, 400 ns no lo ven
 
-Térmico + 1/f del PDK, 400 ns: σ = 183,3 fs frente a 180,4 fs sin 1/f, y
-el exponente baja a 1,005. El separador (`separar_componentes`, ajuste
+Térmico + 1/f del PDK, 400 ns: σ = 183,3 fs (una realización) frente a
+176,7 ± 2,0 fs sin 1/f (ocho). La diferencia, +3,8 %, es 1,2 veces la
+dispersión entre realizaciones (§4.1): σ por sí solo no distingue el 1/f.
+El separador (`separar_componentes`, ajuste
 ponderado de E[D²] = a₁M + a₂M², validado antes con fases sintéticas:
 sesgo del térmico −0,1 % con y sin 1/f, 8 semillas) da
 a₂ = (−0,5 ± 1,3)·10⁻²⁸ s²: compatible con cero. Solo permite decir que
@@ -221,16 +540,19 @@ compensarse.
 
 Con los cuatro nudos de inversor y el de la NAND:
 
-| Cómo actúa el ruido | Esquina 1/f³ | 1/f = térmico a | A K_D = 941 107 (344 µs), 1/f / térmico |
+| Cómo actúa el ruido | Esquina 1/f³ | 1/f = térmico a | A K_D = 981 095 (359 µs), 1/f / térmico |
 |---|---|---|---|
-| (a) estacionario, los dos transistores todo el periodo (lo que hace el banco) | 36,5 kHz | 27 000 periodos (9,9 µs) | 35 |
-| (b) cada transistor solo en su lóbulo | 5,3 MHz | 185 periodos (68 ns) | 5 080 |
+| (a) estacionario, los dos transistores todo el periodo (lo que hace el banco) | 36,5 kHz | 27 000 periodos (9,9 µs) | 36 |
+| (b) cada transistor solo en su lóbulo | 5,3 MHz | 185 periodos (68 ns) | 5 300 |
+
+El cociente es τ/τ_cruce con τ = K_D·T; sale de la ISF y no del σ
+simulado (`anillo_ihp_isf_extra.log` lo da para K_D = 941 107: 35 y 5 080).
 
 El caso real está entre los dos: el ruido de un transistor no se enciende y
 apaga de golpe con su lóbulo. Lo que no depende del caso:
 
 1. **En el punto de trabajo del generador el 1/f domina el jitter
-   acumulado**, entre 35 y 5 000 veces. Si la cota de entropía se sacara de
+   acumulado**, entre 36 y 5 300 veces. Si la cota de entropía se sacara de
    la varianza total acumulada a K_D, se acreditaría entropía que no hay.
 2. **La medida que fija la cota tiene que hacerse con acumulaciones
    cortas**, por debajo de ~100 periodos en este anillo, donde manda el
@@ -239,7 +561,8 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
    y lo que tendrá que hacer la campaña en la FPGA.
 3. En el caso (b) la varianza térmica es 0,48 veces la del banco: el ruido
    estacionario la sobrestima, y K_D podría tener que doblarse
-   (≈ 1,96 millones). El contador de 24 bits lo cubre. En sentido
+   (≈ 2,04 millones, todavía por debajo de 2²¹). El contador de 24 bits
+   lo cubre. En sentido
    contrario, durante una conmutación real el transistor activo lleva más
    corriente que en el punto de conmutación (11 µA) y mete más ruido. La
    herramienta que resuelve las dos cosas a la vez es un análisis de ruido
@@ -250,9 +573,13 @@ apaga de golpe con su lóbulo. Lo que no depende del caso:
 
 - Ruido transitorio cicloestacionario (Spectre) para cerrar el factor ~2
   del térmico y situar el 1/f entre los dos extremos.
-- Esquinas (ss, ff) y temperatura (−40 a 125 °C): el ruido térmico sube
-  con T y el K_D necesario cambia. Cada esquina cuesta ~13 min de
-  simulación con un hilo.
+- Esquinas ss/tt/ff y −40/27/125 °C; sf/fs, ±10 % de V_DD y tt/sf/fs a
+  1,08 V, todo a −40 °C: hechas (§4.2); desapareamiento en tt a 27 °C y
+  en ss a −40 °C y 1,08 V, hecho (§4.3); la detección de cruces tiene ya
+  histéresis (31-10). Quedan ff a 1,08 V y la tensión baja en caliente (se espera
+  mejor, como a 1,2 V). Cada realización
+  cuesta ~11 min con un hilo (~30 min con ocho en paralelo en este PC;
+  ~29 min en ss a 1,08 V con ocho).
 - Anillos más largos (menos σ/T por periodo, misma constante de difusión)
   y la relación jitter-potencia.
 - Trazado y extracción de parásitos: el 1 fF por nudo es una estimación.

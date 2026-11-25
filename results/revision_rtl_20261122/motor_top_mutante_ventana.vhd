@@ -1,0 +1,719 @@
+-- Nivel superior del motor criptografico de generacion de claves.
+--
+-- Une la fuente de entropia, los tests de salud, el buffer de captura, el
+-- generador determinista y el autenticador detras de un esclavo I2C con
+-- el mapa de registros de docs/mapa_registros.md.
+--
+-- Flujo de una clave:
+--   anillos -> ero_core -> bit_cdc -> health_tests
+--                                  -> recogida de 512 bits (semilla)
+--                                  -> ctr_drbg.instanciar
+--   ctr_drbg.generar (orden generar)   -> CLAVE (128 b) -> aes_cmac.carga
+--   ctr_drbg.generar (orden aleatorio) -> ALEATORIO (256 b), generacion
+--                                         independiente: nunca contiene la clave
+--   RETO -> aes_cmac -> ETIQUETA
+--
+-- Lo unico atado a la FPGA son los dos anillos. El resto es RTL portable.
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity motor_top is
+  generic (
+    -- 11 y no 7 desde el 19-11-2026: el biestable sg13g2 sesga el bit en
+    -- proporcion 1/T del anillo muestreado (Monte Carlo del 16-11, H 0,532
+    -- con 5 etapas en SPICE); decision de Mario (docs/decisiones_pendientes.md).
+    G_ETAPAS_RO1 : positive := 11;     -- anillo muestreado
+    -- 13 y no 5 desde el 19-11-2026: con 5 (2,73 GHz, 0,366 ns) ni un
+    -- biestable sg13g2 conmuta a tiempo (~0,37 ns) [ESTIMADO, biblioteca
+    -- tipica]; y distinto de ro1, porque dos anillos iguales se enganchan.
+    -- Decision de Mario (docs/decisiones_pendientes.md).
+    G_ETAPAS_RO2 : positive := 13;     -- anillo de muestreo
+    -- Preescalador de ro2 en cadena (2**G_PRESC_RO2): el dominio del anillo
+    -- (ERO, cruce, captura) corre a ro2 / 16 porque su logica tarda 1,53 ns
+    -- [ESTIMADO]. K_D sigue siendo 2**CFG_KD periodos de ro2. 0 en las FPGA.
+    G_PRESC_RO2  : natural := 4;
+    G_DIR_I2C    : std_logic_vector(6 downto 0) := "0110000";
+    -- Divisor minimo (CFG_KD) con el que se acepta sembrar. Por debajo, el
+    -- cruce de dominio pierde bits en silencio y la semilla acumula muy
+    -- poco jitter; los tests de salud no lo detectan. Antes esto era una
+    -- obligacion del maestro que el hardware no imponia; ahora la impone.
+    -- 25 desde el 19-11-2026: el divisor caracterizado del integrado (SPICE,
+    -- peor esquina, ro1 de 11 etapas). Los tests de salud no ven el regimen
+    -- de poco jitter (docs/basys3.md), asi que este minimo es la proteccion;
+    -- antes 6 (K_D = 64, solo el cruce de dominio). Bloquea tambien FLUJO.
+    G_KD_MIN     : natural := 25;
+    -- CFG_KD tras el reset. El maximo: un maestro que no lo escriba
+    -- siembra con la tasa mas lenta y mas entropia por bit, nunca con una
+    -- por debajo de la caracterizada. Antes arrancaba en 7 (K_D = 128) y
+    -- hasta el 19-11-2026 en 24. Debe ser >= G_KD_MIN.
+    G_KD_RESET   : natural := 25;
+    -- Mayor CFG_KD admitido y ancho del contador del ERO (K_D maximo =
+    -- 2**G_KD_MAX). Escribir un valor mayor se ignora y levanta
+    -- DIAG.rechazada. 26 desde el 19-11-2026 (antes 24 fijo en ero_core).
+    G_KD_MAX     : natural := 26;
+    -- Bits del contador de peticiones que cuentan para agotarlo: con todos
+    -- a uno el DRBG no genera mas hasta resembrar (SP 800-90A,
+    -- reseed_interval). 32 en hardware; el banco lo baja para probarlo.
+    G_PET_BITS   : positive := 32;
+    -- Un solo nucleo AES para el generador y el autenticador. El
+    -- secuenciador ya los serializa (nunca cifran a la vez), asi que el
+    -- segundo nucleo era area sin uso: la primera optimizacion del
+    -- capitulo de integrado. false deja un nucleo por bloque.
+    G_AES_COMPARTIDO : boolean := true;
+    -- El nucleo compartido con ruta de 32 bits (aes_enc_32: cuatro
+    -- S-boxes, 51 ciclos por bloque) en vez del de una ronda por ciclo
+    -- (aes_enc, 11 ciclos). La segunda optimizacion del capitulo de
+    -- integrado; la velocidad sobra en los dos casos. Solo cuenta con
+    -- G_AES_COMPARTIDO: los nucleos propios de cada bloque son aes_enc.
+    G_AES_COMPACTO   : boolean := true;
+    -- Bytes de la FIFO de captura continua (flujo_crudo), potencia de dos.
+    -- 0 la quita: es instrumentacion de caracterizacion, como ro_mon, y en
+    -- el integrado no va. El envoltorio de la FPGA y los bancos la ponen.
+    G_FLUJO_BYTES    : natural := 0;
+    -- Bytes del buffer de captura por trozos (trng_capture). 0 lo quita y
+    -- `capturar` se rechaza: en una FPGA pequena el flujo continuo lo cubre.
+    G_CAPTURA_BYTES  : natural := 512;
+    -- Solo la fuente: sin DRBG, CMAC ni AES, con el mismo mapa I2C. Sembrar,
+    -- resembrar, generar, aleatorio y autenticar se rechazan (DIAG.rechazada)
+    -- y DIAG.solo_fuente lo anuncia. Para la Basys 2 (XC3S100E), donde la
+    -- criptografia no cabe (docs/basys2.md).
+    G_SOLO_FUENTE    : boolean := false;
+    -- Muestreo de ro1 sin habilitacion (ero_core): con ella el bit salia
+    -- correlado con el anterior (rho1 ~0,005, medido en la Basys 2;
+    -- docs/basys2.md). true desde el 15-11-2026.
+    G_MUESTREO_LIBRE : boolean := true;
+    -- Cortes de los tests de salud (health_tests): H = 0,60 y alfa = 2^-30
+    -- desde el 16-11-2026 (antes 0,80: 39 y 683). El biestable real de
+    -- sg13g2 sesga el bit hasta P(1) 0,37 a 125 C (docs/basys2.md).
+    G_RCT_C          : positive := 51;
+    G_APT_C          : positive := 766
+  );
+  port (
+    clk       : in  std_logic;         -- 100 MHz de placa
+    rst_n     : in  std_logic;
+    scl_in    : in  std_logic;
+    sda_in    : in  std_logic;
+    sda_oe    : out std_logic;
+    modo_test : in  std_logic;         -- habilita leer CLAVE y CAPTURA
+    led_alarma : out std_logic;
+    -- Los dos anillos, para el frecuencimetro del envoltorio de la FPGA
+    -- (0: ro1, 1: ro2). En el integrado no van a pad: un anillo visible
+    -- desde fuera deja seguir su fase y resta entropia a la muestra.
+    ro_mon    : out std_logic_vector(1 downto 0)
+  );
+end entity motor_top;
+
+architecture rtl of motor_top is
+
+  -- Resets: el de la placa, soltado sincrono en cada dominio
+  signal rst_n_s       : std_logic;           -- dominio clk
+  signal rst_n_ro      : std_logic;           -- dominio ro2
+
+  -- Anillos y muestreo
+  signal ro1, ro2      : std_logic;
+  signal ro2c          : std_logic;           -- reloj del dominio ro2 (preescalado)
+  signal kd_ero        : unsigned(4 downto 0);
+  signal en_anillos    : std_logic := '0';
+  signal kd_sel        : unsigned(4 downto 0) := to_unsigned(G_KD_RESET, 5);
+  signal bit_ro, stb_ro : std_logic;          -- dominio ro2
+  signal bit_s, stb_s   : std_logic;          -- dominio clk
+
+  -- Salud
+  signal borrar_alm  : std_logic := '0';
+  signal alm_rct, alm_apt, alm : std_logic;
+  signal ventana_fin : std_logic;
+  signal rct_max, apt_max : unsigned(15 downto 0);
+  -- Test de arranque (SP 800-90B 4.3): una ventana completa del APT, 1024
+  -- muestras, sin alarma desde el reset o el ultimo borrado. Sin el no se
+  -- siembra.
+  signal arrancado   : std_logic := '0';
+  -- La ultima orden escrita en CONTROL se ignoro. Sin esto el maestro no
+  -- distingue un rechazo de una orden que acabo enseguida.
+  signal rechazada   : std_logic := '0';
+
+  -- Captura. Mientras hay una captura en curso no se siembra, y al reves:
+  -- el buffer recoge los mismos bits crudos que la semilla, y una captura
+  -- lanzada durante una siembra dejaba la semilla legible en modo test.
+  signal cap_arranca : std_logic := '0';
+  signal cap_en_curso : std_logic := '0';
+  signal cap_lleno   : std_logic;
+  signal cap_dir     : std_logic_vector(15 downto 0);
+  signal cap_dato    : std_logic_vector(7 downto 0);
+  signal pagina      : unsigned(1 downto 0) := (others => '0');
+
+  -- Captura continua (docs/captura_continua.md). Mismas reglas que la
+  -- captura por trozos: solo en modo test y nunca a la vez que una siembra.
+  signal flujo_arranca, flujo_parar : std_logic := '0';
+  signal flujo_activo, flujo_desb   : std_logic := '0';
+  signal flujo_ocup                 : std_logic;
+  signal flujo_lee_n, flujo_lee_dato : std_logic;
+  signal flujo_n, flujo_dato        : std_logic_vector(7 downto 0) := (others => '0');
+
+  -- Recogida de semilla: 384 entropia + 128 nonce = 512 bits
+  signal recogiendo  : std_logic := '0';
+  signal n_recogidos : unsigned(8 downto 0) := (others => '0');
+  signal semilla     : std_logic_vector(511 downto 0) := (others => '0');
+  signal siembra_es_reseed : std_logic := '0';
+
+  -- DRBG
+  signal drbg_inst, drbg_reseed, drbg_gen, drbg_borrar : std_logic := '0';
+  signal drbg_salida : std_logic_vector(255 downto 0);
+  signal drbg_listo, drbg_ocupado, drbg_sembrado, drbg_agotado : std_logic;
+  signal drbg_pet    : unsigned(31 downto 0);
+  signal aleatorio   : std_logic_vector(255 downto 0) := (others => '0');
+
+  -- Nucleo AES compartido
+  signal aes_arranca, cmac_aes_arranca, drbg_aes_arranca : std_logic;
+  signal aes_borrar  : std_logic;
+  signal aes_clave, cmac_aes_clave, drbg_aes_clave : std_logic_vector(127 downto 0);
+  signal aes_dato, cmac_aes_dato, drbg_aes_dato : std_logic_vector(127 downto 0);
+  signal aes_salida  : std_logic_vector(127 downto 0) := (others => '0');
+  signal aes_listo   : std_logic := '0';
+
+  -- Clave y autenticador
+  signal clave       : std_logic_vector(127 downto 0) := (others => '0');
+  signal clave_valida : std_logic := '0';
+  signal cmac_carga, cmac_inicia, cmac_bloque_val : std_logic := '0';
+  signal cmac_clave_lista, cmac_listo, cmac_ocupado : std_logic;
+  signal etiqueta    : std_logic_vector(127 downto 0);
+  signal etiqueta_lista : std_logic := '0';
+  signal reto        : std_logic_vector(127 downto 0) := (others => '0');
+  signal cmac_en_curso : std_logic := '0';
+
+  -- Secuenciador de ordenes
+  -- GENERANDO produce la clave y no deja nada legible; GENERANDO_ALEATORIO
+  -- es otra generacion independiente cuyo resultado si va al registro
+  -- ALEATORIO. Antes ambas cosas salian de la misma generacion y el
+  -- registro ALEATORIO, legible sin modo test, contenia la clave.
+  -- VALIDANDO espera a que se cierre la ventana del APT que contiene el
+  -- ultimo bit de la semilla: hasta entonces esos bits no estan evaluados.
+  -- ZEROIZANDO (orden borrar_todo) deja clave, ALEATORIO, RETO, semilla y
+  -- el estado del DRBG a cero y carga la clave nula en el autenticador.
+  type t_orden is (LIBRE, SEMBRANDO, VALIDANDO, ESPERA_DRBG, GENERANDO,
+                   CARGANDO_CLAVE, GENERANDO_ALEATORIO, AUTENTICANDO,
+                   ZEROIZANDO);
+  signal orden : t_orden := LIBRE;
+  signal ocupado : std_logic;
+
+  -- I2C y registros
+  signal reg_dir   : std_logic_vector(7 downto 0);
+  signal reg_wdato : std_logic_vector(7 downto 0);
+  signal reg_we, reg_re : std_logic;
+  signal reg_rdato : std_logic_vector(7 downto 0);
+  signal status    : std_logic_vector(7 downto 0);
+  -- modo_test es un interruptor de la placa: dos biestables antes de
+  -- usarlo en la maquina de estados.
+  signal modo_test_s : std_logic_vector(1 downto 0) := (others => '0');
+  -- G_SOLO_FUENTE como senal y no como constante en la condicion de
+  -- sembrar: si la rama desaparece en la elaboracion, siembra_es_reseed
+  -- solo se asigna en el reset y GHDL --synth lo convierte en un latch.
+  signal sin_cripto : std_logic;
+
+  function byte_de(v : std_logic_vector; i : integer) return std_logic_vector is
+    -- byte i contando desde la izquierda de un vector (N-1 downto 0)
+  begin
+    return v(v'high - 8 * i downto v'high - 8 * i - 7);
+  end function;
+
+  function bool_sl(b : boolean) return std_logic is
+  begin
+    if b then return '1'; else return '0'; end if;
+  end function;
+
+begin
+
+  led_alarma <= alm;
+  sin_cripto <= '1' when G_SOLO_FUENTE else '0';
+  ro_mon <= ro2 & ro1;
+  ocupado <= '0' when orden = LIBRE else '1';
+
+  p_modo_test : process (clk, rst_n_s)
+  begin
+    if rst_n_s = '0' then
+      modo_test_s <= (others => '0');
+    elsif rising_edge(clk) then
+      modo_test_s <= modo_test_s(0) & modo_test;
+    end if;
+  end process p_modo_test;
+
+  -- ------------------------------------------------------------------
+  -- Resets. El del anillo solo se suelta cuando el anillo oscila, y el
+  -- anillo arranca cuando el dominio de sistema sale de su reset.
+  -- ------------------------------------------------------------------
+  u_rst_s : entity work.reset_sync
+    port map (clk => clk, rst_n_in => rst_n, rst_n_out => rst_n_s);
+
+  u_rst_ro : entity work.reset_sync
+    port map (clk => ro2c, rst_n_in => rst_n, rst_n_out => rst_n_ro);
+
+  -- ------------------------------------------------------------------
+  -- Fuente de entropia
+  -- ------------------------------------------------------------------
+  u_ro1 : entity work.ring_osc
+    generic map (G_ETAPAS => G_ETAPAS_RO1)
+    port map (en => en_anillos, osc => ro1);
+
+  u_ro2 : entity work.ring_osc
+    generic map (G_ETAPAS => G_ETAPAS_RO2)
+    port map (en => en_anillos, osc => ro2);
+
+  assert G_KD_MIN <= G_KD_RESET and G_KD_RESET <= G_KD_MAX and G_KD_MAX <= 31
+    report "motor_top: hace falta G_KD_MIN <= G_KD_RESET <= G_KD_MAX <= 31"
+    severity failure;
+
+  -- Preescalador: biestables T en cadena, cada uno con el anterior de reloj.
+  gen_presc : if G_PRESC_RO2 > 0 generate
+    signal div      : std_logic_vector(G_PRESC_RO2 downto 0) := (others => '0');
+    signal rst_n_r2 : std_logic;
+  begin
+    u_rst_r2 : entity work.reset_sync
+      port map (clk => ro2, rst_n_in => rst_n, rst_n_out => rst_n_r2);
+    div(0) <= ro2;
+    gen_t : for i in 1 to G_PRESC_RO2 generate
+      p_t : process (div(i - 1), rst_n_r2)
+      begin
+        if rst_n_r2 = '0' then
+          div(i) <= '0';
+        elsif rising_edge(div(i - 1)) then
+          div(i) <= not div(i);
+        end if;
+      end process p_t;
+    end generate gen_t;
+    ro2c   <= div(G_PRESC_RO2);
+    kd_ero <= kd_sel - (G_PRESC_RO2 + 1) when to_integer(kd_sel) >= G_PRESC_RO2 + 1
+              else (others => '0');   -- MUTANTE: ventana 2^(CFG_KD-1)
+  end generate gen_presc;
+  gen_sin_presc : if G_PRESC_RO2 = 0 generate
+    ro2c   <= ro2;
+    kd_ero <= kd_sel;
+  end generate gen_sin_presc;
+
+  u_ero : entity work.ero_core
+    generic map (G_CNT_BITS => G_KD_MAX - G_PRESC_RO2, G_MUESTREO_LIBRE => G_MUESTREO_LIBRE)
+    port map (ro1 => ro1, ro2 => ro2c, rst_n => rst_n_ro, kd_sel => kd_ero,
+              bit_o => bit_ro, bit_stb => stb_ro);
+
+  u_cdc : entity work.bit_cdc
+    port map (clk_o => ro2c, rst_n_o => rst_n_ro, bit_o => bit_ro, stb_o => stb_ro,
+              clk_d => clk, rst_n_d => rst_n_s, bit_d => bit_s, stb_d => stb_s);
+
+  u_salud : entity work.health_tests
+    generic map (G_RCT_C => G_RCT_C, G_APT_C => G_APT_C)
+    port map (clk => clk, rst_n => rst_n_s, bit_i => bit_s, bit_stb => stb_s,
+              borrar => borrar_alm, alarma_rct => alm_rct,
+              alarma_apt => alm_apt, alarma => alm,
+              ventana_fin => ventana_fin,
+              rct_max => rct_max, apt_max => apt_max);
+
+  g_captura : if G_CAPTURA_BYTES > 0 generate
+    u_captura : entity work.trng_capture
+      generic map (G_PALABRAS => G_CAPTURA_BYTES)
+      port map (ro_clk => ro2c, rst_n_ro => rst_n_ro, bit_dato => bit_ro, bit_stb => stb_ro,
+                clk => clk, rst_n => rst_n_s, arranca => cap_arranca,
+                lleno => cap_lleno, rd_dir => cap_dir, rd_dato => cap_dato);
+  end generate g_captura;
+  g_sin_captura : if G_CAPTURA_BYTES = 0 generate
+    cap_lleno <= '0';
+    cap_dato  <= (others => '0');
+  end generate g_sin_captura;
+
+  flujo_ocup     <= flujo_activo or flujo_arranca;
+  flujo_lee_n    <= reg_re when reg_dir = x"60" and modo_test_s(1) = '1' else '0';
+  flujo_lee_dato <= reg_re when unsigned(reg_dir) >= 16#61# and unsigned(reg_dir) <= 16#7F#
+                               and modo_test_s(1) = '1' else '0';
+
+  g_flujo : if G_FLUJO_BYTES > 0 generate
+    u_flujo : entity work.flujo_crudo
+      generic map (G_BYTES => G_FLUJO_BYTES)
+      port map (clk => clk, rst_n => rst_n_s, bit_i => bit_s, bit_stb => stb_s,
+                arrancar => flujo_arranca, parar => flujo_parar,
+                activo => flujo_activo, desbordado => flujo_desb,
+                leer_n => flujo_lee_n, leer_dato => flujo_lee_dato,
+                n => flujo_n, dato => flujo_dato);
+  end generate g_flujo;
+
+  -- ------------------------------------------------------------------
+  -- Criptografia
+  -- ------------------------------------------------------------------
+  g_cripto : if not G_SOLO_FUENTE generate
+    u_drbg : entity work.ctr_drbg
+      generic map (G_PET_BITS => G_PET_BITS, G_AES_EXTERNO => G_AES_COMPARTIDO)
+      port map (clk => clk, rst_n => rst_n_s,
+                instanciar => drbg_inst, resembrar => drbg_reseed,
+                borrar => drbg_borrar, agotado => drbg_agotado,
+                aes_arranca_o => drbg_aes_arranca, aes_borrar_o => aes_borrar, aes_clave_o => drbg_aes_clave,
+                aes_dato_o => drbg_aes_dato, aes_salida_i => aes_salida,
+                aes_listo_i => aes_listo,
+                entropia => semilla(511 downto 128),
+                nonce => semilla(127 downto 0),
+                generar => drbg_gen, salida => drbg_salida,
+                listo => drbg_listo, ocupado => drbg_ocupado,
+                sembrado => drbg_sembrado, peticiones => drbg_pet);
+
+    u_cmac : entity work.aes_cmac
+      generic map (G_AES_EXTERNO => G_AES_COMPARTIDO)
+      port map (clk => clk, rst_n => rst_n_s,
+                aes_arranca_o => cmac_aes_arranca, aes_borrar_o => open, aes_clave_o => cmac_aes_clave,
+                aes_dato_o => cmac_aes_dato, aes_salida_i => aes_salida,
+                aes_listo_i => aes_listo,
+                carga_clave => cmac_carga, clave => clave,
+                clave_lista => cmac_clave_lista,
+                inicia => cmac_inicia, bloque => reto,
+                bloque_val => cmac_bloque_val, ultimo => '1',
+                n_bytes => to_unsigned(16, 5),
+                etiqueta => etiqueta, listo => cmac_listo, ocupado => cmac_ocupado);
+
+    -- El nucleo compartido. aes_enc captura clave y dato en el ciclo de
+    -- arranca, asi que basta elegir las entradas por quien arranca; la
+    -- salida y el listo van a los dos, y solo el que lanzo el cifrado esta
+    -- esperandolos.
+    g_nucleo_unico : if G_AES_COMPARTIDO generate
+      aes_arranca <= cmac_aes_arranca or drbg_aes_arranca;
+      aes_clave   <= cmac_aes_clave when cmac_aes_arranca = '1' else drbg_aes_clave;
+      aes_dato    <= cmac_aes_dato  when cmac_aes_arranca = '1' else drbg_aes_dato;
+      g_rapido : if not G_AES_COMPACTO generate
+        u_aes : entity work.aes_enc
+          port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                    clave => aes_clave, dato => aes_dato,
+                    salida => aes_salida, listo => aes_listo, ocupado => open);
+      end generate g_rapido;
+      g_compacto : if G_AES_COMPACTO generate
+        u_aes : entity work.aes_enc_32
+          port map (clk => clk, rst_n => rst_n_s, arranca => aes_arranca, borrar => aes_borrar,
+                    clave => aes_clave, dato => aes_dato,
+                    salida => aes_salida, listo => aes_listo, ocupado => open);
+      end generate g_compacto;
+    end generate g_nucleo_unico;
+  end generate g_cripto;
+
+  -- Sin criptografia: un DRBG que nunca esta sembrado (generar y aleatorio
+  -- se rechazan solos) y un autenticador sin nada que cargar (borrar_todo
+  -- acaba en el ciclo siguiente). Sembrar se rechaza en p_control.
+  g_sin_cripto : if G_SOLO_FUENTE generate
+    drbg_salida <= (others => '0');
+    drbg_listo <= '0'; drbg_ocupado <= '0';
+    drbg_sembrado <= '0'; drbg_agotado <= '0';
+    drbg_pet <= (others => '0');
+    cmac_aes_arranca <= '0'; drbg_aes_arranca <= '0';
+    cmac_clave_lista <= '1'; cmac_listo <= '0'; cmac_ocupado <= '0';
+    etiqueta <= (others => '0');
+  end generate g_sin_cripto;
+
+  -- ------------------------------------------------------------------
+  -- I2C
+  -- ------------------------------------------------------------------
+  u_i2c : entity work.i2c_slave
+    generic map (G_DIR => G_DIR_I2C)
+    port map (clk => clk, rst_n => rst_n_s,
+              scl_in => scl_in, sda_in => sda_in, sda_oe => sda_oe,
+              reg_dir => reg_dir, reg_wdato => reg_wdato, reg_we => reg_we,
+              reg_rdato => reg_rdato, reg_re => reg_re, ocupado => open);
+
+  status <= modo_test_s(1) & etiqueta_lista & cap_lleno & clave_valida &
+            alm_apt & alm_rct & ocupado & drbg_sembrado;
+
+  cap_dir <= std_logic_vector(resize(pagina & unsigned(reg_dir(6 downto 0)), 16));
+
+  -- Lectura combinacional del mapa.
+  p_lectura : process (all)
+    variable d : integer range 0 to 255;
+  begin
+    d := to_integer(unsigned(reg_dir));
+    reg_rdato <= x"00";
+    case d is
+      when 16#00# => reg_rdato <= x"A5";
+      when 16#01# => reg_rdato <= x"04";
+      when 16#02# => reg_rdato <= status;
+      when 16#04# => reg_rdato <= "000" & std_logic_vector(kd_sel);
+      when 16#05# => reg_rdato <= "000000" & std_logic_vector(pagina);
+      when 16#06# => reg_rdato <= std_logic_vector(rct_max(7 downto 0));
+      when 16#07# => reg_rdato <= std_logic_vector(rct_max(15 downto 8));
+      when 16#08# => reg_rdato <= std_logic_vector(apt_max(7 downto 0));
+      when 16#09# => reg_rdato <= std_logic_vector(apt_max(15 downto 8));
+      when 16#0A# => reg_rdato <= std_logic_vector(drbg_pet(7 downto 0));
+      when 16#0B# => reg_rdato <= std_logic_vector(drbg_pet(15 downto 8));
+      when 16#0C# => reg_rdato <= std_logic_vector(drbg_pet(23 downto 16));
+      when 16#0D# => reg_rdato <= std_logic_vector(drbg_pet(31 downto 24));
+      when 16#0E# =>
+        reg_rdato <= "0000" & bool_sl(G_SOLO_FUENTE) & drbg_agotado & rechazada & arrancado;
+      when 16#0F# => reg_rdato <= "000000" & flujo_desb & flujo_activo;
+      when 16#10# to 16#1F# =>
+        if modo_test_s(1) = '1' then
+          reg_rdato <= byte_de(clave, d - 16#10#);
+        end if;
+      when 16#30# to 16#3F# =>
+        -- Solo la etiqueta del reto actual: sin esto, tras borrar_todo o
+        -- con un reto nuevo a medias seguia leyendose la anterior.
+        if etiqueta_lista = '1' then
+          reg_rdato <= byte_de(etiqueta, d - 16#30#);
+        end if;
+      when 16#40# to 16#5F# => reg_rdato <= byte_de(aleatorio, d - 16#40#);
+      when 16#60# =>
+        if modo_test_s(1) = '1' then
+          reg_rdato <= flujo_n;
+        end if;
+      when 16#61# to 16#7F# =>
+        if modo_test_s(1) = '1' then
+          reg_rdato <= flujo_dato;
+        end if;
+      when 16#80# to 16#FF# =>
+        if modo_test_s(1) = '1' then
+          reg_rdato <= cap_dato;
+        end if;
+      when others => null;
+    end case;
+  end process p_lectura;
+
+  -- ------------------------------------------------------------------
+  -- Escrituras, ordenes y secuenciador
+  -- ------------------------------------------------------------------
+  p_control : process (clk, rst_n_s)
+    variable d : integer range 0 to 255;
+  begin
+    if rst_n_s = '0' then
+      en_anillos <= '0';
+      kd_sel <= to_unsigned(G_KD_RESET, 5);
+      pagina <= (others => '0');
+      borrar_alm <= '0'; cap_arranca <= '0'; cap_en_curso <= '0';
+      flujo_arranca <= '0'; flujo_parar <= '0';
+      recogiendo <= '0'; n_recogidos <= (others => '0');
+      semilla <= (others => '0'); siembra_es_reseed <= '0';
+      drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0'; drbg_borrar <= '0';
+      aleatorio <= (others => '0');
+      clave <= (others => '0'); clave_valida <= '0';
+      cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
+      etiqueta_lista <= '0'; reto <= (others => '0');
+      cmac_en_curso <= '0';
+      arrancado <= '0'; rechazada <= '0';
+      orden <= LIBRE;
+
+    elsif rising_edge(clk) then
+      -- Pulsos de un ciclo
+      borrar_alm <= '0'; cap_arranca <= '0'; flujo_arranca <= '0';
+      drbg_inst <= '0'; drbg_reseed <= '0'; drbg_gen <= '0'; drbg_borrar <= '0';
+      cmac_carga <= '0'; cmac_inicia <= '0'; cmac_bloque_val <= '0';
+
+      en_anillos <= '1';    -- los anillos corren siempre tras el reset
+
+      -- Sin modo test el flujo se para y la FIFO se vacia.
+      flujo_parar <= not modo_test_s(1);
+
+      -- cap_lleno sigue a 1 un ciclo despues de lanzar la captura siguiente
+      -- (trng_capture lo baja al ver arranca): sin la segunda condicion toda
+      -- captura salvo la primera se daba por acabada al instante y una
+      -- siembra volvia a poder solapar una captura (revision del 27-10).
+      if cap_lleno = '1' and cap_arranca = '0' then
+        cap_en_curso <= '0';
+      end if;
+
+      -- Test de arranque. Borrar las alarmas reinicia la ventana del APT y
+      -- obliga a pasarlo de nuevo.
+      if borrar_alm = '1' then
+        arrancado <= '0';
+      elsif ventana_fin = '1' and alm = '0' then
+        arrancado <= '1';
+      end if;
+
+      -- Escrituras del maestro
+      if reg_we = '1' then
+        d := to_integer(unsigned(reg_dir));
+        case d is
+          when 16#03# =>                              -- CONTROL
+            if reg_wdato(3) = '1' then
+              borrar_alm <= '1';
+            end if;
+            if orden = LIBRE then
+              -- Una orden por escritura, la de mayor prioridad primero.
+              -- Sembrar exige el test de arranque pasado, ninguna alarma, un
+              -- divisor por encima del minimo (con CFG_KD bajo la semilla
+              -- seria de calidad no garantizada y ningun test lo delataria)
+              -- y ninguna captura en curso. Generar y aleatorio exigen
+              -- ninguna alarma (con la fuente degradada no sale nada del
+              -- motor, SP 800-90B 4.3) y el contador de peticiones sin
+              -- agotar. Borrar_todo se atiende siempre.
+              if reg_wdato(7) = '1' then
+                clave <= (others => '0'); clave_valida <= '0';
+                aleatorio <= (others => '0'); reto <= (others => '0');
+                semilla <= (others => '0'); etiqueta_lista <= '0';
+                drbg_borrar <= '1';
+                flujo_parar <= '1';
+                cmac_carga <= '1';               -- clave nula al autenticador
+                rechazada <= '0';
+                orden <= ZEROIZANDO;
+              elsif reg_wdato(0) = '1' or reg_wdato(5) = '1' then
+                if sin_cripto = '0' and alm = '0' and arrancado = '1' and cap_en_curso = '0'
+                   and flujo_ocup = '0'
+                   and to_integer(kd_sel) >= G_KD_MIN
+                   and (reg_wdato(0) = '1' or drbg_sembrado = '1') then   -- resembrar necesita estado
+                  siembra_es_reseed <= reg_wdato(5);
+                  recogiendo  <= '1';
+                  n_recogidos <= (others => '0');
+                  rechazada <= '0';
+                  orden <= SEMBRANDO;
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(1) = '1' then
+                if drbg_sembrado = '1' and alm = '0' and drbg_agotado = '0' then
+                  drbg_gen <= '1';
+                  rechazada <= '0';
+                  orden <= GENERANDO;
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(6) = '1' then
+                if drbg_sembrado = '1' and alm = '0' and drbg_agotado = '0' then
+                  drbg_gen <= '1';
+                  rechazada <= '0';
+                  orden <= GENERANDO_ALEATORIO;
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(2) = '1' then
+                if clave_valida = '1' then
+                  cmac_inicia <= '1';
+                  etiqueta_lista <= '0';
+                  rechazada <= '0';
+                  orden <= AUTENTICANDO;
+                  cmac_en_curso <= '0';
+                else
+                  rechazada <= '1';
+                end if;
+              elsif reg_wdato(4) = '1' then
+                -- Capturar: solo en modo test (sin el, el buffer no se puede
+                -- leer y una captura solo serviria para guardar bits), con
+                -- el motor libre y sin otra captura en marcha.
+                if G_CAPTURA_BYTES > 0 and modo_test_s(1) = '1' and cap_en_curso = '0'
+                   and flujo_ocup = '0' then
+                  cap_arranca <= '1';
+                  cap_en_curso <= '1';
+                  rechazada <= '0';
+                else
+                  rechazada <= '1';
+                end if;
+              end if;
+            elsif (reg_wdato(0) or reg_wdato(1) or reg_wdato(2) or reg_wdato(4) or
+                   reg_wdato(5) or reg_wdato(6) or reg_wdato(7)) = '1' then
+              rechazada <= '1';          -- orden con el motor ocupado
+            end if;
+          when 16#04# =>
+            -- Solo con el motor libre: cambiar la tasa de muestreo a mitad
+            -- de un sembrado invalidaria el modelo estocastico de esa
+            -- semilla. Con una orden en curso la escritura se ignora. Tampoco
+            -- con el flujo activo: la tira mezclaria dos divisores.
+            if orden = LIBRE and flujo_ocup = '0' then
+              if to_integer(unsigned(reg_wdato(4 downto 0))) <= G_KD_MAX then
+                kd_sel <= unsigned(reg_wdato(4 downto 0));
+              else
+                rechazada <= '1';
+              end if;
+            end if;
+          when 16#05# => pagina <= unsigned(reg_wdato(1 downto 0));
+          when 16#0F# =>                              -- FLUJO
+            -- Arrancar cuenta como una orden: mismas condiciones que
+            -- capturar, mas el divisor minimo (los bits pasan por bit_cdc).
+            -- Parar se atiende siempre.
+            if reg_wdato(0) = '0' then
+              flujo_parar <= '1';
+            elsif G_FLUJO_BYTES > 0 and modo_test_s(1) = '1' and orden = LIBRE
+                  and cap_en_curso = '0' and to_integer(kd_sel) >= G_KD_MIN then
+              flujo_arranca <= '1';
+              rechazada <= '0';
+            else
+              rechazada <= '1';
+            end if;
+          when 16#20# to 16#2F# =>
+            reto(127 - 8 * (d - 16#20#) downto 120 - 8 * (d - 16#20#)) <= reg_wdato;
+            etiqueta_lista <= '0';
+          when others => null;
+        end case;
+      end if;
+
+      -- Secuenciador
+      case orden is
+        when LIBRE => null;
+
+        when SEMBRANDO =>
+          if alm = '1' or borrar_alm = '1' then
+            -- La fuente se degrado a mitad, o se reinicio la ventana del APT
+            -- y estos bits ya no quedarian evaluados: se aborta sin sembrar.
+            recogiendo <= '0';
+            rechazada <= '1';
+            orden <= LIBRE;
+          elsif stb_s = '1' and recogiendo = '1' then
+            semilla <= semilla(510 downto 0) & bit_s;
+            if n_recogidos = 511 then
+              recogiendo <= '0';
+              orden <= VALIDANDO;
+            else
+              n_recogidos <= n_recogidos + 1;
+            end if;
+          end if;
+
+        when VALIDANDO =>
+          -- La ventana que se cierre aqui contiene el ultimo bit de la
+          -- semilla, y las anteriores ya se cerraron sin alarma. Su veredicto
+          -- llega en el mismo ciclo que ventana_fin.
+          if alm = '1' or borrar_alm = '1' then
+            rechazada <= '1';
+            orden <= LIBRE;
+          elsif ventana_fin = '1' then
+            if siembra_es_reseed = '1' then
+              drbg_reseed <= '1';
+            else
+              drbg_inst <= '1';
+            end if;
+            orden <= ESPERA_DRBG;
+          end if;
+
+        when ESPERA_DRBG =>
+          if drbg_listo = '1' then
+            orden <= LIBRE;
+          end if;
+
+        when GENERANDO =>
+          if drbg_listo = '1' then
+            -- Solo la clave. Los otros 128 bits se descartan: no deben
+            -- quedar en ningun registro legible.
+            clave     <= drbg_salida(255 downto 128);
+            clave_valida <= '0';
+            etiqueta_lista <= '0';
+            cmac_carga <= '1';
+            orden <= CARGANDO_CLAVE;
+          end if;
+
+        when CARGANDO_CLAVE =>
+          if cmac_clave_lista = '1' then
+            clave_valida <= '1';
+            orden <= LIBRE;
+          end if;
+
+        when GENERANDO_ALEATORIO =>
+          if drbg_listo = '1' then
+            aleatorio <= drbg_salida;
+            orden <= LIBRE;
+          end if;
+
+        when AUTENTICANDO =>
+          if cmac_en_curso = '0' then
+            cmac_bloque_val <= '1';      -- el reto es un bloque completo
+            cmac_en_curso <= '1';
+          elsif cmac_listo = '1' then
+            etiqueta_lista <= '1';
+            cmac_en_curso <= '0';
+            orden <= LIBRE;
+          end if;
+
+        when ZEROIZANDO =>
+          -- El DRBG se borra en un ciclo; el autenticador tarda en expandir
+          -- la clave nula. clave_valida se queda a 0.
+          if cmac_clave_lista = '1' and drbg_ocupado = '0' then
+            orden <= LIBRE;
+          end if;
+      end case;
+    end if;
+  end process p_control;
+
+end architecture rtl;

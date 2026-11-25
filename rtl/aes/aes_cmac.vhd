@@ -23,6 +23,9 @@ library work;
 use work.aes_pkg.all;
 
 entity aes_cmac is
+  generic (
+    G_AES_EXTERNO : boolean := false
+  );
   port (
     clk         : in  std_logic;
     rst_n       : in  std_logic;
@@ -39,7 +42,17 @@ entity aes_cmac is
 
     etiqueta    : out std_logic_vector(127 downto 0);
     listo       : out std_logic;                       -- pulso
-    ocupado     : out std_logic
+    ocupado     : out std_logic;
+
+    -- Nucleo AES externo (G_AES_EXTERNO): lo pone quien instancia y lo
+    -- puede compartir con otro bloque, porque este solo cifra cuando se
+    -- lo ordenan y nunca a la vez que el otro.
+    aes_arranca_o : out std_logic;
+    aes_borrar_o  : out std_logic;
+    aes_clave_o   : out std_logic_vector(127 downto 0);
+    aes_dato_o    : out std_logic_vector(127 downto 0);
+    aes_salida_i  : in  std_logic_vector(127 downto 0) := (others => '0');
+    aes_listo_i   : in  std_logic := '0'
   );
 end entity aes_cmac;
 
@@ -76,10 +89,22 @@ begin
   etiqueta <= x;
   ocupado  <= '0' when estado = REPOSO or estado = ESPERA_BLOQUE else '1';
 
-  nucleo : entity work.aes_enc
-    port map (clk => clk, rst_n => rst_n, arranca => aes_arranca,
-              clave => aes_clave, dato => aes_dato,
-              salida => aes_salida, listo => aes_listo, ocupado => open);
+  g_nucleo_propio : if not G_AES_EXTERNO generate
+    nucleo : entity work.aes_enc
+      port map (clk => clk, rst_n => rst_n, arranca => aes_arranca,
+                clave => aes_clave, dato => aes_dato,
+                salida => aes_salida, listo => aes_listo, ocupado => open);
+  end generate g_nucleo_propio;
+
+  g_nucleo_externo : if G_AES_EXTERNO generate
+    aes_salida <= aes_salida_i;
+    aes_listo  <= aes_listo_i;
+  end generate g_nucleo_externo;
+
+  aes_arranca_o <= aes_arranca;
+  aes_borrar_o  <= '0';
+  aes_clave_o   <= aes_clave;
+  aes_dato_o    <= aes_dato;
 
   p_cmac : process (clk, rst_n)
     variable relleno : std_logic_vector(127 downto 0);
@@ -107,6 +132,7 @@ begin
         when REPOSO =>
           if carga_clave = '1' then
             aes_clave   <= clave;
+            x           <= (others => '0');   -- la etiqueta anterior no sobrevive
             aes_dato    <= (others => '0');   -- L = AES_K(0)
             aes_arranca <= '1';
             estado      <= SUB_L;
@@ -127,6 +153,7 @@ begin
           if carga_clave = '1' then          -- se puede recargar la clave
             aes_dato    <= (others => '0');
             aes_clave   <= clave;
+            x           <= (others => '0');   -- la etiqueta anterior no sobrevive
             aes_arranca <= '1';
             estado      <= SUB_L;
           elsif inicia = '1' then

@@ -1,0 +1,120 @@
+Banco del medidor contra el motor simulado
+
+0) El modelo de referencia se valida a si mismo
+  [ok ] AES-128 reproduce el vector de FIPS-197 apendice B
+  [ok ] AES-CMAC reproduce el vector de RFC 4493
+  [ok ] el id del equipo sale de la MAC del chip
+
+1) Sin sembrar no hay clave
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); no hay clave
+  [ok ] clave rechazada: el motor no da aleatorio sin sembrar
+  [ok ] y no se consumio ningun bloque
+lectura: primero 'clave'
+  [ok ] sin clave no sale ninguna lectura
+csr: FALLO (-16000), sin clave
+  [ok ] ni CSR
+
+2) Clave del equipo con aleatorio del motor
+sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: RECHAZADA por el motor
+  [FALLO] el motor queda sembrado
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); no hay clave
+  [FALLO] hay clave
+  [FALLO] cada bloque de la clave es una orden aleatorio aceptada por el motor
+  [FALLO] la publica sale en una trama P
+  [FALLO] publica en SubjectPublicKeyInfo DER de P-256 (91 bytes)
+
+3) Lecturas firmadas
+lectura: primero 'clave'
+  [FALLO] 5 lecturas, 5 tramas L
+  [FALLO] entre lecturas se cede la CPU el intervalo
+  [FALLO] secuencia = arranque 1, lectura 5; la energia avanza
+  [FALLO] la ultima lectura verifica con la publica
+  [FALLO] firma determinista: dos firmas iguales
+  [ok ] un bit cambiado en la energia y no verifica
+  [ok ] serializar y deserializar es la identidad
+
+4) Lecturas que el PC debe rechazar
+# lectura manipulada
+FL00187cdfa10011220000000000000000000010000000000003e8380b3a4f
+# lectura repetida
+FL00187cdfa10011220000000000000000000000000000000003e844b00b64
+
+5) Con el motor en alarma se sigue firmando, pero no hay clave nueva
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar) ALARMA_RCT; no hay clave
+  [FALLO] clave rechazada con alarma: sigue la anterior
+lectura: primero 'clave'
+  [FALLO] las lecturas siguen saliendo con la clave que hay
+borrar: alarmas bajadas; hay que repetir el test de arranque
+sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: RECHAZADA por el motor
+  [FALLO] tras borrar y repetir el arranque, sembrado
+
+5b) Rearme acotado: 3 por ventana, luego fallo permanente
+rearmar: RECHAZADA por el motor (antes ALARMA_RCT)
+rearmar: RECHAZADA por el motor (antes ALARMA_RCT)
+rearmar: RECHAZADA por el motor (antes ALARMA_RCT)
+  [FALLO] cada rearme borra la alarma y deja el motor sembrado
+E motor_i2c: 3 rearmes en 24 h: fallo permanente hasta reiniciar
+rearmar: FALLO PERMANENTE, 3 rearmes en 24 h; reiniciar el equipo
+  [ok ] el rearme siguiente dentro de la ventana es fallo permanente
+  [ok ] y la alarma se queda: no se ha borrado
+rearmar: FALLO PERMANENTE, 3 rearmes en 24 h; reiniciar el equipo
+  [ok ] pasada la ventana sigue en fallo: solo un reinicio lo quita
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar) ALARMA_RCT; no hay clave
+  [FALLO] en fallo permanente no hay clave nueva y sigue la anterior
+borrar: alarmas bajadas; hay que repetir el test de arranque
+sembrar: esperando el test de arranque (hasta 687 s)
+sembrar: RECHAZADA por el motor
+  [FALLO] borrar y sembrar a mano siguen funcionando
+
+6) Un fallo de bus a mitad de la clave no deja una clave a medias
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); no hay clave
+  [FALLO] el motor llego a aceptar el primer bloque
+  [FALLO] con el bus caido a mitad no hay clave nueva y sigue la anterior
+
+7) Clave nueva y CSR
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); no hay clave
+  [FALLO] la segunda clave es distinta de la primera
+csr: FALLO (-16000), sin clave
+  [FALLO] la CSR se genera
+  [FALLO] la CSR se parsea (PKCS#10)
+  [FALLO] la CSR lleva la publica del equipo
+lectura: primero 'clave'
+  [FALLO] y se firma con la clave nueva
+
+8) La privada no aparece en lo que sale
+  [FALLO] se extrae d de la clave para buscarla
+  [ok ] ni la publica, ni una firma, ni la CSR contienen 8 bytes seguidos de d
+
+9) Olvidar la clave
+olvidar: clave borrada de la RAM y de la NVS
+  [ok ] la clave deja de valer
+lectura: primero 'clave'
+publica: FALLO, sin clave (-16000)
+  [ok ] sin clave no sale ni lectura ni publica
+
+10) Tras un reinicio la secuencia sigue creciendo
+  [ok ] al reiniciar no hay clave en RAM
+clave: FALLO, el motor no da aleatorio (-60) (sin sembrar); no hay clave
+  [FALLO] clave nueva tras el reinicio
+lectura: primero 'clave'
+  [FALLO] arranque 2: la primera lectura supera a la ultima de antes del reinicio
+E medidor: sin NVS (0xffffffff): la secuencia no sobrevive al reinicio
+  [ok ] sin NVS el contador de arranques es 0 y se avisa
+  [ok ] y sin NVS tampoco se recupera la clave
+
+11) La clave guardada en NVS sobrevive al reinicio
+  [FALLO] 'clave' la dejo guardada en la NVS
+  [FALLO] al arrancar se recupera la clave de la NVS
+lectura: primero 'clave'
+  [FALLO] firma con la misma identidad en el arranque 3
+  [FALLO] la privada exportada es un ECPrivateKey DER de 121 bytes
+olvidar: clave borrada de la RAM y de la NVS
+  [ok ] 'olvidar' la borra tambien de la NVS
+  [ok ] y tras ese reinicio no hay clave
+lectura: primero 'clave'
+
+esperado: validas=10 firma_invalida=1 repetidas=1 csr=1 clave_cambiada=2
+test_medidor: 30 fallos
+rc=1

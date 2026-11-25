@@ -1,0 +1,69 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/tt27_kd16_r2_noniid_b8.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/tt27_kd16_r2.bin 8",
+   "dateTimeStamp" : "20261031194636",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/tt27_kd16_r2.bin",
+   "sha256" : "5e7ff2b7c30ff058e6cfd51c1e25e6a2d147277076eaec6bf24bed55c4b0aaeb",
+   "testCases" : [
+      {
+         "hBitstring" : 0.99560672092528513,
+         "hOriginal" : 2.9974233624610727,
+         "mcvEstimateMode" : 15354.0,
+         "mcvEstimatePHat" : 0.122832,
+         "mcvEstimatePU" : 0.12522344810922129,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hBitstring" : 1.0,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.3281099049004525,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.2102041707433725,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "binTTupleRes" : 0.29637508003217211,
+         "tTupleRes" : 2.4633406674844256,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "binLrsRes" : 0.52326540167125779,
+         "lrsRes" : 4.1956729298957507,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hBitstring" : 1.0,
+         "hOriginal" : 2.9203734912845603,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hBitstring" : 0.37606833112982607,
+         "hOriginal" : 3.3455282652915805,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hBitstring" : 0.3209620145486608,
+         "hOriginal" : 2.3274700270168824,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hBitstring" : 0.3209710076017932,
+         "hOriginal" : 2.3352416279579842,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 8.0,
+         "hAssessed" : 1.68163336594698,
+         "hBitstring" : 0.2102041707433725,
+         "hOriginal" : 2.3274700270168824,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

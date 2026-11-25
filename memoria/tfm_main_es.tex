@@ -35,6 +35,8 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 \usepackage[hidelinks]{hyperref}
+% URLs largas de la bibliografia: cortar tambien en los guiones
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\-}
 \usepackage[nottoc]{tocbibind}
 \usepackage{acronym}
 \usepackage{caption}
@@ -81,6 +83,13 @@ TRNG basado en osciladores en anillos}
 \newcommand{\meas}{\textsc{[medido]}}
 \newcommand{\simu}{\textsc{[simulado]}}
 \newcommand{\est}{\textsc{[estimado]}}
+% Notacion del divisor (Seccion sec:kd): K_D = 2^n periodos de RO2 entre dos
+% muestras, con n el valor del registro CFG_KD. \kd{19} imprime K_D = 2^19.
+\newcommand{\kd}[1]{$K_D = 2^{#1}$}
+% Las tres entropias que no deben confundirse (modo matematico): H_\infty
+% del modelo estocastico, la cifra de SP 800-90B y el valor declarado.
+\newcommand{\Hnb}{\hat{H}_{\mathrm{90B}}}
+\newcommand{\Hdecl}{H_{\mathrm{decl}}}
 
 \begin{document}
 
@@ -111,7 +120,6 @@ TRNG basado en osciladores en anillos}
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
 
-% [BORRADOR -- se cierra con los resultados medidos]
 Las claves criptogr\'aficas valen lo que vale la entrop\'ia que hay
 detr\'as, y sin embargo la mayor\'ia de los generadores embebidos se
 eval\'uan como cajas negras: se pasan bater\'ias de tests estad\'isticos
@@ -125,31 +133,40 @@ rechazado despu\'es la primera bater\'ia para evaluar generadores
 criptogr\'aficos. Despu\'es toma el camino contrario: un motor de
 generaci\'on de claves de caja blanca cuya
 entrop\'ia se justifica desde la f\'isica del dispositivo. Se dise\~na a
-nivel de transistor una fuente de entrop\'ia por oscilador de anillo, se
-extrae su jitter por simulaci\'on y se convierte, mediante un modelo
-estoc\'astico validado, en una cota inferior de min-entrop\'ia por bit y
-en los par\'ametros de dise\~no del muestreador. A su alrededor, un
-n\'ucleo digital totalmente portable --- tests de salud SP~800-90B,
-acondicionado y \acs{CTRDRBG} con funci\'on de derivaci\'on basados en
-AES, autenticaci\'on AES-CMAC e interfaz de registros \acs{I2C} --- se
-escribe una sola vez y se verifica de tres maneras: contra los vectores
-oficiales, en simulaci\'on sobre una FPGA Basys~3 que hace de veh\'iculo
-de verificaci\'on, y frente a un ESP32 que recalcula cada resultado con
-una implementaci\'on independiente (mbedtls). El mismo VHDL se sintetiza
+nivel de transistor una fuente de entrop\'ia por oscilador de anillo; su
+jitter se extrae por simulaci\'on, y se mide en un prototipo en FPGA, y
+se convierte, mediante un modelo estoc\'astico validado num\'ericamente,
+en una cota de min-entrop\'ia por bit y en los par\'ametros de dise\~no del
+muestreador. A su alrededor, un n\'ucleo digital totalmente portable ---
+tests de salud SP~800-90B, acondicionado y \acs{CTRDRBG} con funci\'on de
+derivaci\'on basados en AES, autenticaci\'on AES-CMAC e interfaz de
+registros \acs{I2C} --- se escribe una sola vez y se verifica de tres
+maneras: contra los vectores oficiales, en simulaci\'on con las reglas de
+seguridad del secuenciador comprobadas como propiedades, y en una FPGA
+Basys~3, donde funciona el motor entero y un ESP32 recalcula sus
+etiquetas de autenticaci\'on con una implementaci\'on independiente
+(mbedTLS). La campa\~na de entrop\'ia sobre los anillos de la FPGA
+confirma en hardware lo que mostr\'o la primera parte: la bater\'ia
+SP~800-90B da la misma cifra con un divisor de muestreo en el que el
+modelo concede medio bit de min-entrop\'ia por bit y con otro en el que
+concede casi un bit entero, y no distingue la fuente de anillos del
+generador del ESP32. La cota se toma, en cambio, del borde inferior del
+suelo blanco del ruido de fase medido, y es la prueba de reinicios la que
+separa las dos fuentes, una vez quitado el ruido de arranque del ESP32.
+El mismo VHDL se sintetiza
 por \'ultimo sobre una biblioteca abierta de celdas est\'andar de 130~nm
 para dar el \'area en puertas equivalentes y el camino hacia un circuito
 integrado dedicado. Todo el c\'odigo, modelos, vectores y datos se
 publican.
 
 \paragraph{Palabras clave} generador de n\'umeros verdaderamente
-aleatorios, oscilador en anillo, jitter, min-entrop\'ia, modelo
-estoc\'astico, AIS~20/31, SP~800-90B, CTR\_DRBG, AES-CMAC, elemento
-seguro, FPGA, ASIC, ESP32.
+aleatorios, oscilador en anillo, jitter, min-entrop\'ia, evaluaci\'on de
+aleatoriedad, modelo estoc\'astico, AIS~20/31, SP~800-90B, CTR\_DRBG,
+AES-CMAC, elemento seguro, FPGA, ASIC, ESP32.
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-% [DRAFT -- to be finalized with measured results]
 Cryptographic keys are only as good as the entropy behind them, yet most
 embedded key generators are evaluated as black boxes: statistical test
 suites are run on their output and a pass is taken as evidence of
@@ -162,28 +179,33 @@ and NIST itself has since rejected the first suite for assessing
 cryptographic generators. It then takes the opposite route: a white-box
 key-generation engine whose entropy
 is justified from the physics of the device. A ring-oscillator entropy
-source is designed at transistor level and its jitter is extracted from
-simulation and turned, through a validated stochastic model, into a lower
-bound on min-entropy per bit and into the design parameters of the
-sampler. Around it, a fully portable digital core --- SP~800-90B health
-tests, an AES-based conditioning and \acs{CTRDRBG} with derivation
-function, AES-CMAC authentication and an \acs{I2C} register interface ---
-is written once and verified three ways: against the official test
-vectors, in simulation on a Basys~3 FPGA acting as the verification
-vehicle, and against an ESP32 that recomputes every result with an
-independent implementation (mbedtls). The same VHDL is finally
+source is designed at transistor level; its jitter is extracted from
+simulation, and measured on an FPGA prototype, and turned, through a
+stochastic model validated numerically, into a bound on min-entropy per bit
+and into the design parameters of the sampler. Around it, a fully
+portable digital core --- SP~800-90B health tests, an AES-based
+conditioning and \acs{CTRDRBG} with derivation function, AES-CMAC
+authentication and an \acs{I2C} register interface --- is written once
+and verified three ways: against the official test vectors, in
+simulation with the security rules of the sequencer checked as
+properties, and on a Basys~3 FPGA, where the whole engine runs and an
+ESP32 recomputes its authentication tags with an independent
+implementation (mbedTLS). The entropy campaign on the rings of the FPGA
+confirms on hardware what the first part showed: the SP~800-90B battery
+gives the same figure at a sampling divider where the model credits half
+a bit of min-entropy per bit and at one where it credits nearly a full
+bit, and it does not tell the ring source from the ESP32 generator. The
+bound is taken instead from the lower edge of the white floor of the
+measured phase noise, and it is the restart test that separates the two
+sources, once the boot noise of the ESP32 is removed. The same VHDL
+is finally
 synthesized on an open 130~nm standard-cell library to give the area in
 gate equivalents and the path to a dedicated integrated circuit. All
 code, models, vectors and data are released.
 
 \paragraph{Keywords} true random number generator, ring oscillator,
-jitter, min-entropy, stochastic model, AIS~20/31, SP~800-90B, CTR\_DRBG,
-AES-CMAC, secure element, FPGA, ASIC, ESP32.
-
-\chapter*{Agradecimientos}
-\addcontentsline{toc}{chapter}{Agradecimientos}
-A mi familia, a mis compa\~neros de Airzone y al profesorado del M\'aster en
-Microelectr\'onica del IMSE-CNM, por su apoyo durante este trabajo.
+jitter, min-entropy, randomness assessment, stochastic model, AIS~20/31,
+SP~800-90B, CTR\_DRBG, AES-CMAC, secure element, FPGA, ASIC, ESP32.
 
 \tableofcontents
 \listoffigures
@@ -193,6 +215,7 @@ Microelectr\'onica del IMSE-CNM, por su apoyo durante este trabajo.
 \chapter*{Lista de acr\'onimos}
 \addcontentsline{toc}{chapter}{Lista de acr\'onimos}
 \begin{acronym}[CTR\_DRBG]
+\acro{ADC}{Analog-to-Digital Converter, convertidor anal\'ogico-digital}
 \acro{AES}{Advanced Encryption Standard, est\'andar de cifrado avanzado}
 \acro{AIS}{Anwendungshinweise und Interpretationen zum Schema (BSI)}
 \acro{APT}{Adaptive Proportion Test, prueba de proporci\'on adaptativa}
@@ -215,9 +238,11 @@ Microelectr\'onica del IMSE-CNM, por su apoyo durante este trabajo.
 \acro{PDK}{kit de dise\~no del proceso}
 \acro{PLL}{lazo de enganche de fase}
 \acro{PUF}{funci\'on f\'isicamente no clonable}
+\acro{PSL}{Property Specification Language}
 \acro{RCT}{Repetition Count Test, prueba de recuento de repeticiones}
 \acro{RO}{oscilador en anillo}
 \acro{RTL}{nivel de transferencia de registros}
+\acro{VHDL}{lenguaje de descripción de hardware VHSIC}
 \acro{SPI}{interfaz perif\'erica serie}
 \acro{TRNG}{generador de n\'umeros verdaderamente aleatorios}
 \acro{XADC}{convertidor anal\'ogico-digital de Xilinx}
@@ -242,5 +267,6 @@ Microelectr\'onica del IMSE-CNM, por su apoyo durante este trabajo.
 % =========================================================================
 \appendix
 \input{chapters_es/appendices}
+\input{chapters_es/app_fpga}
 
 \end{document}

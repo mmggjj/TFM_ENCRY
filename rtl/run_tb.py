@@ -21,6 +21,7 @@ WORK = CONSTRUIR / "work"
 
 GHDL_CANDIDATOS = [
     Path(os.environ.get("LOCALAPPDATA", "")) / "ghdl" / "bin" / "ghdl.exe",
+    Path.home() / "eda" / "ghdl" / "bin" / "ghdl.exe",   # mismo sitio que usa synth/sintetiza.py
     Path("ghdl"),
     Path.home() / "eda" / "oss-cad-suite" / "bin" / "ghdl",
 ]
@@ -29,26 +30,39 @@ GHDL_CANDIDATOS = [
 FUENTES_UNISIM = ["sim/unisim_modelos.vhd"]
 FUENTES = [
     "trng/ring_osc.vhd",
+    "trng/reset_sync.vhd",
     "trng/ero_core.vhd",
     "trng/trng_capture.vhd",
+    "trng/flujo_crudo.vhd",
     "trng/health_tests.vhd",
     "trng/bit_cdc.vhd",
     "io/i2c_slave.vhd",
     "aes/aes_pkg.vhd",
     "aes/aes_enc.vhd",
+    "aes/aes_enc_32.vhd",
     "aes/aes_cmac.vhd",
     "drbg/ctr_drbg.vhd",
     "tb/drbg_vectores_pkg.vhd",      # generado por analysis/gen_drbg_vectores.py
     "top/motor_top.vhd",
+    "fpga/medidor_frec.vhd",
+    "fpga/siete_seg.vhd",
+    "fpga/basys3_top.vhd",           # envoltorio de placa
+    "fpga/basys2_top.vhd",
 ]
 BANCOS = [
     ("tb_ring_osc", "tb/tb_ring_osc.vhd", ["-Pbuild/unisim"]),
+    ("tb_ero_core", "tb/tb_ero_core.vhd", []),
     ("tb_i2c_slave", "tb/tb_i2c_slave.vhd", []),
     ("tb_aes_enc", "tb/tb_aes_enc.vhd", []),
     ("tb_aes_cmac", "tb/tb_aes_cmac.vhd", []),
     ("tb_ctr_drbg", "tb/tb_ctr_drbg.vhd", []),
     ("tb_health_tests", "tb/tb_health_tests.vhd", []),
     ("tb_motor_top", "tb/tb_motor_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_motor_solo_fuente", "tb/tb_motor_solo_fuente.vhd", ["-Pbuild/unisim"]),
+    ("tb_medidor_frec", "tb/tb_medidor_frec.vhd", []),
+    ("tb_basys3_top", "tb/tb_basys3_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_basys2_top", "tb/tb_basys2_top.vhd", ["-Pbuild/unisim"]),
+    ("tb_ventana_ero", "tb/tb_ventana_ero.vhd", ["-Pbuild/unisim"]),
 ]
 
 
@@ -109,22 +123,35 @@ def main():
         if filtro and filtro not in nombre:
             continue
         print(f"\n--- {nombre} ---")
+        # Las propiedades PSL del banco (si las tiene) se informan aparte: una
+        # asercion violada ya hace fallar la simulacion, pero el informe dice
+        # ademas cuantas se evaluaron y que coberturas se alcanzaron.
+        psl = CONSTRUIR / f"{nombre}_psl.json"
         opciones = ["--std=08", "--workdir=rtl/build/work", "-Prtl/build/unisim"]
         if mcode:
-            rc = correr(["-r"] + opciones + [nombre], nombre)
+            rc = correr(["-r"] + opciones + [nombre, f"--psl-report={psl}"], nombre)
         else:
             # LLVM/GCC: elaborar a un ejecutable y lanzarlo desde la raiz
             exe = CONSTRUIR / nombre
             rc = correr(["-e"] + opciones + ["-o", str(exe), nombre], nombre)
             if not rc:
-                r = subprocess.run([str(exe)], capture_output=True, text=True,
-                                   timeout=7200)
+                r = subprocess.run([str(exe), f"--psl-report={psl}"],
+                                   capture_output=True, text=True, timeout=7200)
                 salida = (r.stdout + r.stderr).rstrip()
                 if salida:
                     print(salida)
                 rc = r.returncode
                 if rc:
                     print(f"  --> {nombre} devolvio {rc}")
+        if psl.exists():
+            import json
+            s = json.loads(psl.read_text())["summary"]
+            if s["assert"] or s["cover"]:
+                print(f"  PSL: {s['assert']} aserciones ({s['assert-failure']} violadas), "
+                      f"{s['cover']} coberturas ({s['cover-pass']} alcanzadas)")
+                if s["assert-failure"] or s["cover-pass"] < s["cover"]:
+                    print("  --> PSL: aserciones violadas o coberturas sin alcanzar")
+                    rc = rc or 1
         if rc:
             fallidos.append(nombre)
 

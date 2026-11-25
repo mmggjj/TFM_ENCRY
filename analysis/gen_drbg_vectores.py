@@ -3,11 +3,16 @@
 del modelo de referencia (validado contra 960 casos del CAVP).
 
 La disposicion de entrada es la misma que fija el hardware: entropia de
-32 bytes seguida de nonce de 16, sin cadena de personalizacion, con lo que
-la funcion de derivacion ve L = 48. Si el hardware cambia esa disposicion,
+48 bytes seguida de nonce de 16, sin cadena de personalizacion, con lo que
+la funcion de derivacion ve L = 64 (512 bits crudos desde el 16-11-2026;
+antes 32 + 16). Si el hardware cambia esa disposicion,
 hay que cambiarla aqui tambien, y solo aqui.
 
     python gen_drbg_vectores.py  ->  rtl/tb/drbg_vectores_pkg.vhd
+
+Desde el 23-11-2026 el paquete lleva ademas C_LOTE: N_LOTE semillas mas,
+cada una con instanciar, dos generaciones, resembrar y otra generacion,
+para que el banco no dependa de dos semillas solas.
 """
 from __future__ import annotations
 
@@ -18,6 +23,7 @@ from ctr_drbg_ref import CtrDrbg
 
 RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "rtl" / "tb" / "drbg_vectores_pkg.vhd"
+N_LOTE = 50
 
 
 def derivar(etiqueta: str, n: int) -> bytes:
@@ -36,8 +42,8 @@ def vhdl_const(nombre: str, datos: bytes) -> str:
 
 
 def main() -> None:
-    e1, n1 = derivar("entropia-1", 32), derivar("nonce-1", 16)
-    e2, n2 = derivar("entropia-2", 32), derivar("nonce-2", 16)
+    e1, n1 = derivar("entropia-1", 48), derivar("nonce-1", 16)
+    e2, n2 = derivar("entropia-2", 48), derivar("nonce-2", 16)
 
     d = CtrDrbg(usar_df=True)
     d.instantiate(e1, n1)
@@ -54,6 +60,22 @@ def main() -> None:
     d2.instantiate(e1, n1)
     assert d2.generate(32) == sal1a
 
+    lote = []
+    for i in range(N_LOTE):
+        e, n = derivar(f"lote-e-{i}", 48), derivar(f"lote-n-{i}", 16)
+        er, nr = derivar(f"lote-er-{i}", 48), derivar(f"lote-nr-{i}", 16)
+        dl = CtrDrbg(usar_df=True)
+        dl.instantiate(e, n)
+        a, b = dl.generate(32), dl.generate(32)
+        dl.reseed(er + nr)
+        lote.append((e, n, a, b, er, nr, dl.generate(32)))
+    filas = ",\n".join(
+        f'    {i} => (e => x"{e.hex()}", n => x"{n.hex()}",\n'
+        f'          a => x"{a.hex()}",\n          b => x"{b.hex()}",\n'
+        f'          er => x"{er.hex()}", nr => x"{nr.hex()}",\n'
+        f'          c => x"{c.hex()}")'
+        for i, (e, n, a, b, er, nr, c) in enumerate(lote))
+
     texto = [
         "-- GENERADO por analysis/gen_drbg_vectores.py. No editar a mano.",
         "-- Vectores del CTR_DRBG AES-128 con df obtenidos del modelo de",
@@ -68,6 +90,16 @@ def main() -> None:
         vhdl_const("C_SAL2", sal2),
         f"  constant C_CNT_TRAS_DOS_GEN : natural := {cnt_antes};",
         f"  constant C_CNT_TRAS_RESEED_GEN : natural := {cnt_despues};",
+        "  -- Lote: instanciar(e, n), generar a y b, resembrar(er, nr), generar c.",
+        "  type t_caso is record",
+        "    e, er : std_logic_vector(383 downto 0);",
+        "    n, nr : std_logic_vector(127 downto 0);",
+        "    a, b, c : std_logic_vector(255 downto 0);",
+        "  end record;",
+        f"  type t_lote is array (0 to {N_LOTE - 1}) of t_caso;",
+        "  constant C_LOTE : t_lote := (",
+        filas,
+        "  );",
         "end package drbg_vectores_pkg;",
         "",
     ]

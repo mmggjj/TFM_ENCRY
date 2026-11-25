@@ -12,18 +12,28 @@
 -- cuantas repiten la primera. Corte C = 1 + CRITBINOM(W, 2^-H, 1-alfa).
 -- Detecta perdidas grandes de entropia (sesgo). Para fuente binaria la
 -- norma fija W = 1024 (no 512, ese es el valor para fuentes no binarias).
--- Aqui se mira tambien el complemento, que la norma permite para fuentes
--- binarias: una fuente pegada al valor contrario al primero de la ventana
--- daria cuenta cero y pasaria el test de la letra pero no el del espiritu.
+-- Aqui se mira tambien el complemento, adicion propia (la norma solo cuenta
+-- las repeticiones del primer valor): una fuente pegada al valor contrario
+-- al primero de la ventana daria cuenta cero y pasaria el test de la letra
+-- pero no el del espiritu. Coste en falsa alarma: analysis/cortes_salud.py.
 --
--- Valores por defecto para H = 0,98 bit/bit y alfa = 2^-20, calculados en
--- docs/estado_del_arte_trng.md seccion 5.1: RCT C = 22, APT C = 596.
--- Son genericos porque H se fija con la min-entropia MEDIDA (objetivo
--- O3), no con una suposicion.
+-- Valores por defecto para H = 0,60 bit/bit y alfa = 2^-30: RCT C = 51,
+-- APT C = 766 (decision del 16-11-2026: el biestable real de sg13g2 sesga
+-- hasta P(1) 0,37 a 125 C [SIMULADO], docs/basys2.md). Del 15-11, H = 0,80
+-- (39 y 683). Antes, H = 0,98 y alfa = 2^-20 (22 y 596,
+-- docs/estado_del_arte_trng.md 5.1): falsas alarmas cada pocos minutos en
+-- la FPGA. Son genericos
+-- porque H se fija con la min-entropia medida, no con una suposicion.
 --
 -- Las alarmas son pegajosas: quedan levantadas hasta que se borran a
 -- proposito, para que ninguna capa superior pueda perderselas. La logica
 -- que consume bits debe bloquear la salida mientras haya alarma.
+--
+-- ventana_fin pulsa un ciclo al cerrarse cada ventana del APT, a la vez que
+-- se registra su veredicto en alarma_apt: un bit solo esta evaluado por los
+-- dos tests cuando se ha cerrado la ventana que lo contiene. Borrar las
+-- alarmas reinicia la ventana, para que la siguiente que se cierre solo
+-- contenga muestras posteriores al borrado.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -31,9 +41,9 @@ use ieee.numeric_std.all;
 
 entity health_tests is
   generic (
-    G_RCT_C   : positive := 22;     -- corte del test de repeticion
+    G_RCT_C   : positive := 51;     -- corte del test de repeticion
     G_APT_W   : positive := 1024;   -- ventana del test de proporcion
-    G_APT_C   : positive := 596     -- corte del test de proporcion
+    G_APT_C   : positive := 766     -- corte del test de proporcion
   );
   port (
     clk      : in  std_logic;
@@ -44,6 +54,7 @@ entity health_tests is
     alarma_rct : out std_logic;
     alarma_apt : out std_logic;
     alarma     : out std_logic;     -- cualquiera de las dos
+    ventana_fin : out std_logic;    -- pulso: se ha cerrado una ventana del APT
     -- Para diagnostico por el bus: lo peor visto desde el ultimo borrado.
     rct_max  : out unsigned(15 downto 0);
     apt_max  : out unsigned(15 downto 0)
@@ -65,12 +76,26 @@ architecture rtl of health_tests is
   signal apt_cnt   : unsigned(15 downto 0) := (others => '0');  -- coincidencias
   signal apt_alm   : std_logic := '0';
   signal apt_pico  : unsigned(15 downto 0) := (others => '0');
+  signal apt_fin   : std_logic := '0';
+
+  function lim_apt return natural is
+  begin
+    if G_APT_W >= G_APT_C then
+      return G_APT_W - G_APT_C;
+    end if;
+    return 0;
+  end function;
+
+  constant C_APT_COMP  : boolean := G_APT_W >= G_APT_C;
+  constant C_APT_LIM   : natural := lim_apt;
+  constant C_APT_MITAD : natural := (G_APT_W + 1) / 2;
 
 begin
 
   alarma_rct <= rct_alm;
   alarma_apt <= apt_alm;
   alarma     <= rct_alm or apt_alm;
+  ventana_fin <= apt_fin;
   rct_max    <= rct_pico;
   apt_max    <= apt_pico;
 
@@ -118,12 +143,14 @@ begin
       apt_cnt  <= (others => '0');
       apt_alm  <= '0';
       apt_pico <= (others => '0');
+      apt_fin  <= '0';
     elsif rising_edge(clk) then
+      apt_fin <= '0';
       if borrar = '1' then
         apt_alm  <= '0';
         apt_pico <= (others => '0');
-      end if;
-      if bit_stb = '1' then
+        apt_pos  <= (others => '0');    -- ventana nueva tras el borrado
+      elsif bit_stb = '1' then
         if apt_pos = 0 then
           -- Primera muestra de la ventana: referencia, cuenta 1.
           apt_ref <= bit_i;
@@ -139,11 +166,14 @@ begin
 
           if apt_pos = G_APT_W - 1 then
             -- Ventana completa: se evalua la cuenta y su complemento.
+            -- W - c >= C se compara como c <= W - C, y c >= W - c como
+            -- c >= ceil(W/2): mismas condiciones sin restas en el camino
+            -- (en Artix-7 a 100 MHz no cerraba tiempos, 17-11-2026).
             if coincide >= G_APT_C or
-               (to_unsigned(G_APT_W, 16) - coincide) >= G_APT_C then
+               (C_APT_COMP and coincide <= C_APT_LIM) then
               apt_alm <= '1';
             end if;
-            if coincide >= to_unsigned(G_APT_W, 16) - coincide then
+            if coincide >= C_APT_MITAD then
               peor := coincide;
             else
               peor := to_unsigned(G_APT_W, 16) - coincide;
@@ -151,6 +181,7 @@ begin
             if peor > apt_pico then
               apt_pico <= peor;
             end if;
+            apt_fin <= '1';
             apt_pos <= (others => '0');
           else
             apt_pos <= apt_pos + 1;

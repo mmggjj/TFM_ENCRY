@@ -1,7 +1,7 @@
 \chapter{State of the Art}
 \label{ch:ch2_soa}
 
-% [DRAFT v1] Source material: docs/estado_del_arte_trng.md, estado_del_arte_cripto.md,
+% Source material: docs/estado_del_arte_trng.md, estado_del_arte_cripto.md,
 % plataforma_y_flujo.md, via_asic.md. Every numeric claim below carries a
 % reference that was checked against its source when the review was compiled;
 % items the review could not open are marked as such in the working notes.
@@ -9,7 +9,9 @@
 The review is organized along the chain the thesis builds: how ring
 oscillators are turned into random bits, how their entropy is modeled and
 bounded, how their jitter is measured from inside the device, what the two
-governing standards demand, which symmetric primitives fit a constrained
+governing standards demand, what is known of the generators of commodity
+microcontrollers --- the ESP32's above all --- and of the second sources
+and harvesters built around them, which symmetric primitives fit a constrained
 engine, what the commercial parts offer, and what changes when the design
 leaves the FPGA for silicon. The last section states the gap this work
 addresses, in the guarded form the working rules require.
@@ -50,17 +52,21 @@ bistable structure oscillates before settling~\cite{varchola_2010_new},
 with a full physical-to-stochastic model~\cite{bernard_2019_physical};
 the \textbf{self-timed ring} (STR) circulates several events in an
 asynchronous ring to obtain phases spaced by the order of the
-jitter~\cite{cherkaoui_2013_very}, reaching 154~Mbit/s; and the
-\textbf{ES-TRNG} of Yang \emph{et al.} uses the carry chain as a
-time-to-digital converter to encode the edge position with 10~LUTs and
-5~flip-flops~\cite{yang_2018_estrng, rozic_2015_highly}.
+jitter~\cite{cherkaoui_2013_very}, reaching 154~Mbit/s in Petura's
+implementation~\cite{petura_2016_survey}; and the Leuven designs digitize
+the position of the edge: the DC-TRNG uses the carry chain as a
+time-to-digital converter~\cite{rozic_2015_highly}, and the
+\textbf{ES-TRNG} of Yang \emph{et al.} encodes it with variable precision
+and repeated sampling in 10~LUTs and
+5~flip-flops~\cite{yang_2018_estrng}.
 
 Table~\ref{tab:petura} reproduces the comparison Petura \emph{et al.}
 made of the AIS-compliant cores on one device~\cite{petura_2016_survey}.
 The entropy column is a statistical estimate (the AIS~31 T8 test), not a
-model bound; the feasibility column is the authors' qualitative note,
-where COSO and TERO score worst because they need manual adjustment per
-device. No comparable table exists for Artix-7; the open OpenTRNG project
+model bound. The authors also rank the cores by feasibility; that column
+is not reproduced because the sense of its scale could not be confirmed
+from the working notes, and only their remark that COSO and TERO need
+manual adjustment per device is kept. No comparable table exists for Artix-7; the open OpenTRNG project
 implements ERO, multi-ring and COSO on an Arty~A7 with the same XC7A35T
 die as the Basys~3 but publishes neither entropy nor throughput
 figures~\cite{opentrng_2025_docs}.
@@ -69,18 +75,18 @@ figures~\cite{opentrng_2025_docs}.
 \centering
 \caption{AIS-compatible TRNG cores on Xilinx Spartan-6 (45~nm), after
 Petura \emph{et al.}~\cite{petura_2016_survey}, Table~II. Entropy is the
-T8 estimate; ``feasibility'' is the authors' rank (higher is easier).}
+T8 estimate.}
 \label{tab:petura}
-\begin{tabular}{@{}lrrrrl@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Core & LUT/reg. & Power (mW) & Rate (Mbit/s) & Entropy/bit & Feasib. \\
+Core & LUT/reg. & Power (mW) & Rate (Mbit/s) & Entropy/bit \\
 \midrule
-ERO  & 46/19   & 2.16  & 0.0042 & 0.999 & 5 \\
-COSO & 18/3    & 1.22  & 0.54   & 0.999 & 1 \\
-MURO & 521/131 & 54.72 & 2.57   & 0.999 & 4 \\
-PLL  & 34/14   & 10.6  & 0.44   & 0.981 & 3 \\
-TERO & 39/12   & 3.31  & 0.625  & 0.999 & 1 \\
-STR  & 346/256 & 65.9  & 154    & 0.998 & 2 \\
+ERO  & 46/19   & 2.16  & 0.0042 & 0.999 \\
+COSO & 18/3    & 1.22  & 0.54   & 0.999 \\
+MURO & 521/131 & 54.72 & 2.57   & 0.999 \\
+PLL  & 34/14   & 10.6  & 0.44   & 0.981 \\
+TERO & 39/12   & 3.31  & 0.625  & 0.999 \\
+STR  & 346/256 & 65.9  & 154    & 0.998 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,9 +108,16 @@ gives the bit probability conditioned on the previous phase, the
 probability of any output vector, and a lower bound on the Shannon
 entropy rate, $H \ge 1 - \frac{4}{\pi^2\ln 2}e^{-4\pi^2 Q}$, whose exact
 status is examined in Chapter~\ref{ch:ch3_entropy}. Petura \emph{et al.}
-rewrite it in design quantities, $H = 1 - \frac{4}{\pi^2\ln2}\exp(-\pi^2
-\sigma_{th}^2 K T_2/T_1^3)$, and Fischer and Lubicz invert it to obtain
-the divider $K_D$ from a measured jitter~\cite{fischer_2014_embedded}. Ma
+rewrite it in design quantities --- the thermal jitter per period, the
+divider and the two periods~\cite{petura_2016_survey} --- and Fischer and
+Lubicz invert it to obtain
+the divider $K_D$ from a measured jitter~\cite{fischer_2014_embedded}.
+The form used in this work is $Q = K_D\,\sigma^2 T_2/T_1^3$ in Baudet's
+exponent $-4\pi^2 Q$, which is the one that reproduces the published
+divider of Fischer and Lubicz (Section~\ref{sec:kd}); the expression as
+printed by Petura \emph{et al.} was transcribed in the working notes with
+$\pi^2$ in the exponent, which does not reproduce it, and whether that is
+a different convention for $\sigma$ was not checked against the paper. Ma
 \emph{et al.} give an alternative model used by the Leuven
 group~\cite{ma_2014_entropy}; Haddad \emph{et al.} question the mutual
 independence of jitter realizations on which these cancellations
@@ -207,6 +220,13 @@ construction, and so does a weak physical source behind a cryptographic
 post-processor~\cite{saarinen_2021_entropy}. NIST's 2022 decision to
 revise the publication states the point in so many words, ``rejecting its
 use for assessing cryptographic random number generators''~\cite{nist_2022_decision}.
+The criticism that led there is older: Saarinen calls the suite ``clearly
+obsolete, possibly harmful'', since generators with no secret at all pass
+it~\cite{saarinen_2022_obsolete}; Iwasaki shows that the results of its
+tests are not mutually independent and that it lacks a principled global
+acceptance criterion~\cite{iwasaki_2017_analysis}; and the public comments
+gathered in NIST's own review repeat the redundancy of the tests and the
+misuse of the suite as a certification~\cite{nist_2021_sp80022_comments}.
 The empirical record agrees: a certified smart-card generator showed
 consistent biases while passing most tests~\cite{hurleysmith_2018_certifiably,
 hurleysmith_2018_great}, and the ESP32's generator passes the same
@@ -215,7 +235,219 @@ returns pseudo-random values~\cite{espressif_idf_random, espressif_trm_esp32,
 blancoromero_2026_entropy}. The academic literature on that generator
 applies only SP~800-22 or Dieharder~\cite{castillo_2026_automated,
 hidayatulloh_2024_performance}; no SP~800-90B characterization of it was
-found.
+found (Section~\ref{sec:soa_mcu}).
+
+\section{Generators of commodity microcontrollers}
+\label{sec:soa_mcu}
+
+Why the generator of a microcontroller deserves a section of its own is
+shown by what happens when one fails in the field. Heninger \emph{et al.}
+scanned the TLS and SSH hosts of the whole IPv4 space and found that
+0.75\,\% of TLS certificates shared their keys with another host; they
+factored the RSA keys of real devices whenever two keys shared a prime, and
+traced the cause to headless embedded appliances --- routers, firewalls ---
+generating keys at first boot, before their entropy pool had filled: the
+\emph{boot-time entropy hole}~\cite{heninger_2012_mining}. RFC~4086, the
+IETF's best current practice on randomness, states the principle that the
+security of keys, nonces and cookies rests on unpredictable values and that
+a poorly seeded pseudo-random process gives only
+``pseudo-security''~\cite{eastlake_2005_rfc4086}; and Tillmanns \emph{et
+al.}, reverse-engineering the firmware of Broadcom and Cypress Bluetooth
+chips, found that the dedicated hardware generators present in some of
+them pass advanced tests while many popular devices have none and fall
+back on an insecure pseudo-random generator~\cite{tillmanns_2020_firmware}.
+A connected thermostat or HVAC unit that wakes from deep sleep and opens a
+TLS session before its radio has associated is the same pattern in
+miniature.
+
+{\sloppy
+\paragraph{The ESP32 chain.} On the ESP32 the path from the peripheral to
+the protocol is short. The second-stage bootloader, and the application on
+demand through \texttt{bootloader\_\allowbreak{}random\_\allowbreak{}enable()}, put the SAR ADC into
+a noise-sampling mode (\texttt{bootloader\_\allowbreak{}random.c}~\cite{espressif_bootloader_random});
+the entropy interface of mbedTLS in ESP-IDF, \texttt{mbedtls\_\allowbreak{}hardware\_\allowbreak{}poll()}
+in \texttt{esp\_\allowbreak{}hardware.c}, is a thin wrapper over
+\texttt{esp\_\allowbreak{}fill\_\allowbreak{}random()}~\cite{espressif_esp_hardware}; and the TLS
+stack built on it~\cite{espressif_mbedtls} draws from that function the
+client and server randoms, the ephemeral ECDHE scalars, the IVs and the
+session identifiers, with no conditioning of its own. Whatever regime the
+generator is in at the moment a handshake runs, the session keys inherit
+it. Benchmarking TLS~1.3 on the
+ESP32, Salles and Farias find a Curve25519 and RSA suite about four times
+faster than P-256 with ECDSA at equal security~\cite{salles_2023_iotst}, so
+the handshake is where the time goes, and a generator that
+blocks or a slow software conditioner taxes the most expensive moment of
+the connection. The bootloader is also what seeds the generator before any
+radio is up: asked when the RF subsystem counts as ``enabled'' for
+\texttt{esp\_\allowbreak{}random()} to be true random --- whether initializing a
+Bluetooth stack is enough, and which cases saturate the high-speed ADC with
+Wi-Fi on --- an Espressif maintainer answered that the radio start-up
+enables the high-speed ADC and that the bootloader seeds the generator's
+entropy beforehand, and the documentation was rewritten as a
+result~\cite{espressif_issue_14665}. The bootloader announces the switching
+of that source in its log (``Enabling\slash Disabling RNG early entropy
+source''), which has itself puzzled users~\cite{espressif_issue_7598}. The
+boundary between true and pseudo-random operation is, in short, subtle
+even for the manufacturer's own users; the restart test of
+Section~\ref{sec:esp32_90b} shows that without the boot noise the output
+repeats, and bounds what that noise contributes only from below.\par}
+
+\paragraph{The original ESP32 and its successors.} The guides of the
+later chips, ESP32-S2, -C3 and -H2, document a secondary entropy source
+that the original ESP32 does not have: the sampling of an asynchronous
+8~MHz internal oscillator, always enabled and mixed into the generator
+state by hardware, which on its own ``was sufficient to pass the Dieharder
+random number test suite'', although true random output is only guaranteed
+with the main source also enabled~\cite{espressif_idf_random_c3}. The
+guide of the original ESP32 names no such source~\cite{espressif_idf_random}.
+Results obtained on a later chip therefore do not transfer to the original
+one, and the ``pseudo-random only'' caveat weighs more on it.
+
+\paragraph{Earlier looks at the ESP32 generator.} The closest
+peer-reviewed work, by Hidayatulloh \emph{et al.}, uses
+\texttt{esp\_\allowbreak{}random()} for the nonces of AES counter mode on point-to-point
+LoRa links and reports that the numbers pass the NIST suite, in a single
+operating condition and without the per-test pass proportions or the
+uniformity of the $p$-values~\cite{hidayatulloh_2024_performance}. Castillo
+\emph{et al.} present an automated web framework for SP~800-22 and
+validate it on 2~GB from an ESP32-C3, which carries the secondary source;
+the contribution is the tool, not the device~\cite{castillo_2026_automated}.
+Espressif's own validation is the single favourable-condition Dieharder run
+of Section~\ref{sec:esp32_periph}. The rest is informal: Cheich plots
+histograms of up to about 300\,000 values with Wi-Fi on and off and across
+reboots and concludes that the output looks random, with no formal
+battery~\cite{cheich_2025_esp32}, and the AndroidCrypto tutorial reproduces
+the Espressif warning and shows how to call
+\texttt{bootloader\_\allowbreak{}random\_\allowbreak{}enable()}, with no characterization at
+all~\cite{androidcrypto_esp32}. Blanco-Romero \emph{et al.} make the
+point that the pseudo-random output with the radio off passes statistical
+screenings~\cite{blancoromero_2026_entropy}. A characterization of the
+original ESP32 that varies the operating conditions and estimates the
+min-entropy of the output was not found in the literature consulted.
+
+\paragraph{Other microcontrollers.} Table~\ref{tab:prior-trng} sets the
+ESP32 beside the generators of other parts of the same class.
+STMicroelectronics documents in application note AN4230 a validation of
+the STM32 generator against SP~800-22 and SP~800-90B and reports its
+evaluation against AIS-31 PTG.2, the most complete public vendor
+characterization found~\cite{stm_an4230}; even so, Ngo and Dubrova
+recover the Hamming weight of its output words from the power consumption
+with a deep-learning model, with better than 60\,\% accuracy against a
+14\,\% baseline --- side-channel leakage being a threat distinct from
+statistical weakness~\cite{ngo_2022_sidechannel}. Nordic documents for the
+nRF52840 a generator based on internal thermal noise with an optional
+hardware bias corrector~\cite{nordic_nrf52840_rng}. The RP2040 exposes one
+bit of a ring oscillator, \texttt{RANDOMBIT}, which its datasheet says does
+not meet the requirements of security systems~\cite{raspberrypi_rp2040_ds,
+dmo_2022_rp2040}. The Broadcom application processors of the Raspberry~Pi
+expose a closed generator as \texttt{/dev/hwrng}, which community
+evaluations with ENT, \texttt{rngtest} and Dieharder find good at about
+1~Mbit/s~\cite{russell_2013_rpi_hwrng}; with the design and any filtering
+unpublished, no stochastic model can be built and ``passes the tests'' cannot
+be turned into an entropy figure. The ESP32 sits between the documented
+FPGA designs of Section~\ref{sec:soa_archs} and these black boxes: its
+sources are named, not quantified.
+
+\begin{table}[htbp]
+\centering
+\caption{Published assessments of the hardware generators of IoT-class
+parts. ``Conditions'' says whether the operating state was varied.}
+\label{tab:prior-trng}
+\footnotesize
+\begin{tabular}{@{}*{5}{>{\raggedright\arraybackslash}p{2.35cm}}p{1.0cm}@{}}
+\toprule
+Platform & Declared source & Assessment & Conditions & Result & Ref. \\
+\midrule
+ESP32 & RF/SAR ADC noise, asynchronous clocks & Dieharder, 2~GB (vendor) & Wi-Fi on only & Pass; data not public & \cite{espressif_trm_esp32} \\
+ESP32 & \texttt{esp\_\allowbreak{}random()} & SP~800-22 & One & Pass (LoRa nonces) & \cite{hidayatulloh_2024_performance} \\
+ESP32-C3 & As ESP32, plus 8~MHz secondary & SP~800-22, 2~GB & One & Pass (focus: the framework) & \cite{castillo_2026_automated} \\
+ESP32 (blog) & \texttt{esp\_\allowbreak{}random()} & Histograms & Wi-Fi on/off, reboots & ``Looks random'' & \cite{cheich_2025_esp32} \\
+STM32 & Analog noise, dedicated & SP~800-22, SP~800-90B; AIS-31 PTG.2 & Not stated & Pass (vendor) & \cite{stm_an4230} \\
+nRF52840 & Thermal noise, bias corrector & None published & --- & --- & \cite{nordic_nrf52840_rng} \\
+RP2040 & Ring oscillator bit & Community analyses & --- & Not fit for cryptography (datasheet) & \cite{raspberrypi_rp2040_ds} \\
+BCM2835 & Closed & ENT, \texttt{rngtest}, Dieharder & No & Pass & \cite{russell_2013_rpi_hwrng} \\
+Broadcom\slash Cypress Bluetooth & On-chip generator, if any & Advanced suites, reverse engineering & Many devices & Generator good; fallback insecure & \cite{tillmanns_2020_firmware} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Second sources and entropy harvesting}
+\label{sec:soa_harvest}
+
+A node that keeps its radio off needs entropy from elsewhere, and two
+bodies of work bear on where to find it and how to combine it.
+
+\paragraph{The SRAM start-up state.} A six-transistor SRAM cell is a pair
+of cross-coupled inverters; at power-up both start near their metastable
+point and the cell resolves towards one state or the other. In cells whose
+transistors are strongly mismatched the outcome is fixed by manufacture and
+repeats at every power-up: a device-specific fingerprint, the basis of the
+SRAM PUF. In closely matched cells thermal noise decides anew each time,
+and those cells are an entropy source. The same pattern is thus read in two
+ways, the stable cells as identity and the unstable ones as randomness, as
+Holcomb, Burleson and Fu showed with FERNS, extracting 128 random bits that
+pass the NIST runs, approximate-entropy and block-frequency tests from
+512~bytes of power-up SRAM~\cite{holcomb_2009_powerup}. Guajardo \emph{et
+al.} gave the first intrinsic SRAM PUF on FPGAs and the intra- and
+inter-device Hamming-distance methodology now standard for separating
+fingerprint from noise~\cite{guajardo_2007_fpga}, and van der Leest
+\emph{et al.} quantified the min-entropy of the noise in commercial SRAM
+start-up patterns and conditioned it into full-entropy 256-bit
+seeds~\cite{vanderleest_2012_efficient}. The pattern is described by its
+uniformity (fraction of ones, ideally one half), its uniqueness
+(inter-device distance, ideally half the length) and its reliability, whose
+complement, the intra-device bit error rate between power-ups of one chip,
+is not zero even at nominal
+conditions~\cite{holcomb_2009_powerup, vanderleest_2012_efficient}. The
+identity use corrects those errors away with a fuzzy extractor and public
+helper data; the entropy use seeks them out, and must remember that the
+stable majority is known to anyone who has once read the pattern. For the
+ESP32 no peer-reviewed estimate of the start-up min-entropy was found. The
+open \texttt{esp32\_\allowbreak{}puflib} implements an SRAM PUF for the family as an
+ESP-IDF component, reading the memory from a deep-sleep wake stub and
+keeping helper data in flash~\cite{stanicek_esp32_puflib}; and a forum
+thread reports that the boot ROM has already written the first 0x1320~bytes
+of SRAM1 and 0x6E0~bytes of SRAM2 when application code
+runs~\cite{esp32forum_wakestub}, so a reader must use regions the ROM
+leaves untouched. The two sources of a chip are complementary rather than
+redundant: the generator's noise is continuous but needs its injectors
+powered, while the SRAM pattern is one-shot, free at power-up, renewed only
+by a power cycle and dominated by its fixed fingerprint.
+
+\paragraph{Conditioning and harvesting.} The Leftover Hash Lemma of
+Impagliazzo, Levin and Luby bounds how close to uniform a 2-universal hash
+of a source of known min-entropy comes, but needs a uniform
+seed~\cite{impagliazzo_1989_pseudorandom}, which a device short of entropy
+does not have. In practice a fixed cryptographic function is used and its
+soundness argued computationally: Dodis \emph{et al.} analyse when the
+CBC-MAC, cascade and HMAC constructions act as randomness
+extractors~\cite{dodis_2004_randomness}, SP~800-90B lists them as vetted
+conditioners (Section~\ref{sec:soa_standards}), and HKDF splits key
+derivation into an extract step that distils a pseudorandom key from
+non-uniform input and an expand step that stretches it~\cite{krawczyk_2010_hkdf}.
+Fusing several weak sources has precedent in constrained devices. Pawlowski,
+Jara and Ogorzalek harvest the least significant bits of temperature,
+humidity and light sensors on IoT nodes, the light sensors giving about
+7.9~bits per byte after adjustment at roughly 1.3~ms per
+byte~\cite{pawlowski_2015_harvesting}; Zhang and Wu build an entropy pool
+that fuses chaotic circuits and environmental events in multi-sensor
+networks~\cite{zhang_2023_heterogeneous}; Foreman, Yeung and Curchod show
+extractors (Toeplitz, Trevisan) raising the measured quality of commercial
+generators under extended batteries~\cite{foreman_2024_statistical}; and
+the survey of Kietzmann, Schmidt and W\"ahlisch maps radio, sensor, SRAM
+and jitter sources, generators and design guidelines for the constrained
+IoT and treats entropy scarcity there as structural~\cite{kietzmann_2021_guideline}.
+The \texttt{pico\_\allowbreak{}rand} of the RP2040 SDK is a working instance in silicon:
+because the ring-oscillator bit is autocorrelated when sampled quickly, it
+mixes ring samples (at most about 100~kbit/s, 10~$\mu$s apart), time and
+bus counters through a hash~\cite{rpi_forum_picorand}. Two cautions apply
+to all of them. Min-entropy adds across sources only if they are
+independent, which sources sharing die, supply and temperature need not be;
+what concatenation followed by a hash guarantees without that assumption is
+only the min-entropy of the best source. And a hashed output looks uniform
+whatever went in, so statistical batteries on it validate the construction,
+not the entropy; the harvester of Section~\ref{sec:esp32_harvester} is read
+in that light.
 
 \section{Symmetric cores for constrained hardware}
 \label{sec:soa_cores}
@@ -224,7 +456,7 @@ The engine needs a block cipher and, if it uses one, a hash. For AES-128
 (ten rounds~\cite{nist_2023_fips197}) the design space runs from
 fully unrolled pipelines for throughput to 8-bit datapaths for area:
 Good and Benaissa report 124 slices and two block RAMs at 2.2~Mbit/s on
-a Spartan-II at one extreme and 25~Gbit/s at the
+a Spartan-II at one extreme and 25~Gbit/s on a Spartan-III at the
 other~\cite{good_2005_fastest}; Chodowiec and Gaj's compact design uses 222
 slices and three block RAMs~\cite{chodowiec_2003_compact}; and the
 smallest ASIC realizations reach 2.4~kGE with an 8-bit datapath at 226
@@ -274,9 +506,15 @@ nxp_se050_ds, infineon_optiga_trustm_ds, st_stsafe_a110_ds}. The
 ATECC608B, at 0.90~\$ in single units~\cite{digikey_prices_2026}, offers
 AES-128, SHA-256/HMAC, ECDSA/ECDH on P-256, sixteen key slots and an I2C
 interface, and its entropy source holds a NIST validation under
-SP~800-90B, obtained precisely with ring oscillators~\cite{nist_esv_e46}.
-Two of its competitors make no reference to SP~800-90 in their datasheets;
-the third states that its generator is ``designed to meet'' the standard.
+SP~800-90B, obtained precisely with ring oscillators~\cite{nist_esv_e46};
+its own datasheet says only that the generator is ``designed to meet''
+SP~800-90A, B and C, and it is that certificate, not the datasheet, that
+covers the source~\cite{microchip_atecc608b_ds}. The SE050 claims in its
+datasheet a generator compliant with SP~800-90B and SP~800-90A, and holds
+an algorithm validation of its deterministic generator but no validation
+of its entropy source~\cite{nxp_se050_ds, nist_cmvp_3840}. The other two make no reference
+to SP~800-90 in their datasheets~\cite{infineon_optiga_trustm_ds,
+st_stsafe_a110_ds}.
 The lesson for this work is where an academic design can and cannot
 compete: not on price, where a certified part costs less than a euro, but
 on the transparency of the entropy, which is exactly what a black-box part
@@ -302,23 +540,28 @@ $-40$ to 120~$^\circ$C and 0.6 to 0.9~V~\cite{yang_2016_jssc}. And two
 attacks show why a security device cannot ignore its environment: a
 frequency injected on the supply locks the rings and removed the jitter
 of a commercial secure microcontroller, reducing its key space from
-$2^{64}$ to 3300~\cite{markettos_2009_frequency}, and a few hundred
-microwatts of radiated field biased a fifty-ring generator until it
-failed every test~\cite{bayon_2012_contactless}; the published defence
-combines supply filtering with the same calibration loop~\cite{yang_2016_jssc},
-and device aging under bias-temperature instability and hot-carrier
-injection degrades poorly-timed generators over years while leaving
-well-timed ones intact.
+$2^{64}$ to 3300~\cite{markettos_2009_frequency}, and a contactless
+electromagnetic field locked the fifty rings of an FPGA generator
+and controlled the bias of its output~\cite{bayon_2012_contactless}; the
+published defence
+combines supply filtering with the same calibration loop~\cite{yang_2016_jssc}.
+Device aging under bias-temperature instability and hot-carrier
+injection, which shifts the frequency of a ring and with it an operating
+point calibrated at the factory, is a further difference from the
+FPGA that this work does not address.
 
 Access to silicon is more open than it appears. The University of Sevilla
 and IMSE-CNM are members of Europractice~\cite{europractice_memberlist},
 whose academic price list is public: a mini@sic block costs 3\,430~\texteuro{}
 in UMC~180~nm and 3\,691~\texteuro{} in TSMC~65~nm, and IHP's SG13G2 is
-offered at 5\,110~\texteuro{}/mm$^2$ with a free run for open-source designs
-under 2~mm$^2$~\cite{europractice_prices2026, europractice_minisic,
-ihp_openpdk}. The institute's hardware-security area has already taken
+offered at 5\,110~\texteuro{}/mm$^2$~\cite{europractice_prices2026,
+europractice_minisic}; IHP also announces free multi-project runs for
+open-source designs, without publishing their conditions or area
+limits~\cite{ihp_openpdk}. The institute's hardware-security area has
+already taken
 ring-oscillator primitives from Xilinx 7-series FPGAs, evaluated with
-SP~800-22 and SP~800-90B, to characterized 65~nm silicon~\cite{imse_area_hwsec,
+SP~800-22 and SP~800-90B~\cite{rojas2022trngcapability}, to characterized
+65~nm silicon~\cite{imse_area_hwsec,
 martinez2022efficientropuf, ortega2024vlsi65nm, ortega2026ropuf65nm}, and
 has fabricated cryptographic circuits before~\cite{mora2020trivium}. The
 open standard-cell libraries that make a synthesis chapter possible ---
@@ -326,8 +569,11 @@ IHP SG13G2, SkyWater SKY130, GlobalFoundries GF180MCU and the predictive
 Nangate 45~nm --- come with liberty, LEF and GDS views, and the literature
 compares such designs in gate equivalents normalized to the minimum NAND2
 of the library~\cite{ihp_openpdk_repo, skywater_pdk_cells, gf180mcu_pdk,
-nangate45, kaps2019lwc}, with the caution that logic-synthesis area is a
-lower bound that grows by a factor of 1.7 to 4.6 to routed core area.
+nangate45}, with the caution that logic-synthesis area is a
+lower bound: the SKY130 documentation itself gives a routed gate density
+of 160~kGates/mm$^2$ against a raw one of 266, a utilization of
+0.60~\cite{skywater_pdk_cells}, so that in that library the routed core
+is some 1.7 times the area of the cells.
 
 \section{Gap addressed by this work}
 \label{sec:gap}
@@ -336,26 +582,34 @@ No absolute novelty is claimed. The ERO and its model, the embedded
 jitter measurement, the survey of AIS-compliant cores, the calibrated
 COSO on 7-series devices and an open implementation on the very die of
 the Basys~3 all exist, and the institute's own group has crossed from
-7-series FPGAs to 65~nm silicon with ring-oscillator primitives. What was
+7-series FPGAs to 65~nm silicon with ring-oscillator primitives; so do
+SRAM start-up entropy and multi-source harvesters with a cryptographic
+conditioner, on the RP2040 among others. What was
 \emph{not found} in the literature consulted, and what this work sets out
 to provide in a modest but verifiable way, is the following.
 
 \begin{enumerate}
 \item A per-period jitter figure for the Artix-7 XC7A35T in absolute
-units, obtained inside the device with a differential method, with the
-thermal and flicker components separated and with stated uncertainty ---
-the published Artix-7 coefficients being in counter units.
+units, obtained inside the device with a differential method and with
+stated uncertainty --- the published Artix-7 coefficients being in
+counter units. What was obtained is a range for the white floor of the
+relative phase noise of two rings, separated from a deterministic
+modulation rather than from flicker noise, with an estimator that errs
+upwards (Chapter~\ref{ch:ch8_concl}).
 \item The complete chain \emph{measured jitter $\to$ quality factor $\to$
 min-entropy bound $\to$ divider $\to$ health-test cutoffs}, applied to one
 platform and confronted with the ten non-i.i.d.\ estimators of SP~800-90B
-and with the PTG.2 requirements of AIS~20/31 \emph{version~3.0}, which
-most of the earlier literature could not use.
+and with the min-entropy threshold of class PTG.2 of AIS~20/31
+\emph{version~3.0}, which most of the earlier literature could not use;
+the other PTG.2 requirements are not assessed.
 \item An SP~800-90B characterization of the ESP32 generator in its
 operating states, and a controlled comparison between a white-box FPGA
 source and a black-box commercial one under the same methodology.
 \item The use of a commodity microcontroller with its own cryptographic
 accelerators as an independent oracle for an FPGA engine, over a real
-bus, with known-answer, interoperability and challenge-response tests.
+bus, with interoperability and challenge-response tests; the known-answer
+tests stay in simulation, because the engine admits no external key or
+seed.
 \item A single-primitive key-generation engine --- AES for conditioning,
 generation and authentication --- written as portable RTL, verified
 against official vectors, synthesized on an open 130~nm library with the

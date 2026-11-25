@@ -1,0 +1,21 @@
+=== analisis ===
+rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
+  shared variable cfg : t_cfg;
+                  ^
+
+=== ejecucion ===
+
+--- tb_basys3_top ---
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+../../src/ieee2008/numeric_std-body.vhdl:1776:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1721:7:@0ms:(assertion warning): NUMERIC_STD.">=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:3036:7:@0ms:(assertion warning): NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
+rtl/tb/tb_basys3_top.vhd:79:9:@2621436ns:(report note): [ok] ro2: periodo medio 6.59992999005e3 ps, display 1516 (x100 kHz), esperado 1.5151675873950053e3
+rtl/tb/tb_basys3_top.vhd:79:9:@2641436ns:(report note): [ok] JA3 quieto a 0 sin modo test (0 cambios en 20 us)
+rtl/tb/tb_basys3_top.vhd:79:9:@5242876ns:(report note): [ok] ro1: periodo medio 7.7999740463e3 ps, display 1282 (x100 kHz), esperado 1.282055547959625e3
+rtl/tb/tb_basys3_top.vhd:79:9:@5284514848862fs:(report note): [ok] JA3 con modo test: periodo 499207 ps = 64 x ro1 (7.800309917500001e3 ps)
+rtl/tb/tb_basys3_top.vhd:188:5:@5284514848862fs:(report note): resultado: 4 ok, 0 fallos
+simulation stopped @5284514848862fs
+
+=== resumen ===
+todos los bancos pasan

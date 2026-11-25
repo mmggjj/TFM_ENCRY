@@ -1,0 +1,21 @@
+Bits simulados con Q conocida (ero_model.simular_bits, d = 0,5), 10^6 bits
+  [ok ] Q 1e-04 nu 0.4771: sesgo -1.0 %, dispersion 1.3 % (3 semillas), b libre 1.01, M hasta 2016
+  [ok ] Q 1e-04 nu 0.1234: sesgo -1.2 %, dispersion 1.1 % (3 semillas), b libre 1.01, M hasta 2023
+  [ok ] Q 1e-04 nu 0.31: sesgo -1.2 %, dispersion 1.3 % (3 semillas), b libre 1.00, M hasta 2016
+  [ok ] Q 3e-04 nu 0.4771: sesgo -0.5 %, dispersion 1.7 % (3 semillas), b libre 0.98, M hasta 676
+  [ok ] Q 3e-04 nu 0.1234: sesgo -0.4 %, dispersion 1.7 % (3 semillas), b libre 0.99, M hasta 674
+  [ok ] Q 3e-04 nu 0.31: sesgo -0.4 %, dispersion 1.7 % (3 semillas), b libre 0.99, M hasta 675
+  [ok ] Q 1e-03 nu 0.4771: sesgo -0.4 %, dispersion 1.6 % (3 semillas), b libre 0.99, M hasta 204
+  [ok ] Q 1e-03 nu 0.1234: sesgo -0.2 %, dispersion 1.4 % (3 semillas), b libre 0.99, M hasta 203
+  [ok ] Q 1e-03 nu 0.31: sesgo -0.2 %, dispersion 1.4 % (3 semillas), b libre 0.99, M hasta 202
+  [ok ] Q 3e-03 nu 0.4771: sesgo -0.1 %, dispersion 0.8 % (3 semillas), b libre 1.01, M hasta 67
+  [ok ] Q 3e-03 nu 0.1234: sesgo +0.1 %, dispersion 0.7 % (3 semillas), b libre 1.00, M hasta 67
+  [ok ] Q 3e-03 nu 0.31: sesgo +0.3 %, dispersion 1.0 % (3 semillas), b libre 1.01, M hasta 66
+  [ok ] ciclo de trabajo 0,42: Q 1.006e-03 frente a 1e-03 (+0.6 %)
+  [ok ] deriva lenta de nu y jitter casi nulo (Q 1e-6): b libre 2.01 (> 1,3 la delata), Q con b=1 1.12e-05
+  [ok ] conjunto, 300 trozos, Q 3e-03, nu con desviacion 0.0 entre trozos: Q 2.950e-03 (-1.7 %), residuo/ruido 1.69
+  [ok ] conjunto, 300 trozos, Q 3e-03, nu con desviacion 0.03 entre trozos: Q 2.956e-03 (-1.5 %), residuo/ruido 1.73
+  [ok ] conjunto, 300 trozos, Q 1e-04, nu con desviacion 0.03 entre trozos: Q 9.831e-05 (-1.7 %), residuo/ruido 0.34
+  [ok ] 330 trozos de 3072 bits, Q 3e-03: 3.0078e-03 (+0.3 %), b libre 1.00
+  [ok ] 330 trozos de 3072 bits, Q 3e-02: 3.0027e-02 (+0.1 %), b libre 1.00
+autotest jitter_autocorrelacion: 0 fallos

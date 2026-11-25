@@ -1,0 +1,9 @@
+
+Q_raw = 2.0000e-05, incertidumbre 10 %, tolerancia 0.03
+ kd         Q  H_modelo  90B esp.         banda     90B  veredicto
+  8    0.0051    0.0007    0.1115  0.080-0.143  0.1254  compatible
+ 10    0.0205    0.1213    0.2470  0.202-0.292  0.5584  por encima
+ 11    0.0410    0.3520    0.3855  0.329-0.442  0.7862  por encima
+
+tabla: results/motor_campana/basys3_campana_90b_trozos/compara_modelo.csv
+figura: results/motor_campana/basys3_campana_90b_trozos/compara_modelo.png

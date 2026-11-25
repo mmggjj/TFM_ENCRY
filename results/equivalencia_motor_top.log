@@ -1,0 +1,8 @@
+equivalencia de motor_top: arbol de trabajo frente a HEAD (a724931)
+genericos solo del arbol de trabajo: -gG_MUESTREO_LIBRE=false -gG_RCT_C=22 -gG_APT_C=596
+yosys: Yosys 0.70+16 (git sha1 3bb533450, Release, Clang /usr/bin/clang++ 21.1.8)
+base []: equivalentes por ABC dsec (secuencial), cec no lo prueba (aig 156533 4173 8168 4 144192; Networks are equivalent.  Time =    10.73 sec)
+flujo256 [-gG_FLUJO_BYTES=256]: equivalentes por ABC dsec (secuencial), cec no lo prueba (aig 181011 6235 10274 4 164502; Networks are equivalent.  Time =    13.45 sec)
+aes11 [-gG_AES_COMPACTO=false]: equivalentes por ABC dsec (secuencial), cec no lo prueba (aig 176111 4173 8165 4 163773; Networks are equivalent.  Time =    12.24 sec)
+pet4 [-gG_PET_BITS=4]: equivalentes por ABC dsec (secuencial), cec no lo prueba (aig 156505 4173 8168 4 144164; Networks are equivalent.  Time =    10.70 sec)
+variantes distintas o con fallo: 0

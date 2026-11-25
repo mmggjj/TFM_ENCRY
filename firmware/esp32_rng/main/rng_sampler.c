@@ -98,6 +98,9 @@ static esp_err_t wifi_radio_on(void)
         ESP_ERROR_CHECK(esp_event_loop_create_default());
         esp_netif_create_default_wifi_sta();
         wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        /* Never associated here: by default the unconnected station sleeps
+         * the RF and conditions A/B would run mostly without radio. */
+        cfg.sta_disconnected_pm = false;
         ESP_ERROR_CHECK(esp_wifi_init(&cfg));
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
         s_wifi_inited = true;
@@ -105,6 +108,7 @@ static esp_err_t wifi_radio_on(void)
     /* Starting the radio is enough for the RNG entropy source; no
      * association is attempted here (see mqtt_reporter for that). */
     ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
     s_wifi_on = true;
     vTaskDelay(pdMS_TO_TICKS(200)); /* RF calibration settle */
     return ESP_OK;

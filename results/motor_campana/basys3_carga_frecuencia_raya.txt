@@ -1,0 +1,5 @@
+Frecuencia de la raya por interpolacion de dos bins (ventana de Hann), kd 4, bins de 3,14 kHz;
+corregida con la frecuencia de ro2 medida por flujo (escala supuesta 4,878 ns)
+sin carga (sw1 abajo)    bins 37,7/40,8 kHz  14.90/ 14.99  f escala fija  39.26 kHz  ro2 205.825 MHz  f corregida  39.41 kHz
+con carga r1             bins 37,7/40,8 kHz  11.77/ 18.06  f escala fija  39.75 kHz  ro2 205.020 MHz  f corregida  39.76 kHz
+con carga r2             bins 37,7/40,8 kHz  11.61/ 18.09  f escala fija  39.77 kHz  ro2 205.020 MHz  f corregida  39.77 kHz

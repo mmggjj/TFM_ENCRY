@@ -40,6 +40,11 @@ architecture sim of tb_motor_top is
   signal led_alarma : std_logic;
   signal fin        : boolean := false;
 
+  -- Referencia de la captura continua: los bits que cruzan con el flujo
+  -- activo, apuntados desde fuera del DUT.
+  signal ref_bits   : std_logic_vector(0 to 16383) := (others => '0');
+  signal ref_n      : natural := 0;
+
   function hex(v_in : std_logic_vector) return string is
     constant digitos : string := "0123456789abcdef";
     -- Se normaliza a indices descendentes: una concatenacion como
@@ -64,12 +69,119 @@ begin
 
   -- G_KD_MIN = 4 SOLO en este banco: con el anillo lento del modelo, K_D = 16
   -- ya da 24 ciclos de sistema por bit, por encima de los 8 que exige el
-  -- cruce de dominio. En hardware el valor por defecto es 6 (K_D = 64).
+  -- cruce de dominio. En hardware el valor por defecto es 25 (19-11-2026).
+  -- G_PET_BITS = 4 SOLO en este banco: el contador de peticiones se agota en
+  -- 15 y se puede probar que el motor deja de generar hasta resembrar. En
+  -- hardware son 32 bits. G_KD_RESET y G_KD_MAX se dejan en su valor (25 y
+  -- 26): el banco escribe CFG_KD antes de que pase un solo bit a esa tasa.
+  -- G_FLUJO_BYTES = 64 (256 en la placa): la FIFO da varias vueltas en el
+  -- paso 9 y se desborda en 1 ms.
   dut : entity work.motor_top
-    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4)
+    -- G_ETAPAS_RO2 = 5 SOLO en este banco (el integrado lleva 13): mismo
+    -- modelo de anillo de siempre, para que la simulacion no tarde el doble.
+    -- G_PRESC_RO2 = 2 SOLO en este banco (por defecto 4): CFG_KD < G_PRESC_RO2
+    -- se rechaza al escribirlo, y con 2 se puede seguir escribiendo un
+    -- divisor bajo el minimo (2 < 4) para probar el rechazo de la siembra.
+    -- La ventana con el preescalador de 4 la mide tb_ventana_ero.
+    generic map (G_DIR_I2C => C_DIR, G_KD_MIN => 4, G_PET_BITS => 4,
+                 G_FLUJO_BYTES => 64, G_ETAPAS_RO2 => 5, G_PRESC_RO2 => 2)
     port map (clk => clk, rst_n => rst_n, scl_in => scl, sda_in => sda,
               sda_oe => s_sda_oe, modo_test => modo_test,
               led_alarma => led_alarma);
+
+  -- Propiedades de seguridad del secuenciador, en PSL (VHDL-2008), vigiladas
+  -- en cada ciclo de toda la simulacion y no solo en los pasos que las
+  -- provocan. Se leen senales internas del DUT por nombre externo; el
+  -- bloque va despues de dut para que ya este elaborado. GHDL las informa
+  -- al final (--psl-report) y una violacion es un error de aserción. Las
+  -- ordenes se deciden en un ciclo y sus pulsos salen en el siguiente, de
+  -- ahi las secuencias de dos ciclos {condicion; pulso}.
+  propiedades : block
+    alias alm          is << signal .tb_motor_top.dut.alm : std_logic >>;
+    alias ocupado      is << signal .tb_motor_top.dut.ocupado : std_logic >>;
+    alias drbg_gen     is << signal .tb_motor_top.dut.drbg_gen : std_logic >>;
+    alias drbg_inst    is << signal .tb_motor_top.dut.drbg_inst : std_logic >>;
+    alias drbg_reseed  is << signal .tb_motor_top.dut.drbg_reseed : std_logic >>;
+    alias drbg_borrar  is << signal .tb_motor_top.dut.drbg_borrar : std_logic >>;
+    alias drbg_agotado is << signal .tb_motor_top.dut.drbg_agotado : std_logic >>;
+    alias cap_arranca  is << signal .tb_motor_top.dut.cap_arranca : std_logic >>;
+    alias cap_en_curso is << signal .tb_motor_top.dut.cap_en_curso : std_logic >>;
+    alias recogiendo   is << signal .tb_motor_top.dut.recogiendo : std_logic >>;
+    alias cmac_inicia  is << signal .tb_motor_top.dut.cmac_inicia : std_logic >>;
+    alias clave_valida is << signal .tb_motor_top.dut.clave_valida : std_logic >>;
+    alias clave        is << signal .tb_motor_top.dut.clave : std_logic_vector(127 downto 0) >>;
+    alias arrancado    is << signal .tb_motor_top.dut.arrancado : std_logic >>;
+    alias dut_modo_test is << signal .tb_motor_top.dut.modo_test : std_logic >>;
+    alias cmac_aes_arranca is << signal .tb_motor_top.dut.cmac_aes_arranca : std_logic >>;
+    alias drbg_aes_arranca is << signal .tb_motor_top.dut.drbg_aes_arranca : std_logic >>;
+    alias flujo_activo  is << signal .tb_motor_top.dut.flujo_activo : std_logic >>;
+    alias flujo_arranca is << signal .tb_motor_top.dut.flujo_arranca : std_logic >>;
+    alias flujo_desb    is << signal .tb_motor_top.dut.flujo_desb : std_logic >>;
+    alias bit_s         is << signal .tb_motor_top.dut.bit_s : std_logic >>;
+    alias stb_s         is << signal .tb_motor_top.dut.stb_s : std_logic >>;
+  begin
+    default clock is rising_edge(clk);
+    -- Con alarma no sale nada: ni generacion ni siembra.
+    p_alm_gen    : assert never {alm = '1'; drbg_gen = '1'}
+      report "generacion del DRBG con alarma";
+    p_alm_siemb  : assert never {alm = '1'; drbg_inst = '1' or drbg_reseed = '1'}
+      report "siembra del DRBG con alarma";
+    -- Sin test de arranque no se siembra.
+    p_arranque   : assert never {arrancado = '0'; recogiendo = '1' and ocupado = '1'}
+      report "recogida de semilla sin test de arranque";
+    -- Contador agotado: no se genera.
+    p_agotado    : assert never {drbg_agotado = '1'; drbg_gen = '1'}
+      report "generacion con el contador de peticiones agotado";
+    -- La captura y la siembra se excluyen, y la captura solo en modo test.
+    p_cap_ocup   : assert never {ocupado = '1'; cap_arranca = '1'}
+      report "captura lanzada con el motor ocupado";
+    p_cap_test   : assert never {dut_modo_test = '0'; cap_arranca = '1'}
+      report "captura lanzada sin modo test";
+    p_siemb_cap  : assert never {cap_en_curso = '1' and ocupado = '0'; recogiendo = '1'}
+      report "siembra aceptada con una captura en curso";
+    -- Sin clave valida no se autentica.
+    p_cmac       : assert never {clave_valida = '0'; cmac_inicia = '1'}
+      report "autenticacion sin clave valida";
+    -- Borrar todo deja la clave a cero en el mismo ciclo.
+    p_borrar     : assert always (drbg_borrar = '1' ->
+                                  (clave = (127 downto 0 => '0') and clave_valida = '0'))
+      report "borrar_todo con la clave aun cargada";
+    -- Ninguna orden deja el motor ocupado para siempre.
+    p_vivo       : assert always (ocupado = '1' -> eventually! (ocupado = '0'))
+      report "el motor se queda ocupado";
+    -- El AES compartido: el generador y el autenticador nunca lo piden a la vez.
+    p_aes_uno    : assert never (cmac_aes_arranca = '1' and drbg_aes_arranca = '1')
+      report "los dos bloques arrancan el AES en el mismo ciclo";
+    c_aes_cmac   : cover {cmac_aes_arranca = '1'};
+    c_aes_drbg   : cover {drbg_aes_arranca = '1'};
+    -- Lo que el banco tiene que haber ejercitado.
+    c_gen        : cover {drbg_gen = '1'};
+    c_borrar     : cover {drbg_borrar = '1'};
+    c_captura    : cover {cap_arranca = '1'};
+    c_agotado    : cover {drbg_agotado = '1'};
+    -- El flujo continuo saca los mismos bits crudos que la semilla: nunca
+    -- a la vez que una recogida, y solo se arranca en modo test.
+    p_siemb_flujo : assert never (flujo_activo = '1' and recogiendo = '1')
+      report "recogida de semilla con el flujo continuo activo";
+    p_flujo_ocup : assert never {ocupado = '1'; flujo_arranca = '1'}
+      report "flujo arrancado con el motor ocupado";
+    p_flujo_test : assert never {dut_modo_test = '0'; flujo_arranca = '1'}
+      report "flujo arrancado sin modo test";
+    c_flujo      : cover {flujo_arranca = '1'};
+    c_flujo_desb : cover {flujo_desb = '1'};
+
+    p_ref : process (clk)
+    begin
+      if rising_edge(clk) then
+        if flujo_arranca = '1' then
+          ref_n <= 0;
+        elsif flujo_activo = '1' and stb_s = '1' and ref_n < ref_bits'length then
+          ref_bits(ref_n) <= bit_s;
+          ref_n <= ref_n + 1;
+        end if;
+      end if;
+    end process p_ref;
+  end block propiedades;
 
   principal : process
     variable fallos : natural := 0;
@@ -187,12 +299,80 @@ begin
       status := s;
     end procedure;
 
-    variable b, status : std_logic_vector(7 downto 0);
+    -- Sondea DIAG hasta que el test de arranque haya pasado.
+    procedure esperar_arranque is
+      variable d : std_logic_vector(7 downto 0);
+      variable n : natural := 0;
+    begin
+      loop
+        leer_reg(x"0E", d);
+        exit when d(0) = '1';
+        n := n + 1;
+        assert n < 2000 report "el test de arranque no pasa" severity failure;
+      end loop;
+    end procedure;
+
+    -- Lanza una orden que debe rechazarse y comprueba que no arranca.
+    procedure orden_rechazada(ctl : in std_logic_vector(7 downto 0); msg : in string) is
+      variable s, d : std_logic_vector(7 downto 0);
+    begin
+      escribir_reg(x"03", ctl);
+      wait for 5 us;
+      leer_reg(x"02", s);
+      leer_reg(x"0E", d);
+      comprobar(s(1) = '0' and d(1) = '1', msg);
+    end procedure;
+
+    alias rct_alm is << signal .tb_motor_top.dut.u_salud.rct_alm : std_logic >>;
+    alias semilla is << signal .tb_motor_top.dut.semilla : std_logic_vector(511 downto 0) >>;
+    alias cap_en_curso_i is << signal .tb_motor_top.dut.cap_en_curso : std_logic >>;
+    alias drbg_temp_hi is << signal .tb_motor_top.dut.g_cripto.u_drbg.temp_hi : std_logic_vector(127 downto 0) >>;
+    alias drbg_kdf is << signal .tb_motor_top.dut.g_cripto.u_drbg.kdf : std_logic_vector(127 downto 0) >>;
+    alias drbg_x_df is << signal .tb_motor_top.dut.g_cripto.u_drbg.x_df : std_logic_vector(127 downto 0) >>;
+    alias cmac_x is << signal .tb_motor_top.dut.g_cripto.u_cmac.x : std_logic_vector(127 downto 0) >>;
+
+    variable b, b2, status : std_logic_vector(7 downto 0);
+    variable t_lim : time;
+    variable pet1, pet2 : std_logic_vector(31 downto 0);
     variable clave1, clave2, reto, etiqueta1, etiqueta2 : std_logic_vector(127 downto 0);
-    variable aleatorio : std_logic_vector(255 downto 0);
+    variable aleatorio, aleatorio1 : std_logic_vector(255 downto 0);
+    variable semilla1 : std_logic_vector(511 downto 0);
     variable captura : std_logic_vector(127 downto 0);
     variable ack : boolean;
     variable distintos : natural;
+    variable buffer_cap : std_logic_vector(4095 downto 0);
+    variable pag : std_logic_vector(1023 downto 0);
+    variable hallada : boolean;
+    variable bloque : std_logic_vector(255 downto 0);
+    variable n_flujo, total, n_max : natural;
+    variable iguales, resto_cero : boolean;
+
+    -- Lee una transaccion del flujo (FLUJO_N + 31 datos) y la compara con
+    -- la referencia a partir del byte `total`.
+    procedure leer_flujo is
+      variable byte_ref : std_logic_vector(7 downto 0);
+    begin
+      leer_bloque(x"60", 32, bloque);
+      n_flujo := to_integer(unsigned(bloque(255 downto 248)));
+      if n_flujo > n_max then
+        n_max := n_flujo;
+      end if;
+      for i in 1 to 31 loop
+        b := bloque(255 - 8 * i downto 248 - 8 * i);
+        if i <= n_flujo then
+          byte_ref := ref_bits(8 * total to 8 * total + 7);
+          if b /= byte_ref then
+            iguales := false;
+          end if;
+          if b /= x"00" and b /= x"FF" then
+            distintos := distintos + 1;
+          end if;
+          total := total + 1;
+        elsif b /= x"00" then
+          resto_cero := false;
+        end if;
+      end loop;
+    end procedure;
   begin
     -- Anillos con jitter. El retardo por etapa se pone diez veces mayor
     -- que el fisico (1,5 ns en vez de 150 ps) SOLO en este banco: con la
@@ -211,17 +391,48 @@ begin
     leer_reg(x"02", status);
     comprobar(status(7) = '1', "STATUS refleja modo test");
     comprobar(status(0) = '0', "sin sembrar al arrancar");
+    leer_reg(x"01", b);
+    comprobar(b = x"04", "VERSION = 0x04");
+    leer_reg(x"0E", b);
+    comprobar(b(0) = '0', "test de arranque aun sin pasar");
+    leer_reg(x"04", b);
+    comprobar(b = x"19", "CFG_KD arranca en G_KD_RESET (25), no en un valor bajo");
+    -- Por encima de G_KD_MAX (26) la escritura se ignora y se marca rechazada.
+    escribir_reg(x"04", x"1B");
+    leer_reg(x"04", b);
+    comprobar(b = x"19", "CFG_KD por encima de G_KD_MAX se ignora");
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '1', "y levanta DIAG.rechazada");
+    escribir_reg(x"04", x"1A");
+    leer_reg(x"04", b);
+    comprobar(b = x"1A", "CFG_KD = G_KD_MAX (26) se acepta");
+    -- El byte entero cuenta: 32 no se lee como 0 (antes del 22-11 se truncaba).
+    escribir_reg(x"04", x"20");
+    leer_reg(x"04", b);
+    leer_reg(x"0E", b2);
+    comprobar(b = x"1A" and b2(1) = '1', "CFG_KD = 32 se ignora con rechazada, no se trunca a 0");
+    escribir_reg(x"04", x"FF");
+    leer_reg(x"04", b);
+    comprobar(b = x"1A", "CFG_KD = 255 se ignora");
+    -- Por debajo de G_PRESC_RO2 la ventana no seria 2^CFG_KD: se ignora.
+    escribir_reg(x"04", x"01");
+    leer_reg(x"04", b);
+    leer_reg(x"0E", b2);
+    comprobar(b = x"1A" and b2(1) = '1', "CFG_KD < G_PRESC_RO2 se ignora con rechazada");
 
     report "2) Sembrar";
+    -- 2.0) Antes de pasar el test de arranque (1024 muestras sin alarma,
+    --      SP 800-90B 4.3) no se siembra.
+    escribir_reg(x"04", x"04");
+    orden_rechazada(x"01", "sembrar antes del test de arranque se rechaza");
     -- 2a) Con el divisor por debajo del minimo el hardware debe rechazar la
     --     orden: la semilla seria de calidad no garantizada y los tests de
     --     salud no lo detectarian. Antes era solo una obligacion documentada.
-    escribir_reg(x"04", x"02");                 -- K_D = 4 < minimo (16)
-    escribir_reg(x"03", x"01");                 -- sembrar
-    wait for 20 us;
+    esperar_arranque;
+    escribir_reg(x"04", x"02");                 -- 2 < G_KD_MIN (4)
+    orden_rechazada(x"01", "sembrar con CFG_KD por debajo del minimo se rechaza");
     leer_reg(x"02", status);
-    comprobar(status(1) = '0' and status(0) = '0',
-              "sembrar con CFG_KD por debajo del minimo se rechaza");
+    comprobar(status(0) = '0', "sigue sin sembrar");
     -- 2b) K_D = 16: con el anillo lento del banco, un bit cada 16 x 15 ns = 240 ns,
     --     24 ciclos de sistema, por encima de los 8 que exige el cruce de dominio.
     escribir_reg(x"04", x"04");
@@ -233,6 +444,11 @@ begin
     esperar_libre(status);
     comprobar(status(0) = '1', "sembrado");
     comprobar(status(2) = '0' and status(3) = '0', "sin alarmas de salud");
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0', "DIAG.rechazada a 0 tras una siembra completa");
+    -- La semilla con la que se instancio el DRBG: verifica_top.py recalcula
+    -- con ella clave1, aleatorio1 y clave2 en el modelo de referencia.
+    semilla1 := semilla;
 
     report "3) Generar clave";
     escribir_reg(x"03", x"02");
@@ -250,6 +466,7 @@ begin
     comprobar(aleatorio /= (255 downto 0 => '0'), "ALEATORIO no nulo");
     comprobar(aleatorio(255 downto 128) /= clave1 and aleatorio(127 downto 0) /= clave1,
               "ALEATORIO no contiene la clave en ninguna de sus mitades");
+    aleatorio1 := aleatorio;                    -- el paso 8 reutiliza la variable
 
     report "4) Reto-respuesta";
     reto := x"00112233445566778899aabbccddeeff";
@@ -276,8 +493,92 @@ begin
     leer_bloque(x"10", 16, clave2);
     comprobar(clave1 /= clave2, "dos generaciones dan claves distintas");
 
+    report "5b) Con alarma no sale nada del motor";
+    -- La alarma se fuerza: con los anillos del modelo una fuente sana no la
+    -- levanta, y esperar a una al azar no seria un banco.
+    rct_alm <= force '1';
+    wait for 1 us;
+    leer_reg(x"02", status);
+    comprobar(status(2) = '1', "alarma RCT visible en STATUS");
+    orden_rechazada(x"02", "generar con alarma se rechaza");
+    leer_bloque(x"10", 16, captura);
+    comprobar(captura = clave2, "la clave no cambia");
+    orden_rechazada(x"40", "aleatorio con alarma se rechaza");
+    orden_rechazada(x"20", "resembrar con alarma se rechaza");
+    rct_alm <= release;
+    escribir_reg(x"03", x"08");                 -- borrar alarmas
+    leer_reg(x"02", status);
+    comprobar(status(2) = '0' and status(3) = '0', "borrar baja las alarmas");
+    leer_reg(x"0E", b);
+    comprobar(b(0) = '0', "borrar obliga a repetir el test de arranque");
+    orden_rechazada(x"20", "resembrar antes de repetir el test se rechaza");
+    esperar_arranque;
+    escribir_reg(x"03", x"40");                 -- aleatorio
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0', "pasado el test, aleatorio se acepta otra vez");
+
+    report "5c) Alarma a mitad de un resembrado: se aborta";
+    leer_bloque(x"0A", 4, pet1);
+    escribir_reg(x"03", x"20");                 -- resembrar
+    wait for 2 us;
+    rct_alm <= force '1';
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '1', "DIAG.rechazada marca la siembra abortada");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet1 = pet2, "PETICIONES no se reinicia: no hubo resembrado");
+    rct_alm <= release;
+    escribir_reg(x"03", x"08");
+    esperar_arranque;
+
+    report "5d) El contador de peticiones se agota y obliga a resembrar";
+    -- Con G_PET_BITS = 4 el tope es 15. Desde la siembra del paso 2 van
+    -- generar, aleatorio, generar y aleatorio: PETICIONES = 5.
+    leer_bloque(x"0A", 4, pet1);
+    comprobar(pet1 = x"05000000", "PETICIONES = 5 antes de agotar (byte bajo primero): " & hex(pet1));
+    distintos := 0;                             -- aqui: ordenes aceptadas
+    for i in 1 to 12 loop
+      escribir_reg(x"03", x"40");               -- aleatorio
+      esperar_libre(status);
+      leer_reg(x"0E", b);
+      exit when b(1) = '1';
+      distintos := distintos + 1;
+    end loop;
+    comprobar(distintos = 10, "se aceptan 10 generaciones mas (hasta 15) y la siguiente no");
+    leer_reg(x"0E", b);
+    comprobar(b(2) = '1', "DIAG.agotado a 1");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet2 = x"0F000000", "PETICIONES se queda en 15, no da la vuelta");
+    orden_rechazada(x"02", "generar con el contador agotado se rechaza");
+    escribir_reg(x"03", x"20");                 -- resembrar
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0' and b(2) = '0', "resembrar se acepta y baja DIAG.agotado");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet2 = x"01000000", "PETICIONES vuelve a 1 tras resembrar");
+
     report "6) Captura de bits crudos";
+    -- 6a) Sin modo test no se captura: el buffer no se puede leer y solo
+    --     serviria para guardar bits crudos para mas tarde.
+    modo_test <= '0';
+    wait for 1 us;
+    orden_rechazada(x"10", "capturar sin modo test se rechaza");
+    modo_test <= '1';
+    wait for 1 us;
+    -- 6b) Durante una siembra no se captura: el buffer recogeria la semilla.
+    escribir_reg(x"03", x"20");                 -- resembrar (512 bits + ventana)
+    escribir_reg(x"03", x"10");                 -- capturar, con la siembra en curso
+    wait for 5 us;
+    leer_reg(x"02", status);
+    leer_reg(x"0E", b);
+    comprobar(status(1) = '1' and b(1) = '1', "capturar durante una siembra se rechaza");
+    esperar_libre(status);
+    leer_reg(x"02", status);
+    comprobar(status(5) = '0', "y no deja captura hecha");
+    -- 6c) Y durante una captura no se siembra.
     escribir_reg(x"03", x"10");                 -- capturar
+    orden_rechazada(x"20", "resembrar durante una captura se rechaza");
     for i in 1 to 400 loop                      -- 4096 bits a ~5 Mbit/s
       leer_reg(x"02", status);
       exit when status(5) = '1';
@@ -294,12 +595,165 @@ begin
     end loop;
     comprobar(distintos >= 8, "bits crudos con contenido variado: " & hex(captura));
 
+    report "6d) Segunda captura con el buffer ya lleno: sigue excluyendo la siembra";
+    -- Revision del 27-10 (H1): cap_lleno sigue a 1 un ciclo tras lanzar la
+    -- captura siguiente, cap_en_curso se perdia, la siembra se aceptaba y
+    -- la semilla acababa en el buffer, legible en modo test.
+    escribir_reg(x"03", x"10");                 -- capturar, otra vez
+    wait for 1 us;
+    comprobar(cap_en_curso_i = '1', "cap_en_curso sigue a 1 con la segunda captura en marcha");
+    orden_rechazada(x"20", "resembrar durante la segunda captura se rechaza");
+    for i in 1 to 400 loop
+      leer_reg(x"02", status);
+      exit when status(5) = '1';
+    end loop;
+    comprobar(status(5) = '1', "segunda captura llena");
+    -- Y ahora una siembra entera, con el buffer leido despues: la semilla
+    -- no puede estar en el, a ningun desplazamiento de bit.
+    escribir_reg(x"03", x"20");                 -- resembrar
+    esperar_libre(status);
+    comprobar(status(0) = '1', "resembrado tras la segunda captura");
+    for p in 0 to 3 loop
+      escribir_reg(x"05", std_logic_vector(to_unsigned(p, 8)));
+      leer_bloque(x"80", 128, pag);
+      buffer_cap(4095 - 1024 * p downto 3072 - 1024 * p) := pag;
+    end loop;
+    hallada := false;
+    for pos in 0 to 4096 - 512 loop
+      if buffer_cap(4095 - pos downto 3584 - pos) = semilla then
+        hallada := true;
+      end if;
+    end loop;
+    comprobar(not hallada, "la semilla no aparece en el buffer de captura");
+
     report "7) Sin modo test la clave no se lee";
     modo_test <= '0';
     wait for 1 us;
     leer_bloque(x"10", 16, captura);
     comprobar(captura = (127 downto 0 => '0'), "CLAVE devuelve ceros sin modo test");
     modo_test <= '1';
+    wait for 1 us;
+
+    report "8) Borrar todo (zeroizacion)";
+    leer_bloque(x"10", 16, captura);
+    comprobar(captura = clave2, "antes de borrar, la clave sigue ahi");
+    escribir_reg(x"03", x"80");                 -- borrar_todo
+    esperar_libre(status);
+    comprobar(status(4) = '0' and status(0) = '0', "sin clave valida y sin sembrar");
+    leer_bloque(x"30", 16, captura);
+    comprobar(captura = (127 downto 0 => '0'), "ETIQUETA a ceros tras borrar");
+    comprobar(drbg_temp_hi = (127 downto 0 => '0') and drbg_kdf = (127 downto 0 => '0')
+              and drbg_x_df = (127 downto 0 => '0'),
+              "sin residuos de la clave en los registros intermedios del DRBG");
+    comprobar(cmac_x = (127 downto 0 => '0'), "sin residuo en el encadenamiento del CMAC");
+    orden_rechazada(x"20", "resembrar tras borrar se rechaza: no hay estado");
+    leer_bloque(x"10", 16, captura);
+    comprobar(captura = (127 downto 0 => '0'), "CLAVE a ceros (en modo test, que si se lee)");
+    leer_bloque(x"40", 32, aleatorio);
+    comprobar(aleatorio = (255 downto 0 => '0'), "ALEATORIO a ceros");
+    leer_bloque(x"0A", 4, pet2);
+    comprobar(pet2 = x"00000000", "PETICIONES a 0");
+    orden_rechazada(x"02", "generar tras borrar se rechaza: no hay estado");
+    orden_rechazada(x"04", "autenticar tras borrar se rechaza: no hay clave");
+    -- El motor sigue vivo: se vuelve a sembrar y a generar.
+    escribir_reg(x"03", x"01");                 -- sembrar
+    esperar_libre(status);
+    comprobar(status(0) = '1', "tras borrar se puede sembrar de nuevo");
+    escribir_reg(x"03", x"02");
+    esperar_libre(status);
+    leer_bloque(x"10", 16, captura);
+    comprobar(status(4) = '1' and captura /= (127 downto 0 => '0') and captura /= clave2,
+              "y la clave nueva no es nula ni la de antes");
+
+    report "9) Captura continua (FLUJO)";
+    -- 9a) Las mismas reglas que capturar, mas el divisor minimo.
+    leer_reg(x"0F", b);
+    comprobar(b = x"00", "FLUJO a cero sin arrancarlo");
+    modo_test <= '0';
+    wait for 1 us;
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b(0) = '0' and status(1) = '1', "arrancar el flujo sin modo test se rechaza");
+    modo_test <= '1';
+    wait for 1 us;
+    escribir_reg(x"04", x"02");                 -- 2 < G_KD_MIN (4)
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b(0) = '0' and status(1) = '1', "con CFG_KD por debajo del minimo se rechaza");
+    -- K_D = 128: un byte cada 15 us, que el bus a 1 MHz vacia con holgura.
+    escribir_reg(x"04", x"07");
+    escribir_reg(x"03", x"20");                 -- resembrar
+    escribir_reg(x"0F", x"01");                 -- flujo, con la siembra en curso
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b(0) = '0' and status(1) = '1', "durante una siembra se rechaza");
+    esperar_libre(status);
+    -- 9b) Arranca. Con el flujo activo no se siembra, no se captura y
+    --     CFG_KD no cambia.
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    leer_reg(x"0E", status);
+    comprobar(b = x"01" and status(1) = '0', "flujo activo");
+    orden_rechazada(x"20", "resembrar con el flujo activo se rechaza");
+    orden_rechazada(x"10", "capturar con el flujo activo se rechaza");
+    escribir_reg(x"04", x"09");
+    leer_reg(x"04", b);
+    comprobar(b = x"07", "CFG_KD se ignora con el flujo activo");
+    -- 9c) Continuidad: 400 bytes seguidos, mas de seis vueltas de la FIFO,
+    --     iguales bit a bit a los que cruzaron bit_cdc.
+    total := 0; n_max := 0; iguales := true; resto_cero := true; distintos := 0;
+    t_lim := now + 20 ms;                       -- ~6 ms a la tasa correcta
+    while total < 400 and now < t_lim loop
+      leer_flujo;
+    end loop;
+    comprobar(total >= 400, "400 bytes leidos en plazo (" & integer'image(total) & ")");
+    comprobar(iguales, "400 bytes consecutivos iguales a los bits crudos, sin huecos");
+    comprobar(distintos > 300, "y con contenido: " & integer'image(distintos) & " de " &
+              integer'image(total) & " bytes no son 0x00 ni 0xFF");
+    comprobar(resto_cero, "sin credito se leen ceros");
+    comprobar(n_max > 0 and n_max <= 31, "FLUJO_N con tope 31 (maximo visto " & integer'image(n_max) & ")");
+    leer_reg(x"0F", b);
+    comprobar(b = x"01", "sin desbordar mientras se lee a tiempo");
+    -- 9d) Sin leer, la FIFO se llena: desbordado, y el flujo se para solo.
+    wait for 1500 us;
+    leer_reg(x"0F", b);
+    comprobar(b = x"02", "desbordado y parado al no leer");
+    escribir_reg(x"03", x"20");                 -- resembrar: ya no hay flujo
+    esperar_libre(status);
+    leer_reg(x"0E", b);
+    comprobar(b(1) = '0', "parado el flujo, resembrar se acepta");
+    -- 9e) Rearrancar baja desbordado y la tira empieza de nuevo.
+    escribir_reg(x"0F", x"01");
+    leer_reg(x"0F", b);
+    comprobar(b = x"01", "rearrancar baja desbordado");
+    wait for 200 us;
+    total := 0; iguales := true;
+    leer_flujo;
+    comprobar(n_flujo > 0 and iguales, "la tira nueva empieza en su primer bit");
+    -- 9f) Tres formas de pararlo: escribir 0, quitar modo test, borrar_todo.
+    escribir_reg(x"0F", x"00");
+    leer_reg(x"0F", b);
+    comprobar(b = x"00", "escribir 0 lo para");
+    leer_flujo;
+    comprobar(n_flujo = 0, "y vacia la FIFO");
+    escribir_reg(x"0F", x"01");
+    wait for 100 us;
+    modo_test <= '0';
+    wait for 1 us;
+    modo_test <= '1';
+    wait for 1 us;
+    leer_reg(x"0F", b);
+    leer_flujo;
+    comprobar(b = x"00" and n_flujo = 0, "quitar modo test lo para y vacia la FIFO");
+    escribir_reg(x"0F", x"01");
+    wait for 100 us;
+    escribir_reg(x"03", x"80");                 -- borrar_todo
+    esperar_libre(status);
+    leer_reg(x"0F", b);
+    leer_flujo;
+    comprobar(b = x"00" and n_flujo = 0, "borrar_todo lo para y vacia la FIFO");
 
     -- Volcado para la verificacion cruzada en Python.
     file_open(f, "results/tb_motor_top.txt", write_mode);
@@ -309,7 +763,8 @@ begin
     write(l, string'("reto2 ") & hex(x"FF" & reto(119 downto 0))); writeline(f, l);
     write(l, string'("etiqueta2 ") & hex(etiqueta2)); writeline(f, l);
     write(l, string'("clave2 ") & hex(clave2)); writeline(f, l);
-    write(l, string'("aleatorio1 ") & hex(aleatorio)); writeline(f, l);
+    write(l, string'("aleatorio1 ") & hex(aleatorio1)); writeline(f, l);
+    write(l, string'("semilla1 ") & hex(semilla1)); writeline(f, l);
     file_close(f);
     report "  volcado en results/tb_motor_top.txt";
 
@@ -324,5 +779,39 @@ begin
     std.env.stop;
     wait;
   end process principal;
+
+  -- Ciclos del DRBG con el nucleo AES que lleva el motor (compartido, de
+  -- 32 bits por defecto): desde la orden hasta drbg_listo. Se informa de la
+  -- primera de cada tipo.
+  ciclos_drbg : process (clk)
+    alias d_inst   is << signal .tb_motor_top.dut.drbg_inst : std_logic >>;
+    alias d_reseed is << signal .tb_motor_top.dut.drbg_reseed : std_logic >>;
+    alias d_gen    is << signal .tb_motor_top.dut.drbg_gen : std_logic >>;
+    alias d_listo  is << signal .tb_motor_top.dut.drbg_listo : std_logic >>;
+    variable n : natural := 0;
+    variable tipo : natural := 0;              -- 0 nada, 1 inst, 2 reseed, 3 gen
+    variable visto : std_logic_vector(1 to 3) := "000";
+  begin
+    if rising_edge(clk) then
+      if tipo /= 0 then
+        n := n + 1;
+        if d_listo = '1' then
+          if visto(tipo) = '0' then
+            visto(tipo) := '1';
+            case tipo is
+              when 1 => report "  ciclos DRBG instanciar: " & integer'image(n);
+              when 2 => report "  ciclos DRBG resembrar: " & integer'image(n);
+              when others => report "  ciclos DRBG generar: " & integer'image(n);
+            end case;
+          end if;
+          tipo := 0;
+        end if;
+      end if;
+      if d_inst = '1' then tipo := 1; n := 0;
+      elsif d_reseed = '1' then tipo := 2; n := 0;
+      elsif d_gen = '1' then tipo := 3; n := 0;
+      end if;
+    end if;
+  end process ciclos_drbg;
 
 end architecture sim;

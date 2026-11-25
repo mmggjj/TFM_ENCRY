@@ -1,0 +1,432 @@
+--- p0.4979_n1000000_s1_noniid_b1: exit 0, 1 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n1000000_s1.bits' (SHA-256 hash 9a5fdf4cee1ec5f26368911dd339ca77afb6c4eb37613bcfbf8e3c846c863b4d)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 501934, p-hat = 0.50193399999999999, p_u = 0.50322190566117275
+	Most Common Value Estimate = 0.990733 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4999062535154932, sigma-hat = 0.50000061618932068, p = 0.53263497111150282
+	Collision Test Estimate = 0.908781 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50193399999999999, P_1 = 0.49806600000000001, P_0,0 = 0.50194747107681703, P_0,1 = 0.49805252892318297, P_1,0 = 0.50192143209936035, P_1,1 = 0.49807856790063965, p_max = 4.8333357936279445e-39
+	Markov Test Estimate = 0.994392 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.215355383801314, sigma-hat = 1.0170628416451739, p = 0.031666025758539273
+	Compression Test Estimate = 0.830153 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Literal LRS Estimate: u = 17, v = 38, p-hat = 0.50577463124747823, p_u = 0.50706246064575625
+	T-Tuple Test Estimate = 0.919089 / 1 bit(s)
+	LRS Test Estimate = 0.979765 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50267453826950459 (C = 501355) Plocal can't affect result (r = 23)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.992303 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50185241568337446 (C = 500564) Plocal can't affect result (r = 22)
+	Lag Prediction Test Estimate = 0.994665 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50282291358437581 (C = 501534) Plocal can't affect result (r = 23)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.991878 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50303044804479968 (C = 501734) Plocal can't affect result (r = 23)
+	LZ78Y Prediction Test Estimate = 0.991282 / 1 bit(s)
+
+H_original: 0.830153
+tiempo_s=0.64 maxrss_kB=22892
+--- p0.4979_n1000000_s2_noniid_b1: exit 0, 1 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n1000000_s2.bits' (SHA-256 hash abe096fd1d7d5c4e5047d36458a26e36831974f52289f47b32619f91d2695096)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 501911, p-hat = 0.501911, p_u = 0.5031989058889681
+	Most Common Value Estimate = 0.990799 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4998325108867925, sigma-hat = 0.50000059690791021, p = 0.53319485826959412
+	Collision Test Estimate = 0.907265 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.501911, P_1 = 0.498089, P_0,0 = 0.50185491422765038, P_0,1 = 0.49814508577234962, P_1,0 = 0.50196651602424469, P_1,1 = 0.49803348397575531, p_max = 4.7212361408427787e-39
+	Markov Test Estimate = 0.994656 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.216681928947942, sigma-hat = 1.0163105597759723, p = 0.030261544331594559
+	Compression Test Estimate = 0.841062 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Literal LRS Estimate: u = 17, v = 37, p-hat = 0.50023566075873833, p_u = 0.50152357591141927
+	T-Tuple Test Estimate = 0.919089 / 1 bit(s)
+	LRS Test Estimate = 0.995611 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50222951290162343 (C = 500910) Plocal can't affect result (r = 21)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.993581 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.5017484158539588 (C = 500460) Plocal can't affect result (r = 20)
+	Lag Prediction Test Estimate = 0.994964 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50284491345315585 (C = 501556) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.991815 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50294544734422619 (C = 501649) Plocal can't affect result (r = 21)
+	LZ78Y Prediction Test Estimate = 0.991526 / 1 bit(s)
+
+H_original: 0.841062
+tiempo_s=0.63 maxrss_kB=22940
+--- p0.4979_n1000000_s3_noniid_b1: exit 0, 1 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n1000000_s3.bits' (SHA-256 hash 36dc1adad48ca19fd43d8c3ae0415dadcb7bb155e5301eb5d0658aacf2838084)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 502158, p-hat = 0.50215799999999999, p_u = 0.50344590330012606
+	Most Common Value Estimate = 0.990091 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.499650048993141, sigma-hat = 0.50000050244780836, p = 0.53454115217929687
+	Collision Test Estimate = 0.903627 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50215799999999999, P_1 = 0.49784200000000001, P_0,0 = 0.501257574822217, P_0,1 = 0.498742425177783, P_1,0 = 0.50306723820007149, P_1,1 = 0.49693276179992851, p_max = 4.0605125335023908e-39
+	Markov Test Estimate = 0.996356 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2216960569987494, sigma-hat = 1.0107983907955291, p = 0.023531331660841426
+	Compression Test Estimate = 0.901546 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 15, p-hat_max = 0.5200254334221196312227, p_u = 0.5213123153488957853881
+Literal LRS Estimate: u = 16, v = 37, p-hat = 0.50185202103932732, p_u = 0.5031399274999769
+	T-Tuple Test Estimate = 0.939780 / 1 bit(s)
+	LRS Test Estimate = 0.990968 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50181248820388002 (C = 500493) Plocal can't affect result (r = 22)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.994780 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50100841545896568 (C = 499720) Plocal can't affect result (r = 18)
+	Lag Prediction Test Estimate = 0.997093 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50294991279252965 (C = 501661) Plocal can't affect result (r = 19)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.991513 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50318444921926242 (C = 501888) Plocal can't affect result (r = 19)
+	LZ78Y Prediction Test Estimate = 0.990841 / 1 bit(s)
+
+H_original: 0.901546
+tiempo_s=0.65 maxrss_kB=22960
+--- p0.4979_n8378368_s1_noniid_b1: exit 0, 4 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n8378368_s1.bits' (SHA-256 hash 7d6a1c41da0607a49f6de227ccddee826917517a77907aee96f094b2d5192622)
+Loaded 8378368 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4205116, p-hat = 0.50190156364580785, p_u = 0.50234650651718304
+	Most Common Value Estimate = 0.993245 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5002075457115325, sigma-hat = 0.500000031527846, p = 0.51574809562649082
+	Collision Test Estimate = 0.955262 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50190156364580785, P_1 = 0.49809843635419215, P_0,0 = 0.50180423084642611, P_0,1 = 0.49819576915357389, P_1,0 = 0.50199975989941659, P_1,1 = 0.49800024010058341, p_max = 4.6609776125575598e-39
+	Markov Test Estimate = 0.994801 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2164947595385218, sigma-hat = 1.0159254470681214, p = 0.02518504629312901
+	Compression Test Estimate = 0.885215 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 19, p-hat_max = 0.5233229031527291767712, p_u = 0.5237673649145176193185
+Literal LRS Estimate: u = 20, v = 46, p-hat = 0.50778894150686677, p_u = 0.50823383360514701
+	T-Tuple Test Estimate = 0.933002 / 1 bit(s)
+	LRS Test Estimate = 0.976436 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 8378305, Pglobal' = 0.50074303900335848 (C = 4191650) Plocal can't affect result (r = 23)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.997858 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 8378367, Pglobal' = 0.50067846412628236 (C = 4191140) Plocal can't affect result (r = 22)
+	Lag Prediction Test Estimate = 0.998044 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 8378366, Pglobal' = 0.50229888453236204 (C = 4204716) Plocal can't affect result (r = 23)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.993382 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 8378351, Pglobal' = 0.50232365437750837 (C = 4204916) Plocal can't affect result (r = 23)
+	LZ78Y Prediction Test Estimate = 0.993311 / 1 bit(s)
+
+H_original: 0.885215
+tiempo_s=4.11 maxrss_kB=123708
+--- p0.4979_n8378368_s2_noniid_b1: exit 0, 4 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n8378368_s2.bits' (SHA-256 hash df8b8c37e0a609811e66ac24245d8b1dd07ba6dae44bf3dbded4907ac80399bf)
+Loaded 8378368 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4207264, p-hat = 0.50215793815692988, p_u = 0.5026028801021396
+	Most Common Value Estimate = 0.992509 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5000262583728401, sigma-hat = 0.50000007390816492, p = 0.51840199612450233
+	Collision Test Estimate = 0.947857 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50215793815692988, P_1 = 0.49784206184307012, P_0,0 = 0.50215710308578287, P_0,1 = 0.49784289691421713, P_1,0 = 0.50215866111226193, P_1,1 = 0.49784133888773807, p_max = 5.0988335149643645e-39
+	Markov Test Estimate = 0.993789 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2179463507275656, sigma-hat = 1.0149051460668741, p = 0.022735545125555312
+	Compression Test Estimate = 0.909818 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 19, p-hat_max = 0.5225888865881041584404, p_u = 0.5230333783709370026535
+Literal LRS Estimate: u = 20, v = 46, p-hat = 0.51266997569886502, p_u = 0.51311477891224857
+	T-Tuple Test Estimate = 0.935025 / 1 bit(s)
+	LRS Test Estimate = 0.962647 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 8378305, Pglobal' = 0.50079018455056223 (C = 4192045) Plocal can't affect result (r = 25)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.997722 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 8378367, Pglobal' = 0.50040800574177824 (C = 4188874) Plocal can't affect result (r = 25)
+	Lag Prediction Test Estimate = 0.998823 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 8378366, Pglobal' = 0.50256062915572597 (C = 4206909) Plocal can't affect result (r = 22)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.992630 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 8378351, Pglobal' = 0.50257262849697382 (C = 4207002) Plocal can't affect result (r = 22)
+	LZ78Y Prediction Test Estimate = 0.992596 / 1 bit(s)
+
+H_original: 0.909818
+tiempo_s=4.09 maxrss_kB=123848
+--- p0.4979_n8378368_s3_noniid_b1: exit 0, 4 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4979_n8378368_s3.bits' (SHA-256 hash efc2245f0bfba77ce24dcc9d0e3ec2c7e52206eb4eeca6773b55ac299e0d65cf)
+Loaded 8378368 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4208090, p-hat = 0.50225652537582499, p_u = 0.50270146693374129
+	Most Common Value Estimate = 0.992226 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.500086386166755, sigma-hat = 0.50000006713689837, p = 0.51756626911754555
+	Collision Test Estimate = 0.950184 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50225652537582499, P_1 = 0.49774347462417501, P_0,0 = 0.50228060711629263, P_0,1 = 0.49771939288370737, P_1,0 = 0.50223234571708308, P_1,1 = 0.49776765428291692, p_max = 5.261622960274556e-39
+	Markov Test Estimate = 0.993435 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2176952224438837, sigma-hat = 1.0149967658493178, p = 0.023204717908287709
+	Compression Test Estimate = 0.904906 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 19, p-hat_max = 0.5225888865881041584404, p_u = 0.5230333783709370026535
+Literal LRS Estimate: u = 20, v = 43, p-hat = 0.50014621099538823, p_u = 0.50059115706555179
+	T-Tuple Test Estimate = 0.935025 / 1 bit(s)
+	LRS Test Estimate = 0.998295 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 8378305, Pglobal' = 0.50075199068984078 (C = 4191725) Plocal = 0.51660358276556362 (r = 30)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.952870 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 8378367, Pglobal' = 0.50046350581805876 (C = 4189339) Plocal can't affect result (r = 23)
+	Lag Prediction Test Estimate = 0.998663 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 8378366, Pglobal' = 0.50264167089993417 (C = 4207588) Plocal = 0.51660345275985253 (r = 30)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.952871 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 8378351, Pglobal' = 0.50267026069587273 (C = 4207820) Plocal = 0.51660348472797246 (r = 30)
+	LZ78Y Prediction Test Estimate = 0.952871 / 1 bit(s)
+
+H_original: 0.904906
+tiempo_s=4.22 maxrss_kB=123576
+--- p0.5000_n1000000_s1_noniid_b1: exit 0, 1 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.5000_n1000000_s1.bits' (SHA-256 hash fb5814cf44e88275f5ab4e26cb0f0abe6884f6e232d53412fa60b9dce45f0135)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500174, p-hat = 0.50017400000000001, p_u = 0.50146191521774641
+	Most Common Value Estimate = 0.995788 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4999750002499974, sigma-hat = 0.50000062436993387, p = 0.53210423630037418
+	Collision Test Estimate = 0.910219 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49982599999999999, P_1 = 0.50017400000000001, P_0,0 = 0.4998529485319862, P_0,1 = 0.50014705146801375, P_1,0 = 0.49980006957578765, P_1,1 = 0.5001999304242124, p_max = 3.0928705247107459e-39
+	Markov Test Estimate = 0.999424 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2154733412377672, sigma-hat = 1.0169912443717337, p = 0.031544733836830874
+	Compression Test Estimate = 0.831076 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Literal LRS Estimate: u = 17, v = 38, p-hat = 0.50296319240751253, p_u = 0.50425108508594187
+	T-Tuple Test Estimate = 0.919089 / 1 bit(s)
+	LRS Test Estimate = 0.987786 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50233751915208813 (C = 501018) Plocal can't affect result (r = 20)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.993271 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.5018914156050398 (C = 500603) Plocal can't affect result (r = 22)
+	Lag Prediction Test Estimate = 0.994553 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50150691689811155 (C = 500218) Plocal can't affect result (r = 23)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.995658 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50063241399264236 (C = 499336) Plocal can't affect result (r = 21)
+	LZ78Y Prediction Test Estimate = 0.998176 / 1 bit(s)
+
+H_original: 0.831076
+tiempo_s=0.66 maxrss_kB=22944
+--- p0.5000_n1000000_s2_noniid_b1: exit 0, 1 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.5000_n1000000_s2.bits' (SHA-256 hash 1f13a4479633169f22dba67ee719e5bb3e2786fe7342ff2214601c0eda5988da)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500192, p-hat = 0.50019199999999997, p_u = 0.50147991520077684
+	Most Common Value Estimate = 0.995736 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4997200307966123, sigma-hat = 0.50000054654957038, p = 0.53403109830554429
+	Collision Test Estimate = 0.905004 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49980799999999997, P_1 = 0.50019199999999997, P_0,0 = 0.49976090771037618, P_0,1 = 0.50023909228962382, P_1,0 = 0.49985405604247968, P_1,1 = 0.50014594395752032, p_max = 3.0508730560397964e-39
+	Markov Test Estimate = 0.999578 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.216749801188227, sigma-hat = 1.0162939751550382, p = 0.030187231233325562
+	Compression Test Estimate = 0.841653 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 16, p-hat_max = 0.5275569070895033270104, p_u = 0.5288428648552972063902
+Literal LRS Estimate: u = 17, v = 37, p-hat = 0.50013984309435254, p_u = 0.50142775833971163
+	T-Tuple Test Estimate = 0.919089 / 1 bit(s)
+	LRS Test Estimate = 0.995886 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50188249241236116 (C = 500563) Plocal can't affect result (r = 21)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.994578 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50199641535519235 (C = 500708) Plocal can't affect result (r = 20)
+	Lag Prediction Test Estimate = 0.994251 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50107791605005525 (C = 499789) Plocal can't affect result (r = 20)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.996893 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50054041209612332 (C = 499244) Plocal can't affect result (r = 18)
+	LZ78Y Prediction Test Estimate = 0.998442 / 1 bit(s)
+
+H_original: 0.841653
+tiempo_s=0.64 maxrss_kB=22976
+--- p0.5000_n1000000_s3_noniid_b1: exit 0, 1 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.5000_n1000000_s3.bits' (SHA-256 hash 45a64ab5b9d9a46076b61efe14b97d13b574d939e08c8ab11cdceda1a5670c68)
+Loaded 1000000 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 500001, p-hat = 0.50000100000000003, p_u = 0.50128891529572972
+	Most Common Value Estimate = 0.996286 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.4995625765491041, sigma-hat = 0.50000043355226398, p = 0.53516830194286114
+	Collision Test Estimate = 0.901935 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49999900000000003, P_1 = 0.50000099999999992, P_0,0 = 0.49899999599998401, P_0,1 = 0.50100000400001599, P_1,0 = 0.50099899800200398, P_1,1 = 0.49900100199799602, p_max = 3.7870992489387499e-39
+	Markov Test Estimate = 0.997141 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2204956683887564, sigma-hat = 1.011611637776898, p = 0.025462060938710174
+	Compression Test Estimate = 0.882584 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 15, p-hat_max = 0.5200254334221196312227, p_u = 0.5213123153488957853881
+Literal LRS Estimate: u = 16, v = 37, p-hat = 0.50229285483418844, p_u = 0.50358075658823596
+	T-Tuple Test Estimate = 0.939780 / 1 bit(s)
+	LRS Test Estimate = 0.989705 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 999937, Pglobal' = 0.50123745267875108 (C = 499918) Plocal can't affect result (r = 21)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.996434 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 999999, Pglobal' = 0.50112341570548813 (C = 499835) Plocal can't affect result (r = 18)
+	Lag Prediction Test Estimate = 0.996762 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 999998, Pglobal' = 0.50171991696693818 (C = 500431) Plocal can't affect result (r = 19)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.995046 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 999983, Pglobal' = 0.50201843728727369 (C = 500722) Plocal can't affect result (r = 19)
+	LZ78Y Prediction Test Estimate = 0.994188 / 1 bit(s)
+
+H_original: 0.882584
+tiempo_s=0.65 maxrss_kB=22960
+--- p0.5000_n8378368_s1_noniid_b1: exit 0, 4 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.5000_n8378368_s1.bits' (SHA-256 hash 6c260d8e2e52a59c290b90ed6101b41516d92e49b7d788c6f5a2eae9f9afe3f5)
+Loaded 8378368 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4190828, p-hat = 0.50019621959789784, p_u = 0.50064116565282246
+	Most Common Value Estimate = 0.998151 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5001642730937981, sigma-hat = 0.50000004761613071, p = 0.5164205904838518
+	Collision Test Estimate = 0.953382 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.49980378040210216, P_1 = 0.50019621959789784, P_0,0 = 0.49972155489858006, P_0,1 = 0.50027844510141994, P_1,0 = 0.49988606067489783, P_1,1 = 0.50011393932510217, p_max = 3.0262044239348588e-39
+	Markov Test Estimate = 0.999669 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2169305064978309, sigma-hat = 1.0155953693901296, p = 0.024507633266581008
+	Compression Test Estimate = 0.891771 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 19, p-hat_max = 0.5225888865881041584404, p_u = 0.5230333783709370026535
+Literal LRS Estimate: u = 20, v = 46, p-hat = 0.50778894150686677, p_u = 0.50823383360514701
+	T-Tuple Test Estimate = 0.935025 / 1 bit(s)
+	LRS Test Estimate = 0.976436 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 8378305, Pglobal' = 0.50049334657094502 (C = 4189558) Plocal can't affect result (r = 22)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.998577 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 8378367, Pglobal' = 0.5006135350290799 (C = 4190596) Plocal can't affect result (r = 22)
+	Lag Prediction Test Estimate = 0.998231 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 8378366, Pglobal' = 0.50066420126215583 (C = 4191020) Plocal can't affect result (r = 23)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.998085 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 8378351, Pglobal' = 0.50035799624973465 (C = 4188447) Plocal can't affect result (r = 22)
+	LZ78Y Prediction Test Estimate = 0.998967 / 1 bit(s)
+
+H_original: 0.891771
+tiempo_s=4.32 maxrss_kB=123824
+--- p0.5000_n8378368_s2_noniid_b1: exit 0, 4 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.5000_n8378368_s2.bits' (SHA-256 hash 4516cca2e91af193671b524c6fe6ade6dd3010d43710fd64a86b83e5a7fad949)
+Loaded 8378368 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4189696, p-hat = 0.50006110975311657, p_u = 0.50050605583898078
+	Most Common Value Estimate = 0.998541 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5001038431514844, sigma-hat = 0.50000006381658024, p = 0.51731607701328708
+	Collision Test Estimate = 0.950882 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50006110975311657, P_1 = 0.49993889024688343, P_0,0 = 0.50003616015008256, P_0,1 = 0.49996383984991744, P_1,0 = 0.50008594609460943, P_1,1 = 0.49991405390539057, p_max = 2.9662130537550792e-39
+	Markov Test Estimate = 0.999895 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2180607882698622, sigma-hat = 1.0148632827333646, p = 0.02251302457888249
+	Compression Test Estimate = 0.912183 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 19, p-hat_max = 0.5240388433255592883549, p_u = 0.5244832748788185776629
+Literal LRS Estimate: u = 20, v = 46, p-hat = 0.51266997569886502, p_u = 0.51311477891224857
+	T-Tuple Test Estimate = 0.931031 / 1 bit(s)
+	LRS Test Estimate = 0.962647 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 8378305, Pglobal' = 0.50065937056680909 (C = 4190949) Plocal can't affect result (r = 25)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.998099 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 8378367, Pglobal' = 0.5005021768357103 (C = 4189663) Plocal can't affect result (r = 25)
+	Lag Prediction Test Estimate = 0.998552 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 8378366, Pglobal' = 0.50073581423867497 (C = 4191620) Plocal can't affect result (r = 22)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.997878 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 8378351, Pglobal' = 0.5001977021298768 (C = 4187104) Plocal can't affect result (r = 22)
+	LZ78Y Prediction Test Estimate = 0.999430 / 1 bit(s)
+
+H_original: 0.912183
+tiempo_s=4.29 maxrss_kB=123812
+--- p0.5000_n8378368_s3_noniid_b1: exit 0, 4 s ---
+Opening file: '/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.5000_n8378368_s3.bits' (SHA-256 hash ccb9f7004b2bc5bf7302a58af573599ba8765b6c5642a0305bb68e32be8a88e5)
+Loaded 8378368 samples of 2 distinct 1-bit-wide symbols
+
+Running non-IID tests...
+
+Running Most Common Value Estimate...
+Literal MCV Estimate: mode = 4190365, p-hat = 0.50014095823912241, p_u = 0.50058590431062833
+	Most Common Value Estimate = 0.998310 / 1 bit(s)
+
+Running Entropic Statistic Estimates (bit strings only)...
+Literal Collision Estimate: X-bar = 2.5000364038053315, sigma-hat = 0.50000007327274121, p = 0.51826366555252357
+	Collision Test Estimate = 0.948242 / 1 bit(s)
+Literal Markov Estimate: P_0 = 0.50014095823912241, P_1 = 0.49985904176087759, P_0,0 = 0.50014211172535095, P_0,1 = 0.49985788827464905, P_1,0 = 0.50013992352439185, P_1,1 = 0.49986007647560815, p_max = 3.0475946536538304e-39
+	Markov Test Estimate = 0.999590 / 1 bit(s)
+Literal Compression Estimate: X-bar = 5.2175557824424832, sigma-hat = 1.0151155247694319, p = 0.023455420114244729
+	Compression Test Estimate = 0.902322 / 1 bit(s)
+
+Running Tuple Estimates...
+Literal t-Tuple Estimate: t = 19, p-hat_max = 0.5233229031527291767712, p_u = 0.5237673649145176193185
+Literal LRS Estimate: u = 20, v = 43, p-hat = 0.50015288474706062, p_u = 0.50059783081544788
+	T-Tuple Test Estimate = 0.933002 / 1 bit(s)
+	LRS Test Estimate = 0.998276 / 1 bit(s)
+
+Running Predictor Estimates...
+Literal MultiMCW Prediction Estimate: N = 8378305, Pglobal' = 0.50034080974358064 (C = 4188280) Plocal can't affect result (r = 24)
+	Multi Most Common in Window (MultiMCW) Prediction Test Estimate = 0.999017 / 1 bit(s)
+Literal Lag Prediction Estimate: N = 8378367, Pglobal' = 0.50050838329508551 (C = 4189715) Plocal can't affect result (r = 23)
+	Lag Prediction Test Estimate = 0.998534 / 1 bit(s)
+Literal MultiMMC Prediction Estimate: N = 8378366, Pglobal' = 0.5005237204467029 (C = 4189843) Plocal can't affect result (r = 21)
+	Multi Markov Model with Counting (MultiMMC) Prediction Test Estimate = 0.998490 / 1 bit(s)
+Literal LZ78Y Prediction Estimate: N = 8378351, Pglobal' = 0.50046207401565557 (C = 4189319) Plocal = 0.51660348472797246 (r = 30)
+	LZ78Y Prediction Test Estimate = 0.952871 / 1 bit(s)
+
+H_original: 0.902322
+tiempo_s=4.27 maxrss_kB=123856

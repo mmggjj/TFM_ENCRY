@@ -1,0 +1,43 @@
+=== analisis ===
+rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
+  shared variable cfg : t_cfg;
+                  ^
+
+=== ejecucion ===
+
+--- tb_ctr_drbg ---
+rtl/tb/tb_ctr_drbg.vhd:117:5:@55ns:(report note): 1) Instanciar con entropia y nonce
+rtl/tb/tb_ctr_drbg.vhd:104:9:@55ns:(report note):   [ok ] sin sembrar al arrancar
+rtl/tb/tb_ctr_drbg.vhd:104:9:@2155ns:(report note):   [ok ] sembrado tras instanciar (209 ciclos)
+rtl/tb/tb_ctr_drbg.vhd:104:9:@2155ns:(report note):   [ok ] contador de peticiones = 1
+rtl/tb/tb_ctr_drbg.vhd:126:5:@2155ns:(report note): 2) Generar dos veces
+rtl/tb/tb_ctr_drbg.vhd:104:9:@2695ns:(report note):   [ok ] primera salida = referencia (53 ciclos)
+rtl/tb/tb_ctr_drbg.vhd:104:9:@3235ns:(report note):   [ok ] segunda salida = referencia
+rtl/tb/tb_ctr_drbg.vhd:104:9:@3235ns:(report note):   [ok ] las dos salidas son distintas
+rtl/tb/tb_ctr_drbg.vhd:104:9:@3235ns:(report note):   [ok ] contador = 3
+rtl/tb/tb_ctr_drbg.vhd:136:5:@3235ns:(report note): 3) Resembrar y generar
+rtl/tb/tb_ctr_drbg.vhd:104:9:@5335ns:(report note):   [ok ] el contador vuelve a 1 tras resembrar
+rtl/tb/tb_ctr_drbg.vhd:104:9:@5875ns:(report note):   [ok ] salida tras resembrar = referencia
+rtl/tb/tb_ctr_drbg.vhd:104:9:@5875ns:(report note):   [ok ] contador tras generar
+rtl/tb/tb_ctr_drbg.vhd:145:5:@5875ns:(report note): 4) Instanciar de nuevo borra el estado
+rtl/tb/tb_ctr_drbg.vhd:104:9:@8515ns:(report note):   [ok ] vuelve a dar la primera salida
+rtl/tb/tb_ctr_drbg.vhd:152:5:@8515ns:(report note): 5) Generar sin sembrar no hace nada
+rtl/tb/tb_ctr_drbg.vhd:104:9:@8615ns:(report note):   [ok ] la orden se ignora sin estado valido
+rtl/tb/tb_ctr_drbg.vhd:165:5:@8615ns:(report note): 6) Borrar deja el DRBG sin estado y a cero, en reposo o a mitad
+rtl/tb/tb_ctr_drbg.vhd:104:9:@11275ns:(report note):   [ok ] tras borrar: sin estado, salida y contador a cero
+rtl/tb/tb_ctr_drbg.vhd:104:9:@11335ns:(report note):   [ok ] generar tras borrar se ignora
+rtl/tb/tb_ctr_drbg.vhd:104:9:@13475ns:(report note):   [ok ] generacion en curso
+rtl/tb/tb_ctr_drbg.vhd:104:9:@13495ns:(report note):   [ok ] borrar a mitad de una generacion la aborta y limpia
+rtl/tb/tb_ctr_drbg.vhd:187:5:@13495ns:(report note): 7) El contador satura (instancia con G_PET_BITS = 2: tope 3)
+rtl/tb/tb_ctr_drbg.vhd:104:9:@16655ns:(report note):   [ok ] tras dos generaciones el contador esta en 3 y agotado
+rtl/tb/tb_ctr_drbg.vhd:104:9:@19665ns:(report note):   [ok ] agotado: generar se ignora y el contador no da la vuelta
+rtl/tb/tb_ctr_drbg.vhd:206:5:@19665ns:(report note): 8) Lote de 50 semillas: instanciar, dos generaciones, resembrar y otra
+rtl/tb/tb_ctr_drbg.vhd:106:9:@310705ns:(report error):   [FALLO] 149 de 150 salidas = referencia
+rtl/tb/tb_ctr_drbg.vhd:232:7:@310705ns:(report failure): tb_ctr_drbg: 1 fallos
+ghdl:error: report failed
+  instance: /tb_ctr_drbg/principal
+ghdl:error: simulation failed
+  --> tb_ctr_drbg devolvio 1
+
+=== resumen ===
+bancos con fallos: tb_ctr_drbg

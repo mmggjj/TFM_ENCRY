@@ -1,0 +1,11 @@
+4 realizaciones independientes, tstop 400n, escala 1 (ruido del PDK), mos_sf, -40 C, 1.2 V
+  rep  1: 1094 cruces, T 359.070 ps, sigma 149.87 fs, exp 0.85
+  rep  2: 1093 cruces, T 359.090 ps, sigma 151.28 fs, exp 0.93
+  rep  3: 1094 cruces, T 359.081 ps, sigma 148.38 fs, exp 0.94
+  rep  4: 1094 cruces, T 359.071 ps, sigma 147.75 fs, exp 1.01
+
+  sigma por periodo = 149.3 +- 0.8 fs (1 sigma de la media; dispersion entre repeticiones 1.1 % en sigma)
+  Q por periodo = 1.7294e-07 +- 1.83e-09
+  K_D = 1321853 (intervalo 1 sigma 1307993 - 1336010); 2.11 kbit/s a 2.785 GHz
+
+datos en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_esq_sf_m40_resumen.csv

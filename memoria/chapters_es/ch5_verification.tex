@@ -1,9 +1,9 @@
 \chapter{Verificación}
 \label{ch:ch5_verification}
 
-% [BORRADOR v1] Material de partida: rtl/tb/*, rtl/run_tb.py, analysis/ctr_drbg_ref.py,
-% analysis/verifica_top.py, firmware/verificador/, docs/mapa_registros.md.
-% Sección de puesta en marcha en la FPGA pendiente del hardware.
+% Material de partida: rtl/tb/*, rtl/run_tb.py, analysis/ctr_drbg_ref.py,
+% analysis/verifica_top.py, firmware/verificador/, docs/mapa_registros.md,
+% docs/basys3.md, docs/decisiones_pendientes.md, results/run_tb_todos.log.
 
 \section{Estrategia: vectores, simulación, verificador independiente}
 \label{sec:verif_strategy}
@@ -14,24 +14,33 @@ para comprobarlo. Por eso, la verificación de este trabajo se apoya en
 tres pilares que no comparten implementación.
 
 \begin{enumerate}
-\item \textbf{Vectores oficiales.} Cada primitiva se comprueba frente a
-los vectores de prueba publicados con su norma: FIPS~197 y SP~800-38A
-para AES, RFC~4493 y el fichero de ejemplos del NIST para CMAC, y los
-ficheros de respuesta del CAVP para CTR\_DRBG (con y sin función de
-derivación, con y sin resembrado). Son pruebas de respuesta conocida y
-zanjan la corrección del algoritmo.
+\item \textbf{Vectores oficiales.} AES y CMAC se comprueban en VHDL
+frente a los vectores de prueba publicados con su norma: FIPS~197 y
+SP~800-38A para AES, y los cuatro ejemplos de RFC~4493 con sus subclaves
+para CMAC. Son pruebas de respuesta conocida y zanjan la corrección del
+algoritmo. Los ficheros de respuesta del CAVP para CTR\_DRBG (con y sin
+función de derivación, con y sin resembrado) no se pueden aplicar tal
+cual al VHDL: el hardware toma una entrada fija de 384 bits de entropía y
+128 de nonce, sin entrada adicional. Se aplican al modelo de referencia
+del punto siguiente, y el VHDL se compara con ese modelo.
 \item \textbf{Modelos de referencia independientes.} Se escribió en
 Python un modelo exacto al bit del generador, con su propio AES,
 derivado de la norma sin mirar el VHDL. Primero se valida frente a los
 vectores del CAVP, y solo entonces se usa para generar los valores
-esperados para la disposición fija de entradas del hardware y para
-recalcular las etiquetas del banco de pruebas de sistema. Dos
-implementaciones que coinciden valen más que una que pasa las pruebas.
+esperados para la disposición fija de entradas del hardware (51
+secuencias, una principal y un lote de 50, cada una instanciada, con dos
+generaciones, resembrada y con otra generación: 153 salidas) y, en el
+banco de sistema, para recalcular desde la
+semilla que recogió el motor la clave, la salida aleatoria y la segunda
+clave, y las etiquetas. Dos implementaciones que coinciden valen más que
+una que pasa las pruebas.
 \item \textbf{Un verificador independiente en el lazo.} En hardware, el
-ESP32 recalcula con mbedtls, y con su propio acelerador AES, cada
-resultado que produce el motor, de modo que la comprobación final la
-realiza una tercera implementación, sin relación con las otras, sobre un
-bus real.
+ESP32 lee la clave en modo de prueba y recalcula con mbedtls, y con su
+propio acelerador AES, la etiqueta de autenticación de cada reto que
+responde el motor, de modo que la comprobación final la realiza una
+tercera implementación, sin relación con las otras, sobre un bus real.
+Ya lo ha hecho en placa: cuarenta etiquetas de cuarenta en cada una de
+tres sesiones \meas{} (Sección~\ref{sec:bringup}).
 \end{enumerate}
 
 Dos reglas de trabajo se aplican en todo momento, ambas aprendidas en el
@@ -61,7 +70,7 @@ un único fallo en count~14 de cada bloque, parecía exactamente un error
 del algoritmo.
 
 Un segundo script, \texttt{gen\_drbg\_vectores.py}, hace pasar al modelo
-validado por la secuencia que admite el hardware (instanciar con 32
+validado por la secuencia que admite el hardware (instanciar con 48
 bytes de entropía y 16 de nonce, generar dos veces, resembrar, generar)
 y emite un paquete VHDL con los valores esperados; si alguna vez cambia
 la disposición de las entradas del hardware, ese script es el único
@@ -72,28 +81,49 @@ a RFC~4493 antes de comprobar nada.
 \section{Bancos de pruebas y resultados}
 \label{sec:testbenches}
 
-Todo el VHDL se simula con GHDL~6 mediante un único script de ejecución
+Todo el VHDL se simula con GHDL mediante un único script de ejecución
 que analiza las fuentes en orden de dependencias y ejecuta cada banco,
 imprimiendo la salida del simulador sin filtrar. La
-Tabla~\ref{tab:tb} resume los siete bancos y su estado en el momento de
-la redacción.
+Tabla~\ref{tab:tb} resume los trece bancos y su resultado en la última
+ejecución completa, 307 comprobaciones en total \simu{}. Los bancos que
+contienen el motor entero no simulan los anillos del producto: el retardo
+de etapa es diez veces mayor, por la razón que se da más abajo, y el
+anillo de muestreo se queda en cinco etapas para que la simulación no
+dure el doble; el banco lo dice. El banco de sistema fija además cuatro
+genéricos fuera de los valores del producto, y lo que enseña hay que
+leerlo con ellos: un divisor mínimo de $2^{4}$ en lugar de \kd{25}, de
+modo que el rechazo de una siembra por debajo del mínimo se ejercita con
+ese mínimo; un contador de peticiones de 4 bits en lugar de 32, de modo
+que la saturación en $2^{32}-1$ como tal no la ejercita ningún banco,
+solo la misma lógica en $2^{4}-1$; un preescalador de 4 en lugar de 16
+en el anillo de muestreo, y el preescalador del producto lo mide el
+banco de la ventana de muestreo; y una cola de flujo de 64~bytes en
+lugar de los 256 de la placa.
 
 \begin{table}[htbp]
 \centering
-\caption{Bancos de pruebas, qué comprueban y su resultado (GHDL 6.0, VHDL-2008).}
+\caption{Bancos de pruebas, qué comprueban y su resultado (GHDL 5.0.1,
+VHDL-2008; una ejecución de los trece, 23 de noviembre de 2026; banco
+del motor completo con los genéricos que dice el texto).}
 \label{tab:tb}
-\small
-\begin{tabular}{@{}lp{9.2cm}c@{}}
+\footnotesize
+\begin{tabular}{@{}lp{8.4cm}c@{}}
 \toprule
 Banco & Comprobaciones & Resultado \\
 \midrule
-Oscilador en anillo & arranque/parada, $f = 1/(2N t_{pd})$, suelo nulo, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 4/4 \\
-Esclavo I2C & direccionamiento, dirección ajena, escritura multibyte, lectura con inicio repetido & 14/14 \\
-Núcleo AES-128 & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 bloques); cadena de 1000 bloques & 6/6 \\
-AES-CMAC & RFC~4493 ejemplos 1--4; repetibilidad & 5/5 \\
-CTR\_DRBG & instanciación, 2$\times$generación, resembrado, contador, reinstanciación, rechazo sin semilla & 13/13 \\
-Tests de salud & fuente sana, atascada, sesgada al 70\,\%, atascada en el complemento, retención/borrado & 10/10 \\
-Motor completo & secuencia del ESP32 por I2C: id, semilla (divisor por debajo del mínimo rechazado, divisor congelado mientras está ocupado), clave, registro aleatorio libre de la clave, 2 retos, 2.ª clave, captura, clave oculta & 18/18 \\
+Oscilador en anillo & arranque/parada, $f = 1/(2N t_{pd})$, suelo nulo, $\sigma_T = \sqrt{2N}\,\sigma_{\mathrm{stage}}$ & 6/6 \\
+Muestreador del \ac{ERO} & salen bits con cada divisor de $2^{0}$ a $2^{4}$ y toman los dos valores (la relación la comprueba el banco de la ventana de muestreo); las dos formas de muestrear (habilitación de reloj, o cada flanco del anillo de muestreo con el divisor eligiendo la muestra) dan el mismo bit & 12/12 \\
+Esclavo I2C & direccionamiento, dirección ajena, escritura multibyte, lectura con inicio repetido; bus bajo abuso: espurios bajo el filtro, parada e inicio repetido a mitad de byte, bytes tras dirección ajena, puntero a través de la parada y vuelta, maestro perdido con SDA retenido, parada tras ACK de lectura, 1~MHz y 100~kHz; 1 propiedad, 1 cobertura & 49/49 \\
+Núcleos AES-128 (los dos) & FIPS~197 B, C.1; SP~800-38A F.1.1 (3 bloques); cadena de 1000 bloques; zeroización a mitad de bloque; el de una ronda por ciclo y el de 32 bits coinciden & 18/18 \\
+AES-CMAC & RFC~4493 ejemplos 1--4 y subclaves K1, K2; repetibilidad & 7/7 \\
+CTR\_DRBG & instanciación, 2$\times$generación, resembrado, contador, reinstanciación, rechazo sin semilla, zeroización en reposo y a mitad, contador de peticiones que satura; 50 semillas más (150 salidas) frente al modelo & 19/19 \\
+Tests de salud & fuente sana, atascada, sesgada al 80\,\%, atascada en el complemento, retención/borrado, pulso de cierre de ventana con su veredicto, reinicio de la ventana al borrar & 15/15 \\
+Motor completo & secuencia del ESP32 por I2C: id, divisor en su valor de reset, semilla (divisor por debajo del mínimo rechazado, divisor congelado mientras está ocupado, valores del divisor fuera de rango ignorados y señalados), clave, registro aleatorio libre de la clave, 2 retos, 2.ª clave, captura (la semilla nunca en el buffer), clave oculta, agotamiento, zeroización y residuos, flujo continuo (400 bytes consecutivos iguales a los bits crudos, crédito, desbordamiento, las tres formas de pararlo); 14 propiedades, 8 coberturas & 92/92 \\
+Motor sin criptografía & la variante de solo fuente hecha para la primera placa de prototipo (Apéndice~\ref{app:fpga}): órdenes criptográficas rechazadas, fuente, tests de salud y flujo sin cambios; 4 propiedades, 2 coberturas & 21/21 \\
+Ventana de muestreo & la ventana entre dos muestras es exactamente $2^{n}$ periodos del anillo de muestreo para cada valor $n$ del registro de 4 a 14, con el preescalador del circuito integrado; valores fuera de rango rechazados & 47/47 \\
+Frecuencímetro de anillos & cinco frecuencias con jitter, desborde y recuperación, display, prescaler & 10/10 \\
+Envoltorio de placa (Basys~3) & el motor con sus anillos tras los pines de la placa: frecuencia mostrada de los dos anillos, salida del anillo condicionada al modo de prueba & 4/4 \\
+Envoltorio de placa (Basys~2) & el motor de solo fuente tras los pines de la primera placa: frecuencímetro, salida del anillo, latido, \ac{I2C} por el pin bidireccional & 7/7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,7 +154,23 @@ cargando el registro de desplazamiento y presentando su primer bit en el
 mismo flanco de bajada que libera el bit de reconocimiento. Un tercer
 defecto estaba en el propio banco: inicializar la memoria de registros
 desde el proceso de estímulos creaba un segundo driver sobre la misma
-señal, y todo bit en conflicto se resolvía a desconocido.
+señal, y todo bit en conflicto se resolvía a desconocido. El esclavo es
+la única puerta del chip, así que el banco se amplió después con el bus
+bajo abuso: pulsos espurios más cortos que el filtro de entrada en mitad
+de un byte, en SDA con SCL alto (un inicio seguido de una parada, de no
+filtrarse) y en SCL en su fase baja; una parada y un inicio repetido a
+mitad de byte; bytes enviados tras una dirección ajena; el puntero que
+sobrevive a la parada y da la vuelta al final del mapa; un maestro que
+desaparece con el reloj parado mientras el esclavo mantiene SDA a nivel
+bajo en su reconocimiento; un maestro que emite una parada tras reconocer
+un byte leído, cosa que el propio \ac{I2C} hace imposible cuando el byte
+siguiente empieza por cero porque el esclavo retiene la línea; y el bus a
+1~MHz y a 100~kHz con reloj de sistema de 20~MHz. El banco cuenta los
+pulsos de escritura al banco de registros, de modo que ninguna
+transacción abortada puede escribir, y una propiedad comprobada en cada
+ciclo establece que el esclavo nunca tira de SDA estando en reposo. La
+guarda de bus colgado suelta la línea en el número de ciclos configurado
+en los dos casos de bloqueo, y nada anormal escribe.
 
 \paragraph{Tests de salud.} La fuente ``sana'' del primer banco, un
 registro de desplazamiento inicializado con un solo uno, empezaba con
@@ -149,26 +195,86 @@ banco de sistema, que genera casi un milisegundo de tráfico I2C, no
 terminaba en veinte minutos de CPU: cada transición del anillo cuesta
 dos sorteos aleatorios en el modelo de jitter. Solo en ese banco el
 retardo de etapa se fija diez veces mayor, con el mismo jitter relativo,
-y así se indica en el propio banco. Las dieciocho comprobaciones se
-superan, y la clave, los dos retos y sus etiquetas se escriben en un
-fichero que comprueba \texttt{verifica\_top.py}: las dos etiquetas son
-iguales al CMAC recalculado por el AES independiente en Python, el
+y así se indica en el propio banco. Sus comprobaciones se
+superan, y la semilla recogida, la clave, la salida aleatoria, los dos
+retos y sus etiquetas se escriben en un fichero que comprueba
+\texttt{verifica\_top.py}: las dos etiquetas son iguales al CMAC
+recalculado por el AES independiente en Python; la clave, la salida
+aleatoria y la segunda clave son iguales a la primera, la segunda y la
+tercera generación del modelo de referencia instanciado con esa semilla
+(384 bits de entropía y 128 de nonce, con la clave en la mitad alta); el
 registro de salida aleatoria legible no contiene la clave en ninguna de
-sus mitades, y dos generaciones dan claves distintas. Este es el primer
+sus mitades; y dos generaciones dan claves distintas. Si se cambia un
+solo bit de la semilla volcada, fallan las tres comprobaciones de las
+generaciones. Este es el primer
 punto en que una clave nacida del ruido de osciladores en anillo,
 acondicionada, generada y usada para autenticar, queda confirmada por
 una implementación que no comparte nada con el VHDL.
-Dos de las dieciocho comprobaciones se añadieron cuando dos obligaciones
+Varias de las comprobaciones se añadieron cuando tres obligaciones
 que el mapa de registros imponía al anfitrión se trasladaron al
 hardware: una orden de siembra emitida con el divisor por debajo de su
-mínimo ahora se rechaza, y una escritura en el registro del divisor
-mientras se ejecuta una orden se ignora. Una regla que solo impone la
+mínimo ahora se rechaza, una escritura en el registro del divisor
+mientras se ejecuta una orden se ignora, y un valor del divisor fuera
+del rango admitido se ignora y levanta el bit de rechazo del registro de
+diagnóstico. Una regla que solo impone la
 documentación es una regla que un anfitrión descuidado incumple; el
-banco ahora prueba ambas. Además, hubo que indicarle al banco que se
-detuviera: con los anillos funcionando tras el reset, una simulación
+banco ahora prueba las tres. Las reglas de seguridad del secuenciador
+están escritas además como propiedades PSL dentro del banco, comprobadas
+en cada ciclo de toda la simulación y no solo en los pasos que las
+provocan: ni generación ni siembra con una alarma activa, ninguna
+recogida de semilla antes del test de arranque, ninguna generación con
+el contador de peticiones agotado, captura y siembra mutuamente
+excluyentes y captura solo en modo de prueba, el flujo continuo nunca
+activo mientras se recoge una semilla y arrancado solo en modo de prueba
+con el motor libre, ninguna autenticación sin
+clave válida, el borrado total deja la clave a cero en el mismo ciclo, y
+el motor nunca se queda ocupado para siempre; las directivas de
+cobertura confirman que el banco llega a los estados que esas
+propiedades vigilan. Un mutante del secuenciador que omite la
+comprobación de alarma al generar la clave lo detectan tanto el paso que
+espera el rechazo como la propiedad. Además, hubo que indicarle al banco
+que se detuviera: con los anillos funcionando tras el reset, una simulación
 cuyos estímulos han terminado nunca se queda sin eventos, y la primera
 repetición consumió cuarenta y cinco minutos de CPU después de haber
 superado su última comprobación.
+
+\paragraph{Ventana de muestreo: una revisión independiente.} Tras las
+reglas del divisor de noviembre de 2026 (anillos de once y trece etapas,
+un preescalador que divide entre dieciséis el anillo de muestreo, y un
+mínimo, un valor de reset y un máximo para el divisor;
+Sección~\ref{sec:ihp_ring11}) el \ac{RTL} lo revisó una sesión aparte, a
+la que se le dio el código y el requisito, no las conclusiones del
+trabajo. El requisito es que la ventana entre dos muestras sean $2^{n}$
+periodos del anillo de muestreo para el valor $n$ del registro
+(\texttt{CFG\_KD}, $K_D = 2^{n}$), y que nada siembre por debajo del
+divisor mínimo. La revisión encontró que se cumple \simu{}, con este
+alcance: la ventana se midió contando periodos para $n = 4$ a 19; de 20
+a 26, donde una ventana entera no se puede simular en un tiempo
+razonable, lo comprobado es la máscara del contador y la cuenta con la
+que salta el pulso de muestra, con la cuenta forzada, no la ventana en
+sí. Pero la revisión encontró tres defectos de gravedad
+media y un hueco en los bancos. El firmware del medidor de la
+Sección~\ref{sec:lecturas_firmadas} escribía un divisor por debajo del
+mínimo nuevo antes de sembrar, de modo que en el circuito integrado no
+habría sembrado nunca (fallaba cerrado); ahora siembra con el valor de
+reset. Un valor del registro de 32 o más se truncaba a cinco bits, así
+que 32 se tomaba por 0 sin ningún aviso; ahora se compara el byte
+entero. Y los valores de 0 a 3, por debajo del preescalador, se
+aceptaban mientras la ventana real era $2^{4}$; ahora se rechazan. El
+hueco era que ningún banco medía la ventana: un mutante con la mitad de
+ventana no levantó ninguna comprobación fallida en el banco de sistema
+(las 88 a las que llegó pasaron) y solo lo dejó colgado en el paso del
+flujo, un efecto lateral de la tasa de bits doblada. Un banco nuevo
+cuenta los periodos del anillo de muestreo entre muestras consecutivas
+para cada $n$ de 4 a 14 y comprueba los rechazos (47 comprobaciones), y
+el banco de sistema ganó los casos fuera de rango; por encima de
+$n = 14$ ningún banco del repositorio mide la ventana, y la evidencia es
+la de la revisión. El bitstream medido en placa es anterior
+a estas correcciones y solo difiere del diseño corregido ante escrituras
+fuera de rango. Lo que la revisión dejó abierto queda anotado para la
+implementación física: aún no hay restricción de tiempos para el reloj
+dividido, y la primera ventana tras un cambio de divisor es más corta,
+lo que afecta a lo sumo a un bit.
 
 \section{Firmware verificador del ESP32}
 \label{sec:firmware}
@@ -178,10 +284,11 @@ comunica con el motor a través del mapa de registros del
 Apéndice~\ref{app:regs} y ofrece una consola por la UART. Sus órdenes se
 corresponden con el plan de verificación: \texttt{id} lee la
 identificación y el estado; \texttt{sembrar} y \texttt{generar} lanzan
-las órdenes largas y consultan el indicador de ocupado; en modo de
-prueba, \texttt{generar} además relee la clave (aprovisionamiento) y
-comprueba que es igual a los dieciséis primeros bytes del bloque
-generado; \texttt{reto N} realiza $N$ rondas de reto-respuesta con
+las órdenes largas y consultan el indicador de ocupado, y tras cada una
+comprueban el bit de rechazo, para que una orden rechazada nunca se tome
+por una que acabó enseguida; en modo de prueba, \texttt{generar} además
+lee la clave, que es como se aprovisiona el verificador; \texttt{reto N}
+realiza $N$ rondas de reto-respuesta con
 nonces de \texttt{esp\_random()}, recalculando cada etiqueta con
 \texttt{mbedtls\_cipher\_cmac} y contando coincidencias y discrepancias,
 y las discrepancias se imprimen completas; \texttt{crudo N} vuelca $N$
@@ -189,29 +296,382 @@ fragmentos de bits en bruto y \texttt{esp N} vuelca bloques del propio
 generador del ESP32, ambos en el formato en tramas protegido con CRC32
 de las campañas de captura del ESP32 (Sección~\ref{sec:esp32_90b}), para
 que la misma cadena de
-procesado estadístico trate las dos fuentes. CMAC no viene habilitado
+procesado estadístico trate las dos fuentes. Las órdenes añadidas para
+la placa son \texttt{kd}, que lee o escribe el registro del divisor y
+dice si el motor aceptó el valor; \texttt{flujo N}, que vacía el flujo
+continuo de la Sección~\ref{sec:cdc} en tramas numeradas y solo da la
+tira por válida si llegó entera; \texttt{crudoq}, que captura un
+fragmento como \texttt{crudo} pero mantiene el bus callado mientras dura
+la captura; \texttt{aleatorio N}, que vuelca bloques aleatorios;
+\texttt{borrar}, que baja las alarmas de salud; y \texttt{cero}, la
+zeroización. Los plazos siguen al divisor, porque una siembra con un
+divisor grande tarda segundos. CMAC no viene habilitado
 por defecto en la compilación de mbedtls de ESP-IDF y se activa en la
 configuración por defecto del proyecto; la consola funciona a
 115\,200~baudios, la única velocidad que resultó fiable con el puente
 USB de la placa en esas campañas, y el nivel de log se fija en
 solo errores para que las líneas de log no puedan corromper las tramas.
-El firmware compila con ESP-IDF~5.3.2 en una imagen de 255~kB;
-ejecutarlo queda a la espera del hardware.
+La capa de acceso a registros (mapa, emisión de órdenes, sondeo en
+tiempo real, comprobación de rechazo) es un componente compartido con la
+aplicación de la Sección~\ref{sec:lecturas_firmadas}. El firmware
+compila sin avisos con ESP-IDF~5.3.2 en la máquina del autor y con la
+5.3.5 en el flujo de integración continua, y es el firmware que manejó
+el motor en placa en todas las medidas de la Sección~\ref{sec:bringup} y
+del Capítulo~\ref{ch:ch7_results}.
+
+Un hallazgo afecta al firmware como instrumento. Una revisión
+independiente de la primera noche en placa vio que todas las duraciones
+de los logs eran múltiplos de 10~ms: la configuración local de
+compilación se había quedado con un tick del sistema operativo de
+100~Hz, y el de 1~kHz de la configuración por defecto del proyecto no se
+había aplicado nunca. La capa de acceso lo tolera, y ninguna medida se
+vio afectada salvo en esa resolución: hasta el 18 de noviembre de 2026
+las duraciones que da el verificador, y las frecuencias de los anillos
+que salen de ellas, están cuantizadas a 10~ms, y se citan con esa
+resolución; desde esa fecha el tick es de 1~ms.
+
+Los dos firmwares se ejercitan además en el PC, sin placa: el banco
+incluye el código fuente del firmware sin cambios, lo enlaza con un
+modelo en software del motor que implementa el mapa de registros como
+una segunda lectura independiente de la especificación, y recorre la
+secuencia con un árbol real de mbedtls~3.6 (el 3.6.2 tanto en el
+ESP-IDF~5.3.2 de la máquina del autor como en el flujo de integración
+continua). El AES y el CMAC del modelo se validan a sí mismos contra FIPS~197 y
+RFC~4493 antes de cualquier comprobación, para que un fallo del modelo
+no pase por un fallo del firmware. El banco comprueba cuentas, no solo
+resultados: que una orden rechazada no se confunde con una que acabó
+enseguida, que un fallo del bus se cuenta como fallo del bus y no como
+discrepancia criptográfica, que nada llega al PC con una alarma
+levantada y que los plazos duran lo que dicen.
+
+\section{El motor en un producto: lecturas firmadas}
+\label{sec:lecturas_firmadas}
+
+El verificador juzga al motor; un segundo firmware lo \emph{usa}, como
+lo haría un producto. El producto es un medidor de energía genérico
+sobre un ESP32-C3, la parte RISC-V de los equipos pequeños con Wi-Fi,
+con el motor en el mismo bus \ac{I2C} que los periféricos del medidor.
+Dos usos, los dos alimentados por la entropía del motor. Primero, el
+equipo genera su propio par de claves ECDSA P-256: mbedtls obtiene el
+escalar privado a través de una función que emite una orden
+\texttt{aleatorio} por cada bloque de 32~bytes, dos o tres bloques por
+clave en las ejecuciones registradas (dos en el emulador y en el módulo
+en octubre, tres en el banco en el PC del 22 de noviembre), y la clave
+privada nunca sale del chip; lo que sale es la clave pública, o
+una petición de certificado PKCS\#10 firmada con ella, que es lo que un
+equipo enviaría a la CA del fabricante para que nadie, ni el fabricante,
+tenga nunca la clave privada. Segundo, cada lectura (identificador del
+equipo, número de secuencia, instante, energía acumulada, potencia;
+24~bytes) va firmada, de modo que quien la recibe comprueba integridad
+y origen sin fiarse del transporte ni del almacenamiento intermedio sin
+conexión.
+
+Tres decisiones sostienen el diseño. La fuerza de la clave la acota lo
+que la generó: el \ac{DRBG} del motor es CTR\_DRBG con AES-128, 128~bits
+de seguridad, que es lo que ofrece P-256, así que una curva mayor no
+ganaría nada con esta semilla. Las firmas usan ECDSA determinista
+(RFC~6979): el nonce de cada firma se deriva de la clave y del mensaje,
+dos firmas de la misma lectura son idénticas (el banco lo comprueba) y
+un generador pobre en el momento de firmar no puede filtrar la clave,
+que es el fallo clásico de ECDSA; el motor solo hace falta, por tanto,
+para \emph{crear} la clave, y un medidor cuyo motor está en alarma sigue
+firmando con la clave que tiene, mientras que no puede hacer una nueva.
+Y la función de entropía falla cerrada: si el motor rechaza la orden
+(sin sembrar, alarma, test de arranque no superado) o el bus falla,
+mbedtls aborta y no se sustituye ninguna otra fuente; una generación
+fallida deja en servicio la clave anterior y nunca una a medias. Un
+número de secuencia monótono permite al receptor rechazar lecturas
+reinyectadas, cosa que una firma válida por sí sola no hace.
+
+El banco en el PC ejecuta el firmware del medidor contra el modelo del
+motor y entrega su salida de consola a un script del PC que verifica las
+tramas con otra biblioteca (\texttt{cryptography}, no mbedtls). El banco
+planta una lectura manipulada (un bit del campo de energía) y una
+repetida entre diez válidas, y el script debe encontrar exactamente esas
+dos; la petición de certificado debe parsearse, llevar una autofirma
+válida y la clave pública del equipo. Todas las comprobaciones pasan. El
+firmware compila con ESP-IDF~5.3.5 para el ESP32-C3, y corre además en
+la emulación QEMU de Espressif de ese chip: sin motor, toda orden falla
+cerrada, y con el modelo del motor enlazado dentro del firmware en lugar
+del driver \ac{I2C} (una opción de compilación, nunca para una placa) la
+secuencia completa corre en el núcleo RISC-V emulado con el mbedtls
+compilado para el objetivo, y el script del PC acepta sus tramas; la
+clave pública que produce el chip emulado es la misma que produce el
+banco en el PC a partir de los mismos bloques del motor. La ejecución en
+el emulador es del 27 de octubre de 2026, con el modelo del motor en la
+versión 0x02 del mapa de registros.
+
+Una compilación con la misma opción del modelo se grabó después en un
+módulo ESP32-C3 real por USB-serie (28 de octubre de 2026, modelo en la
+versión 0x03) y se manejó con un script que registra cada línea y
+cronometra cada orden. Ninguna de las dos ejecuciones se ha repetido con
+el firmware actual (versión 0x04, semilla de 512 bits, rearme acotado);
+el banco en el PC sí. En el silicio, sembrar el modelo lleva decenas de
+milisegundos, generar la clave P-256 y guardarla unos 0,16~s, la
+petición de certificado 0,2~s y una lectura firmada unos 0,2~s con la ida
+y vuelta serie incluida; la clave privada sobrevive a reinicios físicos
+(el pin de habilitación pulsado desde el adaptador serie), el contador de
+arranques guardado en flash avanza en cada uno, la pública leída tras el
+reinicio es la misma y la primera lectura del arranque siguiente supera
+en secuencia a la última del anterior, así que la regla contra la
+repetición se cumple a través de cortes de alimentación reales. Dos cosas
+que el emulador no podía enseñar aparecieron a la primera. La consola
+leía las órdenes con una llamada de línea completa sobre una entrada no
+bloqueante, y por un enlace USB-serie real los bytes de una orden llegan
+con huecos: una sola orden llegó al firmware en cuatro trozos, cada uno
+rechazado como desconocido; la consola acumula ahora caracteres hasta el
+fin de línea. Y la clave nueva generada tras olvidar la anterior resultó
+idéntica a ella, porque el modelo del motor saca su ``aleatorio'' de una
+función pseudoaleatoria sin semilla que repite la misma secuencia en cada
+arranque; no es un defecto del medidor, sino la demostración en vivo de
+para qué sirve el motor. El verificador del PC acepta todas las tramas
+del log de la placa. El propio motor ha corrido después en placa con el
+verificador (Sección~\ref{sec:bringup}); lo que no se ha hecho es
+conectar este medidor al motor real: solo ha corrido contra el modelo,
+cuya entropía es un AES con semilla fija, no una medida.
 
 \section{Puesta en marcha en la FPGA}
 \label{sec:bringup}
 
-% [PENDIENTE DE HARDWARE] Proyecto de Vivado, restricciones (DONT_TOUCH, pblocks,
-% ALLOW_COMBINATORIAL_LOOPS, set_disable_timing), primer bitstream: ¿oscilan los
-% anillos y a qué frecuencia?; después, el ESP32 en el lazo.
-Pendiente del hardware. Las restricciones que necesitan los anillos se
-conocen por la bibliografía y por la documentación del fabricante ---
-\texttt{DONT\_TOUCH} en las celdas y redes de cada anillo (a diferencia
-de \texttt{KEEP}, sobrevive a la implementación),
-\texttt{ALLOW\_COMBINATORIAL\_LOOPS} en una red de cada lazo,
+% Fuentes: docs/basys3.md ("Implementación con Vivado", "Frecuencias de los
+% anillos", "El motor entero con el ESP32", "Colocación fija", "19-11-2026"),
+% docs/decisiones_pendientes.md, results/basys3_o5_consola_*.txt,
+% results/basys3_esquema, results/basys3_plano. Utilización y tiempos del
+% bitstream final (19-11): results/basys3_final_1911/util_hier.rpt y
+% timing.rpt (copiados de synth/basys3/build/G_QUIETO_true_G_MEDIDOR_false/,
+% cuyo .bit tiene el SHA-256 3affc2f5...9659 que docs/basys3.md da para el
+% bitstream final).
+El motor completo corre en una placa Digilent Basys~3, cuya \ac{FPGA} es
+una Artix-7 XC7A35T, con el ESP32 de la Sección~\ref{sec:firmware} en su
+bus \ac{I2C} a 400~kHz (dos hilos y masa a un conector de la placa, con
+los pull-ups de los pines). Un interruptor de la placa es el pin de
+prueba. Esta sección recoge la implementación, las frecuencias de los
+anillos y el resultado funcional; la campaña de entropía en la misma
+placa está en la Sección~\ref{sec:campaign}. Un primer prototipo había
+corrido unos días antes en la única placa que había entonces, una
+Basys~2, donde solo cabe la fuente de entropía; lo que enseñó se usa más
+abajo, y las dos placas se comparan en el Apéndice~\ref{app:fpga}.
+
+\paragraph{Flujo y restricciones de los anillos.} El diseño se
+implementa con Vivado~2025.2 en Linux, desde un script y sin proyecto,
+de modo que un bitstream se reproduce con una orden. Los anillos
+necesitan cuatro restricciones, conocidas por la bibliografía y por la
+documentación del fabricante: \texttt{DONT\_TOUCH} en las celdas de cada
+anillo (a diferencia de \texttt{KEEP}, sobrevive a la implementación),
+\texttt{ALLOW\_COMBINATORIAL\_LOOPS} en las redes de cada lazo,
 \texttt{set\_disable\_timing} para romper el lazo de cara al análisis
-estático de tiempos, y un bloque de emplazamiento por anillo para que
-anillos idénticos ni se fusionen ni se coloquen uno junto a otro --- y
-el primer bitstream tiene un único propósito: leer los contadores de
-frecuencia y confirmar que todos los anillos oscilan. Antes de eso no se
-afirma nada sobre la entropía.
+estático de tiempos, y un bloque de emplazamiento por anillo, apartados
+entre sí y con el resto de la lógica excluida, para que los anillos ni
+se fusionen ni se coloquen uno junto a otro. La salida de cada anillo se
+declara como reloj. Del mismo motor se compilan dos envoltorios: el
+normal maneja el display de cuatro dígitos con el frecuencímetro de los
+anillos, y el \emph{silencioso} no lleva ni display ni frecuencímetro y
+es el más parecido al circuito integrado; todas las medidas de entropía
+usan el envoltorio silencioso, porque la lógica colgada de los anillos
+cambia su ruido de fase (Sección~\ref{sec:campaign}).
+
+\paragraph{Hubo que arreglar tres cosas antes de que el diseño cumpliera
+tiempos.} Primero, los anillos no se rutaban. Cada bloque de
+emplazamiento encerraba su anillo en dos slices y confinaba también el
+rutado; dentro de dos slices no hay pistas para cerrar el lazo, y
+quedaban diez conexiones sin rutar. El bloque ahora solo fija la
+colocación. Segundo, el dominio de reloj del anillo de muestreo no
+cerraba a la frecuencia real. Con cinco etapas en el anillo de muestreo
+RO2 y siete en el anillo muestreado RO1, RO2 iba a 357,8~MHz \meas{}, y
+el camino crítico de su dominio, del pulso de muestra del \ac{ERO} a la
+habilitación de escritura de la memoria de captura, tarda de 3,3 a
+3,9~ns; con siete y nueve etapas RO2 seguía a 293~MHz \meas{}. Por eso
+el envoltorio de la placa usa once etapas en RO2 y trece en RO1.
+Tercero, la lógica que cierra la ventana del test de proporción no
+cumplía el reloj de sistema de 100~MHz ($-0{,}26$~ns con trece niveles
+de lógica): restaba la cuenta del tamaño de la ventana antes de
+comparar. Las dos comparaciones se reescribieron contra constantes, que
+es la misma condición, y como se trata de un test de salud la
+equivalencia no se dio por buena sin más: una revisión independiente
+enumeró las dos condiciones en 34\,236\,958 casos, cosimuló el bloque
+antiguo y el nuevo con treinta juegos de genéricos sin una sola
+diferencia, con dos mutantes cazados, y demostró formalmente su
+equivalencia para genéricos pequeños \simu{}.
+
+\paragraph{Un anillo hay que comprobarlo en la netlist implementada.} En
+la Basys~2 el primer bitstream no tenía anillos: las herramientas habían
+colapsado la cadena de inversores, y solo se vio al leer la netlist
+implementada (Apéndice~\ref{app:fpga}). Por eso en la Basys~3 el script
+de compilación lista, tras rutar, cada celda de los dos anillos con su
+sitio y el estado de cada red del lazo, y se para si los relojes de los
+anillos no existen tras la síntesis. Ese listado enseñó algo que las
+restricciones no habían impedido: Vivado había empaquetado los
+inversores de RO2 de dos en dos en las dos salidas de una misma \ac{LUT}
+de seis entradas, una optimización de colocación que
+\texttt{DONT\_TOUCH} no prohíbe, mientras que a RO1 no lo tocó. Con una
+\ac{LUT} por etapa, cada una fijada a su sitio y a su posición dentro
+del slice, el mismo RO2 de once etapas va a 207~MHz en lugar de 130~MHz
+\meas{} (Tabla~\ref{tab:ringfreq}). La colocación fija de las etapas es
+el valor por defecto desde el 18 de noviembre de 2026 y es la
+configuración del bitstream final; fija las \acp{LUT} de los anillos, no
+el rutado entre ellas ni el biestable de muestreo.
+
+\begin{table}[htbp]
+\centering
+\caption{Frecuencias de los anillos en la Basys~3 \meas{}. Display: el
+frecuencímetro embebido, una cuenta en 640~$\mu$s, $\pm0{,}1$~MHz de
+lectura y $\pm50$~ppm del oscilador de la placa; los valores se leyeron
+a ojo y no hay fichero que los recoja. Flujo: número de bits por $K_D$
+entre la duración que da el ESP32, en pasos de 10~ms hasta el 18 de
+noviembre ($\pm0{,}12$\,\% con \kd{13}) y de 1~ms después.}
+\label{tab:ringfreq}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.4cm}rr>{\raggedright\arraybackslash}p{4.4cm}@{}}
+\toprule
+Etapas RO2 / RO1, colocación & RO2 (MHz) & RO1 (MHz) & Método \\
+\midrule
+5 / 7, un bloque por anillo & 357,8 & 291,8 & display \\
+7 / 9, un bloque por anillo & 293 & --- & flujo \\
+11 / 13, un bloque por anillo (inversores de RO2 combinados) & 130,0 & sin medir & flujo, tres divisores en $\pm0{,}06$\,\% \\
+11 / 13, etapas fijas, envoltorio normal & 207,2 & 167,2 & display; 207,0 por flujo \\
+11 / 13, etapas fijas, envoltorio silencioso & 205,0--205,2 & --- & flujo \\
+11 / 13, bitstream final (silencioso) & 204,4 & --- & flujo de $10^6$ bits con \kd{19} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las frecuencias son el primer resultado y se leyeron antes que nada: un
+anillo eliminado por las herramientas, o dos anillos enganchados entre
+sí, no se distinguirían de otro modo de una fuente que funciona. Dos
+lecturas de la tabla importan después. El salto de 293 a 130~MHz no
+sigue al número de etapas, y así se dio con los inversores combinados. Y
+el cociente medido de los dos anillos con las etapas fijas es 1,24,
+frente a $13/11 = 1{,}18$ del número de etapas: el rutado entre etapas
+pesa tanto como las \acp{LUT}, así que en una \ac{FPGA} el periodo de un
+anillo hay que medirlo, no deducirlo.
+
+\paragraph{La restricción de tiempos del anillo de muestreo sigue a la
+medida.} Un fallo de tiempos en el divisor del \ac{ERO} parecería
+aleatoriedad, así que la restricción de RO2 no se deja en una
+estimación. Es de 4,5~ns, y para el envoltorio silencioso el script
+compara el camino más largo de ese dominio con 0,9 veces el periodo
+medido, 4,88~ns, y se para si es más largo. La comprobación paró una
+compilación: con el divisor máximo del circuito integrado, $2^{26}$, que
+en la placa, donde el anillo de muestreo no lleva preescalador, supone
+un contador de 26 bits (en el circuito integrado el contador tiene 22
+bits detrás del preescalador), el camino era de 4,407~ns, por encima de
+los 4,392~ns admitidos; el envoltorio de la placa se queda con un contador de 24 bits
+(divisor máximo $2^{24}$), con el que el camino es de 3,98~ns. La
+Tabla~\ref{tab:impl} da la utilización y los tiempos de ese bitstream
+final, con el que se tomaron todas las medidas del 22 de noviembre.
+
+\begin{table}[htbp]
+\centering
+\caption{Implementación del motor completo en el XC7A35T: bitstream
+final del 19 de noviembre de 2026 (envoltorio silencioso, colocación
+fija de las etapas, diseño rutado, informes de Vivado~2025.2). El
+envoltorio normal del 17 de noviembre, con display y frecuencímetro,
+ocupaba 4\,011 \acp{LUT} (el 19\,\% del dispositivo) y 4\,561
+biestables (el 11\,\%). No se usa ningún bloque de RAM ni de DSP: la
+memoria de captura y la cola del flujo son RAM distribuida. Las filas
+suman menos que el total: los registros y el secuenciador del nivel
+superior (8 \acp{LUT} y 1\,066 biestables) no tienen fila, y tampoco los
+bloques pequeños que el informe jerárquico, de tres niveles de
+profundidad, no lista (65 \acp{LUT} y 41 biestables por diferencia).}
+\label{tab:impl}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Bloque & \acp{LUT} & Biestables \\
+\midrule
+CTR\_DRBG & 1\,629 & 2\,225 \\
+Núcleo AES-128, ruta de 32 bits & 647 & 266 \\
+AES-CMAC & 388 & 523 \\
+Esclavo \ac{I2C} & 453 & 86 \\
+Tests de salud & 423 & 86 \\
+Buffer de captura (96 \acp{LUT} como RAM) & 158 & 44 \\
+Cola del flujo (48 \acp{LUT} como RAM) & 115 & 55 \\
+\textbf{Motor completo} & \textbf{3\,886} & \textbf{4\,392} \\
+\midrule
+Reloj & Restricción & Peor holgura (setup / hold) \\
+\midrule
+Sistema, 100~MHz & 10~ns & $+1{,}160$ / $+0{,}023$~ns \\
+RO2, once etapas & 4,5~ns & $+0{,}524$ / $+0{,}054$~ns \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La Figura~\ref{fig:esquema} es el motor tal como lo elabora Vivado,
+bloque a bloque la ruta de datos de la Figura~\ref{fig:engine}, y la
+Figura~\ref{fig:plano} es dónde queda el diseño rutado en el
+dispositivo: el motor en la esquina superior izquierda, RO2 justo debajo
+y RO1 más abajo, cada uno solo en su bloque.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{basys3_esquema_motor.pdf}
+\caption{Esquemático de bloques del motor elaborado por Vivado
+(envoltorio silencioso, 18 de noviembre de 2026, antes de los límites
+del divisor del 19 de noviembre, que no cambian los bloques). Desde
+abajo: los dos anillos, el muestreador del \ac{ERO} con su sincronizador
+de reset, el cruce de dominio bit a bit y el buffer de captura; tests de
+salud y cola del flujo; el esclavo \ac{I2C}; y el único núcleo AES de 32
+bits que comparten el CTR\_DRBG y el bloque AES-CMAC. Los nombres de las
+señales son los del \ac{RTL}.}
+\label{fig:esquema}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{basys3_plano.pdf}
+\caption{Colocación del diseño rutado en el XC7A35T (envoltorio
+silencioso, colocación fija de las etapas, 18 de noviembre de 2026,
+antes de los cambios del 19 de noviembre). Cada punto es una celda, con
+el color de su bloque (los números de la leyenda son celdas); las
+estrellas son las etapas de los dos anillos, RO2 (\texttt{ro2}, once
+etapas) y RO1 (\texttt{ro1}, trece), cada uno en su bloque de
+emplazamiento, lejos de la lógica.}
+\label{fig:plano}
+\end{figure}
+
+% FOTO DEL MONTAJE (Basys 3 + ESP32): pendiente, la hace Mario
+
+\paragraph{El motor con el ESP32 de oráculo (O5).} La secuencia
+funcional se ejecutó en tres sesiones, sobre tres implementaciones
+distintas: 17 de noviembre (colocación libre), 18 de noviembre (etapas
+fijas) y 19 de noviembre (bitstream final) \meas{}. En cada una el
+verificador lee la identificación (motor completo, versión 0x04, test de
+arranque superado), fija el divisor, siembra --- la semilla de 512 bits
+solo se acepta cuando su ventana de proporción se cierra limpia ---,
+genera una clave y la lee en modo de prueba, y hace veinte rondas de
+reto-respuesta; después zeroiza el motor, lee el estado para comprobar
+que no queda ni el indicador de sembrado ni el de clave (en las dos
+primeras sesiones; en la consola de la tercera no hay lectura del estado
+entre la zeroización y la siembra nueva), siembra y genera otra vez,
+obtiene una clave distinta y hace otras veinte rondas. En las tres sesiones \textbf{las cuarenta
+etiquetas calculadas por el hardware son iguales a las cuarenta que
+calcula \texttt{mbedtls\_cipher\_cmac} en el ESP32}, sin ninguna
+discrepancia criptográfica ni error de bus. Los bloques aleatorios
+pedidos entre medias llegan con el CRC correcto (cuatro por sesión en
+las dos primeras). Las dos primeras sesiones sembraron con \kd{16}
+(\texttt{CFG\_KD} $= 16$), el divisor de trabajo de entonces; la tercera
+con \kd{19}, el divisor que pide la medida de jitter de la
+Sección~\ref{sec:campaign}, que es además el mínimo y el valor de reset
+del bitstream final. Esa sesión ejercitó en placa las reglas del
+divisor: tras configurar, el registro se lee 19; con \kd{18} la orden de
+siembra se rechaza y sube el bit de rechazo; con \kd{19} se acepta; y
+escribir 25, por encima del máximo del envoltorio de la placa, deja el
+registro en 19 y levanta el bit de rechazo.
+
+Conviene decir qué es esta prueba y qué no es. Es la integración de la
+\ac{FPGA} y el ESP32 con el ESP32 de juez independiente de cada
+etiqueta, sobre un bus real, con claves nacidas del ruido de los
+anillos. En la placa verifica el núcleo \ac{AES} (el mismo que usa el
+generador, porque está compartido), el \ac{CMAC}, el registro de clave,
+el esclavo \ac{I2C} y el secuenciador. No verifica el CTR\_DRBG: el
+ESP32 lee la clave y recalcula la etiqueta con ella, así que la clave se
+toma como dato, no se predice, y un generador con la derivación o la
+actualización mal pasaría las mismas cuarenta rondas. Tampoco es una
+prueba de respuesta conocida: el mapa de registros no ofrece, a
+propósito, ninguna forma de cargar una clave o una semilla conocidas, así
+que el generador se verifica en simulación, donde el modelo de
+referencia validado con los vectores del \ac{CAVP} predice la clave a
+partir de la semilla que recogió el motor
+(Sección~\ref{sec:testbenches}), y no en el hardware. Nada dice de la
+entropía: un generador sembrado con una constante pasaría las mismas
+cuarenta rondas. De eso trata la Sección~\ref{sec:campaign}.

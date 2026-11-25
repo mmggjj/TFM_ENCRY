@@ -1,0 +1,7 @@
+[ok ] basura: rc=1 excepcion=False resumen: lecturas=0 validas=0 firma_invalida=0 repetidas=0 sin_clave=0 crc_malo=0 csr=0 csr_mala=0 clave_cambiada=0 publica_mala=0
+[ok ] tramas_mutadas: rc=1 excepcion=False resumen: lecturas=0 validas=0 firma_invalida=0 repetidas=0 sin_clave=0 crc_malo=5 csr=0 csr_mala=1 clave_cambiada=0 publica_mala=0
+[ok ] cargas_raras: rc=1 excepcion=False resumen: lecturas=6 validas=0 firma_invalida=3 repetidas=0 sin_clave=3 crc_malo=1 csr=0 csr_mala=0 clave_cambiada=0 publica_mala=2
+[ok ] claves_de_otro_tipo: rc=1 excepcion=False resumen: lecturas=5 validas=0 firma_invalida=3 repetidas=0 sin_clave=2 crc_malo=0 csr=0 csr_mala=0 clave_cambiada=0 publica_mala=2
+[ok ] pem_roto: rc=1 excepcion=False resumen: lecturas=0 validas=0 firma_invalida=0 repetidas=0 sin_clave=0 crc_malo=0 csr=0 csr_mala=2 clave_cambiada=0 publica_mala=0
+logs de los casos en /tmp/fuzz_verifica_gne94gro
+fuzz_verifica_lecturas: 0 fallos

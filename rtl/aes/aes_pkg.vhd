@@ -24,8 +24,10 @@ package aes_pkg is
   subtype t_bloque  is std_logic_vector(127 downto 0);
 
   function sbox(b : t_byte) return t_byte;
+  function sub_word(w : t_word) return t_word;          -- cuatro S-boxes
   function sub_bytes(v : t_bloque) return t_bloque;
   function shift_rows(v : t_bloque) return t_bloque;
+  function mix_columna(w : t_word) return t_word;       -- una columna
   function mix_columns(v : t_bloque) return t_bloque;
   function expandir_clave(k : t_bloque; rcon : t_byte) return t_bloque;
   function rcon_de(ronda : integer) return t_byte;
@@ -96,6 +98,12 @@ package body aes_pkg is
     return v(127 - 8 * i downto 120 - 8 * i);
   end function;
 
+  function sub_word(w : t_word) return t_word is
+  begin
+    return sbox(w(31 downto 24)) & sbox(w(23 downto 16)) &
+           sbox(w(15 downto 8))  & sbox(w(7 downto 0));
+  end function;
+
   function sub_bytes(v : t_bloque) return t_bloque is
     variable r : t_bloque;
   begin
@@ -131,28 +139,31 @@ package body aes_pkg is
     return std_logic_vector(shift_left(unsigned(b), 1));
   end function;
 
-  -- Cada columna se multiplica por la matriz circulante [2 3 1 1].
-  -- La columna c ocupa los bytes 4c+0 .. 4c+3 (filas 0 a 3).
-  function mix_columns(v : t_bloque) return t_bloque is
-    variable r  : t_bloque;
+  -- Una columna (filas 0 a 3, fila 0 a la izquierda) multiplicada por la
+  -- matriz circulante [2 3 1 1].
+  function mix_columna(w : t_word) return t_word is
     variable s0, s1, s2, s3 : t_byte;
     variable d0, d1, d2, d3 : t_byte;
-    variable i0, i1, i2, i3 : integer;
+  begin
+    s0 := w(31 downto 24); s1 := w(23 downto 16);
+    s2 := w(15 downto 8);  s3 := w(7 downto 0);
+
+    d0 := xtime(s0) xor (xtime(s1) xor s1) xor s2 xor s3;
+    d1 := s0 xor xtime(s1) xor (xtime(s2) xor s2) xor s3;
+    d2 := s0 xor s1 xor xtime(s2) xor (xtime(s3) xor s3);
+    d3 := (xtime(s0) xor s0) xor s1 xor s2 xor xtime(s3);
+
+    return d0 & d1 & d2 & d3;
+  end function;
+
+  -- Las cuatro columnas. La columna c ocupa los bytes 4c+0 .. 4c+3, es
+  -- decir, los 32 bits v(127-32c downto 96-32c).
+  function mix_columns(v : t_bloque) return t_bloque is
+    variable r : t_bloque;
   begin
     for col in 0 to 3 loop
-      i0 := 4 * col; i1 := i0 + 1; i2 := i0 + 2; i3 := i0 + 3;
-      s0 := get_byte(v, i0); s1 := get_byte(v, i1);
-      s2 := get_byte(v, i2); s3 := get_byte(v, i3);
-
-      d0 := xtime(s0) xor (xtime(s1) xor s1) xor s2 xor s3;
-      d1 := s0 xor xtime(s1) xor (xtime(s2) xor s2) xor s3;
-      d2 := s0 xor s1 xor xtime(s2) xor (xtime(s3) xor s3);
-      d3 := (xtime(s0) xor s0) xor s1 xor s2 xor xtime(s3);
-
-      r(127 - 8 * i0 downto 120 - 8 * i0) := d0;
-      r(127 - 8 * i1 downto 120 - 8 * i1) := d1;
-      r(127 - 8 * i2 downto 120 - 8 * i2) := d2;
-      r(127 - 8 * i3 downto 120 - 8 * i3) := d3;
+      r(127 - 32 * col downto 96 - 32 * col) :=
+        mix_columna(v(127 - 32 * col downto 96 - 32 * col));
     end loop;
     return r;
   end function;

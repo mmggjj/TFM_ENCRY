@@ -1,0 +1,69 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/ss40v108_kd23_r3_n3523072_noniid_b8.json /home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_kd23_r3_n3523072.bin 8",
+   "dateTimeStamp" : "20261101173801",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/fuente_simulada_90b/secuencias/ss40v108_kd23_r3_n3523072.bin",
+   "sha256" : "5f8d34c3c366da35a011c01cd9233fdc10384698e3aafe239f9c41e5d03984d6",
+   "testCases" : [
+      {
+         "hBitstring" : 0.99660728245324515,
+         "hOriginal" : 7.7835901012194508,
+         "mcvEstimateMode" : 1887.0,
+         "mcvEstimatePHat" : 0.0042848968173230632,
+         "mcvEstimatePU" : 0.0045384327612727846,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hBitstring" : 0.93809504998331883,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.99793249320280042,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hBitstring" : 0.89345335529401082,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "binTTupleRes" : 0.94374135493034095,
+         "tTupleRes" : 7.7835901012194508,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "binLrsRes" : 0.99696971570039394,
+         "lrsRes" : 7.863804433580091,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hBitstring" : 0.9990389018625162,
+         "hOriginal" : 7.9461838219978764,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hBitstring" : 0.9977880284766919,
+         "hOriginal" : 7.9331161955203555,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hBitstring" : 0.99706164584887391,
+         "hOriginal" : 7.9339387177663028,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hBitstring" : 0.99695334471932429,
+         "hOriginal" : 7.9330637845062775,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 8.0,
+         "hAssessed" : 7.1476268423520866,
+         "hBitstring" : 0.89345335529401082,
+         "hOriginal" : 7.7835901012194508,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

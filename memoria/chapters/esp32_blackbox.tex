@@ -1,7 +1,7 @@
 \chapter{The ESP32 Generator as a Black Box}
 \label{ch:esp32}
 
-% [DRAFT v2] First part of the work and justification of the second.
+% First part of the work and justification of the second.
 % Sources of the sections before sec:esp32_90b: docs/estado_del_arte_trng.md
 % (6.1), docs/esp32_linea_base_90b.md (1), docs/plan.md (9),
 % firmware/esp32_rng, analysis/esp32_rng, analysis/campana_rng.py,
@@ -12,7 +12,8 @@ This chapter is the first part of the work. It treats the hardware random
 number generator of the ESP32 as an integrator meets it: a register that
 returns 32-bit words, behind which the manufacturer names two noise
 sources and quantifies neither. The generator is run under four operating
-conditions in four capture campaigns on three chips; its output goes through a
+conditions in four capture campaigns on three chips, and in a fifth, on
+one chip, that repeats them with the radio kept awake; its output goes through a
 self-validated SP~800-22 battery, through Shannon and spectral metrics
 and through the SP~800-90B estimators; a key harvester is built around
 it; and a restart test opens the box as far as it can be opened from
@@ -48,9 +49,10 @@ as pseudo-random only''. Applications read the generator through
 noise can enter, or through \texttt{esp\_fill\_random()}, which fills a
 buffer with it. For the ESP32 the wait is 16~APB cycles, a ceiling of
 5~million words per second (\texttt{hw\_random.c}, unchanged on this
-point from ESP-IDF 5.2.1 to 5.5.2, which bracket the 5.3.2 used here); the
-15--75~kHz quoted by the guide match the longer waits coded for later
-chips.
+point from ESP-IDF 5.2.1 to 5.5.2, which bracket the 5.3.2 used here). The
+guide of that version gives no read rate; the 45 to 75~kHz found in the
+comments of the same file belong to the longer waits coded for later
+chips (ESP32-S3, C6 and P4).
 % hw_random.c: APB_CYCLE_WAIT_NUM = 16 for the ESP32, 1778 (about 45 kHz)
 % for the ESP32-S3; checked in ~/esp/v5.5.2 and in the platformio
 % framework-espidf 5.2.1 and 4.4.7 trees, and the guide text, on 2026-10-13.
@@ -90,6 +92,25 @@ never been on, and each later step adds one source. The firmware waits
 500~ms after each change, and 200~ms more after starting the radio, so
 that each sequence belongs to one stationary condition.
 
+% docs/esp32_linea_base_90b.md, "Aviso del 10-11-2026"; git diff 6db5911
+% HEAD -- firmware/esp32_rng (rng_sampler.c, three lines of code)
+One limit of ``Wi-Fi on'' was found after the four campaigns, by reading
+the code, and was not measured. The firmware of those campaigns started
+the station with the default power-save settings of ESP-IDF, and with
+them a station that is not associated may switch the RF off while it
+neither scans nor connects. The radio is on while
+\texttt{esp\_wifi\_start()} calibrates the PHY, about 85~ms
+(Section~\ref{sec:esp32_90b}), but it may have slept during most of the
+generation of the sequences of conditions A and B, for a fraction of the
+time that is not known: A may have been nearly C, and B nearly D. The
+firmware was corrected on 10~November 2026 so that the radio cannot
+sleep (\texttt{sta\_disconnected\_pm = false} in the driver configuration
+and \texttt{esp\_wifi\_set\_ps(WIFI\_PS\_NONE)} after the start), and a
+fifth campaign repeated the four conditions with it on one chip. Whatever
+this chapter says about the effect of the radio on a continuous stream
+rests on that repeat, as each passage states; conditions C and D, and
+the restart test, are not affected.
+
 Each condition yields 125\,000 bytes, $10^6$ bits, the minimum length
 SP~800-22 recommends for its full battery~\cite{bassham_2010_sp80022} and
 the minimum sample count of SP~800-90B~\cite{turan_2018_sp80090b}. The
@@ -107,15 +128,115 @@ because the Wi-Fi driver's messages broke frames. Before the cycle,
 \texttt{app\_main} copies a 4~KiB buffer from the uninitialized
 \texttt{.noinit} section, the SRAM pattern of
 Section~\ref{sec:esp32_harvester}. The firmware is in
-\path{firmware/esp32_rng}, the tools in \path{analysis/esp32_rng} and
+\path{firmware/esp32_rng}, in its corrected form, which differs from
+that of the first four campaigns in the two settings above; the tools are in \path{analysis/esp32_rng} and
 \path{analysis/campana_rng.py}.
+
+% firmware/esp32_rng/sdkconfig.defaults (240 MHz, FREERTOS_HZ 1000);
+% main.c (campaign task core 1, priority 5; 64 B per line; 4 KiB chunks;
+% 100 ms pause; 2 s between cycles); rng_sampler.c (ADC task core 0,
+% priority 3); esp-idf-v5.3.2/components/esp_wifi/Kconfig (Wi-Fi task on
+% core 0 by default)
+The firmware runs the CPU at 240~MHz, so that the rates of
+Section~\ref{sec:esp32_shannon} refer to one fixed clock, with the
+FreeRTOS tick at 1~kHz. After the SRAM copy, \texttt{app\_main} prints
+the MAC address and the ESP-IDF version and starts a single campaign task
+pinned to core~1. The ADC task of conditions A and C runs on core~0, at a
+lower priority, beside the Wi-Fi driver task, which ESP-IDF places on
+core~0 by default (Figure~\ref{fig:esp32_tasks}). The campaign task runs
+the four conditions, prints 100 harvester seeds and, after 2~s, starts
+the next cycle, indefinitely. Every artefact leaves the device as a frame
+between a \texttt{BEGIN} and an \texttt{END} line --- \texttt{PUF} for the
+SRAM pattern, \texttt{RNG} for a sequence, \texttt{SEEDS} for the seeds,
+and \texttt{CYCLE} around a whole cycle --- with its metadata as
+key--value pairs in the header, a payload of 64 bytes per hexadecimal
+line, and the CRC-32 of the raw bytes, from \texttt{esp\_rom\_crc32\_le},
+on the closing line. A sequence is streamed in 4~KiB chunks, yielding one
+scheduler tick between chunks to the watchdog and the UART driver, after
+a 100~ms pause once the ADC task has stopped.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Latex,
+  box/.style={draw, rounded corners=1pt, align=center, minimum height=8mm,
+              inner sep=3pt, fill=gray!8},
+  hw/.style={draw, align=center, minimum height=8mm, inner sep=3pt}]
+\node[box] (camp) at (0,0) {campaign task\\core 1, priority 5};
+\node[hw] (rng) at (3.6,0) {\texttt{RNG\_DATA\_REG}\\\texttt{esp\_fill\_random}};
+\node[box] (buf) at (7.0,0) {125\,000~B\\buffer in RAM};
+\node[hw] (uart) at (10.0,0) {UART0\\115\,200~baud};
+\node[box] (adc) at (0,-1.7) {ADC task\\core 0, priority 3};
+\node[hw] (sar) at (3.2,-1.7) {SAR ADC1, ch.~0\\GPIO36 floating};
+\node[box] (wifi) at (0,-3.1) {Wi-Fi driver task\\core 0};
+\node[hw] (radio) at (6.2,-3.1) {radio\\started, not associated};
+\draw[->] (camp) -- (rng);
+\draw[->] (rng) -- (buf);
+\draw[->] (buf) -- (uart);
+\draw[->] (adc) -- (sar);
+\draw[->] (wifi) -- (radio);
+\draw[->, dashed] (sar.north) -- (sar.north |- rng.south);
+\draw[->, dashed] (radio.north) |- (4.8,-1.7) -- ([xshift=1.2cm]rng.south);
+\end{tikzpicture}
+\caption{Tasks and cores of the capture firmware. The campaign task reads
+the generator into RAM while the condition holds; the ADC task (conditions
+A and C) and the Wi-Fi driver (A and B) run on the other core. The dashed
+arrows are the paths by which the documented sources may reach the
+generator. The ADC task is stopped before the buffer is streamed.}
+\label{fig:esp32_tasks}
+\end{figure}
+
+% sdkconfig.defaults (460800/921600 gave no application output);
+% capture_rng.py (sanitize, reconnect, host-side numbering);
+% docs/esp32_linea_base_90b.md 4 (about 25 s per condition)
+The serial rate was not the first choice. At 460\,800 and 921\,600~baud
+the banner of the second-stage bootloader still arrived, at the ROM
+default rate, but the application output never did; the cause was not
+investigated, and 115\,200~baud was kept. At that rate the 250\,000
+hexadecimal characters of one sequence need about 22~s (calculated, ten
+line bits per character, newlines and frame lines left out), against the
+about 25~s observed per condition. On the host
+(\path{analysis/esp32_rng/capture_rng.py}), a small state machine collects
+the hexadecimal lines between the markers and ignores anything else
+outside a block; before decoding it removes any character that is not
+hexadecimal, as a stray log fragment would leave, and drops an odd
+trailing nibble, so that an interleaved line ends as a CRC rejection
+rather than as a decoding failure. One more failure appeared on the
+bench: on current transients, most often with the radio and the ADC both
+active, the board restarted and its USB--serial bridge, a CP2102,
+re-enumerated, which invalidated the open port in the middle of a read.
+The cause was taken to be a brown-out and not measured. The capture tool
+then drops the block in progress, reopens the port until it reappears
+and goes on; and it numbers the repetitions itself, by the count of valid
+sequences it already holds for each condition, because the firmware's
+counter restarts with the board. A reconnection can therefore lose a
+block but never duplicate or overwrite one.
+
+% firmware/esp32_rng/main/mqtt_reporter.c, Kconfig.projbuild
+The firmware also contains an optional telemetry path,
+\texttt{mqtt\_reporter}, implemented and never activated. A configuration
+menu (\texttt{Kconfig.projbuild}) takes the network name, its password and
+the broker URI, so that no credential is compiled from the source; after
+the first cycle the firmware tries to associate and connect only if the
+network name differs from its placeholder, and otherwise reports that
+MQTT is disabled and carries on over the serial link. Active, it would
+publish the condition, the die temperature and the rate on the topics
+\texttt{esp32/rng/condition}, \texttt{esp32/rng/temperature} and
+\texttt{esp32/rng/throughput}, and the last seed of each cycle on
+\texttt{esp32/harvester/seed}. No campaign set the credentials, so the
+radio was never associated, as the conditions require. Activating it
+would have changed the later cycles, with an associated radio, and the
+default broker URI is plain \texttt{mqtt://}, so the seed would have
+crossed the network in clear: as written it is a bench telemetry path,
+not one for key material. The sequences were never meant for it, since
+conditions C and D need the radio off.
 
 % capture_log.csv of each campaign: crc_ok = 1 in all 24 rows
 \begin{table}[htbp]
 \centering
-\caption{The four capture campaigns \meas{}. Each cycle is one cold boot
+\caption{The five capture campaigns \meas{}. Each cycle is one cold boot
 followed by the four conditions in the order D, C, B, A, $10^6$ bits
-each.}
+each. In the first four the RF may have slept during conditions A and B;
+the fifth uses the firmware that keeps it awake (see text).}
 \label{tab:esp32_campaigns}
 \footnotesize
 \begin{tabular}{@{}lllll@{}}
@@ -126,11 +247,12 @@ First  & 2026-08-04 & ec:e3:34:9a:d1:18 & ESP-IDF 5.3   & 1 \\
 Second & 2026-09-19 & ec:e3:34:9a:d1:18 & ESP-IDF 5.3.2 & 2 \\
 Third  & 2026-10-12 & a0:dd:6c:0e:fb:4c & ESP-IDF 5.3.2 & 3 \\
 Fourth & 2026-10-20/21 & f8:b3:b7:2a:09:28 & ESP-IDF 5.3.2 & 3 + 3 \\
+Fifth  & 2026-11-10 & f8:b3:b7:2a:09:28 & ESP-IDF 5.3.2 & 3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Four campaigns were run (Table~\ref{tab:esp32_campaigns}). The first
+Five campaigns were run (Table~\ref{tab:esp32_campaigns}). The first
 captured one cycle and the SRAM patterns on the chip of MAC address
 ec:e3:34:9a:d1:18, which the firmware reports at boot and which was noted
 with the results; its capture log has no MAC column.
@@ -138,7 +260,10 @@ with the results; its capture log has no MAC column.
 The same firmware, rebuilt unchanged, then ran two more cycles on that
 chip, three on a second one, a0:dd:6c:0e:fb:4c, and two batches of three
 on a third, f8:b3:b7:2a:09:28, the first batch with the very binary used
-on the second chip.
+on the second chip. The fifth campaign, on the third chip, is the only
+one whose firmware differs: it is the corrected one, with the radio kept
+awake, and its twelve sequences, all with a good CRC, are analysed apart
+from the others (Section~\ref{sec:esp32_90b}).
 On the third chip the serial link to the host occasionally corrupted a
 block on the host side; the CRC rejected all three such blocks, two were
 taken again from the next cycle of the same boot, and one incomplete
@@ -148,9 +273,24 @@ length and CRC. The data are in \path{results/esp32_rng_agosto} and in
 a log of the temperatures, rates and CRC verdicts. The first-level
 SP~800-22 battery, the Shannon metrics and the harvester of the next
 three sections use the first campaign; the second-level SP~800-22
-analysis uses all four, and the SP~800-90B estimators of
-Section~\ref{sec:esp32_90b} all but the second batch of the fourth,
-which is kept for one check.
+analysis uses the first four, and the SP~800-90B estimators of
+Section~\ref{sec:esp32_90b} those four without the second batch of the
+fourth, which is kept for one check, and the fifth separately.
+
+% docs/esp32_linea_base_90b.md 1: on the third chip the retaken blocks were
+% condition A, from the second cycle; D, C and B always from the first.
+The firmware does not stop after one cycle: it comes back to condition~D
+with the radio stopped but having run, and the first design meant to
+compare those later D sequences with the cold-boot one, to see whether
+the residual state of the radio changes the output. None was captured.
+Every condition~D sequence kept, in the first four campaigns, comes from the
+first cycle after a cold boot; the two blocks retaken from a second cycle
+on the third chip were of condition~A. The restart test of
+Section~\ref{sec:esp32_90b} answers the question more directly than a
+later D could have: once the radio has run, the generator has received
+noise (Table~\ref{tab:esp32_fuentes}), so a later D continues from a
+state that is no longer the fixed one, and the statistics below, which
+do not separate D from A, would not have separated the two Ds either.
 
 \section{The SP 800-22 battery}
 \label{sec:esp32_sp80022}
@@ -171,9 +311,37 @@ length~9 that the standard lists. A self-test runs the battery on three
 inputs of 125\,000 bytes: data from \texttt{os.urandom} must pass with at
 most one failure, an all-zero buffer must fail, and the alternating
 pattern \texttt{0x55} must be rejected by the runs or the
-approximate-entropy test. It passes: the zeros fail all fifteen tests,
+approximate-entropy test. The zeros fail all fifteen tests,
 and the alternating pattern fails all but the frequency, block-frequency
 and cumulative-sums tests, which a perfectly balanced sequence must pass.
+In the first condition the self-test counts only the tests that apply:
+the two random-excursion tests are not applicable to good data of this
+length with probability 0.38 (next paragraph). Until the review of this
+document they were counted as two failures, and the self-test stopped on
+about that fraction of its runs for a reason that is not a defect; with
+that corrected, twelve consecutive runs passed, six of them with the
+excursion tests not applicable.
+
+% SP 800-22 Rev. 1a 2.5.7 (n >= 38 MQ), 2.9.7 (L = 7 from n = 904960),
+% 2.14.7 (J >= 500); E[J] and P(J < 500) calculated
+The length of $10^6$ bits is also what lets every test run in the regime
+its approximations need (calculated from the parameters of the standard).
+The matrix-rank test uses $32\times32$ matrices of 1024 bits and needs at
+least 38 of them for its three-class $\chi^2$; $10^6$ bits give 976.
+Maurer's universal test reaches its setting of $L = 7$, with $Q = 1280$
+initialization blocks, only from 904\,960 bits. The two random-excursion
+tests apply only when the $\pm1$ walk of the sequence returns to zero at
+least $J = 500$ times. For a symmetric walk of $n$ steps
+$E[J] \approx \sqrt{2n/\pi}$, so the threshold asks for about
+$3.9\times10^5$ bits on average, and at $10^6$ bits $E[J] \approx 800$.
+The spread is wide: $J/\sqrt{n}$ tends to the absolute value of a standard
+normal variable, so a perfect source of $10^6$ bits falls below 500
+returns with probability 0.38. The standard then treats the excursion
+tests as not applicable; the implementation here records the case as a
+failure with a note, so a short walk cannot pass unnoticed, and the four
+sequences of the first campaign all had enough returns. The same spread
+is why only 34 of the 59 sequences of the second-level analysis below
+enter those tests.
 
 \begin{figure}[htbp]
 \centering
@@ -274,7 +442,25 @@ $1/\sqrt{n} = 0.001$, and the largest of a thousand such values has a
 median of 0.0034 for white noise. The flatness of a single unaveraged
 periodogram of white noise is not 1 but $e^{-\gamma} \approx 0.561$, with
 $\gamma$ Euler's constant, because each bin is exponentially distributed.
+Figure~\ref{fig:esp32_metrics} shows the two distributions behind those
+columns: in all four conditions the thousand standardized
+autocorrelations follow a standard normal distribution and the
+periodogram bins an exponential one, as for white noise.
 In every column the four conditions sit where a perfect source would.
+
+% analysis/esp32_rng/figuras_memoria.py, from condX_rep1.bin
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{esp32_metricas.pdf}
+\caption{Autocorrelation and periodogram of the four sequences of the
+first campaign \meas{}, against white noise (dashed). (a) Distribution of
+$r_k\sqrt{n}$ for lags $k$ from 1 to 1000, $n = 10^6$; for white noise it
+is standard normal. (b) Distribution of the periodogram bins of the first
+65\,536 bits, divided by their mean, on a logarithmic scale; for white
+noise it is exponential, which is why the spectral flatness of a single
+periodogram tends to $e^{-\gamma} \approx 0.561$ and not to 1.}
+\label{fig:esp32_metrics}
+\end{figure}
 Like SP~800-22, these are averages over the output that a deterministic
 sequence can reach, and Shannon entropy is not the quantity a key needs:
 key generation counts min-entropy, the negative logarithm of the
@@ -287,10 +473,14 @@ subject of Section~\ref{sec:esp32_90b}.
 % and 12559 us (B).
 The rate is timed by the firmware with the 1~$\mu$s system timer over
 64~KiB, about 12.6~ms, so its resolution is better than 0.01\,\%
-(calculated). In all four campaigns the twenty-four sequences without the
+(calculated). In the first four campaigns the twenty-four sequences without the
 ADC task were generated at 5.21 to 5.22~MB/s ($10^6$~bytes per second),
 and the twenty-four with it at 2.77~MB/s in the first two campaigns and
-2.70~MB/s in the last two; the radio changes the rate by less than 0.1\,\%. The ADC
+2.70~MB/s in the last two. With the Wi-Fi started the rate is 0.06 to
+0.07\,\% higher without the ADC task, and between 0.02\,\% lower and
+0.11\,\% higher with it, inside the 0.17\,\% spread between repetitions
+of one condition; the fifth campaign, with the radio kept awake, gives
+the same rates and differences within those ranges. The ADC
 task halves the rate, for a cause that was not isolated. Set against the
 manual, 1.30~million words per second without the task is under the
 5~MHz of the radio path, and 0.68 to 0.69~million with it is above the
@@ -298,8 +488,9 @@ manual, 1.30~million words per second without the task is under the
 while the SAR path injects at most 16~Mbit/s, so even if the conversions
 of condition~C reached the generator and every injected bit were fully
 random, no more than 0.72 to 0.74~bit of fresh noise could stand behind
-each output bit (calculated). The radio path, at 160~Mbit/s, exceeds the
-highest read rate, 41.7~Mbit/s, nearly fourfold.
+each output bit (calculated). The radio path, at the 160~Mbit/s of the
+manual while the RF is on, exceeds the
+highest read rate, 41.7~Mbit/s, nearly fourfold (calculated).
 
 % firmware/esp32_rng/main/temp_monitor.c converts (F - 32)/1.8 from a ROM
 % uint8_t; results/esp32_rng_agosto/capture_log.csv holds 52.2 and 52.8
@@ -314,11 +505,32 @@ temperature range of the campaign is one step of the sensor. The
 correlation between byte entropy and temperature over the four sequences,
 $r = 0.795$ with $p = 0.21$, was therefore computed against the least
 significant bit of the sensor, and it carries no information; no
-temperature effect is claimed, in either direction. The three identified
-chips later read 49.4 to 51.7, 61.7 to 64.4 and 42.8 to 45.0~$^\circ$C on
+temperature effect is claimed, in either direction.
+Figure~\ref{fig:esp32_temp} shows the data in the sensor's own unit: one
+sequence read 126~$^\circ$F throughout, two read 127~$^\circ$F, one moved
+from the first value to the second while it was generated, and all four entropies lie
+within two standard deviations of a perfect source of the same length.
+In the later campaigns the first chip read 49.4 to 51.7~$^\circ$C, the
+second 61.7 to 64.4 and the third 41.1 to 45.0 (40.6 to 48.3 in the
+fifth campaign, with the radio awake) on
 the same uncalibrated scale, so chip and temperature are confounded. A temperature
 study needs a calibrated sensor and a controlled sweep, and none was
 made.
+
+% analysis/esp32_rng/figuras_memoria.py, from capture_log.csv and
+% temperature_correlation.csv
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.62\textwidth]{esp32_temperatura.pdf}
+\caption{Byte entropy of the four sequences of the first campaign against
+the reading of the die sensor \meas{}, in its own unit, an uncalibrated
+integer in degrees Fahrenheit; a bar spans the readings before and after
+the sequence. The band is a perfect source of 125\,000 bytes, mean and
+one standard deviation (calculated). The whole campaign is one step of
+the sensor, so the correlation of $r = 0.795$ computed over these points
+says nothing about temperature.}
+\label{fig:esp32_temp}
+\end{figure}
 
 \section{A multi-source key harvester}
 \label{sec:esp32_harvester}
@@ -330,7 +542,8 @@ harvester (\path{firmware/esp32_rng/main/entropy_harvester.c}) that adds
 two sources of the same chip whose availability complements that of the
 generator: the SRAM power-up pattern, present at every power-up before
 any peripheral starts~\cite{holcomb_2009_powerup}, and the least
-significant bits of the ADC reading a floating input. These pass through
+significant bits of the ADC reading a floating input. The ADC bits, and
+only they, pass through
 the corrector of von Neumann~\cite{vonneumann_1951_various}, which
 discards the pairs 00 and 11 and maps 01 to 0 and 10 to 1, so that
 independent bits come out unbiased at the cost of at least three quarters
@@ -357,6 +570,96 @@ before hashing gives the one guarantee that needs no independence between
 sources sharing die, supply and temperature:
 $H_\infty(X_1 \| X_2 \| X_3) \geq \max_i H_\infty(X_i)$.
 
+% firmware/esp32_rng/main/adc_noise.c: LSB of each 12-bit conversion,
+% 8 per byte, 2048 at a time; pair (1,0) -> 1
+The corrector's claim rests on one line. For independent bits with an
+unknown probability $p$ of a one, $\Pr[01] = (1-p)\,p = \Pr[10]$, so a kept
+pair yields 0 and 1 with probability $1/2$ each, whatever $p$ is. A pair
+is kept with probability $2p(1-p)$ and gives one bit for two, so the
+yield is $p(1-p)$ output bits per input bit, at most $1/4$, at $p = 1/2$
+(Figure~\ref{fig:esp32_vn}). The corrector removes bias, not correlation:
+for dependent bits $\Pr[01]$ and $\Pr[10]$ need not be equal. The firmware
+takes the least significant bit of each 12-bit conversion, packs eight to
+a byte, corrects 2048 of them at a time and repeats until it has 32
+bytes. No separate capture of these bits exists, so neither their bias
+nor their correlation was measured.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.55\textwidth, height=4.2cm,
+  xlabel={probability of a one at the input, $p$},
+  ylabel={probability, yield}, xmin=0, xmax=1, ymin=0, ymax=0.55,
+  legend style={draw=none, font=\footnotesize, at={(0.5,1.02)},
+    anchor=south}, legend columns=2,
+  tick label style={font=\footnotesize}, label style={font=\footnotesize}]
+\addplot[domain=0:1, samples=101, thick, dashed] {2*x*(1-x)};
+\addlegendentry{pair kept, $2p(1-p)$}
+\addplot[domain=0:1, samples=101, thick] {x*(1-x)};
+\addlegendentry{output bits per input bit, $p(1-p)$}
+\end{axis}
+\end{tikzpicture}
+\caption{Yield of the von Neumann corrector on independent input bits
+(calculated). Even an unbiased input loses three quarters of its bits;
+the output is unbiased for every $p$ in $(0,1)$ only if the input bits are
+independent.}
+\label{fig:esp32_vn}
+\end{figure}
+
+Hashing the concatenation is justified, under assumptions, by the theory
+of randomness extractors. The leftover hash
+lemma~\cite{impagliazzo_1989_pseudorandom} states that a function drawn at
+random from a universal hash family, applied to an input of min-entropy
+$k$, gives an $\ell$-bit output within statistical distance $\varepsilon$
+of uniform provided
+\begin{equation}
+k \geq \ell + 2\log_2(1/\varepsilon);
+\label{eq:esp32_lhl}
+\end{equation}
+for $\ell = 256$ and $\varepsilon = 2^{-32}$ the input needs 320 bits of
+min-entropy. SHA-256 is one fixed function, not a member of a family drawn
+at random, so the lemma does not apply to it as stated; its use as an
+extractor rests on idealized models, or on analyses such as that of Dodis
+et al.~\cite{dodis_2004_randomness} for the HMAC and cascade
+constructions under assumptions on the compression function, and
+SP~800-90B admits an approved hash function as a vetted conditioning
+component~\cite{turan_2018_sp80090b}. What matters here is the condition
+rather than the bound: the pool is close to uniform only if the inputs
+together hold some 320 bits of min-entropy, and the paragraphs below show
+that this was measured for none of them. The concatenation bound follows
+from an inequality that holds for any joint distribution, because the
+most likely triple is no more likely than the most likely value of any
+one component,
+\begin{equation}
+\max_{x_1,x_2,x_3}\Pr[X_1{=}x_1,X_2{=}x_2,X_3{=}x_3]
+\;\leq\; \min_i \max_{x_i}\Pr[X_i{=}x_i],
+\end{equation}
+and taking $-\log_2$ of both sides gives it. XOR-combining sources of
+equal width also keeps the best min-entropy, but only if the sources are
+independent, which three sources on one die cannot be assumed to be;
+concatenation needs no such assumption, at the cost of a longer hash
+input. If the ADC fails to deliver, its field is filled with zeros and the
+pool is formed from the other two sources.
+
+% entropy_harvester.c: 4-byte counter, fresh 32 B per block, reseed
+% SHA256(pool || r || a) after the 100 seeds of each cycle
+The ratchet of Equation~\eqref{eq:esp32_ratchet} gives forward secrecy:
+the pool after output $i$ does not reveal earlier outputs as long as
+SHA-256 cannot be inverted. The reseed that follows the 100 seeds of each
+cycle hashes 32 fresh generator bytes and 32 ADC bytes into the pool,
+$\mathrm{pool} \leftarrow \mathrm{SHA256}(\mathrm{pool} \,\|\, r \,\|\, a)$,
+and is meant to give backward secrecy, recovery after the pool has been
+exposed; it does so only to the extent that $r$ and $a$ carry entropy the
+attacker cannot predict, which is precisely what is not known with the
+radio off. The construction resembles Hash\_DRBG of
+SP~800-90A~\cite{barker_2015_sp80090ar1} --- a hashed state, outputs that
+hash the state, reseeds from a live source --- but aims at something
+narrower: a hundred 256-bit seeds per cycle, each to be expanded by a key
+derivation function, instead of long output streams, with every output
+absorbing a fresh generator read and the whole state in one 256-bit
+word. It is a small absorb-and-squeeze conditioner, without the reseed
+counters, health tests or validation of an SP~800-90A generator.
+
 % analysis/esp32_rng/harvester_from_sources.py: inputs puf_boot1.bin and
 % condD_rep1.bin, ADC field = 32 B of the same RNG stream (stand-in).
 % docs/esp32_linea_base_90b.md 1: the firmware does not stop after the first
@@ -381,7 +684,23 @@ uniform ($\chi^2$ $p = 0.30$); the Hamming distance between two seeds,
 over 20\,000 random pairs, averages 128.05 of 256 bits (50.02\,\%) with a
 standard deviation of 8.03, against 128 and 8 for independent uniform
 seeds; and the seven SP~800-22 tests that apply to the 256\,000 bits of
-the seed stream pass, with $p$ from 0.148 to 0.956.
+the seed stream pass, with $p$ from 0.148 to 0.956
+(Figure~\ref{fig:esp32_harvester}).
+
+% analysis/esp32_rng/figuras_memoria.py, from seeds_rep1.bin, same pairs
+% as harvester_validation.py (default_rng(1))
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{esp32_recolector.pdf}
+\caption{Off-line validation of the harvester construction (calculated,
+on measured inputs). (a) Hamming distance between two of the 1000 seeds
+derived from one SRAM pattern and the condition-D sequence, over 20\,000
+random pairs, against the binomial distribution of independent uniform
+seeds. (b) $p$ values of the seven SP~800-22 tests that apply to the
+256\,000 bits of the seed stream. Both are passed by construction (see
+text) and say nothing about the entropy of the seeds.}
+\label{fig:esp32_harvester}
+\end{figure}
 
 % computed from results/esp32_rng_agosto/puf_pc1-4.bin (clean series:
 % weights 49.61 to 49.74 %, pairs 6.45 to 6.81 %, mean 6.63 %, stable
@@ -406,7 +725,11 @@ one used (Section~\ref{sec:conventions}). The inter-boot distance of
 ten pairs of a series that mixed power cycles with resets that kept the
 supply, in which one pattern differs from the other four in 49.6 to
 49.7\,\% of its bits, as unrelated data would, and the other six pairs
-differ in 6.5 to 7.4\,\%, as power-ups of the same cells do.
+differ in 6.5 to 7.4\,\%, as power-ups of the same cells do. The clean
+mean of 6.63\,\% lies within the 3 to 8\,\% reported for the start-up
+noise of SRAM cells~\cite{holcomb_2009_powerup, vanderleest_2012_efficient};
+with one board, four power-ups and one temperature, that says only that
+this SRAM behaves like those of the literature, not how much it varies.
 
 % analysis/esp32_rng/mqtt_tls_demo.py, offline mode; outcome as noted with
 % the results of the first campaign (secure session).
@@ -426,12 +749,50 @@ fixed fingerprint, known to anyone who has once read the pattern, and
 bounding what the other 12\,\% contribute would take many more power-ups
 and a model of the cells. The harvester is an architecture whose output is
 at least as strong as its best source, not a measured source of entropy.
-An offline demonstration of its intended use
-(\path{analysis/esp32_rng/mqtt_tls_demo.py}) expands a seed into a
-session key with HKDF-SHA256~\cite{krawczyk_2010_hkdf} and protects a
-message with AES-256-GCM, rejecting a replayed and a tampered message; it
-exercises the cryptography, and the key inherits the entropy of the seed
-without adding any.
+
+% analysis/esp32_rng/mqtt_tls_demo.py rerun on 2026-10-31 with
+% seeds_rep1.bin: determinism True, 130/256 bits, 61 B -> 77 B, wrong topic
+% and one flipped bit rejected. Nonce from os.urandom on the PC.
+The intended use was demonstrated off-line
+(\path{analysis/esp32_rng/mqtt_tls_demo.py}) for a generic connected node,
+a thermostat publishing telemetry. A 32-byte seed is expanded into a
+256-bit session key with HKDF-SHA256~\cite{krawczyk_2010_hkdf}, which
+first condenses the seed into a pseudorandom key and then expands it,
+\begin{equation}
+\mathrm{PRK} = \mathrm{HMAC}_H(\mathrm{salt}, \mathrm{seed}), \qquad
+K = \mathrm{HMAC}_H(\mathrm{PRK}, \mathrm{info} \,\|\, \texttt{0x01})_{1..L},
+\label{eq:esp32_hkdf}
+\end{equation}
+with $H$ = SHA-256, no salt (HKDF then uses a string of zeros of the hash
+length), $\mathrm{info} = \texttt{"tfm-mqtt-session"}$ and $L = 32$ bytes,
+one block because $L$ equals the hash length; changing
+$\mathrm{info}$ derives independent keys for other purposes from the same
+seed. The key drives AES-256-GCM with a 96-bit nonce and the topic
+\texttt{esp32/hvac/telemetry} as associated data, so that the 128-bit tag
+covers ciphertext and topic. On the first two seeds of the validation
+set, the same seed gives the same key, the two keys differ in 130 of 256
+bits, a 61-byte message makes the round trip, and decryption rejects the
+message presented under another topic and the message with one
+ciphertext bit flipped (calculated, on the PC). Two limits belong with
+that result. GCM alone does not reject a message replayed under the same
+topic, which needs a counter in the authenticated data, and the
+demonstration has none. And it takes its nonce from the operating system
+of the PC, not from the harvester; a repeated pair of key and nonce would
+break both the confidentiality and the authenticity of GCM, so on a
+device the nonce generator needs the same care as the key. The case the
+harvester was built for is a node that provisions its key in condition~D
+shortly after a cold boot, where Section~\ref{sec:esp32_90b} shows that,
+without the boot noise, the generator returns one of a few thousand
+outputs, the same on two chips; deriving keys through a key derivation
+function from a conditioned pool rather than from the raw register is the
+practice RFC~4086 recommends~\cite{eastlake_2005_rfc4086}. The
+demonstration does not close that case: it exercises the cryptography,
+and the key inherits the entropy of the seed without adding any. A second
+mode of the script, an MQTT session over TLS through the paho client that
+would take a live seed from the topic \texttt{esp32/harvester/seed}, was
+implemented and never run. It accepts any broker certificate and receives
+the seed over the network, so it shows the plumbing, not a design for
+establishing keys.
 
 \section{The ESP32 reference under SP 800-90B}
 \label{sec:esp32_90b}
@@ -444,7 +805,8 @@ estimators are applied here to the first three and to the first batch of
 the fourth, which together give nine repetitions of $10^6$ bits per
 condition, three on each of the three chips of the same model
 (ESP32-D0WD-V3). Two further captures with the radio off, of $3.52\times10^6$
-and $8.38\times10^6$ bits, were taken with the verifier firmware of
+and $8.38\times10^6$ bits, were taken on the first chip,
+ec:e3:34:9a:d1:18, with the verifier firmware of
 Chapter~\ref{ch:ch5_verification}. All
 thirty-eight were run through the \ac{NIST} reference implementation of the
 SP 800-90B estimators~\cite{nist_ea_github, turan_2018_sp80090b}
@@ -457,7 +819,8 @@ gives the outcome.
 \caption{The ESP32 generator under the SP 800-90B estimators \meas{}.
 Conditions A--D: nine repetitions of $10^6$ bits each, three on each of
 the three chips, mean and range over the repetitions; E and F: single
-captures of $3.5\times10^6$ and $8.4\times10^6$ bits. The ceiling is the
+captures of $3.5\times10^6$ and $8.4\times10^6$ bits on the first chip.
+In A and B the RF may have slept (see text). The ceiling is the
 highest value the most-common-value (MCV) estimator can return for a
 perfectly uniform source of that length at 99\,\% confidence; the non-IID
 figure is the minimum of the ten estimators of Section~6.3 of the
@@ -548,7 +911,8 @@ misjudge sources of that kind. The repetitions show that this is
 estimator behaviour and not a property of the conditions. The compression
 estimate has a standard deviation of 0.03 to 0.04 \emph{within} a
 condition, larger than the 0.013 that separates the four condition means,
-and a one-way analysis of variance on each of the eleven estimators finds
+and a one-way analysis of variance on each of the ten estimators and on
+their minimum finds
 no difference between conditions: the smallest $p$ is 0.045, for the
 MultiMCW predictor, whose condition means follow no physical order, and
 one value below 0.05 among eleven tests is what chance provides; it is
@@ -564,9 +928,38 @@ second illustration of the resolution effect: in the byte layout its
 limiting estimator is the $t$-tuple test at $t = 2$, which returns 7.39
 bits per byte because $10^6$ bytes hold too few of the 65\,536 possible
 pairs for the most frequent one to be representative, exactly as the MCV
-ceiling does at $t = 1$. No difference between Wi-Fi on, ADC on and
-neither is resolvable by any estimator with nine repetitions, and none
+ceiling does at $t = 1$. No difference between the four conditions is
+resolvable by any estimator with nine repetitions, and none
 is claimed.
+
+% docs/esp32_linea_base_90b.md, "Aviso del 10-11-2026" and "Repeticion con
+% la radio despierta"; results/entropia_90b.csv, rows 0928rd_*;
+% results/esp32_campana_rng/mac_f8b3b72a0928_radio_despierta/capture_log.csv
+For the radio, those thirty-six captures cannot carry that statement
+alone. As Section~\ref{sec:esp32_setup} explains, their firmware let an
+unassociated station sleep, so the RF may have been off during most of
+conditions A and B, and an analysis of variance that finds no condition
+effect then says nothing about the radio. The comparison rests on the
+fifth campaign: three cycles on the third chip with the corrected
+firmware, twelve captures of $10^6$ bits kept out of the analyses above.
+Their non-IID minimum is 0.862 in A, 0.834 in B, 0.845 in C and 0.858 in
+D (means of three, range 0.818 to 0.892 over the twelve) \meas{}. An
+analysis of variance between the four conditions gives $F(3, 8) = 1.09$,
+$p = 0.41$; the six captures with the radio against the six without,
+$p = 0.80$ (Welch); and the six with the radio against the twelve A and
+B captures of October on the same chip, $p = 0.91$. The IID track passes
+in all twelve, in both layouts. With the radio kept awake the battery
+still does not separate the conditions, and the figures sit at the
+ceiling it gives to ideal bits of this length ($0.839 \pm 0.021$,
+Section~\ref{sec:sim_90b}). The limits of that repeat are three. With
+three captures per condition and a spread of 0.01 to 0.03, a difference
+between conditions below about 0.04 would go unnoticed. It is one chip.
+And the RF itself was not measured: the only sign that it was on is the
+die sensor, with its step of 0.56~$^\circ$C, which read condition~B 2.2,
+1.1 and 1.2~$^\circ$C above the preceding C in the three cycles, against
+0.0~$^\circ$C in the three cycles of October on the same chip. That is
+compatible with a radio that dissipates now and did not then; it does
+not prove it.
 
 The restart test of Section~3.1.4 of the standard answers what the
 statistics above cannot: if a generator has no noise of its own, its
@@ -583,7 +976,12 @@ variants read a second time after starting the Wi-Fi as in conditions A
 and B, without associating to any network, and waiting 200~ms, with each
 of the two bootloaders; the third is a control that waits the same time
 without touching the radio, so that the read falls on the same scheduler
-tick. Table~\ref{tab:esp32_restart} gives the outcome.
+tick. These variants start the station with the default power-save
+settings, like the first four campaigns; here that does not weaken the
+result, because the PHY calibration inside \texttt{esp\_wifi\_start}
+keeps the radio on before the second read, and the firmware of
+Table~\ref{tab:esp32_fuentes}, which does keep the radio awake, shows
+that this exposure is enough. Table~\ref{tab:esp32_restart} gives the outcome.
 
 \begin{table}[htbp]
 \centering
@@ -615,8 +1013,9 @@ With the stock bootloader the generator passes in both layouts, and the
 1000 outputs differ from one another exactly as random data would: the
 mean Hamming distance between two restarts is 4096.0 bits of 8192,
 against $4096 \pm 45$ expected. Without the boot noise it fails
-decisively, and the data show why. Each restart is a window on one fixed
-sequence, read from a slightly different starting point: wherever the
+decisively, and the data show why. Each restart is a window on a fixed
+sequence (one of 87, according to the clock phase at which reading
+starts, as shown below), read from a slightly different starting point: wherever the
 beginning of one restart's output appears inside another's, displaced by
 a few 32-bit words, the whole overlap matches word for word, 5424 times
 without a single difference. The only thing that changes between restarts
@@ -624,8 +1023,8 @@ is the instant at which the application starts reading, which varies by a
 few thousand clock cycles from one boot to the next. That is worth between
 6.5 bits per restart, the bound of the standard from the most repeated
 output, and 10.8 bits if every starting point were equally likely, out of
-8192 bits read. With the radio and the ADC off the generator has no noise
-of its own, and Espressif's statement that its output is then
+8192 bits read. With the radio and the ADC off the generator shows no noise
+of its own in this read, and Espressif's statement that its output is then
 pseudo-random only~\cite{espressif_idf_random} is confirmed directly,
 which no statistical test on a continuous stream could do. Two
 consequences follow. The condition~D captures of
@@ -648,7 +1047,7 @@ read instant that varies as much (3824 against 5260 clock cycles among
 the restarts that share the tick), and it repeats exactly as at boot:
 760 distinct outputs, 5632 identical overlaps, about 1700 states. With so
 few states, the 797 restarts that share a tick in the radio variant would
-show about 180 repeats by timing alone; they show none. Without the
+show about 180 repeats by timing alone (calculated); they show none. Without the
 radio the generator receives no noise in its first 350~ms of operation;
 with the radio it does. What the test does not give is how much entropy
 per bit the radio delivers: the validated 0.83 bit per bit is the
@@ -665,16 +1064,26 @@ than that, the two chips repeat \emph{each other}. 256 distinct 1024-byte
 outputs occur on both, covering 352 and 347 of their 1000 restarts; 988
 of the third chip's outputs begin, at a whole number of 32-bit words,
 inside an output of the other, in 8369 overlaps without a single
-differing word; and the 3000 noise-free outputs of both chips and of a
-second firmware build fall into the same 87 groups, each holding outputs
-of all three. With the stock bootloader no output aligns with any other,
+differing word; and the 3000 noise-free outputs of both chips and of the
+first read of a second firmware build (the control of
+Table~\ref{tab:esp32_restart}) fall into the same 87 groups, each holding outputs
+of all three. Not every noise-free capture joins them. The first reads
+of the control of Table~\ref{tab:esp32_fuentes}, a third build, fall
+into 86 of the 87; but the first reads of the radio variant without boot
+noise, taken before the radio is started, form 774 groups of their own
+that align with none of the others, and in some builds the noise-free
+reads repeat exactly but never shifted. A word that did not last a whole
+number of APB cycles in those builds would produce this in the model of
+the next paragraph; it was not measured, and it stays unexplained. With the stock bootloader no output aligns with any other,
 within or across chips. Without the boot noise, the output of the two
 chips tested is therefore a deterministic function of a small starting
 point, and the same function on both: whoever has one chip and the
 firmware can precompute what another one returns. Two chips of one
 revision do not establish it for every ESP32.
 
-A dedicated firmware showed what selects that starting point. With the
+A dedicated firmware showed what selects that starting point. The
+restart firmwares, unlike the capture firmware, run the CPU at the
+default 160~MHz, two CPU cycles per cycle of the 80~MHz APB clock. With the
 boot noise removed and interrupts off, it reads 1024~bytes, waits a fixed
 number of instructions and reads again, the wait chosen per restart among
 four values. For the 204 pairs of restarts whose first read was
@@ -682,11 +1091,16 @@ identical, the second reads were identical when the wait was the same,
 shifted by exactly one 32-bit word when it was 174~CPU cycles longer
 (the time \texttt{esp\_fill\_random} spends per word), by exactly 100
 words when it was 17\,400 cycles longer, and unrelated when it was 2
-cycles longer, one APB cycle, in every pair. The generator, without
+cycles longer, one APB cycle, in every pair. The reading that fits all
+204 pairs is that the generator, without
 noise, steps with the APB clock from a fixed reset state, whether or not
-it is read, and its output depends only on the instant reading starts:
-the 87 groups are the 87 APB-cycle phases of a 174-cycle word, a property
-of this firmware and clock, not of the chip.
+it is read, so that its output depends only on the instant reading starts:
+the 87 groups would be the 87 APB-cycle phases of a 174-cycle word, a property
+of this firmware and clock, not of the chip. It is an inference from the
+output, not an observation of the state: \texttt{esp\_random()} returns
+the XOR of several reads of the register, and the test was made on one
+chip, with one binary and at 160~MHz only. At the 240~MHz of the capture
+firmware the number of phases would be another, and was not measured.
 
 \begin{table}[htbp]
 \centering
@@ -695,7 +1109,10 @@ removed: a first read at boot, one source, and a second read at a fixed
 800~ms. A source injects noise if the second reads stop being windows of
 the fixed sequence (overlaps) and never repeat. 300 restarts per variant,
 1000 for the ADC and the boot source, which also pass the restart test
-of the standard ($H_r$ / $H_c$ 0.864 / 0.877 and 0.840 / 0.842).}
+of the standard ($H_r$ / $H_c$ 0.864 / 0.877 and 0.840 / 0.842). A
+``yes'' is a lower bound, not a quantity: no repeat in 300 restarts
+excludes, at 95\,\% confidence, fewer than about $1.5\times10^4$ equally
+likely states, some 14 bits (calculated).}
 \label{tab:esp32_fuentes}
 \footnotesize
 \begin{tabular}{@{}lrrl@{}}
@@ -738,7 +1155,9 @@ a perfect source would at this length; the IID track of SP~800-90B, read
 with its calibration, finds the output indistinguishable from a
 full-entropy binary source; and the non-IID track credits 0.81 to
 0.92~bit per bit, with no difference between conditions or between chips
-that any estimator resolves. None of these figures distinguishes
+that any estimator resolves --- for the radio, on the strength of the
+fifth campaign, twelve captures on one chip with the RF kept awake,
+since in the other thirty-six it may have slept. None of these figures distinguishes
 condition~D, in which Espressif says the generator is pseudo-random, from
 condition~A, in which both documented sources are active.
 
@@ -747,7 +1166,9 @@ physical question rather than a statistical one: does the output repeat
 when the generator starts again from the same state? With the boot noise
 removed and the radio off it repeats, word for word, and repeats the same
 sequence on two different chips; with the radio, the boot source or the
-ADC converting, it does not. The generator has no noise of its own with the radio and the
+ADC converting, it does not. On the two chips tested, both ESP32-D0WD-V3,
+and over the 0.35 to 0.8~s after start-up that the tests cover, the
+generator shows no noise of its own with the radio and the
 ADC off, and the radio does inject noise into it. The SP~800-90B figures
 of condition~D are therefore the estimators' verdict on the deterministic
 continuation of a boot seed: a statistical figure, which cannot be
@@ -757,6 +1178,21 @@ much; for conditions A and C it shows that the ADC conversions do reach
 the generator, but by the manual's own rates the SAR path could not
 supply one bit of fresh noise per output bit at the rate the generator
 was read.
+
+Some measurements would still sharpen the picture of the ESP32 itself;
+they were left undone because none of them can change that conclusion.
+The SRAM source needs tens of power-ups, at several temperatures, to map
+the flip probability of each cell: both to bound what the unstable cells
+contribute and to dimension the error correction of a fuzzy extractor
+that would turn the stable cells into a device key, an SRAM \ac{PUF}
+binding each seed to its chip~\cite{holcomb_2009_powerup}. A temperature
+study needs a calibrated sensor and a climatic chamber, over
+$-20$ to $+85$~$^\circ$C. The seeds produced on the device should be
+captured and analysed, not only reproduced off-line. And the restart
+test, the one measurement that separated the conditions, should be
+repeated on a later chip such as the ESP32-S3, for whose generator the
+driver source codes a much lower read rate
+(Section~\ref{sec:esp32_periph}).
 
 What is missing is not a better test but a different kind of knowledge:
 a model of the source --- which physical process produces the randomness,

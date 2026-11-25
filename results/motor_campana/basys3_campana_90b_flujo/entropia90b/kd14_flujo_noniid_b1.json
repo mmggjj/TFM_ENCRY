@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_campana_90b_flujo/entropia90b/kd14_flujo_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_campana_90b_flujo/entropia90b/bits/kd14_flujo.bits 1",
+   "dateTimeStamp" : "20261117234821",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys3_campana_90b_flujo/entropia90b/bits/kd14_flujo.bits",
+   "sha256" : "276d625732eb1e9458e88ccfd1424f36dd51f3532c1fac5eb0c49379fd4efe05",
+   "testCases" : [
+      {
+         "hOriginal" : 0.98303062750697334,
+         "mcvEstimateMode" : 504628.0,
+         "mcvEstimatePHat" : 0.50462799999999997,
+         "mcvEstimatePU" : 0.5059158601244218,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.9061272830397572,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.98535890737434195,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.82919240878155176,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.93978015269195192,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.97012492137985884,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99226616804341072,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.9950358233284482,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.9836095862332952,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.98320005393233478,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.82919240878155176,
+         "hOriginal" : 0.82919240878155176,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

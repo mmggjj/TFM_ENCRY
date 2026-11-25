@@ -9,17 +9,30 @@
  * la cadena de analisis estadistico sea la misma para el motor y para el
  * propio ESP32.
  *
+ * El acceso al motor (mapa de registros, ordenes, plazos) esta en el
+ * componente motor_i2c, compartido con el medidor.
+ *
  * Reglas del proyecto: nada de credenciales, salida sin filtrar, y los
  * fallos se registran integros, nunca se descartan.
  *
  * Comandos por consola (UART 115200):
- *   id        lee ID y STATUS
- *   sembrar   ordena sembrar y espera
+ *   id        lee ID, VERSION, STATUS y DIAG
+ *   sembrar   espera al test de arranque, ordena sembrar y espera
+ *   borrar    baja las alarmas de salud (obliga a repetir el test de arranque)
  *   generar   pide una clave nueva, la provisiona (modo test) y la muestra
  *   reto N    hace N retos-respuesta con nonces de esp_random() y cuenta
  *   aleatorio N  vuelca N bloques de 32 bytes del DRBG al PC
- *   crudo N   vuelca N trozos del buffer de captura al PC
+ *   kd [N]    escribe CFG_KD (K_D = 2^N) y lo relee; sin N solo lo lee
+ *   crudo N   vuelca N trozos del buffer de captura al PC (4096 bits cada uno,
+ *             no contiguos entre si) con su tiempo de llenado
+ *   crudoq N  igual, pero sin tocar el bus mientras se llena el buffer
+ *             (espera fija tras la orden): para ver si el sondeo I2C modula
+ *             los anillos (docs/basys3.md, tarea 1)
+ *   flujo N   vuelca N bytes CONSECUTIVOS de bits crudos (captura continua,
+ *             registro FLUJO) en tramas C numeradas; si la FIFO del motor se
+ *             desborda o falla el bus, lo dice y la tira no vale
  *   esp N     vuelca N bloques de esp_random() al PC (comparacion)
+ *   cero      zeroiza el motor (clave, DRBG, RETO, ALEATORIO)
  */
 
 #include <stdio.h>
@@ -27,60 +40,22 @@
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2c_master.h"
+#include "esp_rom_sys.h"
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_rom_crc.h"
 #include "mbedtls/cipher.h"
 #include "mbedtls/cmac.h"
+#include "motor_i2c.h"
 
 static const char *TAG = "verificador";
-
-/* ---- mapa de registros (docs/mapa_registros.md) ---------------------- */
-#define MOTOR_DIR        0x30
-#define REG_ID           0x00
-#define REG_STATUS       0x02
-#define REG_CONTROL      0x03
-#define REG_CFG_KD       0x04
-#define REG_CFG_PAG      0x05
-#define REG_CLAVE        0x10
-#define REG_RETO         0x20
-#define REG_ETIQUETA     0x30
-#define REG_ALEATORIO    0x40
-#define REG_CAPTURA      0x80
-
-#define ST_SEMBRADO      (1u << 0)
-#define ST_OCUPADO       (1u << 1)
-#define ST_ALM_RCT       (1u << 2)
-#define ST_ALM_APT       (1u << 3)
-#define ST_CLAVE_VALIDA  (1u << 4)
-#define ST_CAPTURA_LLENA (1u << 5)
-#define ST_ETIQ_LISTA    (1u << 6)
-#define ST_MODO_TEST     (1u << 7)
-
-#define CTL_SEMBRAR      (1u << 0)
-#define CTL_GENERAR      (1u << 1)
-#define CTL_AUTENTICAR   (1u << 2)
-#define CTL_BORRAR_ALM   (1u << 3)
-#define CTL_CAPTURAR     (1u << 4)
-#define CTL_RESEMBRAR    (1u << 5)
-#define CTL_ALEATORIO    (1u << 6)
 
 /* ---- pines: I2C por defecto del ESP32 clasico ------------------------- */
 #define PIN_SDA          21
 #define PIN_SCL          22
-#define I2C_HZ           400000
-
-static i2c_master_bus_handle_t bus;
-static i2c_master_dev_handle_t motor;
 
 static uint8_t clave_provisionada[16];
 static bool hay_clave = false;
-
-/* Un fallo del bus no es un fallo criptografico, y el verificador existe
- * para contar los segundos. Cualquier acceso que falle lo marca aqui, y
- * quien cuente resultados separa los dos casos en vez de sumarlos. */
-static bool io_ok = true;
 
 /* Comparacion sin salida temprana. En este banco no hay adversario que
  * mida tiempos, pero es codigo criptografico y no cuesta nada. */
@@ -89,56 +64,6 @@ static bool iguales(const uint8_t *a, const uint8_t *b, size_t n)
     uint8_t d = 0;
     for (size_t i = 0; i < n; i++) d |= (uint8_t)(a[i] ^ b[i]);
     return d == 0;
-}
-
-/* ---- acceso a registros ---------------------------------------------- */
-static esp_err_t reg_escribir(uint8_t dir, const uint8_t *datos, size_t n)
-{
-    uint8_t buf[1 + 32];
-    if (n > 32) return ESP_ERR_INVALID_SIZE;
-    buf[0] = dir;
-    memcpy(buf + 1, datos, n);
-    esp_err_t e = i2c_master_transmit(motor, buf, 1 + n, 100);
-    if (e != ESP_OK) io_ok = false;
-    return e;
-}
-
-static esp_err_t reg_leer(uint8_t dir, uint8_t *datos, size_t n)
-{
-    esp_err_t e = i2c_master_transmit_receive(motor, &dir, 1, datos, n, 100);
-    if (e != ESP_OK) {
-        io_ok = false;
-        memset(datos, 0, n);   /* nunca dejar el buffer del llamante sin tocar */
-    }
-    return e;
-}
-
-static esp_err_t reg_escribir1(uint8_t dir, uint8_t v)
-{
-    return reg_escribir(dir, &v, 1);
-}
-
-static uint8_t leer_status(void)
-{
-    uint8_t s = 0;
-    /* Si la lectura falla se devuelve 0, no 0xFF: con 0xFF quedaban a uno
-     * sembrado, clave_valida, etiqueta_lista y modo_test, o sea que un bus
-     * caido se leia como "todo listo". Falla cerrado. */
-    reg_leer(REG_STATUS, &s, 1);
-    return s;
-}
-
-/* Sondea hasta que baje "ocupado". Devuelve el STATUS final. */
-static uint8_t esperar_libre(int max_ms)
-{
-    uint8_t s;
-    for (int t = 0; t < max_ms; t += 2) {
-        s = leer_status();
-        if (!(s & ST_OCUPADO)) return s;
-        vTaskDelay(pdMS_TO_TICKS(2));
-    }
-    ESP_LOGE(TAG, "el motor no se libera en %d ms", max_ms);
-    return leer_status();
 }
 
 static void imprimir_hex(const char *etiqueta, const uint8_t *d, size_t n)
@@ -160,33 +85,89 @@ static void trama_pc(char tipo, const uint8_t *d, size_t n)
 /* ---- comandos --------------------------------------------------------- */
 static void cmd_id(void)
 {
-    uint8_t id = 0, st;
-    if (reg_leer(REG_ID, &id, 1) != ESP_OK) { ESP_LOGE(TAG, "sin respuesta I2C"); return; }
-    if (id != 0xA5) ESP_LOGE(TAG, "ID inesperado 0x%02x, se esperaba 0xA5", id);
-    st = leer_status();
-    printf("id 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d alm_apt=%d "
-           "clave=%d captura=%d etiqueta=%d test=%d\n", id, st,
+    uint8_t id = 0, ver = 0, diag = 0, st;
+    if (motor_reg_leer(REG_ID, &id, 1) != ESP_OK) { ESP_LOGE(TAG, "sin respuesta I2C"); return; }
+    if (id != MOTOR_ID) ESP_LOGE(TAG, "ID inesperado 0x%02x, se esperaba 0x%02x", id, MOTOR_ID);
+    motor_reg_leer(REG_VERSION, &ver, 1);
+    if (ver < MOTOR_VERSION_MIN) ESP_LOGE(TAG, "VERSION 0x%02x: motor sin DIAG ni test de arranque", ver);
+    motor_reg_leer(REG_DIAG, &diag, 1);
+    st = motor_status();
+    printf("id 0x%02x version 0x%02x status 0x%02x sembrado=%d ocupado=%d alm_rct=%d "
+           "alm_apt=%d clave=%d captura=%d etiqueta=%d test=%d arrancado=%d rechazada=%d agotado=%d "
+           "solo_fuente=%d\n",
+           id, ver, st,
            !!(st & ST_SEMBRADO), !!(st & ST_OCUPADO), !!(st & ST_ALM_RCT),
            !!(st & ST_ALM_APT), !!(st & ST_CLAVE_VALIDA), !!(st & ST_CAPTURA_LLENA),
-           !!(st & ST_ETIQ_LISTA), !!(st & ST_MODO_TEST));
+           !!(st & ST_ETIQ_LISTA), !!(st & ST_MODO_TEST),
+           !!(diag & DG_ARRANCADO), !!(diag & DG_RECHAZADA), !!(diag & DG_AGOTADO),
+           !!(diag & DG_SOLO_FUENTE));
+}
+
+/* Zeroizacion del motor: clave, estado del DRBG, RETO y ALEATORIO a cero.
+ * La clave provisionada deja de valer. */
+static void cmd_cero(void)
+{
+    uint8_t st;
+    esp_err_t e = motor_orden(CTL_BORRAR_TODO, T_ORDEN_MS, &st);
+    hay_clave = false;
+    printf("cero: %s%s\n", e == ESP_OK ? "ok, motor borrado; hay que sembrar de nuevo" : motor_texto_err(e),
+           (e == ESP_OK && ((st & ST_SEMBRADO) || (st & ST_CLAVE_VALIDA))) ? " PERO STATUS sigue con estado" : "");
 }
 
 static void cmd_sembrar(void)
 {
-    reg_escribir1(REG_CONTROL, CTL_SEMBRAR);
-    uint8_t st = esperar_libre(5000);
-    printf("sembrar: %s%s%s\n", (st & ST_SEMBRADO) ? "ok" : "FALLO",
-           (st & ST_ALM_RCT) ? " ALARMA_RCT" : "", (st & ST_ALM_APT) ? " ALARMA_APT" : "");
+    uint8_t st = 0, diag = 0;
+    /* La variante de la Basys 2 no tiene criptografia: se dice antes de
+     * esperar el test de arranque, que puede tardar minutos. */
+    if (motor_reg_leer(REG_DIAG, &diag, 1) != ESP_OK) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
+    if (diag & DG_SOLO_FUENTE) {
+        printf("sembrar: el motor no tiene criptografia (DIAG.solo_fuente): solo flujo\n");
+        return;
+    }
+    /* El motor no siembra hasta pasar el test de arranque: 1024 muestras sin
+     * alarma desde el reset o el ultimo borrado. */
+    /* Los plazos salen del CFG_KD actual: con el anillo lento de la FPGA y
+     * CFG_KD = 24 el test de arranque puede tardar minutos. */
+    const uint32_t plazo = motor_plazo_arranque_ms();
+    if (plazo > T_ARRANQUE_MS) printf("sembrar: esperando el test de arranque (hasta %" PRIu32 " s)\n", plazo / 1000);
+    esp_err_t e = motor_esperar_arranque(plazo, &diag);
+    if (e == ESP_FAIL) { printf("sembrar: FALLO, ERROR I2C\n"); return; }
+    if (e != ESP_OK) {
+        st = motor_status();
+        printf("sembrar: FALLO, el test de arranque no pasa%s\n", motor_texto_alarmas(st));
+        return;
+    }
+    e = motor_orden(CTL_SEMBRAR, motor_plazo_siembra_ms(), &st);
+    printf("sembrar: %s%s\n",
+           (e == ESP_OK && (st & ST_SEMBRADO)) ? "ok" : motor_texto_err(e), motor_texto_alarmas(st));
+}
+
+static void cmd_borrar(void)
+{
+    if (motor_reg_escribir1(REG_CONTROL, CTL_BORRAR_ALM) != ESP_OK) { printf("borrar: ERROR I2C\n"); return; }
+    uint8_t st = motor_status();
+    printf("borrar: alarmas%s; hay que repetir el test de arranque\n",
+           motor_texto_alarmas(st)[0] ? motor_texto_alarmas(st) : " bajadas");
 }
 
 static void cmd_generar(void)
 {
-    reg_escribir1(REG_CONTROL, CTL_GENERAR);
-    uint8_t st = esperar_libre(2000);
-    if (!(st & ST_CLAVE_VALIDA)) { printf("generar: FALLO, sin clave valida\n"); return; }
+    uint8_t st;
+    esp_err_t e = motor_orden(CTL_GENERAR, T_ORDEN_MS, &st);
+    if (e != ESP_OK) {
+        printf("generar: FALLO, %s%s\n", motor_texto_err(e), motor_texto_alarmas(st));
+        /* Rechazada: la clave del motor no cambio. En otro caso ya no se sabe. */
+        if (e != ESP_ERR_INVALID_STATE) hay_clave = false;
+        return;
+    }
+    if (!(st & ST_CLAVE_VALIDA)) {
+        printf("generar: FALLO, sin clave valida\n");
+        hay_clave = false;
+        return;
+    }
     if (st & ST_MODO_TEST) {
         static const uint8_t cero[16] = {0};
-        if (reg_leer(REG_CLAVE, clave_provisionada, 16) != ESP_OK) {
+        if (motor_reg_leer(REG_CLAVE, clave_provisionada, 16) != ESP_OK) {
             printf("generar: ERROR I2C al leer la clave\n");
             hay_clave = false;
             return;
@@ -195,6 +176,9 @@ static void cmd_generar(void)
         imprimir_hex("clave", clave_provisionada, 16);
         printf("provision: %s\n", hay_clave ? "ok" : "FALLO, clave nula");
     } else {
+        /* El motor cambio de clave y la provisionada ya no vale: seguir con
+         * ella contaria todos los retos como fallos criptograficos. */
+        hay_clave = false;
         printf("generar: ok, clave no exportable sin modo test\n");
     }
 }
@@ -205,16 +189,25 @@ static void cmd_aleatorio(int n)
 {
     uint8_t b[32];
     for (int i = 0; i < n; i++) {
-        reg_escribir1(REG_CONTROL, CTL_ALEATORIO);
-        uint8_t st = esperar_libre(500);
-        if (!(st & ST_SEMBRADO)) { printf("aleatorio: el motor no esta sembrado\n"); return; }
-        reg_leer(REG_ALEATORIO, b, 32);
+        /* Un rechazo o un fallo de bus no pueden llegar al PC con un CRC
+         * valido y entrar en la estadistica. */
+        esp_err_t e = motor_aleatorio(b);
+        if (e != ESP_OK) {
+            uint8_t st = motor_status();
+            printf("aleatorio: FALLO en el bloque %d, %s%s%s\n", i, motor_texto_err(e),
+                   (st & ST_SEMBRADO) ? "" : " (sin sembrar)", motor_texto_alarmas(st));
+            return;
+        }
         trama_pc('D', b, 32);
     }
 }
 
+/* Cuentas del ultimo cmd_reto, para el banco en host. */
+static struct { int aciertos, fallos, errores; } ult_reto;
+
 static void cmd_reto(int n)
 {
+    ult_reto.aciertos = ult_reto.fallos = ult_reto.errores = 0;
     if (!hay_clave) { printf("reto: primero 'generar' en modo test\n"); return; }
     const mbedtls_cipher_info_t *ci = mbedtls_cipher_info_from_type(MBEDTLS_CIPHER_AES_128_ECB);
     if (ci == NULL) {
@@ -227,21 +220,26 @@ static void cmd_reto(int n)
     int aciertos = 0, fallos = 0, errores = 0;
     for (int i = 0; i < n; i++) {
         uint8_t nonce[16] = {0}, etiqueta[16] = {0}, esperada[16] = {0};
-        /* El nonce sale del RNG del ESP32: aqui solo hace falta que no se
-         * repita, no que sea impredecible. No es material de clave. */
+        /* En este banco basta con que el nonce no se repita. En un producto
+         * tiene que ser impredecible, o se pueden pedir respuestas por
+         * adelantado: sin radio ni ruido de arranque esp_fill_random no lo
+         * es (docs/esp32_reinicios.md, seccion 8). */
         esp_fill_random(nonce, 16);
-        io_ok = true;
-        reg_escribir(REG_RETO, nonce, 16);
-        reg_escribir1(REG_CONTROL, CTL_AUTENTICAR);
-        uint8_t st = esperar_libre(500);
-        reg_leer(REG_ETIQUETA, etiqueta, 16);
+        motor_io_reiniciar();
+        uint8_t st = 0;
+        esp_err_t e = ESP_FAIL;
+        if (motor_reg_escribir(REG_RETO, nonce, 16) == ESP_OK)
+            e = motor_orden(CTL_AUTENTICAR, T_ORDEN_MS, &st);
+        motor_reg_leer(REG_ETIQUETA, etiqueta, 16);
+        /* Sin respuesta tampoco es criptografia. */
+        bool bus_ok = motor_io_ok() && e != ESP_ERR_TIMEOUT;
         int r = mbedtls_cipher_cmac(ci, clave_provisionada, 128, nonce, 16, esperada);
         if (r != 0) {
             printf("reto: mbedtls_cipher_cmac fallo (%d); el roto es el "
                    "verificador, no el motor\n", r);
             return;
         }
-        if (!io_ok) {
+        if (!bus_ok) {
             errores++;
             imprimir_hex("ERROR I2C nonce", nonce, 16);
         } else if (!(st & ST_ETIQ_LISTA)) {
@@ -259,25 +257,144 @@ static void cmd_reto(int n)
     }
     printf("reto-respuesta: %d aciertos, %d fallos criptograficos, "
            "%d errores de bus, de %d\n", aciertos, fallos, errores, n);
+    ult_reto.aciertos = aciertos;
+    ult_reto.fallos = fallos;
+    ult_reto.errores = errores;
 }
 
-static void cmd_crudo(int n)
+static void cmd_kd(int v)
+{
+    uint8_t leido = 0xff;
+    motor_io_reiniciar();
+    if (v == -1) {                      /* "kd" solo: lo lee */
+        motor_reg_leer(REG_CFG_KD, &leido, 1);
+        if (!motor_io_ok()) printf("kd: ERROR I2C\n");
+        else printf("kd leido %u\n", leido);
+        return;
+    }
+    if (v < 0 || v > (int)MOTOR_KD_MAX) { printf("kd: fuera de rango (0 a %u)\n", MOTOR_KD_MAX); return; }
+    motor_reg_escribir1(REG_CFG_KD, (uint8_t)v);
+    motor_reg_leer(REG_CFG_KD, &leido, 1);
+    if (!motor_io_ok()) { printf("kd: ERROR I2C\n"); return; }
+    /* Con una orden en curso el motor ignora la escritura. */
+    printf("kd %d leido %u %s\n", v, leido, leido == v ? "ok" : "IGNORADO");
+}
+
+static void cmd_crudo(int n, bool callado)
 {
     uint8_t trozo[512];
+    uint8_t kd = MOTOR_KD_MAX;
+    /* Sin modo test CAPTURA se lee como ceros: saldrian tramas de ceros con
+     * CRC valido. */
+    if (!(motor_status() & ST_MODO_TEST)) { printf("crudo: CAPTURA solo se lee en modo test\n"); return; }
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    const uint32_t plazo = motor_plazo_bits_ms(4096, 2000);
+    /* Callado: 10 ns por periodo de ro2 (el doble del medido) mas 200 us. */
+    const uint64_t espera_us = ((uint64_t)4096 << (kd > MOTOR_KD_MAX ? MOTOR_KD_MAX : kd)) / 100 + 200;
     for (int t = 0; t < n; t++) {
-        reg_escribir1(REG_CONTROL, CTL_CAPTURAR);
-        uint8_t st = 0;
-        for (int k = 0; k < 2000 && !(st & ST_CAPTURA_LLENA); k++) {
-            st = leer_status();
-            if (!(st & ST_CAPTURA_LLENA)) vTaskDelay(1);
+        motor_io_reiniciar();
+        motor_reg_escribir1(REG_CONTROL, CTL_CAPTURAR);
+        if (callado) {
+            if (espera_us < 20000) esp_rom_delay_us((uint32_t)espera_us);
+            else vTaskDelay(pdMS_TO_TICKS(espera_us / 1000 + 1));
         }
-        if (!(st & ST_CAPTURA_LLENA)) { printf("crudo: captura no llena\n"); return; }
+        uint8_t diag = 0;
+        motor_reg_leer(REG_DIAG, &diag, 1);
+        if (diag & DG_RECHAZADA) { printf("crudo: captura rechazada (motor ocupado?)\n"); return; }
+        const TickType_t t0 = xTaskGetTickCount();
+        uint8_t st = motor_status();
+        while (!(st & ST_CAPTURA_LLENA)) {
+            if (xTaskGetTickCount() - t0 >= pdMS_TO_TICKS(plazo)) break;
+            vTaskDelay(pdMS_TO_TICKS(plazo > 10000 ? 10 : 1));
+            st = motor_status();
+        }
+        const uint32_t ms = (uint32_t)((xTaskGetTickCount() - t0) * portTICK_PERIOD_MS);
+        if (!(st & ST_CAPTURA_LLENA)) { printf("crudo: captura no llena en %" PRIu32 " ms (kd %u)\n", ms, kd); return; }
         for (uint8_t pag = 0; pag < 4; pag++) {
-            reg_escribir1(REG_CFG_PAG, pag);
-            reg_leer(REG_CAPTURA, trozo + 128 * pag, 128);
+            motor_reg_escribir1(REG_CFG_PAG, pag);
+            motor_reg_leer(REG_CAPTURA, trozo + 128 * pag, 128);
         }
+        if (!motor_io_ok()) { printf("crudo: ERROR I2C en el trozo %d, no se envia\n", t); return; }
+        /* El tiempo de llenado da la tasa de bits: 4096 / ms, resolucion
+         * de un tick (1 ms) mas el sondeo. */
+        printf("crudo %d kd %u ms %" PRIu32 "\n", t, kd, ms);
         trama_pc('R', trozo, 512);
     }
+}
+
+/* Captura continua (docs/captura_continua.md): el motor mete los bits
+ * crudos en una FIFO y aqui se vacia mientras se llena. Cada trama C lleva
+ * su numero (4 bytes, bajo primero) y hasta 128 bytes de la tira. La tira
+ * solo vale si acaba con "flujo fin ... ok": el PC no da por buena una
+ * captura cortada. El cuello es esta UART: a 115200 salen unos 5 kB/s. */
+#define FLUJO_TRAMA 128
+static struct { uint32_t bytes; bool ok; } ult_flujo;
+
+static void cmd_flujo(int n_bytes)
+{
+    uint8_t buf[1 + MOTOR_FLUJO_MAX], trama[4 + FLUJO_TRAMA];
+    uint8_t kd = MOTOR_KD_MAX, fl = 0, diag = 0;
+    ult_flujo.bytes = 0;
+    ult_flujo.ok = false;
+    if (n_bytes < 1) { printf("flujo: N bytes, N >= 1\n"); return; }
+    motor_io_reiniciar();
+    const uint8_t st = motor_status();
+    if (!motor_io_ok()) { printf("flujo: ERROR I2C al arrancar\n"); return; }
+    if (!(st & ST_MODO_TEST)) { printf("flujo: solo en modo test\n"); return; }
+    motor_reg_leer(REG_CFG_KD, &kd, 1);
+    motor_reg_escribir1(REG_FLUJO, FL_ACTIVO);
+    motor_reg_leer(REG_DIAG, &diag, 1);
+    motor_reg_leer(REG_FLUJO, &fl, 1);
+    if (!motor_io_ok()) { printf("flujo: ERROR I2C al arrancar\n"); return; }
+    if ((diag & DG_RECHAZADA) || !(fl & FL_ACTIVO)) {
+        printf("flujo: rechazado (motor ocupado, captura en curso, CFG_KD bajo o motor sin FLUJO)\n");
+        return;
+    }
+    const uint32_t plazo = motor_plazo_bits_ms(8 * 32, 2000);
+    printf("flujo inicio kd %u bytes %d\n", kd, n_bytes);
+    const uint32_t pedidos = (uint32_t)n_bytes;
+    uint32_t total = 0, seq = 0;
+    size_t en_trama = 0;
+    const char *error = NULL;
+    const TickType_t t0 = xTaskGetTickCount();
+    TickType_t t_ult = t0;
+    while (total < pedidos) {
+        motor_reg_leer(REG_FLUJO_N, buf, sizeof buf);
+        if (!motor_io_ok()) { error = "ERROR I2C"; break; }
+        const uint8_t n = buf[0];
+        if (n > MOTOR_FLUJO_MAX) { error = "FLUJO_N fuera de rango"; break; }
+        for (uint8_t i = 0; i < n && total < pedidos; i++) {
+            trama[4 + en_trama++] = buf[1 + i];
+            total++;
+            if (en_trama == FLUJO_TRAMA || total == pedidos) {
+                trama[0] = (uint8_t)seq; trama[1] = (uint8_t)(seq >> 8);
+                trama[2] = (uint8_t)(seq >> 16); trama[3] = (uint8_t)(seq >> 24);
+                trama_pc('C', trama, 4 + en_trama);
+                seq++;
+                en_trama = 0;
+            }
+        }
+        if (n) t_ult = xTaskGetTickCount();
+        if (n < MOTOR_FLUJO_MAX && total < pedidos) {      /* FIFO vacia: mirar como va y ceder */
+            motor_reg_leer(REG_FLUJO, &fl, 1);
+            if (!motor_io_ok()) { error = "ERROR I2C"; break; }
+            if (fl & FL_DESBORDADO) { error = "DESBORDADO (el maestro no vacia a tiempo: subir CFG_KD)"; break; }
+            if (!(fl & FL_ACTIVO)) { error = "el motor paro el flujo (modo test?)"; break; }
+            if (xTaskGetTickCount() - t_ult >= pdMS_TO_TICKS(plazo)) { error = "sin datos"; break; }
+            vTaskDelay(1);
+        }
+    }
+    const uint32_t ms = (uint32_t)((xTaskGetTickCount() - t0) * portTICK_PERIOD_MS);
+    motor_reg_escribir1(REG_FLUJO, 0);
+    ult_flujo.bytes = total;
+    if (error) {
+        printf("flujo: %s tras %" PRIu32 " bytes (kd %u), la tira no vale\n", error, total, kd);
+        return;
+    }
+    ult_flujo.ok = true;
+    /* bytes * 8 * 2^kd / ms da la frecuencia de ro2, con la resolucion del
+     * tick sobre toda la captura. */
+    printf("flujo fin bytes %" PRIu32 " kd %u ms %" PRIu32 " ok\n", total, kd, ms);
 }
 
 static void cmd_esp(int n)
@@ -293,38 +410,50 @@ static void cmd_esp(int n)
 }
 
 /* ---- consola minima --------------------------------------------------- */
+/* Lee una linea acumulando caracter a caracter: con el stdin no bloqueante
+ * de ESP-IDF, fgets devuelve trozos cuando los bytes de una orden llegan
+ * con huecos por el USB-serie (visto en el medidor en placa: 'lectura 1'
+ * llego como "le", "ctu", "r", "a"). En QEMU la linea llega entera. */
+static bool leer_linea(char *linea, size_t n)
+{
+    static size_t pos;
+    int c;
+    while ((c = fgetc(stdin)) != EOF) {
+        if (c == '\r') continue;
+        if (c == '\n') { linea[pos] = '\0'; pos = 0; return true; }
+        if (pos + 1 < n) linea[pos++] = (char)c;
+    }
+    clearerr(stdin);
+    return false;
+}
+
 static void bucle_consola(void)
 {
     char linea[64];
-    printf("verificador listo. comandos: id sembrar generar reto N aleatorio N crudo N esp N\n");
+    printf("verificador listo. comandos: id sembrar borrar generar reto N aleatorio N kd N crudo N crudoq N flujo N esp N cero\n");
     for (;;) {
-        if (!fgets(linea, sizeof linea, stdin)) { vTaskDelay(pdMS_TO_TICKS(50)); continue; }
+        if (!leer_linea(linea, sizeof linea)) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
         char cmd[16] = {0}; int arg = 1;
-        sscanf(linea, "%15s %d", cmd, &arg);
+        const int campos = sscanf(linea, "%15s %d", cmd, &arg);
         if      (!strcmp(cmd, "id"))      cmd_id();
         else if (!strcmp(cmd, "sembrar")) cmd_sembrar();
+        else if (!strcmp(cmd, "borrar"))  cmd_borrar();
         else if (!strcmp(cmd, "generar")) cmd_generar();
         else if (!strcmp(cmd, "reto"))    cmd_reto(arg);
         else if (!strcmp(cmd, "aleatorio")) cmd_aleatorio(arg);
-        else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg);
+        else if (!strcmp(cmd, "kd"))      cmd_kd(campos >= 2 ? arg : -1);
+        else if (!strcmp(cmd, "crudo"))   cmd_crudo(arg, false);
+        else if (!strcmp(cmd, "crudoq"))  cmd_crudo(arg, true);
+        else if (!strcmp(cmd, "flujo"))   cmd_flujo(arg);
         else if (!strcmp(cmd, "esp"))     cmd_esp(arg);
+        else if (!strcmp(cmd, "cero"))    cmd_cero();
         else if (cmd[0])                  printf("comando desconocido: %s\n", cmd);
     }
 }
 
 void app_main(void)
 {
-    i2c_master_bus_config_t bcfg = {
-        .i2c_port = I2C_NUM_0, .sda_io_num = PIN_SDA, .scl_io_num = PIN_SCL,
-        .clk_source = I2C_CLK_SRC_DEFAULT, .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = true,
-    };
-    ESP_ERROR_CHECK(i2c_new_master_bus(&bcfg, &bus));
-    i2c_device_config_t dcfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7, .device_address = MOTOR_DIR,
-        .scl_speed_hz = I2C_HZ,
-    };
-    ESP_ERROR_CHECK(i2c_master_bus_add_device(bus, &dcfg, &motor));
+    ESP_ERROR_CHECK(motor_abrir(0, PIN_SDA, PIN_SCL));
     cmd_id();
     bucle_consola();
 }

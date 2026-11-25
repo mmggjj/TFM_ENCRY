@@ -1,0 +1,178 @@
+    0.000 # medidor en placa, puerto COM25, 2026-10-28 15:07
+    0.000 
+# 1) arranque limpio
+    0.000 > [reinicio fisico por RTS]
+ESP-ROM:esp32c3-api1-20210207
+Build:Feb  7 2021
+rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5820,len:0x1820
+load:0x403cc710,len:0xbd0
+load:0x403ce710,len:0x2f5c
+entry 0x403cc71a
+[0;32mI (30) boot: ESP-IDF v5.3.5-1057-g5a4288e8ffc 2nd stage bootloader[0m
+[0;32mI (30) boot: compile time Oct 28 2026 14:58:28[0m
+[0;32mI (31) boot: chip revision: v0.3[0m
+[0;32mI (35) boot: efuse block revision: v1.1[0m
+[0;32mI (39) boot.esp32c3: SPI Speed      : 80MHz[0m
+[0;32mI (44) boot.esp32c3: SPI Mode       : DIO[0m
+[0;32mI (49) boot.esp32c3: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (59) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (70) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (85) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3c040020 size=0e114h ( 57620) map[0m
+[0;32mI (114) esp_image: segment 1: paddr=0001e13c vaddr=3fc8ca00 size=01918h (  6424) load[0m
+[0;32mI (116) esp_image: segment 2: paddr=0001fa5c vaddr=40380000 size=005bch (  1468) load[0m
+[0;32mI (122) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=38944h (231748) map[0m
+[0;32mI (168) esp_image: segment 4: paddr=0005896c vaddr=403805bc size=0c330h ( 49968) load[0m
+[0;32mI (181) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (181) boot: Disabling RNG early entropy source...[0m
+clave recuperada de la NVS
+id 0xa5 version 0x03 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=0 rechazada=0 agotado=0 clave_equipo=1 bloques_rng=0 arranques=12 pila_libre=11700
+medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar
+    0.346   [ok ] el firmware arranca y abre la consola
+    0.346 > olvidar
+olvidar: clave borrada de la RAM y de la NVS
+    0.361 > id
+id 0xa5 version 0x03 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=1 rechazada=0 agotado=0 clave_equipo=0 bloques_rng=0 arranques=12 pila_libre=11100
+    0.391   [ok ] id: motor (simulado) version 0x03
+    0.391 
+# 2) sembrar y generar la clave
+    0.391 > sembrar
+sembrar: ok
+    0.420   [ok ] sembrar en 0.03 s
+    0.421 > clave
+clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
+    0.583   [ok ] clave P-256 generada y guardada en 0.162 s
+    0.583 
+# 3) publica, csr y lecturas firmadas
+    0.583 > publica
+01070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
+FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
+    0.616   [ok ] publica anunciada (trama P)
+    0.617 > csr
+-----BEGIN CERTIFICATE REQUEST-----
+MIHeMIGFAgEAMCMxITAfBgNVBAMMGG1lZGlkb3ItODRmNzAzNjc4NGE0MDAwMDBZ
+MBMGByqGSM49AgEGCCqGSM49AwEHA0IABHOJKm6XQKkhWE9kxtQtoQAXAdQsd1Lj
+R6g491hfLEcILIoWZP799ViQBnNDAUD/YQKZR29OXhRFPvToVdbE6mmgADAKBggq
+hkjOPQQDAgNIADBFAiEAo3KQfdpH+sX4PE/c5mu4Toa++KUae/Ck5hDnSNtBuK8C
+IBBMJ3J7oMwveabFhrh4rOAZefnF3rwOa5ibbJ3x92gw
+-----END CERTIFICATE REQUEST-----
+    0.801   [ok ] CSR en 0.184 s
+    0.801 > lectura 5
+FL005f84f7036784a400000c00000100000000000000000000041a30450220707d4845f859e48ee52b9734e7da1137d609fa9535f9c3cff748aef472c67a1c02210096afc6bdcbeed75ac059f597d153e2aad3c64a74631128fbf077f1cf80f7690c565d08dd
+FL005e84f7036784a400000c00000200000001000000000000044c30440220293b2c12649612bcec89f671e0de4927c3ad589a73808844e3903a63ef2d857b0220175efe9ee0f19874a553a57cd4852f7344109cfc83791187553b70cf6eb439f1c1e5a1e1
+FL005e84f7036784a400000c00000300000002000000000000047e3044022034bc27d34a1820d25ac7c629dc909a6ebe99356a43a610362722a48dcad24360022046c6cb30d07638f813acf3e45e4e0d1bc2bd51b69ec6e7044e9833476ea43c525d8452e3
+FL005f84f7036784a400000c0000040000000300000001000004b03045022034c7133362c6bcdff9a0bbcd8f8ff58ee726897884f02b99996e9e323e51164502210092d4f756b98b3db4e5040b3d9981331f13506c695031ce8769f7caf4fb1647e2172bc54a
+FL005f84f7036784a400000c0000050000000500000001000004e230450220388db4a420bbd5ef94bab8f104685d297741bd47de2545855d47da66db146620022100c6adae2cf5956b4540de26b5384b1b8e48f44c4f81422cb06b20de5d6f6647ed92309bc6
+   13.430   [ok ] 5 lecturas firmadas (intervalo 1 s): 12.63 s en total
+   13.431 > lectura 1
+FL006084f7036784a400000c0000060000000d00000004000005143046022100a651da2b09bb3a5f0eca2928b9f2dae599cad26e3827ff50da5dba77d2fcddc50221008e368e5707e0d911fefe0129377f42e836fc80b227b6efbf1844e40ff5941d53da342745
+   13.609   [ok ] una lectura firmada en 178 ms (ida y vuelta serie incluida)
+   13.609 
+# 4) reinicio fisico: la clave vuelve de la NVS
+   13.609 > [reinicio fisico por RTS]
+ESP-ROM:esp32c3-api1-20210207
+Build:Feb  7 2021
+rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5820,len:0x1820
+load:0x403cc710,len:0xbd0
+load:0x403ce710,len:0x2f5c
+entry 0x403cc71a
+[0;32mI (30) boot: ESP-IDF v5.3.5-1057-g5a4288e8ffc 2nd stage bootloader[0m
+[0;32mI (30) boot: compile time Oct 28 2026 14:58:28[0m
+[0;32mI (31) boot: chip revision: v0.3[0m
+[0;32mI (35) boot: efuse block revision: v1.1[0m
+[0;32mI (39) boot.esp32c3: SPI Speed      : 80MHz[0m
+[0;32mI (44) boot.esp32c3: SPI Mode       : DIO[0m
+[0;32mI (49) boot.esp32c3: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (59) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (70) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (85) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3c040020 size=0e114h ( 57620) map[0m
+[0;32mI (114) esp_image: segment 1: paddr=0001e13c vaddr=3fc8ca00 size=01918h (  6424) load[0m
+[0;32mI (116) esp_image: segment 2: paddr=0001fa5c vaddr=40380000 size=005bch (  1468) load[0m
+[0;32mI (122) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=38944h (231748) map[0m
+[0;32mI (168) esp_image: segment 4: paddr=0005896c vaddr=403805bc size=0c330h ( 49968) load[0m
+[0;32mI (181) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (181) boot: Disabling RNG early entropy source...[0m
+clave recuperada de la NVS
+id 0xa5 version 0x03 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=0 rechazada=0 agotado=0 clave_equipo=1 bloques_rng=0 arranques=13 pila_libre=11700
+medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar
+   13.955   [ok ] clave recuperada de la NVS al arrancar
+   13.955 > id
+id 0xa5 version 0x03 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=1 rechazada=0 agotado=0 clave_equipo=1 bloques_rng=0 arranques=13 pila_libre=11100
+   13.980   [ok ] el contador de arranques en NVS sube: 12 -> 13
+   13.980 > publica
+FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
+   14.005   [ok ] la publica es la misma de antes del reinicio
+   14.006 > lectura 1
+FL005e84f7036784a400000d00000100000000000000000000041a304402207cf199a5c86c7e9719491fac56fc3ec3b706f99b00d7e827b1bb9fd9001134ae02207a53f86172ca4688a38863523143715f0d21ab8c9f9a64d7f7971098494d2d785ebaadcf
+   14.175   [ok ] la primera lectura tras el reinicio supera a la ultima de antes: 0x0c000006 -> 0x0d000001
+   14.175 
+# 5) olvidar y reinicio: sin clave no hay lecturas
+   14.175 > olvidar
+olvidar: clave borrada de la RAM y de la NVS
+   14.189 > [reinicio fisico por RTS]
+ESP-ROM:esp32c3-api1-20210207
+Build:Feb  7 2021
+rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5820,len:0x1820
+load:0x403cc710,len:0xbd0
+load:0x403ce710,len:0x2f5c
+entry 0x403cc71a
+[0;32mI (30) boot: ESP-IDF v5.3.5-1057-g5a4288e8ffc 2nd stage bootloader[0m
+[0;32mI (30) boot: compile time Oct 28 2026 14:58:28[0m
+[0;32mI (31) boot: chip revision: v0.3[0m
+[0;32mI (35) boot: efuse block revision: v1.1[0m
+[0;32mI (39) boot.esp32c3: SPI Speed      : 80MHz[0m
+[0;32mI (44) boot.esp32c3: SPI Mode       : DIO[0m
+[0;32mI (49) boot.esp32c3: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (59) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (70) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (85) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3c040020 size=0e114h ( 57620) map[0m
+[0;32mI (114) esp_image: segment 1: paddr=0001e13c vaddr=3fc8ca00 size=01918h (  6424) load[0m
+[0;32mI (116) esp_image: segment 2: paddr=0001fa5c vaddr=40380000 size=005bch (  1468) load[0m
+[0;32mI (122) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=38944h (231748) map[0m
+[0;32mI (168) esp_image: segment 4: paddr=0005896c vaddr=403805bc size=0c330h ( 49968) load[0m
+[0;32mI (181) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (181) boot: Disabling RNG early entropy source...[0m
+id 0xa5 version 0x03 status 0x80 sembrado=0 ocupado=0 alm_rct=0 alm_apt=0 arrancado=0 rechazada=0 agotado=0 clave_equipo=0 bloques_rng=0 arranques=14 pila_libre=11752
+medidor listo. comandos: id sembrar borrar clave publica csr lectura N olvidar
+   14.535   [ok ] tras olvidar, nada que recuperar al arrancar
+   14.536 > lectura 1
+lectura: primero 'clave'
+   14.546   [ok ] lectura rechazada sin clave
+   14.546 > sembrar
+sembrar: ok
+   14.584 > clave
+clave: ok, P-256 con 2 bloques de 32 bytes del motor; guardada en NVS (en claro si la flash no va cifrada)
+   14.748   [ok ] clave nueva en 0.164 s (antes 0.162 s)
+   14.748 > publica
+0a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
+FP005b3059301306072a8648ce3d020106082a8648ce3d0301070342000473892a6e9740a921584f64c6d42da1001701d42c7752e347a838f7585f2c47082c8a1664fefdf558900673430140ff610299476f4e5e14453ef4e855d6c4ea696f0950b7
+   14.788   [ok ] clave nueva anunciada
+   14.788   [info] clave nueva IGUAL a la olvidada (motor simulado, determinista: cada arranque repite el mismo aleatorio)
+   14.788 > lectura 2
+FL006084f7036784a400000e00000100000000000000000000041a3046022100c85f30fafdb0f9f14907dadedec17b94d488f9c045f38fd4778665dab85df95c022100f5e31181e01cce5be961671022a7d8f85dadc2ddcf3cc4fcf84d433ed9d12dbdeabb9ea9
+FL006084f7036784a400000e00000200000001000000000000044c3046022100d63f06f17ba1f94c61dd6e240fa35405b5cf6399ab807cd3847b2fed8b8ec566022100bdeebeabf153af2c01997e6e229285aa7905bd91fc5a3ee98f652022d7556f41834e2291
+   19.819 
+placa_medidor: 0 fallos

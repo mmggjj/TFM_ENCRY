@@ -1,0 +1,15 @@
+# Halo de dos CLB alrededor de cada anillo, prohibido al colocador
+# (docs/basys2.md, "Residuo del jitter", 16-11-2026). Se suma a
+# basys2_sin_medidor_fijo.ucf con UCF_EXTRA. Solo aleja la logica colocada:
+# las rutas pueden seguir cruzando el halo.
+#
+# ro2 ocupa SLICE_X0Y20:SLICE_X1Y21; halo X0-X5, Y16-Y25 sin el anillo.
+CONFIG PROHIBIT = SLICE_X0Y16:SLICE_X5Y19;
+CONFIG PROHIBIT = SLICE_X0Y22:SLICE_X5Y25;
+CONFIG PROHIBIT = SLICE_X2Y20:SLICE_X5Y21;
+# ro1 ocupa SLICE_X28Y20:SLICE_X29Y23; halo X26-X31, Y16-Y27 sin el anillo.
+# El biestable de resolucion (X26Y28) y el de muestreo (X31Y41) quedan fuera.
+CONFIG PROHIBIT = SLICE_X26Y16:SLICE_X31Y19;
+CONFIG PROHIBIT = SLICE_X26Y24:SLICE_X31Y27;
+CONFIG PROHIBIT = SLICE_X26Y20:SLICE_X27Y23;
+CONFIG PROHIBIT = SLICE_X30Y20:SLICE_X31Y23;

@@ -1,0 +1,33 @@
+=== analisis ===
+rtl/sim/unisim_modelos.vhd:30:19:warning: declaration of a protected object before the protected body [-Welaboration]
+  shared variable cfg : t_cfg;
+                  ^
+
+=== ejecucion ===
+
+--- tb_health_tests ---
+rtl/tb/tb_health_tests.vhd:124:5:@35ns:(report note): 1) Fuente sana: 20 ventanas sin alarma
+rtl/tb/tb_health_tests.vhd:77:9:@409635ns:(report note):   [ok ] sin alarmas tras 20480 muestras
+rtl/tb/tb_health_tests.vhd:77:9:@409635ns:(report note):   [ok ] racha maxima vista 13 < 39
+rtl/tb/tb_health_tests.vhd:77:9:@409635ns:(report note):   [ok ] proporcion maxima vista 540 < 683
+rtl/tb/tb_health_tests.vhd:135:5:@409635ns:(report note): 2) Fuente pegada: el RCT salta en la muestra C
+rtl/tb/tb_health_tests.vhd:77:9:@410555ns:(report note):   [ok ] RCT dispara en la muestra 39 (esperado 39)
+rtl/tb/tb_health_tests.vhd:147:5:@410555ns:(report note): 3) Fuente sesgada al 70 %: salta el APT, no el RCT
+rtl/tb/tb_health_tests.vhd:77:9:@431075ns:(report note):   [ok ] APT dispara con proporcion 713 >= 683
+rtl/tb/tb_health_tests.vhd:77:9:@431075ns:(report note):   [ok ] RCT no dispara con racha maxima 15
+rtl/tb/tb_health_tests.vhd:158:5:@431075ns:(report note): 4) Pegada al valor opuesto al de referencia: detecta el complemento
+rtl/tb/tb_health_tests.vhd:77:9:@451595ns:(report note):   [ok ] APT dispara aunque la cuenta directa sea 1
+rtl/tb/tb_health_tests.vhd:166:5:@451595ns:(report note): 5) Las alarmas son pegajosas y se borran a proposito
+rtl/tb/tb_health_tests.vhd:77:9:@452595ns:(report note):   [ok ] sigue en alarma con fuente ya sana
+rtl/tb/tb_health_tests.vhd:77:9:@452615ns:(report note):   [ok ] borrar baja las alarmas
+rtl/tb/tb_health_tests.vhd:177:5:@452615ns:(report note): 6) ventana_fin: una por ventana, con el veredicto, y borrar la reinicia
+rtl/tb/tb_health_tests.vhd:77:9:@473126ns:(report note):   [ok ] sin cierre con W-1 muestras
+rtl/tb/tb_health_tests.vhd:77:9:@473156ns:(report note):   [ok ] un cierre en la muestra W, sin alarma
+rtl/tb/tb_health_tests.vhd:77:9:@514126ns:(report note):   [ok ] tres cierres en 3W muestras: 3
+rtl/tb/tb_health_tests.vhd:77:9:@534616ns:(report note):   [ok ] el cierre de una ventana mala llega con alarma_apt = 1
+rtl/tb/tb_health_tests.vhd:77:9:@565346ns:(report note):   [ok ] tras borrar, W-1 muestras no cierran ventana
+rtl/tb/tb_health_tests.vhd:77:9:@565376ns:(report note):   [ok ] tras borrar, la ventana se cierra en la muestra W y limpia
+rtl/tb/tb_health_tests.vhd:219:7:@565376ns:(report note): tb_health_tests: 0 fallos
+
+=== resumen ===
+todos los bancos pasan

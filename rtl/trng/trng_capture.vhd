@@ -34,6 +34,7 @@ entity trng_capture is
   port (
     -- Dominio del anillo de muestreo
     ro_clk    : in  std_logic;
+    rst_n_ro  : in  std_logic;                      -- soltado sincrono con ro_clk
     bit_dato  : in  std_logic;
     bit_stb   : in  std_logic;
 
@@ -99,9 +100,9 @@ begin
   -- ----------------------------------------------------------------
   -- Escritura, en el dominio del anillo
   -- ----------------------------------------------------------------
-  p_escritura : process (ro_clk, rst_n)
+  p_escritura : process (ro_clk, rst_n_ro)
   begin
-    if rst_n = '0' then
+    if rst_n_ro = '0' then
       arr_ro  <= (others => '0');
       captura <= '0';
       w_desp  <= (others => '0');

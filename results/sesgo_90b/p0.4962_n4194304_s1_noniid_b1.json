@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/p0.4962_n4194304_s1_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4962_n4194304_s1.bits 1",
+   "dateTimeStamp" : "20261116192508",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/sesgo_90b/secuencias/p0.4962_n4194304_s1.bits",
+   "sha256" : "3a16647606f882b3c039d4c46d2f826f4af1dbe7a1f9b3b020725b5208f28b37",
+   "testCases" : [
+      {
+         "hOriginal" : 0.98766832912082192,
+         "mcvEstimateMode" : 2112517.0,
+         "mcvEstimatePHat" : 0.50366330146789551,
+         "mcvEstimatePU" : 0.50429214924024968,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.93120318557768078,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.98954151458755657,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.88483780158558079,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.92894411494418072,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.93160305081914785,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99688484088860507,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99831545083979267,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.98796437227003508,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.98772591922827246,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.88483780158558079,
+         "hOriginal" : 0.88483780158558079,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

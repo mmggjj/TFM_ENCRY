@@ -26,7 +26,12 @@ entity ero_core is
     -- Ancho del divisor. K_D maximo = 2**G_CNT_BITS. 24 y no 20: el anillo
     -- con transistores de IHP pide K_D = 941 107 en esquina tipica a 27 C
     -- (docs/anillo_ihp.md) y 2**20 solo dejaba un 11 % de margen.
-    G_CNT_BITS : positive := 24
+    G_CNT_BITS : positive := 24;
+    -- false: muestra_cruda solo toma ro1 en el tic (habilitacion). true:
+    -- toma ro1 en cada flanco de ro2 y el tic solo marca cual vale; el
+    -- estado previo del biestable deja de ser el bit anterior. Mismos bits
+    -- en simulacion; experimento de la Basys 2 (docs/basys2.md).
+    G_MUESTREO_LIBRE : boolean := false
   );
   port (
     ro1     : in  std_logic;                     -- anillo muestreado
@@ -43,6 +48,7 @@ architecture rtl of ero_core is
   signal cuenta   : unsigned(G_CNT_BITS - 1 downto 0) := (others => '0');
   signal mascara  : unsigned(G_CNT_BITS - 1 downto 0);
   signal tic      : std_logic;
+  signal habilita : std_logic;
 
   -- Captura directa de ro1: puede quedar metaestable, y esa
   -- metaestabilidad forma parte de la fuente de entropia. Se le da un
@@ -66,6 +72,7 @@ begin
              - to_unsigned(1, G_CNT_BITS);
 
   tic <= '1' when (cuenta and mascara) = mascara else '0';
+  habilita <= '1' when G_MUESTREO_LIBRE else tic;
 
   p_divisor : process (ro2, rst_n)
   begin
@@ -84,7 +91,7 @@ begin
       stb_d1        <= '0';
       bit_stb       <= '0';
     elsif rising_edge(ro2) then
-      if tic = '1' then
+      if habilita = '1' then
         muestra_cruda <= ro1;
       end if;
       muestra_res <= muestra_cruda;

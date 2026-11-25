@@ -1,0 +1,10 @@
+
+Q_raw = 1.4200e-05, incertidumbre 10 %, tolerancia 0.03
+ kd         Q  H_modelo  90B esp.         banda     90B  veredicto
+ 13    0.1163    0.8261    0.7332  0.658-0.808  0.8154  por encima
+ 14    0.2327    0.9815    0.8451  0.781-0.877  0.8763  saturada
+ 15    0.4653    0.9998    0.8525  0.788-0.908  0.8539  saturada
+ 16    0.9306    1.0000    0.8460  0.785-0.909  0.8503  saturada
+
+tabla: results/motor_campana/basys3_campana_90b_flujo_bel/compara_modelo.csv
+figura: results/motor_campana/basys3_campana_90b_flujo_bel/compara_modelo.png

@@ -60,7 +60,7 @@ def main() -> int:
     # por condicion: media +- desviacion sobre repeticiones
     conds: dict[str, list[str]] = {}
     for n in nombres:
-        m = None if n.startswith("0928t2_") else re.search(r"cond([A-D])_rep(\d+)$", n)   # la tanda 2 no entra en los ANOVA
+        m = None if n.startswith(("0928t2_", "0928rd_")) else re.search(r"cond([A-D])_rep(\d+)$", n)   # la tanda 2 no entra en los ANOVA
         if m:
             conds.setdefault(m.group(1), []).append(n)
     # ANOVA de un factor por estimador (condicion como factor, repeticiones

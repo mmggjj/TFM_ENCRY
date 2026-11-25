@@ -1,0 +1,56 @@
+48 realizaciones independientes, tstop 400n, escala 1 (ruido del PDK), mos_tt, 27 C, 1.2 V, con desapareamiento
+  rep  1: 1056 cruces, T 371.850 ps, sigma 190.11 fs, exp 0.97
+  rep  2: 1093 cruces, T 359.576 ps, sigma 174.75 fs, exp 0.90
+  rep  3: 1073 cruces, T 365.964 ps, sigma 178.11 fs, exp 1.03
+  rep  4: 1080 cruces, T 363.744 ps, sigma 169.84 fs, exp 1.22
+  rep  5: 1084 cruces, T 362.536 ps, sigma 167.27 fs, exp 0.95
+  rep  6: 1078 cruces, T 364.149 ps, sigma 177.90 fs, exp 0.98
+  rep  7: 1053 cruces, T 372.771 ps, sigma 180.08 fs, exp 0.91
+  rep  8: 1090 cruces, T 360.578 ps, sigma 172.68 fs, exp 1.03
+  rep  9: 1076 cruces, T 364.976 ps, sigma 169.94 fs, exp 1.09
+  rep 10: 1070 cruces, T 366.957 ps, sigma 181.27 fs, exp 1.05
+  rep 11: 1091 cruces, T 360.116 ps, sigma 176.97 fs, exp 1.03
+  rep 12: 1082 cruces, T 362.972 ps, sigma 173.12 fs, exp 0.94
+  rep 13: 1080 cruces, T 363.873 ps, sigma 177.83 fs, exp 1.02
+  rep 14: 1059 cruces, T 370.781 ps, sigma 180.36 fs, exp 0.92
+  rep 15: 1070 cruces, T 366.848 ps, sigma 177.72 fs, exp 0.85
+  rep 16: 1098 cruces, T 357.824 ps, sigma 172.05 fs, exp 0.96
+  rep 17: 1089 cruces, T 360.859 ps, sigma 180.28 fs, exp 1.07
+  rep 18: 1067 cruces, T 370.380 ps, sigma 177.46 fs, exp 0.97
+  rep 19: 1064 cruces, T 369.023 ps, sigma 177.25 fs, exp 1.08
+  rep 20: 1049 cruces, T 374.151 ps, sigma 185.98 fs, exp 0.86
+  rep 21: 1055 cruces, T 372.138 ps, sigma 173.03 fs, exp 0.85
+  rep 22: 1054 cruces, T 372.353 ps, sigma 170.45 fs, exp 1.09
+  rep 23: 1063 cruces, T 369.240 ps, sigma 183.48 fs, exp 0.88
+  rep 24: 1097 cruces, T 358.724 ps, sigma 169.55 fs, exp 1.17
+  rep 25: 1071 cruces, T 366.784 ps, sigma 173.70 fs, exp 0.80
+  rep 26: 1074 cruces, T 366.378 ps, sigma 177.76 fs, exp 0.94
+  rep 27: 1079 cruces, T 365.091 ps, sigma 177.30 fs, exp 0.93
+  rep 28: 1058 cruces, T 371.033 ps, sigma 189.14 fs, exp 0.89
+  rep 29: 1055 cruces, T 371.950 ps, sigma 178.76 fs, exp 0.99
+  rep 30: 1073 cruces, T 366.003 ps, sigma 179.85 fs, exp 1.13
+  rep 31: 1080 cruces, T 364.654 ps, sigma 183.50 fs, exp 1.02
+  rep 32: 1059 cruces, T 370.858 ps, sigma 178.51 fs, exp 1.00
+  rep 33: 1069 cruces, T 367.284 ps, sigma 177.99 fs, exp 1.06
+  rep 34: 1059 cruces, T 371.052 ps, sigma 183.70 fs, exp 0.90
+  rep 35: 1086 cruces, T 361.741 ps, sigma 177.37 fs, exp 1.09
+  rep 36: 1074 cruces, T 365.791 ps, sigma 173.58 fs, exp 1.08
+  rep 37: 1091 cruces, T 360.050 ps, sigma 175.39 fs, exp 0.97
+  rep 38: 1090 cruces, T 360.391 ps, sigma 180.17 fs, exp 0.99
+  rep 39: 1086 cruces, T 361.575 ps, sigma 168.45 fs, exp 0.76
+  rep 40: 1082 cruces, T 363.332 ps, sigma 172.87 fs, exp 0.99
+  rep 41: 1054 cruces, T 374.476 ps, sigma 180.41 fs, exp 1.00
+  rep 42: 1081 cruces, T 363.300 ps, sigma 180.55 fs, exp 0.94
+  rep 43: 1096 cruces, T 358.474 ps, sigma 175.75 fs, exp 0.99
+  rep 44: 1089 cruces, T 360.901 ps, sigma 177.29 fs, exp 1.07
+  rep 45: 1057 cruces, T 371.415 ps, sigma 180.38 fs, exp 0.97
+  rep 46: 1089 cruces, T 360.646 ps, sigma 165.78 fs, exp 1.02
+  rep 47: 1077 cruces, T 364.620 ps, sigma 173.01 fs, exp 0.98
+  rep 48: 1052 cruces, T 373.430 ps, sigma 186.62 fs, exp 0.98
+
+  sigma por periodo = 177.2 +- 0.7 fs (1 sigma de la media; dispersion entre repeticiones 2.6 % en sigma)
+  Q por periodo = 2.3464e-07 +- 1.74e-09
+  K_D = 974260 (intervalo 1 sigma 967086 - 981541); 2.81 kbit/s a 2.733 GHz
+  periodo 365.909 ps, dispersion 4.789 ps (1.31 %); K_D de cada realizacion: 874619 - 1090974 (mediana 971107)
+
+datos en /home/mmggjj/workspace/TFM_ENCRY/results/anillo_ihp_mc_tt_27_resumen.csv

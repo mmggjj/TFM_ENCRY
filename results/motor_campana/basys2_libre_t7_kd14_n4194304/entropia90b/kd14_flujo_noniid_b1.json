@@ -1,0 +1,61 @@
+{
+   "IID" : false,
+   "commandline" : "./ea_non_iid -i -a -v -o /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys2_libre_t7_kd14_n4194304/entropia90b/kd14_flujo_noniid_b1.json /home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys2_libre_t7_kd14_n4194304/entropia90b/bits/kd14_flujo.bits 1",
+   "dateTimeStamp" : "20261115105915",
+   "errorLevel" : 0,
+   "filename" : "/home/mmggjj/workspace/TFM_ENCRY/results/motor_campana/basys2_libre_t7_kd14_n4194304/entropia90b/bits/kd14_flujo.bits",
+   "sha256" : "d81c8def06a9575f7274867934bcec7f1fb2d404ec0585c092e38ffe32d21888",
+   "testCases" : [
+      {
+         "hOriginal" : 0.98993867894461618,
+         "mcvEstimateMode" : 2109191.0,
+         "mcvEstimatePHat" : 0.50287032127380371,
+         "mcvEstimatePU" : 0.50349917556263657,
+         "testCaseDesc" : "Most Common Value"
+      },
+      {
+         "hOriginal" : 0.92320586029027829,
+         "testCaseDesc" : "Collision Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.99149750429984063,
+         "testCaseDesc" : "Markov Test (for bit strings only)"
+      },
+      {
+         "hOriginal" : 0.88481499290123367,
+         "testCaseDesc" : "Compression Test (for bit strings only)"
+      },
+      {
+         "tTupleRes" : 0.92894411494418072,
+         "testCaseDesc" : "T-Tuple Test"
+      },
+      {
+         "lrsRes" : 0.99812680530931064,
+         "testCaseDesc" : "LRS Test"
+      },
+      {
+         "hOriginal" : 0.99715601664844,
+         "testCaseDesc" : "Multi Most Common in Window Test"
+      },
+      {
+         "hOriginal" : 0.99800078055190244,
+         "testCaseDesc" : "Lag Prediction Test"
+      },
+      {
+         "hOriginal" : 0.9900636955654607,
+         "testCaseDesc" : "Multi Markov Model with Counting Test (MultiMMC)"
+      },
+      {
+         "hOriginal" : 0.98999500272960006,
+         "testCaseDesc" : "LZ78Y Test"
+      },
+      {
+         "dataWordSize" : 1.0,
+         "hAssessed" : 0.88481499290123367,
+         "hOriginal" : 0.88481499290123367,
+         "testCaseDesc" : "Overall"
+      }
+   ],
+   "toolVersion" : "1.1.8",
+   "type" : ""
+}

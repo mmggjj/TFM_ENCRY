@@ -1,6 +1,8 @@
 # Compilados de simulacion y sintesis (se regeneran con rtl/run_tb.py y synth/sintetiza.py)
 rtl/build/
 synth/build/
+synth/basys2/build/
+synth/basys3/build/
 # Firmware: el build de ESP-IDF se regenera con idf.py build
 firmware/*/build/
 firmware/*/sdkconfig
@@ -31,6 +33,7 @@ results/entropia90b/bits/
 # Logs serie integros de las capturas del ESP32: se guardan en local (evidencia) pero no se versionan;
 # la carga util con CRC comprobado va en results/esp32_tramas_*.bin
 results/esp32_consola_*.log
+results/motor_campana/*/serie.log
 # Copia por consola de esos mismos logs (stdout de consola_esp32.py): tampoco se versiona
 results/esp32_captura_*.txt
 # Build del firmware de la campana del ESP32 (va al scratchpad, no aqui) y copia de consola de su captura
@@ -44,6 +47,22 @@ results/esp32_campana_rng/*/serie_*.log
 # Prueba de reinicios: flujo serie integro y matrices derivadas (se regeneran con analysis/reinicios_90b.py)
 results/esp32_reinicios/*/*/serie_*.log
 results/esp32_reinicios/*/*/restart_*.bin
+results/fpga_reinicios/*/restart_*.bin
+results/fpga_reinicios/*/serie.log
+# Bits derivados (un byte por bit) de las campanas del motor: se regeneran desde kdNN_flujo.bin
+results/motor_campana/*/entropia90b/bits/
 firmware/*/build_*/
 # Logs serie de las tandas y capturas apartadas (un nivel mas hondo)
 results/esp32_campana_rng/*/*/serie_*.log
+# Secuencias simuladas de la fuente (se regeneran con analysis/fuente_simulada_90b.py)
+results/fuente_simulada_90b/secuencias/
+# Log por pasada: el mismo texto va integro en results/fuente_simulada_90b*.log
+results/fuente_simulada_90b/*.log
+# Log de errores que deja Adept (djtgcfg) en la carpeta desde la que se lanza
+DebugErc.log
+results/sesgo_90b/secuencias/
+synth/basys3/.Xil/
+synth/basys3/clockInfo.txt
+synth/basys3/tight_setup_hold_pins.txt
+# Trozos en npz derivados de kdNN.bin (para jitter_autocorrelacion.py): se regeneran
+results/motor_campana/basys3_jitter_*/*_trozos.npz

@@ -1,8 +1,9 @@
 \chapter{Camino hacia un circuito integrado}
 \label{ch:ch6_asic}
 
-% [BORRADOR v1] Material de partida: docs/sintesis_resultados.md, docs/via_asic.md,
-% synth/sintetiza.py, results/sintesis_sg13g2.csv.
+% Material de partida: docs/sintesis_resultados.md (síntesis del 22-11-2026),
+% docs/via_asic.md, docs/decisiones_pendientes.md, synth/sintetiza.py,
+% results/sintesis_sg13g2.csv.
 
 El motor está diseñado para acabar siendo un circuito integrado dedicado que
 sirve claves a un microcontrolador, y la FPGA es su vehículo de
@@ -13,8 +14,8 @@ tirada de fabricación y qué tendría que cambiar en la fuente de entropía. Un
 envío a fabricación (tape-out) queda explícitamente fuera del alcance de este TFM
 --- no por coste ni por área, como se verá, sino por plazos --- y todo lo que
 aquí aparece se etiqueta como lo que es: una cota inferior del área obtenida de
-la síntesis lógica, con los factores de crecimiento hasta el área del núcleo
-tomados de datos publicados.
+la síntesis lógica, con el crecimiento hasta el área del núcleo estimado a
+partir de un rango de utilización, no de un diseño colocado y rutado.
 
 \section{Flujo de síntesis con celdas estándar}
 \label{sec:synthflow}
@@ -38,41 +39,63 @@ anillo no se sintetizan; son el único bloque diseñado a nivel de transistor
 \section{Área por bloque en puertas equivalentes}
 \label{sec:area}
 
-La Tabla~\ref{tab:synth} da el resultado de cada bloque. El motor digital
---- todo salvo el búfer de captura --- ocupa unos \textbf{68~kGE}: 62,9~kGE
-en los bloques de la tabla y 5,2~kGE en el secuenciador del nivel superior y
-el banco de registros, que solo aparecen cuando se sintetiza el motor
-completo. AES supone cerca de la mitad: el autenticador y el generador
-instancian cada uno su propio núcleo de cifrado, de 15,8~kGE cada uno. El
+La Tabla~\ref{tab:synth} da el resultado de cada bloque, todos
+sintetizados en una sola tanda sobre el \ac{RTL} final. El motor completo
+son \textbf{95,5~kGE}, y el motor digital
+--- todo salvo el búfer de captura --- ocupa unos \textbf{48,7~kGE}, la
+diferencia entre la última fila y la del búfer ($95{,}46 - 46{,}81$).
+Sintetizados por separado, el autenticador y el generador llevan cada uno
+su propio núcleo de cifrado de una ronda por ciclo, de 15,8~kGE, y así
+están medidas sus filas de la tabla; en el motor completo un solo núcleo
+de 32 bits sirve a los dos, porque el secuenciador nunca los deja
+funcionar a la vez (Sección~\ref{sec:opt}), de modo que las filas no
+suman la cifra del motor. Aproximadamente, a partir de las filas: el AES
+compartido de 32 bits
+6,6~kGE, el autenticador sin su núcleo 7,5, el generador sin él 23,8, los
+tests de salud 1,2, muestreador, cruce y resets 0,4, \ac{I2C} 1,0, y
+el resto, unos 8~kGE, de secuenciador, registros y reparto del núcleo en
+el nivel superior. El
 búfer de captura se incluye para que la tabla esté completa, pero no debe
-leerse como parte del producto: sus 46,7~kGE son una memoria de 4096 bits
-mapeada sobre flip-flops porque el flujo no tiene macros de SRAM. En la FPGA
-ocupa una block RAM sin coste de lógica; en silicio sería una SRAM compilada
+leerse como parte del producto: sus 46,8~kGE son una memoria de 4096 bits
+mapeada sobre flip-flops porque el flujo no tiene macros de SRAM. En la
+\ac{FPGA} la herramienta de implementación lo lleva a RAM distribuida,
+158 tablas de consulta y 44 flip-flops en el diseño implementado, sin
+block RAM; en silicio sería una SRAM compilada
 o, con más sentido, un búfer mucho más pequeño, porque es una ruta de prueba
 que se desactiva en producción.
 
 \begin{table}[htbp]
 \centering
-\caption{Síntesis lógica sobre IHP SG13G2, aplanada, sin rutado.
-1~GE $=7{,}2576~\mu\mathrm{m}^2$. Cota inferior del área \simu{}.}
+\caption{Síntesis lógica sobre IHP SG13G2, aplanada, sin rutado, todos
+los bloques en una tanda sobre el \ac{RTL} final (22 de noviembre de
+2026, Yosys con el conector de GHDL). 1~GE $=7{,}2576~\mu\mathrm{m}^2$.
+Cota inferior del área \simu{}.}
 \label{tab:synth}
-\begin{tabular}{@{}lrrrr@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth}rrrr@{}}
 \toprule
 Bloque & Celdas & Flip-flops & Área ($\mu\mathrm{m}^2$) & kGE \\
 \midrule
-Núcleo de cifrado AES-128      & 10\,439 & 262   & 114\,771 & 15,81 \\
-AES-CMAC (con su AES)          & 13\,210 & 909   & 169\,766 & 23,39 \\
-CTR\_DRBG con df (con su AES)  & 17\,953 & 2\,355 & 267\,262 & 36,83 \\
-Tests de salud (RCT, APT)      & 568     & 85    & 8\,986   & 1,24 \\
-Muestreador ERO y divisor de 24 bits & 132 & 28  & 2\,397   & 0,33 \\
+Núcleo AES-128, una ronda por ciclo (20 S-boxes, entrada de borrado) & 10\,549 & 262 & 114\,677 & 15,80 \\
+Núcleo AES-128, ruta de 32 bits (4 S-boxes, 51 ciclos/bloque) & 3\,771 & 265 & 48\,175 & 6,64 \\
+AES-CMAC (con su AES de una ronda) & 13\,239 & 909   & 169\,426 & 23,35 \\
+CTR\_DRBG con df (con su AES de una ronda) & 20\,614 & 2\,483 & 287\,513 & 39,62 \\
+Tests de salud (RCT, APT)      & 530     & 86    & 8\,487   & 1,17 \\
+Muestreador ERO y divisor (aislado, contador de 24 bits) & 139 & 28 & 2\,442 & 0,34 \\
 Cruce de dominio de reloj del bit & 11   & 7     & 408      & 0,06 \\
+Sincronizador de reset (uno por dominio) & 3 & 3 & 147      & 0,02 \\
 Esclavo I2C (con guarda de bus bloqueado) & 431 & 85 & 7\,408 & 1,02 \\
 \midrule
 Búfer de captura (4096 bits en flip-flops) & 12\,592 & 4\,140 & 339\,698 & 46,81 \\
-Motor completo, anillos como cables & 47\,252 & 8\,409 & 834\,033 & 114,92 \\
+Motor completo, anillos como cables, un solo AES de una ronda & 42\,010 & 8\,422 & 763\,818 & 105,24 \\
+\textbf{Motor completo, un solo AES de 32 bits} & 34\,179 & 8\,425 & 692\,782 & \textbf{95,46} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+La fila del muestreador es el bloque con su contador de 24 bits por
+defecto; dentro del motor el contador tiene 22 bits y va detrás de los
+cuatro biestables de conmutación del preescalador que divide RO2 por 16,
+que pertenecen al nivel superior (Sección~\ref{sec:ro_silicon}).
 
 Los números son coherentes entre sí, y esa coherencia es la que permitió
 detectar un error en el flujo: antes de aplanar, el informe devolvía para el
@@ -80,8 +103,39 @@ autenticador y para el generador solo el área de su submódulo AES. Un
 autenticador que pese exactamente lo mismo que un AES desnudo es imposible,
 así que el que fallaba era el informe, no el diseño. Tras aplanar, el
 autenticador añade al AES 647 flip-flops (subclaves, estado de
-encadenamiento, clave) y 7,6~kGE, y el generador añade 2093 flip-flops y
-21~kGE, de los que cerca de la mitad son sus registros.
+encadenamiento, clave) y 7,5~kGE, y el generador añade 2221 flip-flops y
+23,8~kGE, de los que cerca de dos tercios son sus registros \est{} (un
+flip-flop de esta biblioteca ocupa de 6,75 a 7,25~GE según la celda; no
+se han contado las celdas que eligió el mapeador).
+
+La cifra se ha movido con el diseño, y cada paso se sintetizó frente al
+anterior en la misma tanda, porque el optimizador lógico mueve por sí
+solo el total alrededor de un 0,2\,\% cuando solo cambian nombres de
+señales, y entre tandas de días distintos la misma variante se ha movido
+alrededor de un 0,5\,\% (el motor con el núcleo de una ronda: 104,60,
+104,81 y 105,24~kGE en tres tandas del 19 y el 22 de noviembre). Con la
+versión~3 del mapa de registros --- borrado total, un
+contador de peticiones que satura en vez de dar la vuelta, las reglas de
+exclusión de la captura y los sincronizadores de reset --- el motor eran
+115,7~kGE con dos núcleos de cifrado; compartir un núcleo lo dejó en
+101,6 y el núcleo de 32 bits en 92,5 (Sección~\ref{sec:opt}). La semilla
+de 512 bits (Sección~\ref{sec:health}) añadió 256 flip-flops, en el
+colector de semilla y en el registro de entropía del generador, y
+2,3~kGE. El RO2 de trece etapas con su preescalador y el divisor más
+ancho añadieron un 0,5\,\% en la tanda en que se introdujeron (de 95,09
+a 95,53~kGE, cinco flip-flops más), que es el tamaño de ese ruido: en la
+tanda de la tabla el motor con los genéricos anteriores sale en
+95,60~kGE, por encima del final, así que el cambio no es medible en
+área. Rechazar un divisor fuera del rango admitido tampoco costó nada
+medible: 95,46~kGE en la tanda de
+la tabla, con los mismos 8\,425 flip-flops. Las tandas de octubre leyeron
+el \ac{VHDL} a través de la salida Verilog de GHDL y de la versión de
+Yosys instalable con \texttt{pip}, y la de la tabla con el conector de
+GHDL; en el núcleo AES, que no cambió, los dos caminos coincidían dentro
+del 0,9\,\% cuando se compararon en octubre, y la cifra del núcleo en la
+tabla, 15,80~kGE, queda un 1,6\,\% por debajo de los 16,06 de aquel mes:
+las diferencias de menos de un 2\,\% entre tandas de fechas y caminos de
+herramienta distintos no son cambios de diseño.
 
 \section{Optimizaciones y sus ahorros esperados}
 \label{sec:opt}
@@ -91,32 +145,73 @@ verificable, no pequeño --- y apunta a tres optimizaciones, por orden de
 rentabilidad del esfuerzo:
 
 \begin{enumerate}
-\item \textbf{Un único núcleo AES compartido.} El secuenciador del nivel
-superior ya serializa las órdenes: el generador y el autenticador nunca
-funcionan a la vez. Compartir el núcleo ahorra $\approx$15,8~kGE, una cuarta
-parte del motor, a cambio de un árbitro trivial.
-\item \textbf{Ruta de datos compacta para la S-box.} Veinte tablas S-box
-independientes se sintetizan en 15,8~kGE para el núcleo completo; los
-diseños optimizados en área de la literatura van desde 2,4~kGE para una
-ruta de datos de 8 bits a 226 ciclos por bloque~\cite{moradi2011pushing}
-hasta unos 5~kGE para rutas de datos de 32 bits. Aquí la velocidad es
-irrelevante, así que una ruta de datos de 32 bits con cuatro S-boxes
-compartidas es el punto razonable; ahorro estimado, 10~kGE por núcleo.
-\item \textbf{Menos registros en el generador.} De sus 2355 flip-flops, la
-entropía capturada y el nonce (384), el material de semilla (256), la salida
+\item \textbf{Un único núcleo AES compartido --- hecho.} El secuenciador
+del nivel superior ya serializa las órdenes: el generador y el
+autenticador nunca funcionan a la vez. El núcleo vive ahora en el nivel
+superior y se entrega al bloque que levanta su pulso de arranque; una
+propiedad del banco del sistema comprueba que los dos nunca lo hacen en
+el mismo ciclo. Ahorro medido, en la tanda de octubre en la que se
+introdujo: \textbf{14,1~kGE} (de 115,7 a 101,6), algo
+por debajo de los 15,8 estimados, porque el reparto cuesta cerca de medio
+kGE y la entrada de borrado que la revisión exigió al núcleo y al
+generador cuesta otro. Un genérico conserva la disposición de dos
+núcleos.
+\item \textbf{Ruta de datos compacta para la S-box --- hecho.} Veinte
+tablas S-box independientes se sintetizan en 16~kGE para el núcleo de
+una ronda por ciclo; los diseños optimizados en área de la literatura van
+desde 2,4~kGE para una ruta de datos de 8 bits a 226 ciclos por
+bloque~\cite{moradi2011pushing} hasta unos 5~kGE para rutas de datos de
+32 bits. Aquí la velocidad es irrelevante, así que se escribió un segundo
+núcleo con ruta de 32 bits: cuatro S-boxes compartidas entre SubBytes y
+el SubWord de la expansión de clave, un solo MixColumns, ShiftRows
+aplicado como permutación de cableado del registro de estado al empezar
+cada ronda, una columna por ciclo, 51 ciclos por bloque en vez de 11.
+Pasa los mismos vectores oficiales, la cadena de mil bloques y la prueba
+de zeroización, y el banco exige que su salida coincida con la del núcleo
+de una ronda en cada bloque. Medido cuando se introdujo, en octubre:
+6,67~kGE frente a 16,06 en
+el núcleo (ahorro de 9,4, frente a los 10 estimados; la diferencia son
+los multiplexores de columna y el registro de fase) y 92,5 frente
+a 101,8~kGE en el motor completo, en la misma tanda de síntesis. En la
+tanda de la Tabla~\ref{tab:synth}: \textbf{6,64~kGE frente a 15,80} en
+el núcleo y \textbf{95,46 frente a 105,24~kGE} en el motor, un ahorro de
+9,8; en las cuatro tandas de noviembre en que se sintetizaron las dos
+variantes el ahorro va de 9,1 a 9,8~kGE. El
+núcleo de una ronda sigue disponible mediante un genérico.
+\item \textbf{Menos registros en el generador.} De sus 2483 flip-flops,
+la entropía capturada y el nonce (512), el material de semilla (256), la salida
 (256) y los temporales de la función de derivación pueden reducirse
 consumiendo la semilla como un flujo y compartiendo temporales; unos 800
 flip-flops, cerca de 4~kGE.
 \end{enumerate}
 
-Con las tres, el motor digital baja a \textbf{$\approx$20--25~kGE}
-(los 5~kGE del control del nivel superior apenas se reducen), que es el
-orden de magnitud que anticipaba el estado del arte (de 13 a 25~kGE para
-motores de este tipo) y que, con el factor de crecimiento publicado de
-$\approx$2,35 del área de celdas al área del núcleo para un AES en esta misma
-biblioteca, supone unos 0,34~mm$^2$ de núcleo. Cada uno de estos ahorros se
-presenta como una estimación; medirlos sintetizando las variantes
-optimizadas se recoge como trabajo futuro y no se da por hecho.
+Las dos optimizaciones medidas llevaron el motor digital, en las tandas
+de octubre, de 69~kGE (dos núcleos de una ronda) a 46; con la semilla de
+512 bits y los cambios posteriores del código está en 48,7~kGE, y la
+tercera optimización lo dejaría en
+\textbf{$\approx$45~kGE} \est{}. Es más que los 13 a 25~kGE que
+anticipaba la estimación inicial de este mismo trabajo, armada con áreas
+de bloques publicadas, para un motor de este tipo, y la tabla dice por
+qué: el
+generador sin su núcleo son 23,8~kGE, cerca de dos tercios registros, y
+el secuenciador y los registros del nivel superior otros 8; llegar a ese
+rango exigiría repensar el almacenamiento del generador y no su
+cifrador, lo que este trabajo deja planteado y no hecho.
+% NOTA (no impresa): "13 a 25 kGE" son las estimaciones propias de
+% docs/via_asic.md §4 (config. A con SHA 24,6 kGE; sin SHA ~13) y
+% docs/arquitectura.md §9.
+El paso del área de celdas al área del núcleo es una estimación con
+rango, no un resultado: no se ha colocado ni rutado ningún diseño. La
+utilización se toma entre 0,60, la relación entre la densidad de puertas
+rutada y la bruta publicada para las celdas estándar de otro proceso
+abierto de 130~nm, no de este~\cite{skywater_pdk_cells}, y 0,70, la
+cifra supuesta en el primer presupuesto de área de este trabajo, es
+decir, un núcleo de 1,4 a 1,7 veces el área de celdas. Con ella, 45~kGE
+(0,33~mm$^2$ de celdas) son de 0,47 a 0,54~mm$^2$ de núcleo \est{}, por
+debajo de los 0,8~mm$^2$ que son el cargo mínimo en este proceso
+(Sección~\ref{sec:shuttle}). Los dos primeros
+ahorros son medidas; el tercero es una estimación y se recoge como
+trabajo futuro, no se da por hecho.
 
 \section{Lo que necesita el oscilador en anillo en silicio}
 \label{sec:ro_silicon}
@@ -141,13 +236,79 @@ lazo de ajuste~\cite{yang_2016_jssc}. En tercer lugar, y lo más importante
 para un dispositivo de seguridad, inyectar una frecuencia en la alimentación
 engancha los anillos y elimina el jitter: una señal de 500~mV en el raíl
 redujo el espacio de claves de un microcontrolador seguro comercial de
-$2^{64}$ a unas 3300~\cite{markettos_2009_frequency}, y unos pocos cientos de
-microvatios de campo radiado destruyeron la estadística de un generador de
-cincuenta anillos~\cite{bayon_2012_contactless}. El mismo lazo de
+$2^{64}$ a unas 3300~\cite{markettos_2009_frequency}, y un ataque
+electromagnético sin contacto enganchó los cincuenta anillos de un generador
+en \ac{FPGA} y controló el sesgo de su
+salida~\cite{bayon_2012_contactless}. El mismo lazo de
 calibración, junto con el filtrado de la alimentación, es la defensa
 publicada, y los tests de salud de la Sección~\ref{sec:health} son el
 detector de último recurso. Nada de esto está en el prototipo en FPGA; es el
 trabajo que añade una implementación en silicio.
+
+Cuatro requisitos salen de las simulaciones y medidas de este mismo
+trabajo, y el \ac{RTL} ya aplica los dos primeros.
+
+\paragraph{Longitud de los anillos.} RO1 tiene once etapas y RO2 trece.
+RO1 es largo porque el biestable de muestreo de la biblioteca no captura
+en el mismo instante una entrada que sube y una que baja, y esa
+asimetría fija sesga menos el bit cuanto más lento es el anillo
+muestreado: con cinco etapas la entropía declarable caía por debajo del
+0,60 declarado, con once es 0,757 \simu{} (Sección~\ref{sec:ff_mc}). RO2
+es más largo aún, y a propósito distinto de RO1, porque dos anillos
+idénticos tienden a engancharse entre sí. Con estas longitudes y el
+divisor mínimo \kd{25} (\texttt{CFG\_KD} $= 25$) la fuente entrega de 20
+a 50~bit/s según la esquina \est{} (Sección~\ref{sec:ihp_ring11}).
+
+\paragraph{Tiempos del dominio del anillo.} La lógica cuyo reloj es RO2
+tiene que cerrar tiempos con el periodo del propio anillo, y una primera
+estimación dice que con el anillo original de cinco etapas no lo habría
+hecho \est{} (síntesis lógica e informe de retardos del mapeador sobre
+la biblioteca típica, 1,2~V y 25~$^\circ$C): un contador del divisor de
+26 bits con el reloj directo del anillo, como tenía entonces el diseño,
+tarda 1,53~ns, y un solo biestable de la biblioteca necesita
+unos 0,37~ns para conmutar, frente a un periodo de 0,366~ns. Con trece
+etapas el periodo simulado es de 0,905~ns en la esquina típica a
+27~$^\circ$C \simu{}, lo que deja allí al primer biestable un
+margen de $\times2{,}4$, y una cadena de cuatro biestables de
+conmutación divide RO2 por 16 antes de que nada más ancho reciba ese
+reloj, de modo que el contador, ahora de 22 bits y sin volver a estimar,
+trabaja con un periodo dieciséis veces mayor que el del anillo (14,5~ns
+en típico). En la esquina más rápida simulada ($-40$~$^\circ$C, 1,32~V,
+transistores rápidos) el periodo baja a 0,594~ns \simu{}: frente a los
+0,37~ns de la biblioteca típica serían $\times1{,}6$, una comparación
+entre esquinas que solo es orientativa, porque no se ha usado una
+biblioteca de esquina rápida para el biestable. Es una estimación y está abierta: el \ac{PDK}
+local no trae biblioteca de esquina lenta, así que 1,08~V a
+125~$^\circ$C está sin comprobar, y no se ha hecho un análisis estático
+de tiempos con restricciones sobre el reloj dividido.
+
+\paragraph{Aislamiento del nudo muestreado.} El biestable no debe colgar
+del anillo: sin un búfer entre los dos su capacidad de entrada tira del
+nudo y modula el periodo de 2 a 3~ps \simu{}. Por lo mismo, la salida de
+monitorización que el envoltorio de la \ac{FPGA} usa para medir la
+frecuencia de los anillos debe quedar sin carga en un producto.
+
+\paragraph{Alimentación o anillo de guarda propios.} En la \ac{FPGA} la
+lógica que cuelga de los anillos cambia el ruido de fase aparente en un
+factor 4,4, con las etapas de los anillos en los mismos sitios, y la
+fase relativa de los anillos lleva una modulación estrecha a 38-40~kHz,
+fija en tiempo y no ligada a la frecuencia del anillo, cuyo origen no se
+ha identificado \meas{} (Sección~\ref{sec:campaign}). En una \ac{FPGA} los anillos no se
+pueden aislar; en un circuito integrado sí, con una alimentación
+filtrada propia o un anillo de guarda, que es además la defensa frente a
+los ataques de inyección de arriba. Esa alimentación debe ser una sola
+rama común a los dos anillos, no una por anillo. Cada anillo por separado
+es sensible a su alimentación: su periodo cambia entre un 1,1 y un
+2,8\,\% por cada 10~mV según la esquina \simu{}. Pero el bit depende del
+cociente de los dos periodos y, como los dos anillos usan el mismo
+inversor, una perturbación común se cancela casi entera en él: en el
+chip nominal queda un 0,4\,\% de la sensibilidad de un anillo solo, y
+como mucho un 2-3\,\% (media más dos desviaciones típicas sobre 8 sorteos
+de desapareamiento por anillo, esquinas típica y lenta) \simu{}. Con
+alimentaciones separadas se perdería esa cancelación. Es una sensibilidad
+estática, con escalones de $\pm10$~mV y sin ruido; el acoplamiento por
+sustrato, las caídas de tensión distintas en cada zona del chip y el
+enganche entre anillos quedan fuera.
 
 \section{Coste y plazos de una lanzadera académica}
 \label{sec:shuttle}
@@ -156,10 +317,22 @@ La fabricación es más accesible de lo que sugiere el peso de la palabra. La
 Universidad de Sevilla y el IMSE-CNM son miembros de Europractice, cuya
 lista de precios académicos es pública: un bloque mini@sic en UMC~180~nm
 cuesta 3\,430~\texteuro{}, uno en TSMC~65~nm 3\,691~\texteuro{}, e IHP SG13G2
-se ofrece a 5\,110~\texteuro{}/mm$^2$ con una tirada multiproyecto gratuita
-para diseños de código abierto de menos de 2~mm$^2$~\cite{europractice_prices2026}.
-Un motor de 0,3--0,4~mm$^2$ cabe muchas veces en el bloque más pequeño de
-cualquiera de ellos; el chip estaría limitado por sus pads, no por su
+se ofrece a 5\,110~\texteuro{}/mm$^2$~\cite{europractice_prices2026}; IHP
+anuncia además tiradas multiproyecto gratuitas para diseños de código
+abierto, sin publicar sus límites de área ni sus condiciones.
+El motor son 0,35~mm$^2$ de celdas sin el búfer de captura y 0,69~mm$^2$
+con él, sin rutar \simu{}; con el rango de utilización de la
+Sección~\ref{sec:opt} la primera cifra pasa a entre 0,50 y 0,59~mm$^2$
+de núcleo \est{}. En IHP, que factura por área con un mínimo equivalente
+a 0,8~mm$^2$, eso queda por debajo del mínimo, así que el pedido sería
+el mínimo. Los mm$^2$ son los de esta biblioteca: en la alternativa de
+180~nm los mismos 48,7~kGE, a los 9,677~$\mu\mathrm{m}^2$ por puerta
+equivalente de una biblioteca publicada de ese
+proceso~\cite{poschmann2009lightweight}, son 0,47~mm$^2$ de celdas y de
+0,67 a 0,78~mm$^2$ de núcleo \est{}, que cabe unas tres veces en el
+bloque de 2,33~mm$^2$; para 65~nm no se recogió ningún área de puerta, y
+no se da más cifra que el mínimo de 1~mm$^2$ de ese bloque. El chip
+estaría limitado por sus pads, no por su
 lógica. El propio grupo de seguridad hardware del instituto ya ha llevado
 primitivas de oscilador en anillo desde FPGAs Xilinx~7-series hasta silicio
 de 65~nm caracterizado, lo que hace que continuar este trabajo sea cuestión
@@ -174,6 +347,8 @@ y se vende con una validación NIST de la fuente de entropía~\cite{microchip_at
 dos de sus competidores directos no mencionan SP~800-90 en ninguna parte de
 sus hojas de datos. Por tanto, la posición honesta de este trabajo no es
 competir en precio sino en \emph{transparencia de la entropía}: cada bit de
-una clave producida por este motor puede trazarse hasta un jitter medido y
+una clave producida por este motor puede trazarse hasta un jitter que el propio dispositivo puede medir (en
+este trabajo, medido en el prototipo en \ac{FPGA} y simulado para el
+circuito integrado) y
 una cota declarada, que es precisamente lo que una pieza de caja negra no
 puede ofrecer.

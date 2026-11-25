@@ -1,0 +1,7 @@
+tramo1 W<=300 casos=9180500 dif_alarma=0 dif_peor=0
+tramo2 casos acumulados=22702930 dif_alarma=0 dif_peor=0
+tramo3 casos acumulados=34236958 dif_alarma=0 dif_peor=0
+
+real	8m34,611s
+user	8m21,258s
+sys	0m0,171s

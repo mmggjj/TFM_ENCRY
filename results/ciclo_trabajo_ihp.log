@@ -1,0 +1,42 @@
+tt27 rep 0: periodo 366.0 ps, ciclo a VDD/2 por nudo 0.5006 0.5213 0.4914 0.5219 0.4964
+ss_m40 rep 0: periodo 438.7 ps, ciclo a VDD/2 por nudo 0.5015 0.5222 0.4906 0.5229 0.4959
+ss_m40_v108 rep 0: periodo 587.7 ps, ciclo a VDD/2 por nudo 0.5023 0.5196 0.4918 0.5204 0.4968
+ff125 rep 0: periodo 309.0 ps, ciclo a VDD/2 por nudo 0.5027 0.5222 0.4958 0.5223 0.5009
+ff125_v132 rep 0: periodo 267.1 ps, ciclo a VDD/2 por nudo 0.5021 0.5240 0.4950 0.5241 0.5001
+sf_m40 rep 0: periodo 359.1 ps, ciclo a VDD/2 por nudo 0.5075 0.5245 0.4985 0.5249 0.5050
+fs_m40 rep 0: periodo 358.2 ps, ciclo a VDD/2 por nudo 0.4960 0.5169 0.4868 0.5178 0.4908
+sf125 rep 0: periodo 379.7 ps, ciclo a VDD/2 por nudo 0.5084 0.5278 0.4999 0.5281 0.5063
+fs125 rep 0: periodo 382.9 ps, ciclo a VDD/2 por nudo 0.4941 0.5182 0.4858 0.5191 0.4896
+tt27_mm rep 0: periodo 371.2 ps, ciclo a VDD/2 por nudo 0.4934 0.5324 0.4889 0.5211 0.4993
+ss_m40_v108_mm rep 0: periodo 577.3 ps, ciclo a VDD/2 por nudo 0.4989 0.5245 0.4893 0.5214 0.4943
+tt27_mm rep 1: periodo 367.9 ps, ciclo a VDD/2 por nudo 0.5098 0.5188 0.4899 0.5254 0.4882
+ss_m40_v108_mm rep 1: periodo 578.3 ps, ciclo a VDD/2 por nudo 0.4950 0.5284 0.4910 0.5181 0.4997
+tt27_mm rep 2: periodo 356.1 ps, ciclo a VDD/2 por nudo 0.4945 0.5183 0.4966 0.5173 0.5040
+ss_m40_v108_mm rep 2: periodo 597.7 ps, ciclo a VDD/2 por nudo 0.4976 0.5216 0.4928 0.5225 0.5014
+tt27_mm rep 3: periodo 367.0 ps, ciclo a VDD/2 por nudo 0.4949 0.5261 0.4833 0.5300 0.4958
+ss_m40_v108_mm rep 3: periodo 582.0 ps, ciclo a VDD/2 por nudo 0.5063 0.5222 0.4886 0.5250 0.4892
+tt27_mm rep 4: periodo 368.1 ps, ciclo a VDD/2 por nudo 0.5051 0.5136 0.4972 0.5191 0.4931
+ss_m40_v108_mm rep 4: periodo 584.1 ps, ciclo a VDD/2 por nudo 0.5013 0.5222 0.4867 0.5249 0.4968
+tt27_mm rep 5: periodo 364.7 ps, ciclo a VDD/2 por nudo 0.5057 0.5185 0.4911 0.5238 0.4937
+ss_m40_v108_mm rep 5: periodo 596.0 ps, ciclo a VDD/2 por nudo 0.4967 0.5214 0.4917 0.5199 0.5017
+tt27_mm rep 6: periodo 374.1 ps, ciclo a VDD/2 por nudo 0.4902 0.5350 0.4849 0.5279 0.4963
+ss_m40_v108_mm rep 6: periodo 600.7 ps, ciclo a VDD/2 por nudo 0.5100 0.5235 0.4832 0.5298 0.4840
+tt27_mm rep 7: periodo 366.1 ps, ciclo a VDD/2 por nudo 0.4982 0.5229 0.4900 0.5200 0.5001
+ss_m40_v108_mm rep 7: periodo 582.5 ps, ciclo a VDD/2 por nudo 0.4871 0.5287 0.4918 0.5143 0.5105
+
+CSV: /home/mmggjj/workspace/TFM_ENCRY/results/ciclo_trabajo_ihp.csv
+
+Resumen por caso (todos los nudos; umbral VDD/2 y VDD/2 +-100 mV):
+| caso | n | periodo ps | ciclo a VDD/2 (min-max) | ciclo con +-100 mV (min-max) | H cota peor a VDD/2 | H cota peor con +-100 mV |
+|---|---|---|---|---|---|---|
+| tt27 | 1 | 366.0 | 0.4914-0.5219 | 0.4735-0.5399 | 0.9380 | 0.8891 |
+| ss_m40 | 1 | 438.7 | 0.4906-0.5229 | 0.4741-0.5395 | 0.9354 | 0.8902 |
+| ss_m40_v108 | 1 | 587.7 | 0.4918-0.5204 | 0.4745-0.5380 | 0.9423 | 0.8943 |
+| ff125 | 1 | 309.0 | 0.4958-0.5223 | 0.4760-0.5433 | 0.9370 | 0.8801 |
+| ff125_v132 | 1 | 267.1 | 0.4950-0.5241 | 0.4764-0.5438 | 0.9321 | 0.8789 |
+| sf_m40 | 1 | 359.1 | 0.4985-0.5249 | 0.4810-0.5427 | 0.9300 | 0.8818 |
+| fs_m40 | 1 | 358.2 | 0.4868-0.5178 | 0.4696-0.5349 | 0.9496 | 0.9026 |
+| sf125 | 1 | 379.7 | 0.4999-0.5281 | 0.4806-0.5481 | 0.9212 | 0.8675 |
+| fs125 | 1 | 382.9 | 0.4858-0.5191 | 0.4669-0.5381 | 0.9459 | 0.8942 |
+| tt27_mm | 8 | 366.9 | 0.4833-0.5350 | 0.4655-0.5532 | 0.9024 | 0.8542 |
+| ss_m40_v108_mm | 8 | 587.3 | 0.4832-0.5298 | 0.4643-0.5469 | 0.9165 | 0.8706 |

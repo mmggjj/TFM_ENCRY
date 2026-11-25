@@ -1,0 +1,4 @@
+kd,modo,trozos,bits,crc_malo,tramas_huerfanas,errores,ms_mediana,ms_min,ms_max,f_ro2_MHz,fraccion_unos,fichero,exit_90b,h_min_90b
+8,trozos,245,1003520,0,0,0,10,0,10,,0.4944694674744898,kd08.bin,0,0.12536076852668412
+10,trozos,245,1003520,0,0,0,30,30,40,,0.4958954480229592,kd10.bin,0,0.5583951277897403
+11,trozos,245,1003520,0,0,0,60,60,70,,0.4965182557397959,kd11.bin,0,0.7862094533501827
