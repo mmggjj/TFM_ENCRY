@@ -92,3 +92,17 @@ bitstream del 19-11. Fable está escribiendo la memoria (fases 2-4 de
     con el firmware 0x04; por qué salen 2 o 3 bloques por clave; la
     diferencia entre tandas del Monte Carlo; el margen del primer biestable
     en la esquina rápida; los 774 grupos de `radio_sin_ruido`.
+
+## En curso al cierre del 25-11
+
+16. **Enganche entre ro1 y ro2 con alimentación común** (`analysis/enganche_anillos.py`,
+    SPICE sin ruido, R = 0, 10, 100, 1000 Ω entre la fuente y el nudo común, tt y
+    ss −40 °C 1,08 V). Prueba suelta en tt con R = 100 Ω [SIMULADO]: V_DD 1,178 V,
+    rizado 12 mV pp, cociente 1,1749 estable en tres tramos, hueco de fase 0,005
+    (enganchado sería ~1/q, 0,09-0,17): sin enganche. La tanda se paró a las 21:35
+    (Mario): la de ss con R = 100 Ω llevaba 1 h 47 min **atascada en el punto de
+    operación** (gmin y source stepping fallan; reproducido con 5 ns), y el script
+    solo guarda al final, así que se perdieron las otras 7. **Mañana:** guardar cada
+    simulación al acabar, arrancar con `uic` y una condición inicial en un nudo de
+    cada anillo (sin punto de operación) y un condensador de desacoplo pequeño en
+    el nudo común; repetir la tanda (~1 h por simulación de ss).
